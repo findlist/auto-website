@@ -1,0 +1,171 @@
+---
+import BaseLayout, { type SiteMeta } from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { tagToSlug } from '../../utils/tags';
+
+// 获取所有博客文章，按发布日期倒序排列
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+// 格式化日期为中文
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const meta: SiteMeta = {
+  title: '技术博客 - 开发者工具实践指南',
+  description:
+    '深入探讨 JSON、UUID、Base64、Hash 等开发者工具背后的技术原理与最佳实践。涵盖 JavaScript Web API、数据格式、性能优化等实战内容。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: '工具盒子技术博客',
+    url: 'https://toolbox.example.com/blog',
+    description: '开发者工具的技术原理与最佳实践深度解析',
+    blogPost: posts.map((post) => ({
+      '@type': 'BlogPosting',
+      headline: post.data.title,
+      description: post.data.description,
+      datePublished: post.data.pubDate.toISOString(),
+      url: `https://toolbox.example.com/blog/${post.id}`,
+      keywords: post.data.tags.join(', '),
+    })),
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>技术博客</h1>
+      <p>开发者工具背后的技术原理与最佳实践，每一篇都配套可用的在线工具。</p>
+    </div>
+
+    <ul class="blog-list" role="list">
+      {posts.map((post) => (
+        <li class="blog-card">
+          <h2 class="blog-card__title">
+            <a href={`/blog/${post.id}`} class="blog-card__link">{post.data.title}</a>
+          </h2>
+          <p class="blog-card__desc">{post.data.description}</p>
+          <div class="blog-card__meta">
+            <time datetime={post.data.pubDate.toISOString()}>
+              {formatDate(post.data.pubDate)}
+            </time>
+            {post.data.tags.length > 0 && (
+              <span class="blog-card__tags">
+                {post.data.tags.map((tag) => (
+                  <a href={`/blog/tag/${tagToSlug(tag)}`} class="blog-card__tag">#{tag}</a>
+                ))}
+              </span>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <!-- 标签入口：引导用户进入标签索引页 -->
+    <div class="blog-tags-entry">
+      <a href="/blog/tag" class="btn">按标签浏览全部文章 →</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .blog-list {
+    list-style: none;
+    padding: 0;
+    margin: 32px 0 24px;
+    display: grid;
+    gap: 20px;
+  }
+
+  .blog-card {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.18s ease;
+    overflow: hidden;
+    padding: 24px;
+  }
+
+  .blog-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* 拉伸链接：标题链接的 ::after 撑满整张卡片，实现"整卡可点击" */
+  .blog-card__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .blog-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .blog-card__title {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .blog-card__desc {
+    margin: 0 0 14px;
+    color: var(--color-text-soft);
+    font-size: 14.5px;
+    line-height: 1.7;
+  }
+
+  .blog-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .blog-card__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* 标签链接：z-index 高于拉伸链接，保证可单独点击 */
+  .blog-card__tag {
+    position: relative;
+    z-index: 1;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .blog-card__tag:hover {
+    background: rgba(43, 108, 255, 0.18);
+  }
+
+  /* 标签入口 */
+  .blog-tags-entry {
+    margin: 32px 0 64px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .blog-card {
+      padding: 20px;
+    }
+    .blog-card__title {
+      font-size: 17px;
+    }
+  }
+</style>

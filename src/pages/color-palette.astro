@@ -1,0 +1,687 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ColorPaletteTool from '../components/ColorPaletteTool.tsx';
+
+const meta: SiteMeta = {
+  title: '调色板生成器 - 设计系统色阶 / 和谐配色 / WCAG 对比度 / 色盲模拟',
+  description:
+    '免费的在线调色板生成器：6 种和谐配色方案（互补 / 类似 / 三角 / 分割互补 / 四角 / 单色阶）、设计系统色阶（Tailwind 50-950 / Material 100-900）、明度色调（Tints / Shades / Tones）、WCAG 2.1 对比度检查、三种色盲模拟（红色盲 / 绿色盲 / 蓝色盲）。支持导出 CSS 变量、Tailwind 配置、SCSS、JSON、Android XML、iOS Swift 六种格式。所有计算在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '调色板生成器',
+    url: 'https://toolbox.example.com/color-palette',
+    description: '在线调色板生成器：和谐配色 + 设计系统色阶 + WCAG 对比度 + 色盲模拟 + 多格式导出，全本地处理。',
+    applicationCategory: 'DesignApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>调色板生成器</h1>
+      <p>
+        基于色彩理论生成 6 种和谐配色、Tailwind / Material 设计系统色阶、明度色调阶梯，
+        内置 WCAG 2.1 对比度检查与三种色盲模拟，支持一键导出 CSS / Tailwind / SCSS / JSON / Android / iOS 六种格式。
+        所有计算在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <ColorPaletteTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>这个调色板生成器和颜色格式转换工具有什么区别？</summary>
+        <p>
+          <strong>颜色格式转换工具</strong>（/color）侧重 HEX / RGB / HSL / HSV / CMYK 五种格式互转，
+          内置简单的 5 种和谐方案（仅旋转色相）；<strong>调色板生成器</strong>（本工具）侧重调色板生成与导出，
+          提供更丰富的能力：
+          ①6 种和谐方案（含单色阶）+ 明度色调（Tints / Shades / Tones）+ 设计系统色阶（Tailwind 50-950 / Material 100-900）；
+          ②WCAG 2.1 对比度检查（普通文字 / 大字号 AA / AAA 等级判定）；
+          ③三种色盲模拟（红色盲 / 绿色盲 / 蓝色盲）；
+          ④6 种格式导出（CSS 变量 / Tailwind 配置 / SCSS / JSON / Android XML / iOS Swift）。
+          两者互补，颜色格式互转用 /color，调色板生成与可访问性检查用本工具。
+        </p>
+      </details>
+      <details>
+        <summary>和谐配色方案的 6 种类型分别适合什么场景？</summary>
+        <p>
+          基于色环理论的 6 种方案：
+          <strong>互补色</strong>（180° 对比）适合 CTA 按钮强调，如蓝色背景 + 橙色按钮；
+          <strong>类似色</strong>（±30° 邻近）适合背景渐变与图表系列，和谐统一；
+          <strong>三角色</strong>（±120°）适合品牌识别与三栏布局，活泼平衡；
+          <strong>分割互补</strong>（180°±30°）比互补色柔和，对比但不刺眼，适合插画配色；
+          <strong>四角色</strong>（±90°/±180°）适合多主题配色与数据可视化；
+          <strong>单色阶</strong>（同色相不同明度）适合统一沉稳的设计，如企业站主色调。
+          建议先选 1 个主色 + 1 个强调色（互补或分割互补），再用类似色或灰色填充背景。
+        </p>
+      </details>
+      <details>
+        <summary>Tailwind 50-950 和 Material 100-900 色阶是怎么生成的？</summary>
+        <p>
+          以输入色为 <code>500</code> 锚点，向亮端（50）提升明度 + 降低饱和度，向暗端（950）降低明度 + 略提升饱和度。
+          各档位的明度偏移与饱和度系数参考 Tailwind 与 Material 官方色阶规律（如 50 档明度 +42、饱和度 ×0.7；
+          950 档明度 -42、饱和度 ×1.15）。<strong>Tailwind</strong> 色阶为 50/100/200/300/400/500/600/700/800/900/950 共 11 档，
+          <strong>Material</strong> 色阶为 50/100/200/300/400/500/600/700/800/900 共 10 档。
+          生成结果接近但非完全等同官方色板（官方是人工精调），适合快速搭建设计系统原型。
+        </p>
+      </details>
+      <details>
+        <summary>Tints、Shades、Tones 三种明度色调有什么区别？</summary>
+        <p>
+          <strong>Tints（明色）</strong>：向纯白渐变，明度提升 + 饱和度略降，适合背景与悬停态（hover）；
+          <strong>Shades（暗色）</strong>：向纯黑渐变，明度降低，适合按下态（active）与边框；
+          <strong>Tones（浊色）</strong>：向纯灰渐变，饱和度降低，适合次要元素与禁用态。
+          三者都是从当前色出发的 5 档阶梯，与设计系统色阶（50-950）的区别是：
+          色阶覆盖从最亮到最暗的完整范围，色调阶梯只覆盖单一方向（仅亮 / 仅暗 / 仅浊）。
+        </p>
+      </details>
+      <details>
+        <summary>WCAG 对比度的 AA / AAA 等级是什么意思？</summary>
+        <p>
+          WCAG 2.1（Web Content Accessibility Guidelines）是 W3C 制定的无障碍标准。
+          对比度 = (亮色相对亮度 + 0.05) / (暗色相对亮度 + 0.05)，范围 1-21。
+          <strong>普通文字</strong>：AA ≥ 4.5:1，AAA ≥ 7:1；
+          <strong>大字号</strong>（18pt 或 14pt 粗体）：AA ≥ 3:1，AAA ≥ 4.5:1。
+          本工具同时检查当前色与白字 / 黑字的对比度，标注合规等级，便于选择文字色。
+          例如深蓝色背景白字通常通过 AA，浅黄色背景白字可能不达标需改用黑字。
+        </p>
+      </details>
+      <details>
+        <summary>色盲模拟的原理是什么？为什么需要检查？</summary>
+        <p>
+          色盲模拟通过线性 RGB 变换矩阵（Machado et al. 2009 简化版）模拟色盲视觉：
+          <strong>红色盲（Protanopia）</strong>约 1% 男性，红色感知缺失；
+          <strong>绿色盲（Deuteranopia）</strong>约 1% 男性，绿色感知缺失（最常见）；
+          <strong>蓝色盲（Tritanopia）</strong>极罕见，蓝色感知缺失。
+          检查色盲可访问性的原因：约 8% 男性存在不同程度的色觉异常，若配色仅靠红绿区分（如红=错误、绿=成功），
+          色盲用户无法识别。建议同时用颜色 + 图标 / 文字标注状态，避免仅靠颜色传达信息。
+          本工具展示当前色在色盲眼中的实际呈现，便于调整配色。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些导出格式？怎么使用？</summary>
+        <p>
+          支持 6 种格式（设计系统色阶 Tab 可选全部，其他 Tab 默认 CSS 变量）：
+          <strong>CSS 变量</strong>：复制到样式表顶部，用 <code>var(--primary-500)</code> 引用；
+          <strong>Tailwind 配置</strong>：粘贴到 <code>tailwind.config.js</code> 的 <code>theme.extend.colors</code>，
+          用 <code>bg-primary-500</code>、<code>text-primary-700</code> 等类名引用；
+          <strong>SCSS</strong>：复制到 <code>_colors.scss</code>，用 <code>$primary-500</code> 引用；
+          <strong>JSON</strong>：供 JavaScript 动态加载或设计工具导入；
+          <strong>Android XML</strong>：放入 <code>res/values/colors.xml</code>，用 <code>@color/primary_500</code> 引用；
+          <strong>iOS Swift</strong>：UIColor 扩展，用 <code>.primary500</code> 引用。
+          变量名前缀可在导出区自定义（默认 <code>primary</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>随机配色是怎么生成的？为什么用黄金角度？</summary>
+        <p>
+          随机配色采用<strong>黄金角度旋转采样</strong>（137.508°）：从随机起始色相开始，
+          每次旋转 137.508° 取下一个色相，保证色相在色环上分布最均匀。
+          黄金角度是数学上最优的均匀分布角度（源自向日葵种子排列、松果鳞片等自然现象），
+          相比纯随机采样能避免色相扎堆或遗漏。饱和度与明度固定在中等范围（S: 60-90, L: 45-60），
+          保证生成的配色既鲜艳又不刺眼。点击「重新生成」可取第一个色为主色。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具生成的色阶和 Tailwind / Material 官方色板一样吗？</summary>
+        <p>
+          <strong>不一样</strong>。Tailwind 与 Material 官方色板是设计师人工精调的结果，
+          每个颜色的明度、饱和度、色相都经过仔细校准，本工具采用<strong>算法生成</strong>：
+          以输入色为 500 锚点，按经验公式向亮暗两端推导其他档位。
+          算法生成的色阶接近官方风格但非完全等同，适合：
+          ①快速搭建原型（无需手动调色）；
+          ②自定义品牌色（输入品牌色生成完整色阶）；
+          ③学习色阶规律（理解明度与饱和度的变化趋势）。
+          生产环境建议在算法生成基础上手动微调，或直接使用官方色板。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些输入格式？需要加前缀吗？</summary>
+        <p>
+          支持以下输入：
+          <code>#rgb</code>、<code>#rrggbb</code>（带或不带 #）、
+          <code>rgb(r, g, b)</code>、<code>hsl(h, s%, l%)</code>。
+          也可省略前缀只写 3 个 0-255 的数字（按 RGB 解析）。
+          建议加前缀避免歧义，如 <code>220, 100%, 58%</code> 可能是 HSL 也可能是 HSV，
+          加 <code>hsl(...)</code> 才能确保正确。也可点击左侧色块用拾色器直接选色。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有颜色解析、调色板生成、对比度计算、色盲模拟、
+          代码导出逻辑由 JavaScript 在你本地执行，输入的颜色值不会发送到任何服务器。
+          这对于处理品牌色、商业设计稿配色尤其重要，可避免配色方案提前泄露。
+          但请注意：浏览器历史记录、屏幕截图、共享设备可能留下痕迹，如需彻底保密请在隐私模式中使用。
+        </p>
+      </details>
+      <details>
+        <summary>如何与颜色格式转换工具、颜色对比度工具联动？</summary>
+        <p>
+          站点提供三个颜色相关工具，互补使用：
+          <strong>颜色格式转换工具</strong>（/color）—— HEX / RGB / HSL / HSV / CMYK 五格式互转 + 简单和谐方案；
+          <strong>调色板生成器</strong>（/color-palette，本工具）—— 调色板生成 + 设计系统色阶 + 多格式导出；
+          <strong>颜色对比度检查工具</strong>（/color-contrast）—— 双色对比度精确检查 + WCAG 合规判定。
+          典型流程：先用 /color 选基础色 → 用本工具生成完整色阶与和谐方案 → 用 /color-contrast 验证关键组合的对比度。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 调色板工具专属样式：cpl__ 前缀 */
+
+  /* 输入区 */
+  .cpl__input-area {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cpl__input-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cpl__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .cpl__input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .cpl__picker {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .cpl__picker::-webkit-color-swatch-wrapper {
+    padding: 4px;
+  }
+  .cpl__picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+  .cpl__picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+
+  .cpl__input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cpl__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .cpl__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .cpl__error {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--color-error);
+    font-size: 13px;
+  }
+
+  /* 当前色预览 */
+  .cpl__current {
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cpl__current-hex {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .cpl__current-rgb {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+    opacity: 0.85;
+  }
+
+  /* Tab 切换 */
+  .cpl__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 16px 0;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+  }
+
+  .cpl__tab {
+    padding: 8px 14px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .cpl__tab:hover {
+    color: var(--color-primary);
+  }
+
+  .cpl__tab--active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .cpl__tab-desc {
+    margin: 8px 16px 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  /* 内容区 */
+  .cpl__content {
+    padding: 16px;
+  }
+
+  .cpl__section {
+    margin-bottom: 16px;
+  }
+
+  .cpl__section:last-child {
+    margin-bottom: 0;
+  }
+
+  .cpl__section-title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .cpl__section-title--mt {
+    margin-top: 24px;
+  }
+
+  .cpl__section-desc {
+    margin: 8px 0 12px;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  /* 子 Tab */
+  .cpl__sub-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cpl__sub-tab {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .cpl__sub-tab:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .cpl__sub-tab--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 色块网格 */
+  .cpl__swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .cpl__scale {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+
+  /* 单个色块 */
+  .cpl__swatch {
+    position: relative;
+    min-height: 90px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .cpl__swatch:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .cpl__swatch:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .cpl__swatch-label {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .cpl__swatch-hex {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .cpl__swatch-copy {
+    align-self: flex-end;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 10.5px;
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+  }
+
+  .cpl__swatch-copy:hover {
+    opacity: 1;
+  }
+
+  /* 可访问性检查网格 */
+  .cpl__a11y-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .cpl__a11y-item {
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 90px;
+  }
+
+  .cpl__a11y-label {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+
+  .cpl__a11y-ratio {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .cpl__a11y-level {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid currentColor;
+  }
+
+  /* 色盲模拟网格 */
+  .cpl__cb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .cpl__cb-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .cpl__cb-swatch {
+    width: 100%;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+  }
+
+  .cpl__cb-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .cpl__cb-hex {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+    color: var(--color-text);
+  }
+
+  /* 随机配色刷新按钮 */
+  .cpl__refresh {
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  /* 导出区 */
+  .cpl__export {
+    padding: 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cpl__export-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .cpl__export-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .cpl__export-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .cpl__format-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 11.5px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .cpl__format-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .cpl__format-btn--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .cpl__name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .cpl__name-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+  }
+
+  .cpl__name-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .cpl__export-code {
+    margin: 0 0 12px;
+    padding: 12px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+    line-height: 1.6;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .cpl__export-copy {
+    width: 100%;
+  }
+
+  /* 状态提示 */
+  .cpl__notice {
+    margin: 12px 16px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .cpl__input-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cpl__tabs {
+      padding: 10px 12px 0;
+    }
+    .cpl__tab {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .cpl__content {
+      padding: 12px;
+    }
+    .cpl__swatches {
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    }
+    .cpl__scale {
+      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+    }
+    .cpl__swatch {
+      min-height: 78px;
+    }
+    .cpl__swatch-hex {
+      font-size: 10.5px;
+    }
+    .cpl__a11y-grid {
+      grid-template-columns: 1fr;
+    }
+    .cpl__export-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cpl__export-actions {
+      overflow-x: auto;
+    }
+  }
+</style>

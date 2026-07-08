@@ -1,0 +1,353 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import LoremTool from '../components/LoremTool.tsx';
+
+const meta: SiteMeta = {
+  title: '占位文本与 Mock 数据生成器 - Lorem Ipsum / 中文占位 / 假数据',
+  description:
+    '免费的在线占位文本与 Mock 数据生成器：支持 Lorem Ipsum 英文占位、中文占位文本，以及姓名、邮箱、URL、手机号、UUID、IPv4、颜色、日期、数字、布尔等 11 种 Mock 数据生成，可输出纯文本、JSON 数组、CSV、Markdown 表格四种格式。所有数据在浏览器本地生成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '占位文本与 Mock 数据生成器',
+    url: 'https://toolbox.example.com/lorem',
+    description: '在线占位文本与 Mock 数据生成器，支持 Lorem Ipsum、中文占位、姓名邮箱 URL 等 11 种假数据，输出 JSON/CSV/Markdown 格式。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>占位文本与 Mock 数据生成器</h1>
+      <p>
+        一站式生成占位文本与测试用 Mock 数据：支持 Lorem Ipsum 英文占位、中文占位文本（段落 / 句子 / 单词三种粒度），
+        以及中英文姓名、邮箱、URL、手机号、UUID、IPv4、颜色、日期、数字、布尔共 11 种假数据。
+        可输出纯文本、JSON 数组、CSV、Markdown 表格四种格式，方便粘贴到原型、文档、接口 Mock 与单元测试。数据全部在浏览器本地生成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <LoremTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Lorem Ipsum？为什么用它做占位文本？</summary>
+        <p>
+          Lorem Ipsum 是 16 世纪流传下来的拉丁文假文章，源自西塞罗的《善恶极》。
+          它被广泛用作印刷、排版、设计领域的占位文本，原因是其字母分布接近真实英文，
+          能让观者专注于版面而非内容语义。本工具支持段落、句子、单词三种粒度，可按需生成 1-100 项。
+        </p>
+      </details>
+      <details>
+        <summary>中文占位文本和 Lorem Ipsum 有什么区别？</summary>
+        <p>
+          拉丁字母的 Lorem Ipsum 不适合中文排版测试（字宽、行高、断行规则都不同）。
+          本工具的中文占位文本从 20 句模板库中随机组合，包含古诗、散文、现代文风格，
+          更贴近真实中文排版的视觉效果。单词粒度则从常用字库随机选取单字，用于字间距测试。
+        </p>
+      </details>
+      <details>
+        <summary>Mock 数据生成器支持哪些数据类型？</summary>
+        <p>
+          支持 11 种常用类型：① 中文姓名（百家姓 + 吉祥字）；② 英文姓名（First Last）；
+          ③ 邮箱（name@domain）；④ URL（https://domain/path）；⑤ 中国手机号（1[3-9]开头的 11 位）；
+          ⑥ UUID v4（基于 crypto.randomUUID）；⑦ IPv4 地址；⑧ 十六进制颜色（#RRGGBB）；
+          ⑨ 日期（YYYY-MM-DD）；⑩ 随机整数（1-999）；⑪ 布尔值（true/false）。
+          可批量生成 1-100 条，适用于接口 Mock、数据库填充、单元测试。
+        </p>
+      </details>
+      <details>
+        <summary>四种输出格式分别适合什么场景？</summary>
+        <p>
+          ① 纯文本：每项一行，适合粘贴到笔记、文档作为示意；② JSON 数组：2 空格缩进，
+          适合前端 Mock 接口返回值、配置文件示例；③ CSV：type,value 两列，适合导入 Excel、
+          数据库批量插入；④ Markdown 表格：| # | value | 格式，适合写入 README、文档站点。
+        </p>
+      </details>
+      <details>
+        <summary>生成的数据是真实可用的吗？</summary>
+        <p>
+          数据格式真实但内容虚构。姓名、邮箱、URL、手机号均从词库随机组合，
+          不指向真实人物或服务。UUID v4 基于 CSPRNG（crypto.getRandomValues）生成，
+          碰撞概率极低（约 2^-122），可用于数据库主键测试。手机号符合中国号段格式（1[3-9]xxxxxxxxx），
+          但不保证是真实在用号码。
+        </p>
+      </details>
+      <details>
+        <summary>为什么用 crypto.getRandomValues 而不是 Math.random？</summary>
+        <p>
+          Math.random 是伪随机数生成器（PRNG），分布不均且可预测，不适合密码学或需要高随机性的场景。
+          crypto.getRandomValues 是浏览器提供的 CSPRNG（密码学安全随机数生成器），
+          基于操作系统熵源（如 /dev/urandom），分布均匀且不可预测。本工具的 UUID、颜色、IP 等
+          均优先使用 CSPRNG，保证数据质量。在不支持的环境下（如旧浏览器）降级到 Math.random。
+        </p>
+      </details>
+      <details>
+        <summary>可以批量生成多少条数据？有上限吗？</summary>
+        <p>
+          单次最多生成 100 条。这是基于以下考虑：① 浏览器渲染性能，过长的 <code>&lt;pre&gt;</code>
+          内容会拖慢页面；② 实用性，超过 100 条通常应直接用脚本生成而非在线工具；
+          ③ 内存占用，避免大数组导致卡顿。如需更大数据集，建议下载为文件后用脚本处理，
+          或使用专门的数据库填充工具（如 Faker.js）。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有生成逻辑由 JavaScript 在你本地执行，
+          不会发送任何输入或输出到服务器。随机数生成、格式化、复制、下载全程零网络请求，
+          可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 占位文本与 Mock 数据生成器专属样式 */
+  .lorem {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 配置区 */
+  .lorem__config {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .lorem__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 160px;
+  }
+
+  .lorem__field--count {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  .lorem__label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .lorem__count-value {
+    color: var(--color-primary, #2b6cff);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lorem__select {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .lorem__select:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.15);
+  }
+
+  .lorem__range {
+    width: 100%;
+    height: 36px;
+    cursor: pointer;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 按钮 */
+  .lorem__btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .lorem__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .lorem__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .lorem__btn--primary {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+    padding: 8px 24px;
+    font-weight: 500;
+  }
+
+  .lorem__btn--primary:hover:not(:disabled) {
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  /* 输出格式切换 */
+  .lorem__format {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lorem__format-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .lorem__format-btn {
+    padding: 7px 14px;
+    border: none;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .lorem__format-btn:last-child {
+    border-right: none;
+  }
+
+  .lorem__format-btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+  }
+
+  .lorem__format-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 结果区 */
+  .lorem__result {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lorem__result-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .lorem__stats {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lorem__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .lorem__output {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 120px;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .lorem__output {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .lorem__format-btn.is-active {
+      background: var(--color-primary, #2b6cff);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .lorem__config {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .lorem__field {
+      min-width: 0;
+      width: 100%;
+    }
+    .lorem__btn--primary {
+      width: 100%;
+    }
+    .lorem__format {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .lorem__format-group {
+      width: 100%;
+    }
+    .lorem__format-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 6px;
+      font-size: 12.5px;
+    }
+    .lorem__output {
+      font-size: 12px;
+      padding: 12px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .lorem__format-btn {
+      font-size: 11.5px;
+    }
+  }
+</style>

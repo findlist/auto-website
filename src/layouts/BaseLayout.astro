@@ -1,0 +1,123 @@
+---
+// 引入全局样式：Astro 会自动打包并注入，避免外部 link 在构建后 404
+import '../styles/global.css';
+
+// 站点元数据与全局 SEO 配置
+export interface SiteMeta {
+  title: string;
+  description: string;
+  // ogImage 默认使用 /og-image.svg
+  ogImage?: string;
+  // canonical 默认自动拼接 Astro.url
+  canonical?: string;
+  // 是否禁止索引（如隐私政策页可设为 false）
+  indexable?: boolean;
+  // 页面级 JSON-LD 结构化数据（如 WebApplication），与站点级 WebSite 合并输出
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const SITE_NAME = '工具盒子';
+const SITE_URL = 'https://toolbox.example.com';
+
+interface Props {
+  meta: SiteMeta;
+}
+
+const { meta } = Astro.props;
+const fullTitle = meta.title.includes(SITE_NAME)
+  ? meta.title
+  : `${meta.title} - ${SITE_NAME}`;
+const canonical = meta.canonical ?? new URL(Astro.url.pathname, Astro.site ?? SITE_URL).toString();
+const ogImage = meta.ogImage ?? new URL('/og-image.svg', Astro.site ?? SITE_URL).toString();
+const indexable = meta.indexable ?? true;
+
+// 站点级 WebSite 结构化数据：所有页面共享，帮助搜索引擎理解站点
+const siteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: '面向中文开发者的现代化在线工具集，全本地处理，零广告零追踪。',
+  inLanguage: 'zh-CN',
+};
+// 合并站点级与页面级 JSON-LD，统一以数组形式输出
+const pageLd = meta.jsonLd ? (Array.isArray(meta.jsonLd) ? meta.jsonLd : [meta.jsonLd]) : [];
+const allLd = [siteLd, ...pageLd];
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={meta.description} />
+    <link rel="canonical" href={canonical} />
+    {!indexable && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={meta.description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="zh_CN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={meta.description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- 图标 -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- RSS 订阅源：供阅读器与搜索引擎发现 -->
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="工具盒子技术博客"
+      href="/rss.xml"
+    />
+
+    <!-- 结构化数据：站点级 WebSite + 页面级 WebApplication，帮助搜索引擎理解 -->
+    <script type="application/ld+json" set:html={JSON.stringify(allLd)} />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">跳到主要内容</a>
+    <slot name="header">
+      <header class="site-header">
+        <div class="container site-header__inner">
+          <a href="/" class="site-header__brand" aria-label="工具盒子首页">
+            <span class="site-header__brand-mark" aria-hidden="true">工</span>
+            <span>工具盒子</span>
+          </a>
+          <nav class="site-header__nav" aria-label="主导航">
+            <a href="/">首页</a>
+            <a href="/#tools-list">工具</a>
+            <a href="/blog">博客</a>
+            <a href="/about">关于</a>
+          </nav>
+        </div>
+      </header>
+    </slot>
+    <main id="main">
+      <slot />
+    </main>
+    <slot name="footer">
+      <footer class="site-footer">
+        <div class="container site-footer__inner">
+          <div>
+            © {new Date().getFullYear()} 工具盒子 · 全本地处理 · 零追踪
+          </div>
+          <nav aria-label="底部导航">
+            <a href="/about">关于</a>
+            &nbsp;·&nbsp;
+            <a href="/privacy">隐私政策</a>
+          </nav>
+        </div>
+      </footer>
+    </slot>
+  </body>
+</html>

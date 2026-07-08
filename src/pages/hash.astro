@@ -1,0 +1,426 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HashTool from '../components/HashTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Hash 计算工具 - 在线 SHA-1/SHA-256/SHA-512 哈希生成器',
+  description:
+    '免费的在线 Hash 计算工具：支持 SHA-1 / SHA-256 / SHA-384 / SHA-512，输出 HEX 或 Base64 格式。使用浏览器原生 SubtleCrypto API，全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Hash 计算工具',
+    url: 'https://toolbox.example.com/hash',
+    description: '在线 SHA-1/SHA-256/SHA-384/SHA-512 哈希计算工具，支持 HEX 与 Base64 输出，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Hash 计算工具</h1>
+      <p>
+        计算 SHA-1 / SHA-256 / SHA-384 / SHA-512 哈希摘要，支持文本与文件两种输入模式，HEX 与 Base64 两种输出格式。基于浏览器原生 SubtleCrypto，所有数据本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <HashTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>SHA-1 / SHA-256 / SHA-512 有什么区别？</summary>
+        <p>三者都是 SHA 系列密码学哈希函数，主要区别在于输出长度与安全性：<strong>SHA-1</strong> 输出 160 位（40 个十六进制字符），已被发现碰撞漏洞，<strong>不推荐用于安全场景</strong>；<strong>SHA-256</strong> 输出 256 位（64 个十六进制字符），属于 SHA-2 家族，目前安全，是 TLS 证书与区块链的常用算法；<strong>SHA-512</strong> 输出 512 位（128 个十六进制字符），安全性更高，在 64 位系统上性能反而优于 SHA-256。</p>
+      </details>
+      <details>
+        <summary>为什么没有 MD5？</summary>
+        <p>MD5 早在 2004 年就被证实存在严重碰撞漏洞，已被各大安全标准（如 PCI DSS、NIST）明确禁用。同时浏览器原生的 SubtleCrypto API 不支持 MD5，若要实现需引入第三方库，会增加约 30KB 的 bundle 体积。综合考虑安全性与性能，本工具不提供 MD5。若需校验文件完整性，建议使用 SHA-256 或更高级别算法。</p>
+      </details>
+      <details>
+        <summary>哈希值可以反推出原文吗？</summary>
+        <p>不能。哈希函数是单向的，从摘要几乎不可能还原出原文。理论上的碰撞攻击（如对 SHA-1 的选择前缀攻击）需要极大的计算资源，对 SHA-256 及以上算法目前仍不可行。因此哈希常用于存储密码（加盐哈希）、校验文件完整性、生成数字签名等场景。</p>
+      </details>
+      <details>
+        <summary>HEX 和 Base64 输出有什么区别？</summary>
+        <p><strong>HEX</strong>（十六进制）每个字节用 2 个字符表示，仅包含 0-9 与 a-f，长度为字节数的 2 倍，便于人眼识别与对比。<strong>Base64</strong> 每 3 个字节用 4 个字符表示，包含 A-Z、a-z、0-9、+、/，长度比 HEX 短约 33%，常用于传输或存储。两者可以互相转换，表达的是同一份二进制数据。</p>
+      </details>
+      <details>
+        <summary>计算过程会上传到服务器吗？</summary>
+        <p>不会。本工具使用浏览器原生 <code>crypto.subtle.digest</code> API 在你本地完成所有计算，输入文本不会发送到任何服务器。</p>
+      </details>
+      <details>
+        <summary>支持计算文件哈希吗？</summary>
+        <p>支持。切换到「文件哈希」Tab，点击或拖拽文件到指定区域即可。文件通过 File API 流式读取，全部在浏览器本地计算，不会上传。支持同时勾选多个算法（如 SHA-256 + SHA-512）一次性计算，便于交叉校验。文件大小上限 100MB，避免浏览器内存爆炸。</p>
+      </details>
+      <details>
+        <summary>为什么文件哈希限制 100MB？</summary>
+        <p>浏览器原生 SubtleCrypto API 的 <code>digest</code> 方法需要完整的 ArrayBuffer 一次性计算（不支持流式增量哈希），文件需要全部读入内存。对 100MB 以上的文件，浏览器内存可能不足以容纳原始 buffer + 多算法 digest 的中间结果。如需计算超大文件哈希，建议使用本地命令行工具（如 <code>sha256sum</code>、<code>certutil -hashfile</code>）。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Hash 工具专属样式：复用 .jsontool 基础样式，仅补充表单元素差异 */
+  .hashtool__field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .hashtool__select {
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .hashtool__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .hashtool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hashtool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 哈希结果使用等宽字体便于识别 */
+  .hashtool__output {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  /* ============ 顶部模式切换 Tab ============ */
+  .hashtool__mode-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .hashtool__mode-tab {
+    flex: 0 0 auto;
+    padding: 12px 24px;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .hashtool__mode-tab:hover {
+    color: var(--color-text);
+  }
+
+  .hashtool__mode-tab.is-active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    background: var(--color-bg);
+  }
+
+  /* ============ 文件区 ============ */
+  .hashtool__file-area {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 拖拽区 */
+  .hashtool__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 220px;
+  }
+
+  .hashtool__dropzone:hover,
+  .hashtool__dropzone:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-bg-soft);
+    color: var(--color-primary);
+  }
+
+  .hashtool__dropzone.is-dragover {
+    border-color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.06);
+    color: var(--color-primary);
+    transform: scale(1.005);
+  }
+
+  .hashtool__dropzone-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    line-height: 1;
+  }
+
+  .hashtool__dropzone-text {
+    font-size: 15px;
+    color: var(--color-text);
+    margin-bottom: 6px;
+  }
+
+  .hashtool__dropzone-text strong {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .hashtool__dropzone-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .hashtool__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* 文件信息卡 */
+  .hashtool__file-info {
+    padding: 16px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .hashtool__file-meta {
+    display: grid;
+    gap: 6px;
+  }
+
+  .hashtool__file-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 12px;
+    font-size: 13px;
+    align-items: baseline;
+  }
+
+  .hashtool__file-label {
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+
+  .hashtool__file-value {
+    color: var(--color-text);
+    word-break: break-all;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* 进度条 */
+  .hashtool__progress-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hashtool__progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--color-bg-code);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .hashtool__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), #7a4cff);
+    border-radius: 4px;
+    transition: width 0.2s ease;
+  }
+
+  .hashtool__progress-text {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 错误提示 */
+  .hashtool__file-error {
+    padding: 10px 14px;
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
+    background: rgba(229, 72, 77, 0.06);
+  }
+
+  /* 结果列表 */
+  .hashtool__results {
+    padding: 16px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .hashtool__results-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .hashtool__result-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .hashtool__result-item {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 12px;
+  }
+
+  .hashtool__result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .hashtool__result-algo {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .hashtool__result-algo em {
+    color: var(--color-text-muted);
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  .hashtool__result-value {
+    display: block;
+    padding: 8px 10px;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text);
+    word-break: break-all;
+    line-height: 1.6;
+    user-select: all;
+  }
+
+  .hashtool__file-notice {
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+    font-size: 13px;
+  }
+
+  /* 算法多选 fieldset */
+  .hashtool__fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hashtool__legend {
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .hashtool__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hashtool__checkbox input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .hashtool__checkbox input:disabled + span {
+    opacity: 0.5;
+  }
+
+  /* 移动端：工具栏允许换行 */
+  @media (max-width: 768px) {
+    .hashtool__seg {
+      flex: 1 1 auto;
+    }
+    .hashtool__file-area {
+      padding: 14px;
+    }
+    .hashtool__dropzone {
+      padding: 32px 16px;
+      min-height: 180px;
+    }
+    .hashtool__file-row {
+      grid-template-columns: 70px 1fr;
+      gap: 8px;
+    }
+    .hashtool__fieldset {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hashtool__mode-tab {
+      padding: 10px 16px;
+      font-size: 13px;
+    }
+  }
+</style>

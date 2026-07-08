@@ -1,0 +1,545 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import CsvJsonTool from '../components/CsvJsonTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSV 与 JSON 互转工具 - 在线表格数据双向转换 + 表格预览',
+  description:
+    '免费的在线 CSV / JSON 双向转换工具：CSV 转 JSON（支持引号包裹、字段内换行、自定义分隔符）、JSON 转 CSV（嵌套对象自动展平为点号路径列）。配表格预览、UTF-8 BOM Excel 兼容下载、首行表头开关。前端开发与数据处理高频必备，所有解析在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSV / JSON 互转工具',
+    url: 'https://toolbox.example.com/csv-json',
+    description: '在线 CSV 与 JSON 双向转换工具：状态机解析 CSV、嵌套对象展平、表格预览、Excel 兼容下载，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>CSV / JSON 互转工具</h1>
+      <p>
+        CSV 与 JSON 双向转换：状态机解析 CSV（支持引号包裹、字段内换行、引号转义），
+        JSON 对象数组展平为点号路径列。配表格预览、自定义分隔符、Excel 兼容的 BOM 下载。
+        所有解析在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <CsvJsonTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CSV 和 JSON 各有什么优劣？什么时候该用哪个？</summary>
+        <p>
+          <strong>CSV</strong>（Comma-Separated Values）是表格数据的轻量格式，每行一条记录、字段用逗号分隔，
+          优势是<strong>体积小、Excel 直接可读、人类可读</strong>，劣势是<strong>无类型系统</strong>（所有值都是字符串）、
+          <strong>不支持嵌套结构</strong>、字段含逗号或换行需引号转义。
+          <strong>JSON</strong>（JavaScript Object Notation）支持对象、数组、嵌套结构、数字 / 布尔 / null 类型，
+          优势是<strong>结构化、类型丰富、与 API 兼容</strong>，劣势是<strong>体积较大、Excel 不能直接打开</strong>。
+          经验法则：<strong>表格数据交换用 CSV，API 与结构化数据用 JSON</strong>。
+        </p>
+      </details>
+      <details>
+        <summary>CSV 字段里有逗号或换行怎么办？工具能正确处理吗？</summary>
+        <p>
+          CSV 标准规定：字段若包含分隔符（逗号）、双引号 <code>"</code> 或换行符，必须用双引号包裹整个字段，
+          字段内原有的双引号需转义为两个连续双引号 <code>""</code>。例如含换行的字段：
+          <code>"上海&lt;换行&gt;浦东"</code>。本工具完全实现 RFC 4180 标准的<strong>状态机解析器</strong>，
+          可正确处理引号包裹、引号转义、字段内换行、CRLF / LF 行结束符。如果输入的引号未闭合，
+          工具会给出错误提示并指出大致行号，便于定位问题。
+        </p>
+      </details>
+      <details>
+        <summary>JSON 中的嵌套对象（如 user.address.city）转 CSV 时会怎么处理？</summary>
+        <p>
+          本工具会把嵌套对象<strong>展平为点号路径列</strong>。例如 JSON 对象
+          <code>&#123; "user": &#123; "name": "张三", "age": 28 &#125; &#125;</code>
+          转 CSV 后会有两列：<code>user.name</code> 和 <code>user.age</code>。
+          数组则用 <code>[index]</code> 标记，如 <code>tags[0]</code>、<code>tags[1]</code>。
+          多个对象的键会取并集作为表头，缺失的字段填空字符串。这样处理后 CSV 仍是表格结构，
+          可直接在 Excel 中查看，但<strong>列名会比较长</strong>，如需还原嵌套结构建议保留 JSON。
+        </p>
+      </details>
+      <details>
+        <summary>为什么下载的 CSV 文件在 Excel 中打开是乱码？</summary>
+        <p>
+          这是 Excel 的老问题：<strong>Excel 默认按系统编码（GBK / GB2312）解析 CSV</strong>，
+          而现代工具生成的 CSV 多为 UTF-8 编码，导致中文乱码。解决方案是<strong>在文件开头加 UTF-8 BOM 头</strong>
+          （<code>\uFEFF</code> 三字节），Excel 识别到 BOM 后会自动按 UTF-8 解析。
+          本工具的「下载」按钮已自动添加 BOM 头，下载的 <code>converted.csv</code> 可直接在 Excel 中打开，
+          中文显示正常。若用其他工具下载 CSV 出现乱码，可手动用记事本打开 → 另存为 → 编码选 UTF-8 with BOM。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些分隔符？逗号、分号、Tab、管道符有什么区别？</summary>
+        <p>
+          本工具支持 4 种分隔符：<strong>逗号 <code>,</code></strong>（RFC 4180 标准，最通用，Excel 默认）、
+          <strong>分号 <code>;</code></strong>（欧洲国家常用，因欧洲数字用逗号作小数点）、
+          <strong>Tab <code>\t</code></strong>（即 TSV 格式，适合字段中常含逗号的数据）、
+          <strong>管道符 <code>|</code></strong>（日志、配置文件常用，避免与文本中的逗号冲突）。
+          切换分隔符后实时转换会立即重新解析。注意：<strong>JSON → CSV 时若值中含所选分隔符，会自动用引号包裹</strong>，
+          不需要手动处理。
+        </p>
+      </details>
+      <details>
+        <summary>CSV 转出来的 JSON 数字、布尔为什么都变成了字符串？</summary>
+        <p>
+          这是 CSV 格式本身的限制：<strong>CSV 没有类型系统，所有值在 CSV 中都是字符串</strong>。
+          例如 <code>age</code> 列的 <code>28</code> 在 CSV 中只是字符 "2" 和 "8"，无法区分是数字还是字符串。
+          因此 CSV → JSON 时默认所有字段都是字符串类型。如果需要还原为数字 / 布尔，<strong>勾选工具栏的「智能类型」开关</strong>，
+          工具会自动将符合规则的字段转换为对应类型：
+        </p>
+        <ul>
+          <li><strong>数字</strong>：<code>28</code> → <code>28</code>（number）、<code>3.14</code> → <code>3.14</code>、<code>-5</code> → <code>-5</code>、<code>1e3</code> → <code>1000</code></li>
+          <li><strong>布尔</strong>：<code>true</code> / <code>false</code>（不区分大小写）→ 布尔值</li>
+          <li><strong>null</strong>：<code>null</code> / <code>NULL</code> / <code>None</code> / <code>nil</code> → <code>null</code>，空字符串也转为 <code>null</code></li>
+          <li><strong>字符串</strong>：其余所有内容保留为字符串</li>
+        </ul>
+        <p>
+          启用后表格预览中每个单元格右上角会显示类型徽章（<strong>N</strong>=数字 / <strong>B</strong>=布尔 / <strong>∅</strong>=null / <strong>S</strong>=字符串），
+          并对前导零数字、超大整数等风险场景给出提示。若不想用工具自动转换，也可在 JSON 输出后用代码二次处理：
+        </p>
+        <pre><code>data.forEach(row => &#123;
+  row.age = Number(row.age);
+  row.active = row.active === 'true';
+&#125;);</code></pre>
+        <p>
+          反过来 JSON → CSV 时，数字 <code>28</code> 会被 <code>String(28)</code> 转为字符串 "28" 写入 CSV，
+          这是正常行为，不是 bug。
+        </p>
+      </details>
+      <details>
+        <summary>智能类型推断会误判吗？哪些场景需要小心？</summary>
+        <p>
+          智能类型推断采用<strong>保守策略</strong>：宁可保留字符串也不误判。以下场景工具会主动保留为字符串并给出风险提示：
+        </p>
+        <ul>
+          <li><strong>前导零数字</strong>（如 <code>021000</code> 邮政编码、<code>01012345678</code> 电话号码、<code>007</code> 编号）：
+            转 number 会丢失前导零（<code>021000</code> → <code>21000</code>），工具保留为字符串并提示「前导零数字」</li>
+          <li><strong>超过 <code>Number.MAX_SAFE_INTEGER</code>（2^53-1 = 9007199254740991）的大整数</strong>：
+            JavaScript number 类型无法精确表示，转 number 会丢失末尾精度（如 <code>9007199254740993</code> → <code>9007199254740992</code>），
+            工具保留为字符串并提示「整数超过安全范围」</li>
+          <li><strong>混合内容</strong>（如 <code>010-12345678</code>、<code>v1.0</code>、<code>1,234.56</code>）：不符合数字格式，保留为字符串</li>
+        </ul>
+        <p>
+          常见陷阱：<strong>ID 编号、订单号、身份证号、银行卡号</strong>等长数字串虽然全是数字，但实质是标识符而非数值，
+          转 number 后既可能丢失精度也可能丢失前导零。工具对超过安全整数范围的大数字会主动保留为字符串，
+          但 16 位以内的纯数字 ID（如 12 位订单号 <code>202601011234</code>）会被转为 number——
+          若你的数据是 ID 类，建议关闭「智能类型」开关或导出后用代码还原为字符串。
+        </p>
+        <p>
+          风险提示区位于表格预览下方，黄色背景，列出所有保留为字符串的字段及原因，最多显示 20 条。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 021000 邮政编码转 JSON 后还是字符串而不是数字？</summary>
+        <p>
+          这是<strong>有意设计</strong>，不是 bug。邮政编码 <code>021000</code> 以 <code>0</code> 开头，
+          如果转为 number 会变成 <code>21000</code>（丢失前导零），导致：
+        </p>
+        <ul>
+          <li>邮政编码含义改变（<code>021000</code> 是上海，<code>21000</code> 不存在）</li>
+          <li>电话号码 <code>01012345678</code> 变成 <code>1012345678</code>（区号 <code>010</code> 丢失前导零）</li>
+          <li>编号 <code>007</code> 变成 <code>7</code>（编号含义丢失）</li>
+        </ul>
+        <p>
+          因此工具对<strong>长度 &gt; 1 且以 0 开头的纯数字串</strong>主动保留为字符串，并在风险提示区标注「前导零数字」。
+          如果你确认数据是纯数值（如 <code>0</code>、<code>0.5</code>、<code>0.0</code>），
+          这些不会被前导零规则拦截（<code>0</code> 长度为 1，<code>0.5</code> 含小数点不符合 <code>^0\d+$</code> 规则）。
+          类似地，超过 <code>Number.MAX_SAFE_INTEGER</code>（9007199254740991）的大整数也会保留为字符串，
+          避免 JavaScript 精度丢失。
+        </p>
+      </details>
+      <details>
+        <summary>能处理多大的 CSV 文件？有行数限制吗？</summary>
+        <p>
+          本工具的解析器是<strong>纯前端 JavaScript 实现</strong>，性能受浏览器内存限制。
+          实测 1 万行 × 10 列的 CSV（约 1MB）可在 200ms 内完成解析，10 万行约需 2-3 秒。
+          <strong>表格预览区只渲染前 50 行</strong>避免 DOM 节点过多导致卡顿，但完整数据仍会写入 JSON 输出框。
+          超过 10 万行的超大 CSV 建议用专业工具（如 Python pandas、命令行 csvkit）处理。
+          所有解析在浏览器本地完成，<strong>数据不会上传</strong>，可放心处理敏感数据。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有 CSV 解析、JSON 序列化、文件下载逻辑由 JavaScript 在你本地执行，
+          输入的数据不会发送到任何服务器。这对于处理用户数据、商业数据、隐私数据尤其重要，
+          可避免数据泄露风险。但请注意：浏览器历史记录、屏幕截图、共享设备可能留下痕迹，
+          如需彻底保密请在隐私模式中使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSV/JSON 工具专属样式：复用 .jsontool 基础样式，仅补充表格预览与下载按钮 */
+
+  /* 下载按钮：与复制按钮区分，加左侧间距 */
+  .csvtool__download {
+    margin-left: 4px;
+  }
+
+  /* 表格预览区 */
+  .csvtool__preview {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .csvtool__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .csvtool__preview-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .csvtool__preview-count {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+  }
+
+  /* 表格滚动容器：限制最大高度，超出滚动 */
+  .csvtool__preview-scroll {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  /* 键盘可达性：滚动容器获得焦点时显示焦点环 */
+  .csvtool__preview-scroll:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .csvtool__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .csvtool__th,
+  .csvtool__td {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-all;
+    vertical-align: top;
+  }
+
+  /* 表头行：浅色背景 + 加粗 */
+  .csvtool__table-head-row .csvtool__th {
+    background: var(--color-bg-soft);
+    font-weight: 600;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  /* 普通行：hover 高亮，便于横向阅读 */
+  .csvtool__table tbody tr:hover {
+    background: rgba(43, 108, 255, 0.04);
+  }
+
+  /* 空单元格：浅灰占位，避免视觉空洞 */
+  .csvtool__td:empty::before {
+    content: '—';
+    color: var(--color-text-muted);
+    opacity: 0.4;
+  }
+
+  /* 智能类型开关：在工具栏中与其它开关并列，加左侧分隔线以提示「高级选项」 */
+  .csvtool__infer-toggle {
+    padding-left: 10px;
+    border-left: 1px solid var(--color-border);
+    margin-left: 4px;
+  }
+
+  /* 类型图例：与行数统计并排，间距均匀 */
+  .csvtool__legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 类型徽章基础样式：右上角小标签 */
+  .csvtool__type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    line-height: 1;
+    letter-spacing: 0.2px;
+    user-select: none;
+    vertical-align: middle;
+  }
+
+  /* 图例中的徽章：稍微缩小并与文字间距固定 */
+  .csvtool__legend .csvtool__type-badge {
+    margin-right: 2px;
+  }
+
+  /* 类型变体配色（明亮模式）：与单元格背景色呼应 */
+  .csvtool__type-badge--number {
+    background: rgba(43, 108, 255, 0.14);
+    color: #1a57f0;
+  }
+  .csvtool__type-badge--boolean {
+    background: rgba(245, 166, 35, 0.18);
+    color: #b8730a;
+  }
+  .csvtool__type-badge--null {
+    background: rgba(138, 143, 153, 0.18);
+    color: #5a6068;
+  }
+  .csvtool__type-badge--string {
+    background: rgba(26, 170, 85, 0.14);
+    color: #0f7a3e;
+  }
+
+  /* 单元格类型着色：浅淡背景与徽章呼应，便于横向扫读 */
+  .csvtool__td--number {
+    background: rgba(43, 108, 255, 0.06);
+  }
+  .csvtool__td--boolean {
+    background: rgba(245, 166, 35, 0.08);
+  }
+  .csvtool__td--null {
+    background: rgba(138, 143, 153, 0.08);
+  }
+  .csvtool__td--string {
+    background: rgba(26, 170, 85, 0.05);
+  }
+
+  /* 单元格内部布局：文本与徽章并排，徽章绝对定位右上角避免破坏表格列宽 */
+  .csvtool__td[class*='csvtool__td--'] {
+    position: relative;
+    padding-right: 28px;
+  }
+
+  .csvtool__cell-text {
+    display: inline-block;
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+
+  /* 单元格内的徽章：右上角固定位置 */
+  .csvtool__td[class*='csvtool__td--'] .csvtool__type-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+
+  /* 风险提示区：黄色背景 + 左边框，醒目但不刺眼 */
+  .csvtool__warnings {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(245, 166, 35, 0.4);
+    border-left: 4px solid #f5a623;
+    border-radius: var(--radius-md);
+    background: #fff7ed;
+    color: #4a3508;
+  }
+
+  .csvtool__warnings-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .csvtool__warnings-hint {
+    font-size: 12.5px;
+    color: #8a6420;
+  }
+
+  .csvtool__warnings-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .csvtool__warning-item {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) minmax(100px, auto) 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-top: 1px dashed rgba(245, 166, 35, 0.3);
+    font-size: 13px;
+  }
+
+  .csvtool__warning-item:first-child {
+    border-top: none;
+  }
+
+  .csvtool__warning-loc {
+    font-weight: 600;
+    color: #6b4a0e;
+    white-space: nowrap;
+  }
+
+  .csvtool__warning-raw {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    background: rgba(245, 166, 35, 0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #4a3508;
+    word-break: break-all;
+  }
+
+  .csvtool__warning-reason {
+    color: #6b4a0e;
+    line-height: 1.5;
+  }
+
+  .csvtool__warning-more {
+    grid-template-columns: 1fr;
+    color: #8a6420;
+    font-style: italic;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* 暗色模式适配：保持类型语义清晰可辨 */
+  @media (prefers-color-scheme: dark) {
+    .csvtool__type-badge--number {
+      background: rgba(91, 140, 255, 0.22);
+      color: #a8c2ff;
+    }
+    .csvtool__type-badge--boolean {
+      background: rgba(251, 191, 36, 0.22);
+      color: #fcd34d;
+    }
+    .csvtool__type-badge--null {
+      background: rgba(107, 114, 128, 0.28);
+      color: #cbd5e1;
+    }
+    .csvtool__type-badge--string {
+      background: rgba(52, 211, 153, 0.22);
+      color: #6ee7b7;
+    }
+
+    .csvtool__td--number {
+      background: rgba(91, 140, 255, 0.10);
+    }
+    .csvtool__td--boolean {
+      background: rgba(251, 191, 36, 0.12);
+    }
+    .csvtool__td--null {
+      background: rgba(107, 114, 128, 0.12);
+    }
+    .csvtool__td--string {
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    /* 表格 hover 在暗色下使用更明显的色调 */
+    .csvtool__table tbody tr:hover {
+      background: rgba(91, 140, 255, 0.08);
+    }
+
+    /* 风险提示区暗色版本：深棕背景 + 亮黄边框 */
+    .csvtool__warnings {
+      border-color: rgba(251, 191, 36, 0.4);
+      border-left-color: #fbbf24;
+      background: #2a1f0a;
+      color: #fde68a;
+    }
+    .csvtool__warnings-hint {
+      color: #fcd34d;
+    }
+    .csvtool__warning-loc {
+      color: #fde68a;
+    }
+    .csvtool__warning-raw {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fde68a;
+    }
+    .csvtool__warning-reason {
+      color: #fcd34d;
+    }
+    .csvtool__warning-more {
+      color: #fcd34d;
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .csvtool__preview {
+      padding: 12px;
+    }
+    .csvtool__preview-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .csvtool__preview-scroll {
+      max-height: 320px;
+    }
+    .csvtool__th,
+    .csvtool__td {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    /* 类型徽章在移动端更小，避免占用过多单元格空间 */
+    .csvtool__type-badge {
+      min-width: 14px;
+      height: 14px;
+      font-size: 9px;
+      padding: 0 3px;
+    }
+    .csvtool__td[class*='csvtool__td--'] {
+      padding-right: 22px;
+    }
+    .csvtool__td[class*='csvtool__td--'] .csvtool__type-badge {
+      top: 4px;
+      right: 4px;
+    }
+    /* 风险提示项在移动端改为单列堆叠，避免横向溢出 */
+    .csvtool__warning-item {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .csvtool__warnings {
+      padding: 12px;
+    }
+  }
+</style>

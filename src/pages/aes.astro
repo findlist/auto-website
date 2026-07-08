@@ -1,0 +1,640 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import AesTool from '../components/AesTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'AES 加解密工具 - 在线 AES-GCM/CBC/CTR 加密解密 AES-128/192/256',
+  description:
+    '免费的在线 AES 加解密工具：支持 AES-GCM（认证加密，推荐）、AES-CBC（传统分组）、AES-CTR（流模式）三种模式，AES-128/192/256 三种密钥长度。密钥输入支持 Hex 字符串、Base64、UTF-8 口令、PBKDF2 密码派生四种来源。加密输出密文、IV/Nonce、盐（派生模式）、派生密钥，解密输入密文+IV+盐即可还原明文。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥与明文在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'AES 加解密工具',
+    url: 'https://toolbox.example.com/aes',
+    description: '在线 AES 加解密工具，支持 AES-GCM/CBC/CTR 三种模式与 AES-128/192/256 三种密钥长度，PBKDF2 密码派生，基于 Web Crypto API 全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>AES 加解密工具</h1>
+      <p>
+        在线 AES 对称加密与解密：支持 <strong>AES-GCM</strong>（认证加密，推荐）、
+        <strong>AES-CBC</strong>（传统分组）、<strong>AES-CTR</strong>（流模式）三种模式，
+        <strong>AES-128 / 192 / 256</strong> 三种密钥长度。密钥输入支持 Hex 字符串、Base64、
+        UTF-8 口令、<strong>PBKDF2 密码派生</strong>四种来源。加密输出密文、IV/Nonce、盐（派生模式），
+        一键「用加密结果填入解密」闭环验证。基于 <strong>Web Crypto API</strong> 纯原生 TypeScript 零依赖实现，
+        密钥与明文不离开浏览器。
+      </p>
+    </div>
+
+    <AesTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>AES 是什么？为什么它是主流对称加密算法？</summary>
+        <p>
+          <strong>AES</strong>（Advanced Encryption Standard，高级加密标准）是美国国家标准与技术研究院（NIST）
+          于 2001 年发布的对称分组密码算法，分组长度固定 128 位（16 字节），密钥长度可为 128/192/256 位。
+          它是<strong>对称加密</strong>：加密与解密使用同一把密钥。AES 是目前全球应用最广泛的加密算法，
+          HTTPS（TLS）、Wi-Fi（WPA2/WPA3）、磁盘加密（BitLocker/FileVault）、数据库加密、JWT/JWE 内容加密
+          等场景几乎都基于 AES。其安全性经过二十余年公开密码学界的全面审查，无已知实用攻击方法。
+          本工具基于浏览器原生 <strong>Web Crypto API</strong>（crypto.subtle）实现，调用操作系统底层加密原语，
+          性能与安全性均优于 JavaScript 第三方库。
+        </p>
+      </details>
+      <details>
+        <summary>AES-GCM / CBC / CTR 三种模式有什么区别？该选哪个？</summary>
+        <p>
+          AES 是分组密码，每次只加密 16 字节，需要「工作模式」处理任意长度数据。三种主流模式对比：
+          <br />- <strong>AES-GCM</strong>（Galois/Counter Mode）：认证加密模式，<strong>推荐首选</strong>。
+          无需填充，自带认证标签（16 字节），可检测密文是否被篡改，性能优秀且支持 AAD（附加认证数据）。
+          <br />- <strong>AES-CBC</strong>（Cipher Block Chaining）：传统模式，需 PKCS#7 填充，
+          无认证能力，存在 <strong>padding oracle 攻击</strong>风险，生产环境必须配合 HMAC（加密-然后-MAC）。
+          <br />- <strong>AES-CTR</strong>（Counter）：流模式，无需填充，将计数器加密后与明文 XOR，
+          高性能且可并行，但 IV/计数器<strong>绝不可重复使用</strong>，否则会泄露明文。
+          <br /><strong>结论</strong>：新项目首选 GCM；兼容老系统才用 CBC（务必加 HMAC）；
+          CTR 适合流式场景但必须谨慎管理计数器。本工具默认 GCM。
+        </p>
+      </details>
+      <details>
+        <summary>AES-128 / 192 / 256 有什么区别？256 一定更安全吗？</summary>
+        <p>
+          三者区别仅在密钥长度与轮数：AES-128（10 轮）、AES-192（12 轮）、AES-256（14 轮）。
+          轮数越多理论越安全，但<strong>实际安全性差异在当前算力下均可忽略</strong>——
+          暴力破解 AES-128 需约 2<sup>128</sup> 次运算，远超全球算力总和。
+          AES-256 的优势在于抗量子攻击（Grover 算法将有效安全性减半，256→128 仍安全）。
+          <br /><strong>选型建议</strong>：默认 AES-256 满足绝大多数场景；若性能敏感（如海量数据加密）
+          可用 AES-128；AES-192 较少使用（不在 NSA Suite B 推荐中）。本工具默认 AES-256。
+          <strong>注意</strong>：密钥长度不影响 IV 大小（GCM 始终 12 字节，CBC/CTR 始终 16 字节）。
+        </p>
+      </details>
+      <details>
+        <summary>IV 和 Nonce 是什么？为什么每次加密都要重新生成？</summary>
+        <p>
+          <strong>IV</strong>（Initialization Vector，初始化向量）和 <strong>Nonce</strong>（Number used once）
+          在 AES 语境下常混用，本质是「每次加密使用的随机值」，作用是让相同明文在相同密钥下产生不同密文。
+          <br />- <strong>GCM</strong>：12 字节 Nonce，<strong>同一密钥下绝不可重复</strong>，
+          否则会导致认证标签碰撞，攻击者可恢复认证密钥并伪造密文。
+          <br />- <strong>CBC</strong>：16 字节 IV，不可预测即可（不要求唯一，但预测性 IV 会暴露明文前缀）。
+          <br />- <strong>CTR</strong>：16 字节计数器，<strong>绝不可重复</strong>，
+          否则两次密文 XOR 后会抵消密钥流，直接泄露明文 XOR 结果。
+          <br /><strong>本工具每次加密自动用 crypto.getRandomValues 生成全新随机 IV</strong>，无需手动管理。
+          IV 不需要保密，可随密文明文传输（它是「盐」而非密钥）。解密时需原样提供加密时使用的 IV。
+        </p>
+      </details>
+      <details>
+        <summary>GCM 模式的认证标签是什么？为什么它比 CBC 更安全？</summary>
+        <p>
+          <strong>认证标签</strong>（Authentication Tag）是 GCM 模式在加密时同步生成的 16 字节校验值，
+          基于 GHASH 算法对密文与 AAD（附加认证数据）计算得出。解密时会重新计算标签并比对，
+          若密文或 AAD 被篡改哪怕 1 位，标签不匹配，解密直接失败。
+          <br /><strong>这意味着 GCM 提供「机密性 + 完整性」双重保障</strong>：
+          攻击者既无法读取明文，也无法篡改密文而不被发现。
+          <br />而 <strong>CBC 模式无认证能力</strong>：攻击者可以翻转密文位，
+          对应明文块会相应变化（CBC 的 malleability 特性），且不会报错。
+          这就是著名的 <strong>padding oracle 攻击</strong>原理——攻击者通过观察解密是否报「填充错误」，
+          逐字节恢复明文。因此 CBC 必须配合 HMAC（加密-然后-MAC）使用，而 GCM 内置认证，无需额外 MAC。
+          Web Crypto API 的 GCM 实现自动处理认证标签的生成与校验。
+        </p>
+      </details>
+      <details>
+        <summary>什么是 padding oracle 攻击？CBC 为什么有这个风险？</summary>
+        <p>
+          <strong>padding oracle 攻击</strong>是针对 CBC 模式的经典侧信道攻击，2010 年由 Juliano Rizzo
+          和 Thai Duong 公开。CBC 模式需 PKCS#7 填充：若明文不是 16 字节倍数，末尾补若干字节，
+          值等于填充长度（如缺 5 字节则补 5 个 0x05）。
+          <br /><strong>攻击原理</strong>：若服务端解密后对「填充错误」与「内容错误」返回不同响应
+          （如不同错误信息或响应时间），攻击者可构造特殊密文，通过逐字节试探判断填充是否正确，
+          进而逐字节恢复明文，无需知道密钥。著名受害者包括 ASP.NET、Java EE 等。
+          <br /><strong>防御</strong>：① 优先用 GCM（内置认证，篡改即失败）；② 若必须用 CBC，
+          采用「加密-然后-MAC」：先加密再用 HMAC 对密文+IV 签名，解密前先验 MAC，MAC 不符直接拒绝，
+          不暴露 padding 校验结果。本工具的 CBC 模式仅用于教学对比，生产环境请用 GCM。
+        </p>
+      </details>
+      <details>
+        <summary>PBKDF2 密码派生是什么？为什么要用盐和迭代次数？</summary>
+        <p>
+          <strong>PBKDF2</strong>（Password-Based Key Derivation Function 2）是从人类可记忆的密码
+          派生出密码学密钥的标准算法（RFC 2898）。直接用密码当 AES 密钥有两个问题：
+          ① 密码长度通常不足 16/32 字节；② 密码熵低（易被字典/暴力破解）。
+          <br />PBKDF2 通过<strong>加盐 + 高速迭代的 HMAC</strong> 解决：
+          <br />- <strong>盐（Salt）</strong>：随机 16 字节，防止彩虹表攻击（相同密码派生出不同密钥）。
+          <br />- <strong>迭代次数</strong>：重复 HMAC 数万至数十万次，让每次派生都「昂贵」，
+          攻击者暴力破解成本同等放大，而单次用户登录的延迟可接受（~100ms）。
+          <br />本工具使用 <strong>PBKDF2-SHA-256</strong>，默认 100000 次迭代。
+          <strong>OWASP 2023 建议</strong>至少 600000 次（SHA-256）。盐需随密文一起保存
+          （不需要保密，派生时需原样提供）。本工具加密时自动生成盐并返回，解密时需填入。
+          现代替代方案还有 Argon2id（抗 GPU/ASIC）与 scrypt，但 Web Crypto API 原生仅支持 PBKDF2。
+        </p>
+      </details>
+      <details>
+        <summary>加密后 IV 和盐需要保密吗？密文和 IV 可以公开传输吗？</summary>
+        <p>
+          <strong>IV/Nonce 和盐都不需要保密</strong>，它们的设计目的就是可公开。
+          真正需要严格保密的只有<strong>密钥本身</strong>（或密码派生模式下的密码）。
+          <br />- <strong>IV/Nonce</strong>：作用是引入随机性，只要不重复即可，公开传输不影响安全
+          （常见做法是 IV 前置于密文：iv || ciphertext）。
+          <br />- <strong>盐</strong>：防止彩虹表，公开不影响安全（与密码哈希存储的盐同理）。
+          <br />- <strong>密文</strong>：GCM 模式下可公开传输（有认证标签防篡改）；
+          CBC 模式下密文可公开但<strong>易被篡改</strong>（malleability），必须配合 MAC。
+          <br /><strong>本工具的输出格式</strong>：加密返回「密文、IV、盐、派生密钥」四个字段，
+          其中 IV 和盐需随密文一起传给解密方，派生密钥仅供调试展示（切勿外泄）。
+          传输时建议拼接为 <code>iv.ciphertext</code> 或 JSON 封装，解密方按相同格式拆分。
+        </p>
+      </details>
+      <details>
+        <summary>AES 和 RSA 有什么区别？什么时候用对称加密，什么时候用非对称加密？</summary>
+        <p>
+          <strong>AES 是对称加密</strong>（加密解密同一密钥），<strong>RSA 是非对称加密</strong>
+          （公钥加密、私钥解密）。两者对比：
+          <br />- <strong>性能</strong>：AES 比 RSA 快 100-1000 倍，适合大数据加密。
+          <br />- <strong>密钥管理</strong>：AES 需双方预先共享密钥（密钥分发难题）；
+          RSA 公钥可公开，解决密钥分发问题。
+          <br />- <strong>用途</strong>：AES 加密数据内容；RSA 加密小数据（如 AES 密钥）或做数字签名。
+          <br /><strong>实际系统通常混合使用</strong>（混合加密）：
+          ① 用 RSA/ECDH 协商出 AES 会话密钥；② 用 AES 加密实际数据。
+          这正是 <strong>TLS/HTTPS</strong>、<a href="/jwe">JWE</a>、PGP 的设计原理。
+          <br /><strong>JWE</strong>（JSON Web Encryption）就是典型混合加密：
+          用 RSA/ECDH/AES-KW 加密「内容密钥」，再用 AES-GCM 加密「实际负载」。
+          本 AES 工具加密数据内容，配合 <a href="/jwt-sign">JWT 签名</a>（RS256/ES256 非对称签名）
+          可构建完整的加密签名方案。深入阅读 <a href="/blog/aes-encryption-guide">AES 加密实战指南</a>。
+        </p>
+      </details>
+      <details>
+        <summary>Web Crypto API 的 AES 实现安全吗？为什么不用第三方库？</summary>
+        <p>
+          <strong>Web Crypto API</strong>（crypto.subtle）是浏览器原生加密接口，由浏览器厂商
+          （Chrome/V8、Firefox/NSS、Safari/CommonCrypto）调用操作系统底层加密原语实现，
+          经过严格的安全审计与沙箱隔离。<strong>比 JavaScript 第三方库更安全</strong>的原因：
+          <br />- <strong>原生实现</strong>：C/C++ 编写，无 JS 解释执行开销，常量时间算法实现更可靠
+          （JS 库可能因 JIT 优化引入时序泄漏）。
+          <br />- <strong>密钥隔离</strong>：CryptoKey 对象不可导出（除非 extractable=true），
+          密钥不会意外泄漏到 JS 内存或被恶意脚本读取。
+          <br />- <strong>算法合规</strong>：实现严格遵循 NIST/RFC 标准，通过 FIPS 140-2 认证
+          （取决于平台）。
+          <br />- <strong>零依赖</strong>：不引入第三方库，bundle 体积小，无供应链攻击风险。
+          <br />本工具的 AES、PBKDF2、随机数生成均通过 Web Crypto API 完成，
+          零第三方依赖。注意：Web Crypto API 仅在<strong>安全上下文</strong>（HTTPS 或 localhost）可用，
+          部署时务必启用 HTTPS。
+        </p>
+      </details>
+      <details>
+        <summary>加密结果为什么每次都不一样？相同明文加密两次结果不同正常吗？</summary>
+        <p>
+          <strong>完全正常，且这是安全加密的必要特性</strong>。
+          原因是每次加密都使用<strong>全新的随机 IV/Nonce</strong>，
+          相同明文在相同密钥下会因 IV 不同而产生完全不同的密文。
+          若相同明文总是产生相同密文，攻击者可识别重复明文模式（如 ECB 模式的经典缺陷）。
+          <br />本工具每次点击「加密」都会调用 crypto.getRandomValues 生成新 IV，
+          因此<strong>同一明文两次加密结果必然不同</strong>。
+          解密时只需提供加密时返回的对应 IV 即可还原明文。
+          <br /><strong>CTR 模式特别注意</strong>：若两次加密使用了相同的密钥+计数器组合，
+          会产生相同的密钥流，两段密文 XOR 后密钥流抵消，得到两段明文的 XOR——
+          这是致命的安全漏洞。因此 CTR 的计数器必须保证唯一性（如递增计数器或随机 nonce+计数器组合）。
+          本工具每次随机生成完整 16 字节计数器，单次使用场景安全。
+        </p>
+      </details>
+      <details>
+        <summary>解密失败常见原因有哪些？</summary>
+        <p>
+          常见解密失败原因排查：
+          <br />- <strong>密钥不匹配</strong>：加密与解密使用的密钥不一致（最常见）。
+          Hex 模式检查大小写与长度（AES-256 需 64 字符）；密码派生模式检查密码、盐、迭代次数三者完全一致。
+          <br />- <strong>IV 错误或不匹配</strong>：未填入加密时返回的 IV，或 IV 编码格式不一致
+          （加密用 Hex 但解密用 Base64）。
+          <br />- <strong>密文格式错误</strong>：复制时丢失字符或多了换行空格（本工具容忍空格但需格式正确）。
+          <br />- <strong>模式/密钥长度不一致</strong>：加密用 GCM 但解密选了 CBC，
+          或加密用 AES-256 但解密选了 AES-128。
+          <br />- <strong>GCM 认证失败</strong>：密文或 IV 被篡改，认证标签不匹配
+          （GCM 模式特有，说明数据被改动过）。
+          <br />- <strong>CBC 填充错误</strong>：密文长度不是 16 字节倍数，或填充被破坏。
+          <br /><strong>建议</strong>：先用「载入示例」+「加密」+「用加密结果填入解密」+「解密」
+          验证完整闭环，确认参数正确后再用自己的数据。若闭环可解密但自有数据不行，
+          多半是密钥/IV/盐复制时出错。
+        </p>
+      </details>
+      <details>
+        <summary>AES 与 JWT / JWE / Hash 有什么关系？工具如何配合使用？</summary>
+        <p>
+          本站已形成完整的<strong>加密安全工具矩阵</strong>，AES 是其中的对称加密核心：
+          <br />- <strong>AES 与 JWE</strong>：JWE（JSON Web Encryption）的内容加密层通常使用
+          AES-GCM（A128GCM/A256GCM）或 AES-CBC+HMAC。本 AES 工具可独立加解密任意文本，
+          <a href="/jwe">JWE 工具</a> 则专门处理 JWT 格式的加密令牌（含密钥管理 + 内容加密两层）。
+          <br />- <strong>AES 与 JWT 签名</strong>：JWT 签名（<a href="/jwt-sign">签名</a>/
+          <a href="/jwt-verify">验签</a>）是<strong>认证</strong>（防篡改），AES 是<strong>加密</strong>
+          （防窃听）。签名让接收方确认数据来源可信，加密让数据内容不可读。完整方案常组合使用：
+          先 AES 加密负载，再对密文签名。
+          <br />- <strong>AES 与 Hash</strong>：<a href="/hash">Hash 工具</a>（SHA-256 等）是单向摘要，
+          不可逆，用于完整性校验；AES 是双向可逆加密。Hash 可用于 CBC 模式的 HMAC 配合
+          （加密-然后-MAC 中的 MAC 即 HMAC-SHA256）。
+          <br />- <strong>PBKDF2 与密码生成</strong>：<a href="/password">密码生成器</a> 生成随机密钥，
+          本工具的「生成随机密钥」按钮同样基于 crypto.getRandomValues。
+          <br />深入理解各工具协作，参阅 <a href="/blog/aes-encryption-guide">AES 加密实战指南</a>。
+        </p>
+      </details>
+      <details>
+        <summary>本工具的数据安全吗？密钥和明文会上传到服务器吗？</summary>
+        <p>
+          <strong>完全本地处理，零上传、零追踪、零存储</strong>。
+          <br />- 所有加密解密运算在浏览器内通过 Web Crypto API 完成，密钥与明文<strong>从不离开你的设备</strong>。
+          <br />- 本工具不发起任何网络请求，无后端服务器，无日志记录，无第三方分析脚本。
+          <br />- 加密结果仅在浏览器内存中展示，刷新页面即清除，不会持久化存储。
+          <br />- 代码完全开源（基于 Astro + React），可直接审查 <code>aes.ts</code> 与 <code>AesTool.tsx</code>。
+          <br /><strong>使用建议</strong>：① 生产密钥请用「生成随机密钥」按钮生成，避免使用弱口令；
+          ② 涉及敏感数据时在私密环境使用，避免在公共网络下展示密钥；③ 本工具仅用于调试与学习，
+          生产系统请通过服务端加密库（如 Node.js crypto、Python cryptography、Java JCA）实现完整方案。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* AES 工具页样式，前缀 aes__，遵循站点设计令牌 */
+  .aes__tool {
+    max-width: 880px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 方向切换 */
+  .aes__direction {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+  }
+  .aes__dir-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .aes__dir-btn--active {
+    background: var(--color-bg);
+    color: var(--color-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 参数配置区 */
+  .aes__field {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 16px 20px 20px;
+    margin: 0;
+    background: var(--color-bg);
+  }
+  .aes__field legend {
+    padding: 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+  .aes__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .aes__label {
+    width: 96px;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: var(--color-text-soft);
+  }
+  .aes__seg {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .aes__seg-btn {
+    padding: 7px 14px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid var(--color-border);
+  }
+  .aes__seg-btn:last-child {
+    border-right: none;
+  }
+  .aes__seg-btn--active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .aes__select {
+    padding: 7px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .aes__input {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .aes__input--num {
+    width: 160px;
+  }
+  .aes__mode-hint {
+    flex-basis: 100%;
+    margin: 4px 0 0 106px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+  .aes__mode-hint--ok {
+    color: var(--color-success);
+  }
+  .aes__mode-hint--warn {
+    color: #d97706;
+  }
+  .aes__source-hint {
+    flex-basis: 100%;
+    margin: 4px 0 0 106px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  /* 输入块 */
+  .aes__block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .aes__block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .aes__block-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+  .aes__mini-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-bg-soft);
+    color: var(--color-primary);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .aes__mini-btn:hover {
+    border-color: var(--color-primary);
+  }
+  .aes__textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+    line-height: 1.6;
+    resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .aes__textarea--key {
+    font-size: 12.5px;
+  }
+  .aes__textarea:focus,
+  .aes__input:focus,
+  .aes__select:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+    border-color: var(--color-primary);
+  }
+
+  /* 操作按钮 */
+  .aes__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .aes__btn {
+    padding: 9px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .aes__btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .aes__btn--primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+  .aes__btn--primary:hover {
+    color: #fff;
+    opacity: 0.9;
+  }
+  .aes__btn--primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .aes__btn--link {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-bg-soft);
+  }
+  .aes__btn--ghost {
+    background: transparent;
+    color: var(--color-text-muted);
+  }
+
+  /* 结果区 */
+  .aes__result {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: var(--color-bg-soft);
+  }
+  .aes__result-title {
+    margin: 0 0 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .aes__field-result {
+    margin-bottom: 14px;
+  }
+  .aes__field-result-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .aes__field-result-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+  .aes__field-result-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  .aes__copy-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-bg);
+    color: var(--color-primary);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .aes__copy-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .aes__field-result-value {
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .aes__field-result-value--mono {
+    font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+  }
+  .aes__error {
+    margin: 0;
+    padding: 10px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    color: #b91c1c;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .aes__tip {
+    margin: 10px 0 0;
+    padding: 10px 14px;
+    background: var(--color-bg);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 4px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--color-text-soft);
+  }
+
+  /* 安全提示 */
+  .aes__security {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    background: var(--color-bg);
+  }
+  .aes__security h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .aes__security ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--color-text-soft);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .aes__security li {
+    margin-bottom: 4px;
+  }
+  .aes__security a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  .aes__security a:hover {
+    text-decoration: underline;
+  }
+
+  /* 暗色模式适配 */
+  :global(.dark) .aes__dir-btn--active {
+    background: var(--color-bg-soft);
+  }
+  :global(.dark) .aes__error {
+    background: rgba(185, 28, 28, 0.15);
+    border-color: rgba(185, 28, 28, 0.4);
+  }
+  :global(.dark) .aes__mode-hint--warn {
+    color: #fbbf24;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 640px) {
+    .aes__label {
+      width: 100%;
+      margin-bottom: 2px;
+    }
+    .aes__mode-hint,
+    .aes__source-hint {
+      margin-left: 0;
+    }
+    .aes__seg-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .aes__actions {
+      flex-direction: column;
+    }
+    .aes__btn {
+      width: 100%;
+    }
+    .aes__input--num {
+      width: 100%;
+    }
+  }
+</style>

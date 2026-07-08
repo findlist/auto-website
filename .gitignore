@@ -1,0 +1,41 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+.output/
+
+# Astro 缓存
+.astro/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+npm-debug.log*
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+
+# 临时
+*.tmp
+
+# 调试诊断脚本与输出
+_diag*.py
+_diag*.cjs
+_diag*.mjs
+_diag*.txt
+_diag*.png
+_diag_log.txt
+
+# Playwright 浏览器缓存
+.pw-browsers/
+
+# IDE/工具目录
+.trae/
+.workbuddy/

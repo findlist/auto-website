@@ -1,0 +1,198 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JsFormatterTool from '../components/JsFormatterTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JavaScript 格式化与压缩工具 - 美化 / 压缩 / 校验三合一',
+  description:
+    '免费的在线 JavaScript 格式化工具：一键美化（基于括号深度智能缩进）、压缩（移除注释与空白）、校验（统计函数语句与未闭合括号问题）。手写 JS 词法分析器，正确识别字符串、模板字符串、注释与正则字面量。支持 2/4 空格与 Tab 缩进、保留注释等选项。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JavaScript 格式化与压缩工具',
+    url: 'https://toolbox.example.com/js-formatter',
+    description: '在线 JavaScript 格式化、压缩与校验工具，支持缩进、保留注释等选项，手写词法分析器，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JavaScript 格式化与压缩工具</h1>
+      <p>
+        JavaScript 代码的美化、压缩与校验三合一。美化模式基于括号深度追踪智能换行缩进，压缩模式移除注释与空白减小体积，校验模式输出函数语句统计与未闭合括号问题清单。手写 JS 词法分析器，正确识别字符串、模板字符串、注释与正则字面量。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JsFormatterTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 JavaScript 格式化？为什么需要它？</summary>
+        <p>JS 格式化（也称美化或 Pretty Print）是将压缩或缩进混乱的 JS 代码重新按层级缩进对齐的过程。它不改变代码语义，只调整可读性。常见场景：①还原压缩后的生产 JS 源码；②阅读第三方库或框架的压缩代码；③整理复制粘贴的代码片段；④代码审查时统一缩进风格。本工具支持 2 空格、4 空格、Tab 三种缩进，可选保留注释。</p>
+      </details>
+      <details>
+        <summary>JS 压缩能减小多少体积？</summary>
+        <p>压缩效果取决于原代码的空白与注释量。典型场景：含大量缩进与注释的源码压缩后可减小 40-70% 体积；已经是单行的代码压缩收益有限（约 5-15%）。本工具压缩模式移除注释与所有多余空白，合并为单行。注意 JS 压缩不同于 CSS/HTML，需保留必要的分号防止 ASI（自动分号插入）陷阱，并保留标识符间的空格防止词法粘连（如 <code>return x</code> 不能合并为 <code>returnx</code>）。</p>
+      </details>
+      <details>
+        <summary>如何区分除法与正则字面量？</summary>
+        <p>JS 中 <code>/</code> 既是除法运算符又是正则字面量开始符，区分需依赖上下文。本工具通过「前一个有意义 token」判断：①前一个 token 是标识符（非 <code>return</code>/<code>typeof</code>/<code>case</code> 等关键字）、数字、字符串、正则、<code>)</code>、<code>]</code>、<code>&#125;</code>、<code>true</code>/<code>false</code>/<code>null</code>/<code>this</code>/<code>super</code> → 除法；②前一个 token 是 <code>=</code>、<code>(</code>、<code>,</code>、<code>;</code>、<code>&#123;</code>、<code>[</code>、<code>!</code>、<code>&&</code>、<code>||</code>、<code>return</code>、<code>typeof</code>、<code>new</code>、<code>throw</code>、<code>case</code> 等 → 正则字面量。这是手写 JS tokenizer 的经典难点。</p>
+      </details>
+      <details>
+        <summary>支持哪些 JS 语法？</summary>
+        <p>本工具手写词法分析器，正确处理以下语法：①函数声明与表达式（<code>function foo() &#123;&#125;</code>、<code>const f = function() &#123;&#125;</code>）；②箭头函数（<code>(x) => x * 2</code>、<code>x => &#123; return x; &#125;</code>）；③类声明（<code>class Foo &#123; constructor() &#123;&#125; method() &#123;&#125; &#125;</code>）；④模板字符串（<code>`Hello, $&#123;name&#125;!`</code>）；⑤正则字面量（<code>/^https?:\/\//i</code>，含字符类与 flags）；⑥注释（<code>// 单行</code> 与 <code>/* 多行 */</code>）；⑦数字字面量（十进制、<code>0x</code> 十六进制、<code>0o</code> 八进制、<code>0b</code> 二进制、科学计数法 <code>1e3</code>）；⑧多字符运算符（<code>===</code>、<code>!==</code>、<code>...</code>、<code>**=</code>、<code>&&=</code>、<code>??=</code>、<code>>>></code> 等）；⑨可选链（<code>?.</code>）与空值合并（<code>??</code>）。</p>
+      </details>
+      <details>
+        <summary>校验模式会执行哪些检查？</summary>
+        <p>校验模式遍历 token 流输出统计与问题清单：①统计字符数、行数、函数数（含 <code>function</code> 关键字与 <code>=></code> 箭头函数）、语句数（<code>;</code> 近似计数）、字符串数、注释数、最大嵌套深度；②检测未闭合的花括号 <code>&#123;</code>、圆括号 <code>(</code>、方括号 <code>[</code>；③检测未闭合的字符串（<code>'</code>、<code>"</code>、<code>`</code>）与多行注释 <code>/*</code>。注意本工具不做语法错误检测（如未定义变量、类型错误），仅做词法层面的统计与平衡性检查。</p>
+      </details>
+      <details>
+        <summary>为什么美化时对象字面量会被展开为多行？</summary>
+        <p>本工具采用「括号深度追踪」策略而非完整 AST 解析，无法区分 <code>&#123;&#125;</code> 是代码块还是对象字面量。为统一处理，所有 <code>&#123;</code> 都触发换行 + 缩进递增，<code>&#125;</code> 触发缩进递减 + 换行。因此 <code>const obj = &#123; a: 1, b: 2 &#125;;</code> 会被美化成 <code>const obj = &#123; \\n  a: 1, b: 2 \\n&#125;</code>（属性仍在一行，未按逗号拆分）。这是「智能缩进」与「完整 AST 重排」的取舍：前者实现简单、零依赖、不破坏代码，后者效果更好但需引入重型解析器（如 Babel/ESLint）。如需更精细的对象格式化，建议使用 Prettier。</p>
+      </details>
+      <details>
+        <summary>与 HTML/CSS 格式化工具有何联动？</summary>
+        <p>三者形成「标记 + 样式 + 脚本」完整三件套：<a href="/html-formatter">HTML 格式化工具</a>处理 HTML 结构，<a href="/css-formatter">CSS 格式化工具</a>处理样式代码，本工具处理 JS 脚本。典型流程：用 HTML 格式化工具美化页面结构（<code>&lt;script&gt;</code> 标签内的 JS 内容会被原样保留不格式化），将 <code>&lt;script&gt;</code> 内的 JS 复制到本工具单独美化或压缩。</p>
+      </details>
+      <details>
+        <summary>支持 JSX/TypeScript 吗？</summary>
+        <p>本工具针对标准 JavaScript（ES2023+）设计，不专门支持 JSX/TSX/TypeScript 扩展语法。①JSX 的 <code>&lt;Component prop=&#123;value&#125; /&gt;</code> 会被当作标点与标识符处理，<code>&lt;</code> <code>/</code> <code>&gt;</code> 会被误判为运算符，美化效果可能不理想；②TypeScript 的类型注解（<code>: string</code>）、接口（<code>interface Foo &#123;&#125;</code>）、泛型（<code>&lt;T&gt;</code>）、枚举（<code>enum Color &#123;&#125;</code>）等会被当作普通 JS 标识符处理，多数场景能正常美化，但类型参数 <code>&lt;T&gt;</code> 可能被误判为比较运算。如需 JSX/TSX 支持，建议使用 Prettier 或 ESLint。</p>
+      </details>
+      <details>
+        <summary>压缩后会引入 ASI 陷阱吗？</summary>
+        <p>不会。ASI（Automatic Semicolon Insertion，自动分号插入）是 JS 引擎在行尾缺少分号时自动补全的机制，但某些场景下会失效导致 bug（如行首是 <code>[</code>、<code>(</code>、<code>`</code>、<code>+</code>、<code>-</code> 时会与前一行合并）。本工具压缩模式保留所有原始分号，不主动移除分号，因此不会引入 ASI 陷阱。生产级压缩工具（如 Terser）会做更激进的分号省略与 ASI 分析以进一步减小体积，本工具为安全起见保留全部分号。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有词法分析、美化、压缩、校验逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JS 格式化工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .jsfmt__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .jsfmt__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: var(--color-bg-soft, #f6f8fa);
+    border-radius: 6px;
+  }
+
+  .jsfmt__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .jsfmt__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .jsfmt__toggle select {
+    padding: 2px 6px;
+    font-size: 13px;
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 4px;
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+  }
+
+  .jsfmt__field {
+    margin-bottom: 12px;
+  }
+
+  .jsfmt__textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 10px 12px;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 6px;
+    background: var(--color-bg, #fff);
+    color: var(--color-text, #1f2328);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .jsfmt__textarea:focus {
+    outline: 2px solid var(--color-accent, #0969da);
+    outline-offset: -1px;
+  }
+
+  .jsfmt__output {
+    min-height: 200px;
+    max-height: 500px;
+    overflow: auto;
+    padding: 10px 12px;
+    margin: 0;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--color-bg-soft, #f6f8fa);
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 校验报告模式：等宽字体，按行显示 */
+  .jsfmt__output--report {
+    white-space: pre-wrap;
+    word-break: normal;
+  }
+
+  .jsfmt__ratio {
+    margin-left: 8px;
+    padding: 2px 6px;
+    font-size: 12px;
+    color: #fff;
+    background: #1f883d;
+    border-radius: 4px;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 640px) {
+    .jsfmt__options {
+      gap: 8px;
+      padding: 6px 8px;
+    }
+
+    .jsfmt__toggle {
+      font-size: 12px;
+    }
+
+    .jsfmt__textarea,
+    .jsfmt__output {
+      font-size: 12px;
+      min-height: 150px;
+    }
+  }
+</style>

@@ -1,0 +1,383 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TomlTool from '../components/TomlTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'TOML 与 JSON 互转工具 - 在线配置文件双向转换 + 日期时间类型支持',
+  description:
+    '免费的在线 TOML / JSON 双向转换工具：TOML 转 JSON（支持注释、数组表 [[...]]、点号键、内联表、多行字符串、日期时间类型）、JSON 转 TOML。配语法校验、精确错误定位、TOML 类型陷阱提示（日期时间类型丢失、大整数精度丢失、null 不支持）。Rust Cargo.toml、Python pyproject.toml 配置文件处理高频必备，所有解析在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'TOML / JSON 互转工具',
+    url: 'https://toolbox.example.com/toml',
+    description: '在线 TOML 与 JSON 双向转换工具：支持数组表、点号键、日期时间类型、类型陷阱提示，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>TOML / JSON 互转工具</h1>
+      <p>
+        TOML 与 JSON 双向转换：TOML 解析支持注释、数组表（<code>[[...]]</code>）、点号键、内联表、
+        多行字符串、日期时间类型；JSON 转 TOML 自动序列化。配语法校验、精确错误定位、
+        TOML 类型陷阱提示（日期时间类型丢失、大整数精度丢失、null 不支持）。
+        所有解析在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <TomlTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>TOML 是什么？和 YAML、JSON 有什么区别？</summary>
+        <p>
+          <strong>TOML</strong>（Tom's Obvious, Minimal Language）是专为配置文件设计的格式，
+          由 GitHub 创始人 Tom Preston-Werner 发起，现为 Rust（<code>Cargo.toml</code>）、
+          Python（<code>pyproject.toml</code>）、Go、Pnpm 等主流生态的配置文件标准。
+          核心优势是<strong>语义明确、类型严格、解析简单</strong>。
+        </p>
+        <ul>
+          <li><strong>TOML vs JSON</strong>：TOML 支持注释、多行字符串、日期时间类型，可读性远高于 JSON；JSON 更适合数据交换</li>
+          <li><strong>TOML vs YAML</strong>：TOML 类型严格（无 yes/no 布尔陷阱）、缩进不敏感（用表头分段而非缩进）、解析器行为统一；YAML 支持多文档、锚点 / 别名，但类型推断有陷阱</li>
+          <li><strong>选型建议</strong>：配置文件优先 TOML（明确、安全），数据交换用 JSON（通用、紧凑），需要多文档 / 复杂引用时用 YAML</li>
+        </ul>
+      </details>
+      <details>
+        <summary>TOML 的基本语法是怎样的？</summary>
+        <p>TOML 由「键值对」和「表」组成，大小写敏感、UTF-8 编码：</p>
+        <pre><code># 注释用 # 开头
+title = "工具盒子"          # 字符串（双引号）
+version = "1.0.0"
+count = 42                  # 整数
+rate = 3.14                 # 浮点数
+enabled = true              # 布尔
+created = 2024-01-15        # 日期（TOML 独有类型）
+tags = ["前端", "工具"]      # 数组
+
+# 表用 [表名] 分段（等价于嵌套对象）
+[server]
+host = "0.0.0.0"
+port = 8080
+
+# 点号键等价于嵌套（无需显式定义表）
+database.url = "localhost"  # 等价于 [database]\nurl = "localhost"</code></pre>
+        <p>
+          TOML 用表头 <code>[section]</code> 分段，<strong>不依赖缩进</strong>（与 YAML 不同），
+          这是它比 YAML 更易解析的根本原因。
+        </p>
+      </details>
+      <details>
+        <summary>TOML 的日期时间类型转 JSON 后会变成什么？为什么需要提示？</summary>
+        <p>
+          TOML 有 4 种日期时间类型，是它区别于 JSON / YAML 的核心特性。但 JSON 没有日期类型，
+          转换后会变成 <strong>ISO 8601 字符串</strong>，类型信息丢失：
+        </p>
+        <ul>
+          <li><strong>偏移日期时间</strong> <code>2024-06-01T10:30:00+08:00</code> → <code>"2024-05-31T18:30:00.000Z"</code>（转为 UTC，时区偏移丢失）</li>
+          <li><strong>本地日期时间</strong> <code>2024-06-01T10:30:00</code> → <code>"2024-06-01T10:30:00.000Z"</code>（无时区，但 JSON 强加 Z 后缀）</li>
+          <li><strong>本地日期</strong> <code>2024-01-15</code> → <code>"2024-01-15T00:00:00.000Z"</code>（被强加 T00:00:00.000Z 时区）</li>
+          <li><strong>本地时间</strong> <code>10:30:00</code> → <code>"1970-01-01T10:30:00.000Z"</code>（被强加 1970-01-01 日期与 UTC 时区）</li>
+        </ul>
+        <p>
+          本工具在检测到日期时间值时会给出<strong>类型提示</strong>，说明该字段转 JSON 后的形态，
+          帮助用户识别时区与类型变化。如需保留原始 TOML 格式，请在消费 JSON 时按字符串还原。
+        </p>
+      </details>
+      <details>
+        <summary>TOML 的数组表 [[...]] 是什么？和普通表 [...] 有什么区别？</summary>
+        <p>
+          <strong>数组表</strong>（Array of Tables）用双方括号 <code>[[...]]</code> 定义，
+          生成的是<strong>对象数组</strong>，每个 <code>[[...]]</code> 新增一个元素：
+        </p>
+        <pre><code>[[dependencies]]
+name = "react"
+version = "18.3.1"
+
+[[dependencies]]
+name = "astro"
+version = "5.6.1"
+
+# 转 JSON 后：
+# "dependencies": [
+#   &#123; "name": "react", "version": "18.3.1" &#125;,
+#   &#123; "name": "astro", "version": "5.6.1" &#125;
+# ]</code></pre>
+        <p>
+          而普通表 <code>[dependencies]</code> 只定义一个对象。这是 TOML 表达「同类集合」的标准方式，
+          Cargo（依赖列表）、pyproject（工具配置）都大量使用。
+        </p>
+      </details>
+      <details>
+        <summary>TOML 的点号键和内联表有什么区别？</summary>
+        <p>
+          两者都能表达嵌套结构，但写法不同，<strong>语义等价</strong>：
+        </p>
+        <pre><code># 点号键（适合零散字段）
+server.host = "0.0.0.0"
+server.port = 8080
+
+# 等价于显式表
+[server]
+host = "0.0.0.0"
+port = 8080
+
+# 内联表（适合紧凑单行，不能跨行）
+point = &#123; x = 1, y = 2 &#125;
+
+# 等价于
+[point]
+x = 1
+y = 2</code></pre>
+        <ul>
+          <li><strong>点号键</strong>：无需提前定义表，零散添加字段方便</li>
+          <li><strong>显式表</strong>：表头清晰，适合多字段集中定义</li>
+          <li><strong>内联表</strong>：单行紧凑，适合少量字段的嵌套值，<strong>不能跨多行</strong></li>
+        </ul>
+      </details>
+      <details>
+        <summary>TOML 的字符串有几种？多行字符串怎么写？</summary>
+        <p>TOML 有 4 种字符串写法：</p>
+        <ul>
+          <li><strong>基本字符串</strong> <code>"..."</code>：双引号，支持转义（<code>\n</code> / <code>\t</code> / <code>\"</code> / <code>\uXXXX</code>）</li>
+          <li><strong>字面字符串</strong> <code>'...'</code>：单引号，<strong>不转义</strong>（<code>\n</code> 是字面反斜杠 n），适合正则、Windows 路径</li>
+          <li><strong>多行基本字符串</strong> <code>"""..."""</code>：三双引号，支持换行、转义，行尾反斜杠可续行</li>
+          <li><strong>多行字面字符串</strong> <code>'''...'''</code>：三单引号，支持换行、<strong>不转义</strong>，适合代码块、文档</li>
+        </ul>
+        <pre><code># 字面字符串：反斜杠不转义，写正则最方便
+pattern = '\d+\.\d+'
+
+# 多行字面字符串：保留原始格式
+description = '''
+第一行
+第二行（首行换行会被裁剪）
+'''</code></pre>
+      </details>
+      <details>
+        <summary>TOML 的整数转 JSON 会丢失精度吗？</summary>
+        <p>
+          <strong>会</strong>。TOML 支持 64 位整数（范围 <code>-9223372036854775808</code> 到 <code>9223372036854775807</code>），
+          但 JavaScript Number 只能安全表示 <code>±9007199254740991</code>（2^53-1）。
+          超过此范围的整数转 JS Number 后<strong>会丢失精度</strong>。
+        </p>
+        <pre><code># 安全范围（2^53-1 内）
+small_id = 9007199254740991     # 精确
+
+# 超出安全范围（精度丢失）
+big_id = 9223372036854775807    # 转后变成 9223372036854776000</code></pre>
+        <p>
+          本工具在检测到超出 <code>Number.MAX_SAFE_INTEGER</code> 的整数时会给出提示。
+          如需精确处理，请在消费端用 <code>BigInt</code> 或字符串还原。
+        </p>
+      </details>
+      <details>
+        <summary>JSON 转 TOML 时为什么报错？TOML 不支持什么？</summary>
+        <p>TOML 有几条严格限制，JSON → TOML 时常见报错原因：</p>
+        <ul>
+          <li><strong>不支持 null</strong>：JSON 的 <code>null</code> 在 TOML 中无对应类型。需删除该字段、改为空字符串、或用其他语义表达</li>
+          <li><strong>不支持 undefined</strong>：JSON 不会有 undefined，但 JS 对象可能含</li>
+          <li><strong>不支持循环引用</strong>：JSON 本身不支持，但需注意</li>
+          <li><strong>顶层必须是表</strong>：JSON 顶层若是数组或原始值，TOML 无法直接表达（TOML 文档根必须是表）</li>
+        </ul>
+        <p>
+          本工具在 JSON → TOML 模式下检测到 <code>null</code> 值时会给出提示，标明具体字段路径。
+        </p>
+      </details>
+      <details>
+        <summary>本工具支持 TOML 的所有特性吗？基于什么库？</summary>
+        <p>
+          本工具基于 <a href="https://github.com/squirrelchat/smol-toml">smol-toml</a>，
+          完全符合 <strong>TOML v1.0.0 规范</strong>。支持的特性：
+        </p>
+        <ul>
+          <li><strong>支持</strong>：注释、表 / 数组表、点号键、内联表、多行字符串（基本 / 字面）、4 种日期时间类型、整数（十进制 / 十六进制 / 八进制 / 二进制 / 下划线分隔）、浮点数（含 inf / nan）、布尔、数组（可嵌套、可混合类型）</li>
+          <li><strong>类型陷阱提示</strong>：日期时间值转 JSON 后类型丢失、大整数精度丢失、JSON null 不可转</li>
+          <li><strong>不支持</strong>：TOML v1.0.0 之后的草案特性（如多行内联表、跨表引用）</li>
+        </ul>
+        <p>
+          对于绝大多数配置文件（Cargo.toml、pyproject.toml、Go go.mod 配置、Pnpm 配置），
+          本工具都能正确解析。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* TOML 工具专属样式：复用 jsontool__ 通用布局，新增 tomltool__ 自定义样式 */
+
+  /* 解析错误提示区 */
+  .tomltool__error {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    border-left: 4px solid #dc2626;
+    border-radius: var(--radius-md);
+    background: #fef2f2;
+    color: #7f1d1d;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .tomltool__error-loc {
+    font-size: 13px;
+    color: #b91c1c;
+    font-weight: 500;
+  }
+
+  .tomltool__error-msg {
+    flex: 1;
+    min-width: 200px;
+    color: #7f1d1d;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* TOML 类型陷阱提示区 */
+  .tomltool__warnings {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(245, 166, 35, 0.4);
+    border-left: 4px solid #f5a623;
+    border-radius: var(--radius-md);
+    background: #fff7ed;
+    color: #4a3508;
+  }
+
+  .tomltool__warnings-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .tomltool__warnings-hint {
+    font-size: 12.5px;
+    color: #8a6420;
+  }
+
+  .tomltool__warnings-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tomltool__warning-item {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) minmax(100px, auto) 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-top: 1px dashed rgba(245, 166, 35, 0.3);
+    font-size: 13px;
+  }
+
+  .tomltool__warning-item:first-child {
+    border-top: none;
+  }
+
+  .tomltool__warning-loc {
+    font-weight: 600;
+    color: #6b4a0e;
+    white-space: nowrap;
+  }
+
+  .tomltool__warning-raw {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    background: rgba(245, 166, 35, 0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #4a3508;
+    word-break: break-all;
+  }
+
+  .tomltool__warning-reason {
+    color: #6b4a0e;
+    line-height: 1.5;
+  }
+
+  .tomltool__warning-more {
+    color: #8a6420;
+    font-style: italic;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .tomltool__error {
+      background: #2a0f0f;
+      border-color: rgba(248, 113, 113, 0.4);
+      color: #fca5a5;
+    }
+
+    .tomltool__error-loc {
+      color: #f87171;
+    }
+
+    .tomltool__error-msg {
+      color: #fca5a5;
+    }
+
+    .tomltool__warnings {
+      background: #2a1f0a;
+      border-color: rgba(251, 191, 36, 0.4);
+      border-left-color: #fbbf24;
+      color: #fcd34d;
+    }
+
+    .tomltool__warnings-hint {
+      color: #fbbf24;
+    }
+
+    .tomltool__warning-item {
+      border-top-color: rgba(251, 191, 36, 0.2);
+    }
+
+    .tomltool__warning-loc {
+      color: #fde68a;
+    }
+
+    .tomltool__warning-raw {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fcd34d;
+    }
+
+    .tomltool__warning-reason {
+      color: #fde68a;
+    }
+
+    .tomltool__warning-more {
+      color: #fbbf24;
+    }
+  }
+
+  /* 移动端响应式：警告项改为单列堆叠 */
+  @media (max-width: 768px) {
+    .tomltool__warning-item {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .tomltool__error {
+      font-size: 13px;
+    }
+  }
+</style>

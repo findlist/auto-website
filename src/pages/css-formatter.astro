@@ -1,0 +1,198 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import CssFormatterTool from '../components/CssFormatterTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 格式化与压缩工具 - 美化 / 压缩 / 校验三合一',
+  description:
+    '免费的在线 CSS 格式化工具：一键美化（按嵌套层级缩进）、压缩（移除注释与空白）、校验（统计规则声明与可疑问题清单）。支持 2/4 空格与 Tab 缩进、保留注释、选择器换行、省略末尾分号等选项。手写 CSS 词法分析器，支持嵌套 at-rule 与 @keyframes。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 格式化与压缩工具',
+    url: 'https://toolbox.example.com/css-formatter',
+    description: '在线 CSS 格式化、压缩与校验工具，支持缩进、保留注释、选择器换行、省略末尾分号等选项，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>CSS 格式化与压缩工具</h1>
+      <p>
+        CSS 代码的美化、压缩与校验三合一。美化模式按嵌套层级缩进对齐，压缩模式移除注释与空白减小体积，校验模式输出规则声明统计与可疑问题清单。手写 CSS 词法分析器，支持嵌套 at-rule（@media / @supports / @keyframes）。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <CssFormatterTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS 格式化？为什么需要它？</summary>
+        <p>CSS 格式化（也称美化或 Pretty Print）是将压缩或缩进混乱的 CSS 代码重新按层级缩进对齐的过程。它不改变样式语义，只调整可读性。常见场景：①还原压缩后的生产 CSS 源码；②阅读第三方库或框架的压缩 CSS；③整理复制粘贴的样式片段；④代码审查时统一缩进风格。本工具支持 2 空格、4 空格、Tab 三种缩进，可自定义保留注释、选择器换行等选项。</p>
+      </details>
+      <details>
+        <summary>CSS 压缩能减小多少体积？</summary>
+        <p>压缩效果取决于原代码的空白与注释量。典型场景：含大量缩进与注释的源码压缩后可减小 30-60% 体积；已经是单行的代码压缩收益有限（约 5-10%）。本工具压缩模式提供「移除注释」与「省略末尾分号」两个选项。注意 CSS 压缩不同于 HTML 压缩，CSS 的空白在选择器和值中大多可安全移除，但字符串字面量（如 <code>content: " "</code>）内的空白必须保留。</p>
+      </details>
+      <details>
+        <summary>支持哪些 CSS 语法？</summary>
+        <p>本工具手写词法分析器，正确处理以下语法：①普通规则（<code>selector &#123; prop: value; &#125;</code>）；②@media / @supports / @keyframes 等嵌套 at-rule；③@import / @charset 等无块 at-rule；④<code>!important</code> 声明；⑤字符串字面量（<code>content: "Hello"</code>，内部字符原样保留）；⑥注释（<code>/* ... */</code>，美化模式可选保留）；⑦伪类伪元素选择器（<code>:hover</code> / <code>::before</code>）；⑧属性选择器（<code>[type="text"]</code>）；⑨@keyframes 关键帧选择器（<code>from</code> / <code>to</code> / <code>0%</code>）。</p>
+      </details>
+      <details>
+        <summary>如何区分规则和声明？</summary>
+        <p>CSS 块内既有声明（<code>color: red;</code>）也有嵌套规则（@media 内的 <code>.btn &#123; ... &#125;</code>）。本工具采用「向前探测」策略：从当前位置扫描到下一个 <code>&#123;</code> 或 <code>;</code>，若先遇到 <code>&#123;</code> 则判定为嵌套规则，先遇到 <code>;</code> 则判定为声明。这能正确处理 @media 块内混合声明与规则的情况。</p>
+      </details>
+      <details>
+        <summary>校验模式会执行哪些检查？</summary>
+        <p>校验模式遍历 AST 输出统计与问题清单：①统计规则数、@ 规则数、声明数、注释数、最大嵌套深度；②检测空规则（选择器存在但无任何声明，建议删除以减小体积）；③检测重复属性（同一规则内多次定义同一属性，后者覆盖前者，可能是笔误）；④检测缺失值的属性。注意 CSS 不会「解析失败」，即使语法有误浏览器也会容错处理，校验模式只提示潜在问题不阻止解析。</p>
+      </details>
+      <details>
+        <summary>压缩时为什么要省略末尾分号？</summary>
+        <p>CSS 规范允许每条规则最后一条声明省略分号，因为 <code>&#125;</code> 会隐式结束声明。例如 <code>.btn&#123;color:red&#125;</code> 与 <code>.btn&#123;color:red;&#125;</code> 等价。省略末尾分号每条规则可节省 1 字节，大型样式表累积可减小 0.5-2% 体积。但省略后如果手动在末尾追加声明容易漏加分号导致错误，因此仅建议在生产压缩时开启，开发环境应保留完整分号。</p>
+      </details>
+      <details>
+        <summary>与 HTML 格式化工具有何联动？</summary>
+        <p>两者互补形成「标记 + 样式」处理矩阵：<a href="/html-formatter">HTML 格式化工具</a>处理 HTML 结构的缩进与压缩（注意 <code>&lt;style&gt;</code> 标签内的 CSS 内容会被原样保留不格式化）；本工具处理 CSS 代码的缩进与压缩。典型流程：用 HTML 格式化工具美化页面结构，将 <code>&lt;style&gt;</code> 内的 CSS 复制到本工具单独美化或压缩。</p>
+      </details>
+      <details>
+        <summary>与颜色工具有何联动？</summary>
+        <p>CSS 中大量使用颜色值（<code>color: #0969da</code> / <code>background: rgb(9,105,218)</code>）。<a href="/color">颜色格式转换工具</a>可在 HEX / RGB / HSL / HSV / CMYK 五种格式间互转，并生成和谐配色方案。典型流程：用颜色工具选取和转换颜色值，将结果复制到 CSS 中，再用本工具统一格式化。</p>
+      </details>
+      <details>
+        <summary>支持 CSS 嵌套语法（Native Nesting）吗？</summary>
+        <p>现代浏览器已支持原生 CSS 嵌套（<code>.parent &#123; & .child &#123; ... &#125; &#125;</code>）。本工具的向前探测策略能正确识别嵌套规则：块内遇到 <code>&#123;</code> 优先于 <code>;</code> 时判定为嵌套规则。因此原生嵌套语法的美化与压缩均可正常工作。注意原生嵌套的 <code>&</code> 选择器会被当作普通 word 处理，不影响结构解析。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有词法分析、解析、美化、压缩、校验逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS 格式化工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .cssfmt__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .cssfmt__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: var(--color-bg-soft, #f6f8fa);
+    border-radius: 6px;
+  }
+
+  .cssfmt__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .cssfmt__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .cssfmt__toggle select {
+    padding: 2px 6px;
+    font-size: 13px;
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 4px;
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+  }
+
+  .cssfmt__field {
+    margin-bottom: 12px;
+  }
+
+  .cssfmt__textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 10px 12px;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 6px;
+    background: var(--color-bg, #fff);
+    color: var(--color-text, #1f2328);
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .cssfmt__textarea:focus {
+    outline: 2px solid var(--color-accent, #0969da);
+    outline-offset: -1px;
+  }
+
+  .cssfmt__output {
+    min-height: 200px;
+    max-height: 500px;
+    overflow: auto;
+    padding: 10px 12px;
+    margin: 0;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    background: var(--color-bg-soft, #f6f8fa);
+    border: 1px solid var(--color-border, #d0d7de);
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 校验报告模式：等宽字体，按行显示 */
+  .cssfmt__output--report {
+    white-space: pre-wrap;
+    word-break: normal;
+  }
+
+  .cssfmt__ratio {
+    margin-left: 8px;
+    padding: 2px 6px;
+    font-size: 12px;
+    color: #fff;
+    background: #1f883d;
+    border-radius: 4px;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 640px) {
+    .cssfmt__options {
+      gap: 8px;
+      padding: 6px 8px;
+    }
+
+    .cssfmt__toggle {
+      font-size: 12px;
+    }
+
+    .cssfmt__textarea,
+    .cssfmt__output {
+      font-size: 12px;
+      min-height: 150px;
+    }
+  }
+</style>

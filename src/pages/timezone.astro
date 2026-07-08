@@ -1,0 +1,488 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TimeZoneTool from '../components/TimeZoneTool.tsx';
+
+const meta: SiteMeta = {
+  title: '时区转换器 - 在线多时区对比与世界时钟',
+  description:
+    '免费的在线时区转换工具：输入一个时间与源时区，实时对比多个目标时区（UTC、北京、纽约、伦敦、东京等），自动识别夏令时（DST）与 UTC 偏移，输出 ISO 8601、Unix 时间戳、12/24 小时制多种格式。基于浏览器内置 IANA 时区数据库，全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '时区转换器',
+    url: 'https://toolbox.example.com/timezone',
+    description: '在线多时区对比转换工具，支持夏令时识别、UTC 偏移、ISO 8601 与 Unix 时间戳输出，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>时区转换器</h1>
+      <p>
+        输入一个时间与源时区，实时对比多个目标时区的完整时间表示。自动识别夏令时（DST）与 UTC 偏移，输出 ISO 8601、Unix 时间戳、12 与 24 小时制多种格式，并标注与源时区的时差。适用于跨时区会议安排、日志分析、API 时间设计与国际化开发场景。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <TimeZoneTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>时区转换器与 Unix 时间戳转换工具有何区别？</summary>
+        <p>本工具侧重「同一时刻在不同时区下的本地表示对比」，适合跨时区协作、会议安排、国际化展示；Unix 时间戳转换工具侧重「绝对时间与人类可读时间的双向换算」，适合日志分析、API 调试、缓存过期计算。两者互补：时间戳是时区无关的绝对值，时区转换则是把绝对值映射到不同地区的本地时间。本工具在每张时区卡片中同时展示 Unix 时间戳，可一键复制后前往时间戳工具进一步处理。</p>
+      </details>
+      <details>
+        <summary>什么是 IANA 时区标识（如 Asia/Shanghai）？</summary>
+        <p>IANA 时区数据库（又称 tz database、tzdata）是由互联网号码分配局（IANA）维护的全球时区标准，每个时区以「区域/位置」形式命名，如 <code>Asia/Shanghai</code>、<code>America/New_York</code>、<code>Europe/London</code>。命名优先选择能代表该时区规则的最大人口城市，而非当前政治边界。例如中国大陆统一使用 <code>Asia/Shanghai</code>（而非 Beijing），因为历史时区规则以上海记录为准。本工具的所有时区均来自 IANA 数据库，与 Linux、macOS、Java、Python、JavaScript 等主流技术栈一致。</p>
+      </details>
+      <details>
+        <summary>UTC 与 GMT 有什么区别？</summary>
+        <p><strong>UTC</strong>（协调世界时，Coordinated Universal Time）是基于原子钟的国际时间标准，用闰秒修正地球自转减速，是现代所有时间同步的基准。<strong>GMT</strong>（格林尼治标准时间，Greenwich Mean Time）是历史概念，指本初子午线处的平均太阳时，现已基本被 UTC 取代。日常使用中两者数值相同（UTC+0 ≈ GMT），但技术上 UTC 更精确。IANA 数据库中伦敦的「标准时间」（非夏令时）即 UTC+0。</p>
+      </details>
+      <details>
+        <summary>什么是夏令时（DST）？为什么有些时区有夏令时？</summary>
+        <p>夏令时（Daylight Saving Time，DST）是在夏季将时钟拨快一小时，以充分利用日光、节约能源的做法。通常在春季「拨快」、秋季「拨回」。例如 <code>America/New_York</code> 标准时间为 UTC-5（东部标准时间 EST），夏令时为 UTC-4（东部夏令时 EDT）。<code>Europe/London</code> 标准为 UTC+0（GMT），夏令时为 UTC+1（BST）。中国大陆、日本、印度等不使用夏令时。本工具会自动识别并标注「夏令时」徽章，偏移也会随之调整。</p>
+      </details>
+      <details>
+        <summary>为什么同一时区在不同日期的 UTC 偏移会变化？</summary>
+        <p>这正是夏令时导致的。例如 <code>America/New_York</code> 在 3 月第二个周日到 11 月第一个周日为 UTC-4（夏令时），其余时间为 UTC-5（标准时间）。本工具根据输入时间所处的具体日期计算偏移，因此同一城市在不同日期会显示不同的 UTC 偏移。注意南半球夏令时方向相反（如 <code>Australia/Sydney</code> 在北半球冬季为夏令时）。</p>
+      </details>
+      <details>
+        <summary>ISO 8601 时间格式是什么？带偏移如何表示？</summary>
+        <p>ISO 8601 是国际标准的日期时间表示格式，基本形式为 <code>YYYY-MM-DDTHH:mm:ss</code>。<strong>带偏移</strong>的完整形式在末尾附加 <code>±HH:mm</code>，如 <code>2026-07-08T14:30:00+08:00</code> 表示东八区下午两点三十。UTC 时间可用 <code>Z</code> 后缀表示，如 <code>2026-07-08T06:30:00Z</code>。带偏移的 ISO 8601 是 JSON、REST API、数据库 timestamp 字段的首选格式，因为它能无损还原为绝对时间。本工具每张时区卡片均输出带偏移的 ISO 8601。</p>
+      </details>
+      <details>
+        <summary>如何选择源时区？源时区与目标时区有何区别？</summary>
+        <p>源时区是「你输入的时间所采用的时区」。例如你有一张北京时间的会议通知，想把会议时间换算成纽约、伦敦时间，则源时区选 <code>Asia/Shanghai</code>，目标时区添加 <code>America/New_York</code>、<code>Europe/London</code>。工具默认用浏览器系统时区作为源时区，可手动切换。目标时区可任意添加、删除，默认展示 UTC、北京、纽约、伦敦、东京五个常用时区。</p>
+      </details>
+      <details>
+        <summary>浏览器如何获取时区数据库？是否需要联网？</summary>
+        <p>现代浏览器内置 IANA 时区数据库（随操作系统或浏览器更新），通过 <code>Intl.DateTimeFormat</code> 的 <code>timeZone</code> 选项即可使用，<strong>无需联网</strong>。本工具所有时区计算均在浏览器本地完成，不上传任何数据。时区数据库会随操作系统更新（如 Windows Update、macOS 系统更新），各国夏令时规则变更时会同步。极少数旧浏览器可能不支持完整 IANA 列表，本工具提供常用时区预设降级方案。</p>
+      </details>
+      <details>
+        <summary>时区转换与 Unix 时间戳是什么关系？</summary>
+        <p>Unix 时间戳是「自 1970-01-01 00:00:00 UTC 起经过的秒数」，它是<strong>时区无关的绝对时间</strong>。同一时刻，全球所有时区的 Unix 时间戳相同。时区转换的本质是：把一个绝对时间戳，格式化为不同地区的本地时间字符串。因此本工具中所有时区卡片的 Unix 时间戳值完全一致，区别仅在本地表示。这也是为什么后端存储、API 通信推荐用 Unix 时间戳或 UTC ISO 8601，而前端展示时再按用户时区格式化。</p>
+      </details>
+      <details>
+        <summary>为什么某些地区使用非整数小时偏移？</summary>
+        <p>多数时区以整小时偏移（如 UTC+8、UTC-5），但部分时区使用半小时或四十五分钟偏移。例如 <code>Asia/Kolkata</code>（印度）为 UTC+5:30，<code>Asia/Tokyo</code> 为 UTC+9，<code>Asia/Kathmandu</code>（尼泊尔）为 UTC+5:45，<code>Australia/Adelaide</code> 为 UTC+9:30。这些奇数偏移多源于历史与地理因素（如印度按其中心经度定位）。本工具的偏移标签会精确显示到分钟，如 <code>UTC+5:30</code>。</p>
+      </details>
+      <details>
+        <summary>跨时区会议安排有哪些最佳实践？</summary>
+        <p>① 始终以 UTC 或 Unix 时间戳作为「真相源」记录会议时间，避免歧义；② 邀请函中同时标注参与者所在时区的本地时间，本工具可一次生成多个时区对照；③ 注意夏令时切换日（每年 3 月、11 月附近），切换当周可能造成会议时间错位；④ 使用带偏移的 ISO 8601（如 <code>2026-07-08T14:00:00+08:00</code>）在日历软件中最可靠；⑤ 跨半球协作时注意南半球夏令时与北半球相反。</p>
+      </details>
+      <details>
+        <summary>开发中处理时区有哪些常见坑与最佳实践？</summary>
+        <p>常见坑：① 后端存储本地时间而非 UTC，导致跨时区错乱；② 前端 <code>new Date('2026-07-08')</code> 被当作 UTC 午夜，在负偏移时区显示为前一天；③ 假设偏移恒定忽略夏令时；④ 用字符串拼接而非 <code>Intl.DateTimeFormat</code> 格式化。最佳实践：① 后端与数据库统一存 UTC；② API 传输用 ISO 8601 带偏移或 Unix 时间戳；③ 前端用 <code>Intl.DateTimeFormat</code> 按用户时区格式化；④ 涉及定时任务时用 <code>Asia/Shanghai</code> 等 IANA 时区名而非 <code>+08:00</code> 偏移（偏移不随夏令时变化，时区名会）；⑤ 测试覆盖夏令时切换边界。</p>
+      </details>
+      <details>
+        <summary>数据是否安全？会上传到服务器吗？</summary>
+        <p>完全安全。本工具所有时区计算、格式化、夏令时识别均在浏览器本地完成，<strong>不会上传任何时间数据到服务器</strong>。没有后端、没有数据库、没有统计脚本。你输入的时间仅在你的设备内处理，适合处理敏感的会议安排、日志时间等场景。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 时区转换器专属样式：tz__ 前缀，复用全局 CSS 变量 */
+  .tz {
+  }
+
+  /* 顶部输入栏 */
+  .tz__bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+  }
+
+  .tz__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .tz__field--time {
+    flex: 1 1 220px;
+  }
+
+  .tz__field--source {
+    flex: 1 1 240px;
+  }
+
+  .tz__field input,
+  .tz__field select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s ease;
+  }
+
+  .tz__field input:focus,
+  .tz__field select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  /* 源时区摘要 */
+  .tz__source-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(43, 108, 255, 0.08), rgba(122, 76, 255, 0.06));
+    border: 1px solid rgba(43, 108, 255, 0.18);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+  }
+
+  .tz__source-summary strong {
+    color: var(--color-text);
+  }
+
+  .tz__source-offset {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .tz__source-time {
+    margin-left: auto;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+  }
+
+  /* 夏令时徽章 */
+  .tz__dst-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  /* 错误提示 */
+  .tz__error {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: var(--radius-md);
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  /* 添加时区栏 */
+  .tz__add-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tz__field--add {
+    flex: 1 1 260px;
+  }
+
+  /* 时区卡片列表 */
+  .tz__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .tz__card {
+    padding: 14px 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .tz__card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .tz__card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tz__card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .tz__card-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tz__card-id {
+    font-size: 11px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .tz__card-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .tz__offset-badge {
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.1);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .tz__remove-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--color-text-soft);
+    font-size: 18px;
+    line-height: 1;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .tz__remove-btn:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+  }
+
+  .tz__remove-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  /* 卡片主时间区 */
+  .tz__card-main {
+    padding: 8px 0 12px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 10px;
+  }
+
+  .tz__time-24 {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: 0.02em;
+  }
+
+  .tz__time-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .tz__time-12 {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .tz__diff {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 详情列表 */
+  .tz__card-detail {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tz__detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .tz__detail-label {
+    flex-shrink: 0;
+    width: 64px;
+    color: var(--color-text-soft);
+  }
+
+  .tz__detail-value {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+    word-break: break-all;
+    font-size: 12px;
+  }
+
+  .tz__copy-btn {
+    appearance: none;
+    flex-shrink: 0;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--color-border);
+    color: var(--color-text-soft);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tz__copy-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .tz__copy-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  /* 空状态 */
+  .tz__empty {
+    grid-column: 1 / -1;
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 联动链接 */
+  .tz__links {
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tz__link {
+    color: var(--color-primary);
+    font-size: 14px;
+    text-decoration: none;
+  }
+
+  .tz__link:hover {
+    text-decoration: underline;
+  }
+
+  /* 状态条 */
+  .tz__status {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  .tz__notice {
+    color: #16a34a;
+  }
+
+  .tz__hint {
+    color: var(--color-text-soft);
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .tz__bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .tz__field--time,
+    .tz__field--source {
+      flex: 1 1 auto;
+    }
+
+    .tz__list {
+      grid-template-columns: 1fr;
+    }
+
+    .tz__source-time {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .tz__add-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .tz__field--add {
+      flex: 1 1 auto;
+    }
+  }
+
+  /* 暗色模式适配：复用全局暗色变量，徽章颜色微调 */
+  @media (prefers-color-scheme: dark) {
+    .tz__card {
+      background: var(--color-bg);
+    }
+
+    .tz__dst-badge {
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.18);
+    }
+
+    .tz__error {
+      color: #f87171;
+    }
+
+    .tz__copy-btn {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+</style>

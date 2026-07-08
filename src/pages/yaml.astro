@@ -1,0 +1,405 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import YamlTool from '../components/YamlTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'YAML 与 JSON 互转工具 - 在线配置文件双向转换 + 多文档支持',
+  description:
+    '免费的在线 YAML / JSON 双向转换工具：YAML 转 JSON（支持注释、多文档 --- 分隔、锚点 / 别名、流 / 块样式）、JSON 转 YAML（可配置缩进、行宽、引号风格）。配语法校验、精确错误定位、YAML 类型推断陷阱提示（yes/no 布尔、日期自动解析）。Kubernetes、CI/CD、OpenAPI 配置文件处理高频必备，所有解析在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'YAML / JSON 互转工具',
+    url: 'https://toolbox.example.com/yaml',
+    description: '在线 YAML 与 JSON 双向转换工具：支持多文档、锚点 / 别名、类型推断陷阱提示，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>YAML / JSON 互转工具</h1>
+      <p>
+        YAML 与 JSON 双向转换：YAML 解析支持注释、多文档（<code>---</code> 分隔）、锚点 / 别名、流 / 块样式；
+        JSON 转 YAML 可配置缩进与引号风格。配语法校验、精确错误定位、YAML 类型推断陷阱提示。
+        所有解析在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <YamlTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>YAML 和 JSON 各有什么优劣？什么时候该用哪个？</summary>
+        <p>
+          <strong>YAML</strong>（YAML Ain't Markup Language）是配置文件的首选格式，
+          优势是<strong>支持注释（<code>#</code>）、可读性高、支持多文档（<code>---</code> 分隔）、
+          支持锚点 / 别名复用</strong>，劣势是<strong>解析复杂、缩进敏感、类型推断有陷阱</strong>。
+          <strong>JSON</strong>（JavaScript Object Notation）是数据交换的标准格式，
+          优势是<strong>严格类型、解析快、与 API 兼容、所有语言原生支持</strong>，
+          劣势是<strong>不支持注释、体积较大、可读性稍差</strong>。
+          经验法则：<strong>人写的配置文件用 YAML，机器交换的数据用 JSON</strong>。
+          典型场景：Kubernetes / CI-CD / OpenAPI 用 YAML，REST API / 数据库存储用 JSON。
+        </p>
+      </details>
+      <details>
+        <summary>YAML 的缩进有什么规则？Tab 可以用吗？</summary>
+        <p>
+          YAML 的核心规则是<strong>用空格缩进表示层级，不能用 Tab</strong>。这是 YAML 最常见的踩坑点。
+          具体规则：
+        </p>
+        <ul>
+          <li><strong>只能用空格</strong>，不能用 Tab（<code>\t</code>）。若编辑器把 Tab 展开为空格则可用</li>
+          <li><strong>缩进必须一致</strong>，同一层级的元素缩进空格数必须相同</li>
+          <li><strong>缩进空格数不强制</strong>（2 / 4 / 8 均可），但同级元素必须对齐</li>
+          <li><strong>子节点缩进必须大于父节点</strong>，例如父节点缩进 2，子节点至少缩进 4</li>
+          <li><strong>列表项</strong>（<code>- item</code>）的 <code>-</code> 后必须有空格</li>
+        </ul>
+        <p>
+          本工具解析 YAML 时严格遵循此规则，遇到 Tab 缩进会报错「Tabs are not allowed for indentation」，
+          并指出错误行号。建议在编辑器中设置「将 Tab 转为空格」避免此问题。
+        </p>
+      </details>
+      <details>
+        <summary>YAML 里的 yes/no/on/off 会被解析成什么？需要加引号吗？</summary>
+        <p>
+          这取决于 YAML 解器使用的 schema 版本：<strong>YAML 1.1</strong>（如 PyYAML、libyaml、Ruby psych）
+          会把 <code>yes</code> / <code>no</code> / <code>on</code> / <code>off</code> / <code>y</code> / <code>n</code>
+          解析为布尔值；<strong>YAML 1.2</strong>（较新标准，本工具基于 js-yaml v4）已移除此规则，保留为字符串。
+        </p>
+        <pre><code># YAML 1.1 解析器（PyYAML 等）会转为布尔
+# YAML 1.2 解析器（本工具）保留为字符串
+enabled: yes      # 1.1: true   |  1.2: "yes"
+answer: no         # 1.1: false  |  1.2: "no"
+
+# 跨解析器统一保留为字符串，请用引号包裹
+enabled: "yes"
+answer: "no"</code></pre>
+        <p>
+          本工具基于 YAML 1.2，<code>yes</code> / <code>no</code> 会保留为字符串。但若你的 YAML 文件
+          会被 Python（PyYAML）、Ruby、C（libyaml）等 YAML 1.1 解析器读取，<strong>建议用引号包裹</strong>
+          避免跨解析器行为不一致。本工具在检测到这类裸字符串时会给出<strong>类型推断陷阱提示</strong>，
+          提醒用户注意跨解析器兼容性。
+        </p>
+      </details>
+      <details>
+        <summary>YAML 里的日期（如 2024-01-15）会被解析成 Date 对象吗？</summary>
+        <p>
+          <strong>会</strong>。本工具基于 js-yaml v4，默认 schema 包含 timestamp 类型，
+          会把 <code>YYYY-MM-DD</code> 格式的值解析为 JavaScript Date 对象。
+          <code>JSON.stringify</code> 会把 Date 转为 ISO 8601 字符串：
+          <code>2024-01-15</code> → <code>"2024-01-15T00:00:00.000Z"</code>（注意时区偏移）。
+          这会导致<strong>日期被转为带时区的 UTC 字符串</strong>，可能不是期望的结果。
+        </p>
+        <pre><code># 会被解析为 Date 对象，转 JSON 后变成 ISO 8601 字符串
+created: 2024-01-15
+# → "2024-01-15T00:00:00.000Z"
+
+# 保留为字符串，用引号包裹
+created: "2024-01-15"</code></pre>
+        <p>
+          如果需要保留原始日期字符串，<strong>请用引号包裹</strong>。本工具在检测到日期格式的
+          裸字符串时会给出提示。
+        </p>
+      </details>
+      <details>
+        <summary>YAML 的多文档（--- 分隔符）是什么？转 JSON 后会变成什么？</summary>
+        <p>
+          YAML 支持<strong>在一个文件中存放多个独立文档</strong>，用 <code>---</code>（三个连字符）作为分隔符。
+          这是 YAML 独有的特性，JSON 不支持。常见用途：Kubernetes 多资源清单、Jekyll 多文章文件、
+          CI/CD 多阶段配置。例如：
+        </p>
+        <pre><code>---
+name: doc1
+value: 1
+---
+name: doc2
+value: 2</code></pre>
+        <p>
+          本工具在检测到 <code>---</code> 分隔符时会自动切换为<strong>多文档模式</strong>，
+          把每个文档解析后放入数组：转 JSON 后得到
+          <code>[&#123; "name": "doc1", "value": 1 &#125;, &#123; "name": "doc2", "value": 2 &#125;]</code>。
+          输出区会显示「多文档 · N 个」标记。<strong>反向转换（JSON → YAML）不支持多文档</strong>，
+          因为 JSON 本身是单文档格式。
+        </p>
+      </details>
+      <details>
+        <summary>YAML 的锚点（&）和别名（*）是什么？转 JSON 后会怎样？</summary>
+        <p>
+          锚点和别名是 YAML 的<strong>引用复用机制</strong>，避免重复定义相同内容：
+        </p>
+        <ul>
+          <li><strong>锚点 <code>&amp;id</code></strong>：给一个值起名字，后续可引用</li>
+          <li><strong>别名 <code>*id</code></strong>：引用之前定义的锚点</li>
+          <li><strong>合并键 <code>&lt;&lt;</code></strong>：把一个映射合并到当前映射（类似继承）</li>
+        </ul>
+        <pre><code>defaults: &amp;defaults
+  timeout: 30
+  retries: 3
+service_a:
+  &lt;&lt;: *defaults
+  name: a
+service_b:
+  &lt;&lt;: *defaults
+  name: b</code></pre>
+        <p>
+          转 JSON 后，<strong>锚点和别名会被展开为完整结构</strong>（每个别名替换为锚点指向的内容），
+          合并键会把父映射的字段合并进来。JSON 本身不支持引用复用，所以转换后会有<strong>数据重复</strong>，
+          但语义是等价的。本工具的 JSON → YAML 方向默认使用 <code>noRefs: true</code>，
+          不生成锚点 / 别名，确保输出 YAML 在所有工具中都能正确解析。
+        </p>
+      </details>
+      <details>
+        <summary>JSON 转 YAML 时字符串的引号规则是什么？什么时候会加引号？</summary>
+        <p>
+          本工具的 JSON → YAML 转换采用<strong>仅在必要时加引号</strong>的策略（<code>forceQuotes: false</code>），
+          大多数字符串不加引号以提高可读性。但以下情况必须加引号，否则会被 YAML 解析器误判：
+        </p>
+        <ul>
+          <li><strong>看起来像数字的字符串</strong>：<code>"123"</code> → <code>"123"</code>（不加引号会被解析为数字）</li>
+          <li><strong>看起来像布尔的字符串</strong>：<code>"true"</code> → <code>"true"</code>（不加引号会被解析为布尔）</li>
+          <li><strong>看起来像 null 的字符串</strong>：<code>"null"</code> → <code>"null"</code></li>
+          <li><strong>含特殊字符</strong>：<code>"a: b"</code> → <code>"a: b"</code>（含冒号空格）</li>
+          <li><strong>以特殊字符开头</strong>：<code>"- item"</code> → <code>"- item"</code>（以 <code>-</code> 开头）</li>
+          <li><strong>空字符串</strong>：<code>""</code> → <code>''</code></li>
+        </ul>
+        <p>
+          引号风格默认为双引号（<code>"</code>），与 JSON 保持一致。若字符串内含双引号，
+          会自动处理转义。这种「最小引号」策略既保证 YAML 可读性，又确保反向解析时类型不丢失。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 YAML 解析报错「mapping values are not allowed here」？</summary>
+        <p>
+          这是 YAML 最常见的错误之一，通常是因为<strong>同一行出现了多个冒号</strong>，或<strong>冒号后没有空格</strong>。
+          YAML 规定键值对的冒号后必须有一个空格（除非值在下一行）。常见错误：
+        </p>
+        <pre><code># 错误：冒号后没有空格
+name:张三
+
+# 错误：同一行多个冒号（value 中的冒号未加引号）
+url: https://example.com:8080
+
+# 正确
+name: 张三
+url: "https://example.com:8080"</code></pre>
+        <p>
+          本工具在解析失败时会给出<strong>精确的错误行号和列号</strong>，方便定位。
+          如果 URL 或值中含冒号，建议用引号包裹避免歧义。
+        </p>
+      </details>
+      <details>
+        <summary>本工具支持 YAML 的所有特性吗？有什么限制？</summary>
+        <p>
+          本工具基于 <a href="https://github.com/nodeca/js-yaml">js-yaml</a> v4 库，
+          默认使用 <strong>YAML 1.2 core schema</strong>（与 PyYAML 等 YAML 1.1 解析器在布尔 / 日期处理上有差异），
+          支持的常用特性：
+        </p>
+        <ul>
+          <li><strong>支持</strong>：注释、多文档、锚点 / 别名、合并键、流样式（<code>[1, 2]</code> / <code>&#123;a: 1&#125;</code>）、
+            块样式、多行字符串（<code>|</code> 字面量 / <code>&gt;</code> 折叠）、标签（<code>!!str</code>）</li>
+          <li><strong>YAML 1.2 与 1.1 差异</strong>：<code>yes</code> / <code>no</code> / <code>on</code> / <code>off</code>
+            在 1.2 中保留为字符串（本工具行为），在 1.1 中会被转为布尔；<code>YYYY-MM-DD</code> 在本工具中会被解析为 Date 对象
+            （js-yaml v4 默认 schema 含 timestamp 类型）。本工具检测到这类裸字符串会给出提示</li>
+          <li><strong>不支持</strong>：自定义 schema、复杂数据类型转换</li>
+        </ul>
+        <p>
+          对于绝大多数配置文件（Kubernetes、Docker Compose、CI/CD、OpenAPI、GitHub Actions），
+          本工具都能正确解析。如果遇到特殊语法导致解析失败，请检查 YAML 缩进与语法。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* YAML 工具专属样式：复用 jsontool__ 通用布局，新增 yamltool__ 自定义样式 */
+  .yamltool__doc-count {
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(43, 108, 255, 0.12);
+    color: var(--color-primary);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+
+  /* 解析错误提示区 */
+  .yamltool__error {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    border-left: 4px solid #dc2626;
+    border-radius: var(--radius-md);
+    background: #fef2f2;
+    color: #7f1d1d;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .yamltool__error-loc {
+    font-size: 13px;
+    color: #b91c1c;
+    font-weight: 500;
+  }
+
+  .yamltool__error-msg {
+    flex: 1;
+    min-width: 200px;
+    color: #7f1d1d;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  /* YAML 类型推断陷阱提示区 */
+  .yamltool__warnings {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(245, 166, 35, 0.4);
+    border-left: 4px solid #f5a623;
+    border-radius: var(--radius-md);
+    background: #fff7ed;
+    color: #4a3508;
+  }
+
+  .yamltool__warnings-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .yamltool__warnings-hint {
+    font-size: 12.5px;
+    color: #8a6420;
+  }
+
+  .yamltool__warnings-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .yamltool__warning-item {
+    display: grid;
+    grid-template-columns: minmax(120px, auto) minmax(100px, auto) 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-top: 1px dashed rgba(245, 166, 35, 0.3);
+    font-size: 13px;
+  }
+
+  .yamltool__warning-item:first-child {
+    border-top: none;
+  }
+
+  .yamltool__warning-loc {
+    font-weight: 600;
+    color: #6b4a0e;
+    white-space: nowrap;
+  }
+
+  .yamltool__warning-raw {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    background: rgba(245, 166, 35, 0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: #4a3508;
+    word-break: break-all;
+  }
+
+  .yamltool__warning-reason {
+    color: #6b4a0e;
+    line-height: 1.5;
+  }
+
+  .yamltool__warning-more {
+    color: #8a6420;
+    font-style: italic;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .yamltool__doc-count {
+      background: rgba(91, 140, 255, 0.22);
+      color: #a8c2ff;
+    }
+
+    .yamltool__error {
+      background: #2a0f0f;
+      border-color: rgba(248, 113, 113, 0.4);
+      color: #fca5a5;
+    }
+
+    .yamltool__error-loc {
+      color: #f87171;
+    }
+
+    .yamltool__error-msg {
+      color: #fca5a5;
+    }
+
+    .yamltool__warnings {
+      background: #2a1f0a;
+      border-color: rgba(251, 191, 36, 0.4);
+      border-left-color: #fbbf24;
+      color: #fcd34d;
+    }
+
+    .yamltool__warnings-hint {
+      color: #fbbf24;
+    }
+
+    .yamltool__warning-item {
+      border-top-color: rgba(251, 191, 36, 0.2);
+    }
+
+    .yamltool__warning-loc {
+      color: #fde68a;
+    }
+
+    .yamltool__warning-raw {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fcd34d;
+    }
+
+    .yamltool__warning-reason {
+      color: #fde68a;
+    }
+
+    .yamltool__warning-more {
+      color: #fbbf24;
+    }
+  }
+
+  /* 移动端响应式：警告项改为单列堆叠 */
+  @media (max-width: 768px) {
+    .yamltool__warning-item {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .yamltool__error {
+      font-size: 13px;
+    }
+  }
+</style>

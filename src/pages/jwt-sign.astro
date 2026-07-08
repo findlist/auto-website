@@ -1,0 +1,941 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JwtSignTool from '../components/JwtSignTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JWT 签名生成器 - 在线签发 HS256/RS256/ES256 JSON Web Token',
+  description:
+    '免费的在线 JWT 签名生成工具：支持 HS256/HS384/HS512（HMAC 对称密钥）、RS256/RS384/RS512（RSA 非对称密钥）、ES256/ES384/ES512（ECDSA 椭圆曲线非对称密钥）、none（无签名，仅调试）共 10 种算法。在线生成 RSA 密钥对（2048/3072/4096 位）与 EC 密钥对（P-256/P-384/P-521 曲线），均输出 PEM 与 JWK 双格式；实时校验 Header/Payload JSON 合法性，HMAC 密钥长度不足时警告，签名结果三段拆分展示（Header/Payload/Signature base64url + 美化 JSON），可复制完整 JWT 或单段。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，所有密钥与签名计算在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JWT 签名生成器',
+    url: 'https://toolbox.example.com/jwt-sign',
+    description: '在线 JWT 签名生成工具，支持 HS256/HS384/HS512、RS256/RS384/RS512、ES256/ES384/ES512、none 共 10 种算法，在线生成 RSA 与 EC 密钥对，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JWT 签名生成器</h1>
+      <p>
+        在线签发 JSON Web Token：支持 <strong>HS256/HS384/HS512</strong>（HMAC 对称密钥）、
+        <strong>RS256/RS384/RS512</strong>（RSA 非对称密钥）、<strong>ES256/ES384/ES512</strong>（ECDSA 椭圆曲线非对称密钥）、
+        <code>none</code>（无签名，仅调试）共 10 种算法。
+        可在线生成 RSA 密钥对（2048/3072/4096 位）与 EC 密钥对（P-256/P-384/P-521 曲线），均输出 PEM 与 JWK 双格式；
+        实时校验 Header/Payload JSON，HMAC 密钥长度不足时警告，签名结果<strong>三段拆分展示</strong>（Header/Payload/Signature base64url + 美化 JSON）。
+        基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥不离开浏览器。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JwtSignTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>JWT 签名与 JWT 解码有什么区别？</summary>
+        <p>
+          <strong>签名</strong>是用密钥对 Header + Payload 计算摘要，生成完整的 JWT 字符串（三段式 <code>header.payload.signature</code>），
+          用于服务端向客户端颁发令牌；<strong>解码</strong>是反向操作，把已有的 JWT 字符串拆开还原 Header/Payload 内容，
+          但不验证签名真实性。本工具负责签发，配套的 <a href="/jwt">JWT 解码工具</a> 负责解析。
+          典型流程：① 服务端用本工具（或后端库）签发 JWT；② 客户端携带 JWT 访问 API；③ 服务端用密钥重新计算签名并比对（验签）；
+          ④ 调试时用解码工具查看令牌内容。注意：解码工具无法验签，因为它不持有密钥。
+        </p>
+      </details>
+      <details>
+        <summary>HS256 和 RS256 怎么选？对称与非对称有何差异？</summary>
+        <p>
+          两者都是 JWT 标准算法，差异在密钥模型与适用场景：
+          <br />- <strong>HS256</strong>（HMAC + SHA-256）：<strong>对称密钥</strong>，签发与验签用同一密钥。
+          性能高、实现简单、token 较短，适合<strong>单方服务</strong>（如内部系统、单体应用）。
+          缺点是密钥需在签发方与验签方之间安全共享，泄露后可任意伪造。
+          <br />- <strong>RS256</strong>（RSASSA-PKCS1-v1_5 + SHA-256）：<strong>非对称密钥</strong>，
+          私钥签发、公钥验签。适合<strong>多方协作</strong>（如 OAuth2、SAML、微服务架构），
+          公钥可公开分发（如 <code>/jwks.json</code> 端点），验签方无需私钥。缺点是 RSA 密钥较长、token 较大、计算稍慢。
+          <br />选择建议：内部系统用 HS256；对外 API、第三方接入用 RS256；对密钥长度与 token 体积敏感的移动/物联网场景用 ES256（详见下方 ECDSA 专条）。
+        </p>
+      </details>
+      <details>
+        <summary>HMAC 密钥长度有什么要求？为什么短密钥不安全？</summary>
+        <p>
+          RFC 7518 建议 HMAC 密钥长度<strong>至少等于哈希输出长度</strong>：HS256 ≥ 256 位（32 字节）、
+          HS384 ≥ 384 位（48 字节）、HS512 ≥ 512 位（64 字节）。本工具在密钥长度不足时显示橙色警告，
+          但仍允许签发（由用户决定）。短密钥的风险：<strong>暴力破解</strong>——攻击者截获 JWT 后可离线穷举密钥，
+          若密钥是 <code>"secret"</code>、<code>"123456"</code> 等弱密钥，几分钟即可破解并伪造任意令牌。
+          推荐用 <a href="/password">密码生成器</a> 生成至少 32 字节的随机字符串作为 HMAC 密钥，
+          或用 <a href="/uuid">UUID v4</a> 作为密钥种子。本工具支持 UTF-8 字符串与 base64url 编码两种密钥输入格式，
+          后者可直接输入 32 字节随机二进制（避免字符集限制）。
+        </p>
+      </details>
+      <details>
+        <summary>RSA 密钥位数 2048 / 3072 / 4096 怎么选？</summary>
+        <p>
+          NIST SP 800-57 给出的 RSA 安全强度对应关系：2030 年前 2048 位足够，2030 年后推荐 3072 位，
+          4096 位提供更高安全裕度但性能稍慢。实际选择需平衡<strong>安全性、性能与 token 长度</strong>：
+          <br />- <strong>2048 位</strong>：签名约 256 字节，base64url 后约 344 字符，目前主流选择，性能最佳
+          <br />- <strong>3072 位</strong>：签名约 384 字节，base64url 后约 512 字符，NIST 推荐的 2030 年后安全等级
+          <br />- <strong>4096 位</strong>：签名约 512 字节，base64url 后约 684 字符，安全裕度最高但 token 显著变大
+          <br />本工具可在浏览器内本地生成 RSA 密钥对（基于 Web Crypto API 的 CSPRNG），输出 PEM 与 JWK 双格式。
+          生成的密钥<strong>仅本地保存</strong>，关闭页面即丢失，请及时复制保存。生产环境建议用 OpenSSL 等专业工具离线生成。
+        </p>
+      </details>
+      <details>
+        <summary>ECDSA 与椭圆曲线密码学是什么？为什么 ES 系列签名比 RS 系列短？</summary>
+        <p>
+          <strong>ECDSA</strong>（Elliptic Curve Digital Signature Algorithm，椭圆曲线数字签名算法）是基于
+          <strong>椭圆曲线离散对数问题（ECDLP）</strong>的非对称签名算法，由 NIST 在 FIPS 186-4 标准化。
+          与 RSA 基于大整数分解不同，椭圆曲线密码学（ECC）在<strong>同等安全强度下密钥与签名都显著更短</strong>：
+          <br />- <strong>ES256（P-256 + SHA-256）</strong>：私钥约 32 字节，签名 64 字节（base64url 后约 86 字符），安全强度约等同于 RSA 3072 位
+          <br />- <strong>RS256（2048 位）</strong>：私钥约 1190 字节，签名 256 字节（base64url 后约 344 字符）
+          <br />即 ES256 的<strong>签名长度仅为 RS256 的 1/4</strong>，私钥长度约为 1/37，在移动端、IoT 设备、HTTP Header 等带宽敏感场景优势明显。
+          <br />本工具支持 ES256（P-256）、ES384（P-384）、ES512（P-521）三种曲线，签名格式遵循 RFC 7518：
+          采用 ECDSA 原始拼接格式 <code>r || s</code>（r 与 s 各为曲线点位整数的固定长度大端字节），不含 ASN.1 DER 包装。
+        </p>
+      </details>
+      <details>
+        <summary>P-256 / P-384 / P-521 椭圆曲线怎么选？</summary>
+        <p>
+          NIST 推荐的三条曲线对应 JWT 中的 ES256/ES384/ES512 算法，安全强度与适用场景如下：
+          <br />- <strong>P-256（secp256r1）</strong>：256 位曲线，安全强度约 128 位，等同 RSA 3072 位。
+          <strong>JWT 生态最广泛</strong>，Apple Sign In、Google OAuth2、AWS Cognito 默认采用。性能最佳，token 最短。
+          <br />- <strong>P-384（secp384r1）</strong>：384 位曲线，安全强度约 192 位，等同 RSA 7680 位。
+          适用于对长期安全等级要求更高的场景（如金融级、医疗级身份令牌）。
+          <br />- <strong>P-521（secp521r1）</strong>：521 位曲线，安全强度约 256 位，等同 RSA 15360 位。
+          NIST 曲线中安全强度最高，但部分老旧库（如旧版 Java）支持较差，选用前需确认验签方环境。
+          <br />选择建议：通用业务首选 <strong>P-256（ES256）</strong>；高合规要求选 P-384；P-521 仅在确有极高安全等级需求且验签方支持时使用。
+          本工具切换 ES 算法时会自动同步对应曲线，避免曲线与算法不匹配。
+        </p>
+      </details>
+      <details>
+        <summary>ES256 与 RS256 如何选择？性能与安全如何对比？</summary>
+        <p>
+          两者都是非对称签名，但底层算法差异显著。同等安全强度下的对比（数据来源：NIST SP 800-57）：
+          <br />- <strong>密钥长度</strong>：ES256 私钥 32 字节 vs RS256 私钥约 1190 字节（约 1/37）
+          <br />- <strong>签名长度</strong>：ES256 固定 64 字节 vs RS256 约 256 字节（约 1/4），base64url 后约 86 vs 344 字符
+          <br />- <strong>签发性能</strong>：ECDSA 签发比 RSA 快 5–10 倍（P-256 比 RSA-2048）
+          <br />- <strong>验签性能</strong>：RSA 验签略快于 ECDSA（RSA 验签只需公开指数运算）
+          <br />- <strong>安全强度</strong>：P-256 ≈ RSA-3072，比 RSA-2048 还高一个等级
+          <br />选择建议：① 移动端、IoT、HTTP Header 受限场景用 <strong>ES256</strong>；
+          ② 验签高并发、客户端广泛需兼容老系统的场景用 <strong>RS256</strong>；
+          ③ 两者均可时优先 ES256，token 体积小、签发快、安全等级更高。
+          <br />注意：ECDSA 签名<strong>非确定性</strong>（每次签发结果不同，因含随机数 k），同一密钥对同一 Payload 会产生不同签名，这是正常现象而非 Bug。
+        </p>
+      </details>
+      <details>
+        <summary>如何生成 EC 密钥对？ECDSA 签名格式是怎样的？</summary>
+        <p>
+          本工具内置 EC 密钥对生成器：选择算法为 ES256/ES384/ES512 → 选择曲线（P-256/P-384/P-521，默认随算法自动同步）→
+          点击「生成新密钥对」按钮。生成过程基于浏览器原生 <strong>Web Crypto API</strong> 的
+          <code>crypto.subtle.generateKey&#40;&#123; name: 'ECDSA', namedCurve: 'P-256' &#125;&#41;</code>，
+          使用操作系统 CSPRNG，质量与 OpenSSL 相当。输出格式：
+          <br />- <strong>PEM 格式</strong>：私钥为 PKCS#8（<code>-----BEGIN PRIVATE KEY-----</code>），
+          公钥为 SPKI（<code>-----BEGIN PUBLIC KEY-----</code>），兼容 OpenSSL、Java、Node.js 等
+          <br />- <strong>JWK 格式</strong>：含 <code>kty:"EC"</code>、<code>crv</code>、<code>x</code>、<code>y</code>、<code>d</code>（私钥）字段，可用于 JWKS 端点
+          <br />签名格式：Web Crypto 的 ECDSA <code>sign&#40;&#41;</code> 默认输出 <strong>raw 拼接格式</strong>
+          （r 与 s 各为固定长度大端字节，P-256 时各 32 字节共 64 字节），<strong>直接符合 RFC 7518 ES 系列要求</strong>，
+          无需 ASN.1 DER 解包转换（这是 Web Crypto 相对其他库的便利之处）。
+          <strong>安全提示</strong>：EC 私钥请妥善保管，泄露后可签发任意令牌；<code>d</code> 字段是私钥标量，切勿公开。
+          想深入了解椭圆曲线原理与 ES vs RS 性能对比？参阅
+          <a href="/blog/ecdsa-elliptic-curve-jwt-signing-guide">椭圆曲线密码学与 ECDSA 签名实践</a>。
+        </p>
+      </details>
+      <details>
+        <summary>none 算法是什么？为什么严禁生产使用？</summary>
+        <p>
+          <code>none</code> 算法表示<strong>无签名</strong>，JWT 第三段（Signature）为空字符串，
+          格式为 <code>header.payload.</code>（末尾有一个点）。RFC 7519 允许此算法仅用于调试与教学演示。
+          风险在于：任何人都可伪造 Payload 内容（如把 <code>role: "user"</code> 改为 <code>role: "admin"</code>），
+          接收方无法验证令牌真实性。<strong>常见攻击场景</strong>：服务端未严格校验 alg 字段，攻击者把 Header 中的
+          <code>&#123;"alg":"HS256"&#125;</code> 改为 <code>&#123;"alg":"none"&#125;</code> 并清空签名段，
+          若服务端信任客户端传入的 alg 就会跳过验签。<strong>防御</strong>：服务端必须硬编码允许的算法白名单
+          （如仅接受 HS256/RS256），不读取 token 自身声明的 alg。本工具保留 none 算法仅用于演示此攻击，
+          签发结果会显示红色安全警告横幅。详见 <a href="/blog/jwt-security-best-practices">JWT 安全实践</a>。
+        </p>
+      </details>
+      <details>
+        <summary>如何生成 RSA 密钥对？生成的密钥安全吗？</summary>
+        <p>
+          本工具内置 RSA 密钥对生成器：选择算法为 RS256/RS384/RS512 → 选择密钥位数（2048/3072/4096）→
+          点击「生成新密钥对」按钮。生成过程基于浏览器原生 <strong>Web Crypto API</strong> 的
+          <code>crypto.subtle.generateKey</code>，使用操作系统提供的<strong>密码学安全随机数生成器（CSPRNG）</strong>，
+          质量与 OpenSSL 等专业工具相当。生成结果同时输出 <strong>PEM 格式</strong>（用于 OpenSSL、Nginx、传统后端）
+          与 <strong>JWK 格式</strong>（用于 JWKS 端点、现代前端库）。<strong>安全提示</strong>：
+          ① 密钥仅在浏览器内存中生成与展示，<strong>不会上传到任何服务器</strong>；
+          ② 关闭页面后密钥即丢失，请及时复制保存；③ 生产环境建议用离线工具（如 OpenSSL）生成并妥善保管；
+          ④ 私钥切勿泄露，公钥可公开分发。
+        </p>
+      </details>
+      <details>
+        <summary>JWT、JWS、JWE 三者是什么关系？</summary>
+        <p>
+          三者都是 JOSE（JavaScript Object Signing and Encryption）工作组的标准，层层递进：
+          <br />- <strong>JWS</strong>（JSON Web Signature，RFC 7515）：定义签名格式，即 <code>header.payload.signature</code> 三段式
+          <br />- <strong>JWT</strong>（JSON Web Token，RFC 7519）：基于 JWS 的令牌规范，约束 Header 必含 <code>alg</code>、
+          Payload 为声明集合（iss/sub/aud/exp 等标准声明 + 自定义声明）
+          <br />- <strong>JWE</strong>（JSON Web Encryption，RFC 7516）：定义加密格式，五段式
+          <code>protected.encrypted_key.iv.ciphertext.tag</code>，提供机密性（内容加密）而非仅完整性
+          <br />关系：JWT 默认用 JWS 签名（不加密，内容可读）；若需机密性，可嵌套为 JWT-in-JWE（先签后加密）。
+          本工具签发的是<strong>未加密的 JWT</strong>（JWS 格式），任何人都可解码查看 Payload 内容，
+          仅靠签名保证防篡改。如需加密，请用 <a href="/jwe">JWE 解码工具</a> 了解 JWE 格式。
+        </p>
+      </details>
+      <details>
+        <summary>base64url 和 base64 有什么区别？为什么 JWT 用 base64url？</summary>
+        <p>
+          <strong>base64url</strong> 是 base64 的 URL 安全变体，差异在两个字符与 padding：
+          <br />- base64 用 <code>+</code> 和 <code>/</code>，在 URL 中 <code>+</code> 会被解析为空格、<code>/</code> 是路径分隔符，破坏 URL
+          <br />- base64url 用 <code>-</code> 替换 <code>+</code>，用 <code>_</code> 替换 <code>/</code>，并通常省略末尾的 <code>=</code> padding
+          <br />JWT 经常放在 URL 参数、HTTP Header、Cookie 中传输，必须 URL 安全，故 RFC 7515 规定使用 base64url。
+          本工具签发与展示的 JWT 各段均为 base64url 编码。若你看到 JWT 含 <code>+</code> 或 <code>/</code>，
+          说明签发方实现不规范，可能导致 URL 解析错误。
+        </p>
+      </details>
+      <details>
+        <summary>签名失败常见原因有哪些？</summary>
+        <p>
+          常见失败场景与排查建议：
+          <br />- <strong>Header JSON 不合法</strong>：如缺少 <code>alg</code> 字段、JSON 语法错误（多余逗号、引号未闭合）。
+          本工具实时校验并显示具体错误。
+          <br />- <strong>Payload JSON 不合法</strong>：同上，Payload 必须是 JSON 对象（不能是数组或基本类型）。
+          <br />- <strong>HMAC 密钥为空</strong>：HS 系列算法必须提供密钥。
+          <br />- <strong>RSA 私钥格式错误</strong>：PEM 缺少 <code>-----BEGIN ... PRIVATE KEY-----</code> 标记，
+          或 JWK 缺少 <code>kty</code>/<code>n</code>/<code>d</code> 字段。本工具支持 PKCS#1 与 PKCS#8 两种 PEM 格式。
+          <br />- <strong>EC 私钥格式错误</strong>：PEM 缺少 <code>-----BEGIN PRIVATE KEY-----</code> 标记，
+          或 JWK 缺少 <code>kty:"EC"</code>、<code>crv</code>、<code>x</code>、<code>y</code>、<code>d</code> 字段，
+          或 <code>crv</code> 与算法不匹配（如 ES256 必须用 P-256）。
+          <br />- <strong>算法与密钥不匹配</strong>：如选 RS256 但输入了 HMAC 密钥，或选 HS256 但输入了 RSA 私钥。
+          本工具根据算法类别动态切换密钥输入区，避免此问题。
+          <br />- <strong>Web Crypto API 不可用</strong>：非安全上下文（HTTP 非 localhost）下 <code>crypto.subtle</code> 为 undefined。
+          请在 HTTPS 或 localhost 环境使用本工具。
+        </p>
+      </details>
+      <details>
+        <summary>签发的 JWT 如何验证？服务端怎么验签？</summary>
+        <p>
+          本工具仅负责签发，不负责验签。服务端验签流程：① 拆分 JWT 为 Header、Payload、Signature 三段；
+          ② base64url 解码 Header，读取 <code>alg</code>；③ 用对应算法与密钥对
+          <code>base64url(Header) + "." + base64url(Payload)</code> 重新计算签名；
+          ④ 用<strong>常量时间比较</strong>（防止时序攻击）比对计算结果与 token 的 Signature 段；
+          ⑤ 校验 Payload 的 <code>exp</code>（未过期）、<code>nbf</code>（已生效）、<code>iss</code>、<code>aud</code> 等声明。
+          <strong>关键安全点</strong>：服务端必须硬编码允许的算法白名单，<strong>不读取 token 自身声明的 alg</strong>，
+          否则会被 alg=none 攻击绕过。常见后端库：Node.js 的 <code>jsonwebtoken</code>、Java 的 <code>jose4j</code>、
+          Python 的 <code>PyJWT</code>。调试时可用 <a href="/jwt">JWT 解码工具</a> 查看 token 内容。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？密钥安全吗？</summary>
+        <p>
+          <strong>不会上传。</strong>本工具完全在浏览器内运行，所有 Header/Payload 解析、密钥处理、签名计算、
+          RSA 与 EC 密钥对生成均由 JavaScript 在你本地执行，输入的密钥与生成的 JWT 不会发送到任何服务器。
+          Web Crypto API 的所有操作（<code>importKey</code>、<code>sign</code>、<code>generateKey</code>）
+          均在浏览器沙箱内完成，密钥材料不离开设备内存。这对于调试真实业务的密钥尤为重要——
+          生产密钥泄露会导致任意 JWT 被伪造。<strong>额外提示</strong>：① 生成 RSA 或 EC 密钥对后请及时复制保存，
+          关闭页面即丢失；② 不要在公共电脑上输入生产密钥；③ 调试完成后建议清除浏览器历史记录。
+        </p>
+      </details>
+      <details>
+        <summary>与 JWT 解码工具如何联动？</summary>
+        <p>
+          本工具与 <a href="/jwt">JWT 解码工具</a> 形成「签发 + 解析」闭环：
+          <br />① 在本工具签发 JWT → 复制完整 token
+          <br />② 粘贴到 JWT 解码工具 → 查看 Header/Payload 解码结果、过期状态、算法说明
+          <br />③ 验证签发结果是否符合预期（声明字段、过期时间、算法安全等级）
+          <br />④ 若需加密保护内容，可继续用 <a href="/jwe">JWE 解码工具</a> 了解 JWE 加密令牌格式
+          <br />两者共享 JWT 标准声明字段说明（iss/sub/aud/exp/iat/nbf/jti）与算法说明表（HS256/RS256/ES256/none 等），
+          体验一致。常见联调场景：服务端集成 JWT 认证时，先用本工具签发测试 token，再用解码工具验证客户端收到的 token 是否被中间件改写。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JWT 签名工具专属样式：复用 .jsontool/.jwttool 基础样式，仅补充差异部分 */
+
+  /* 算法选择按钮组 */
+  .jwts__alg-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .jwts__alg-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .jwts__alg-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .jwts__alg-btn--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* none 算法按钮：红色边框提示风险 */
+  .jwts__alg-btn--insecure {
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #b91c1c;
+  }
+
+  .jwts__alg-btn--insecure:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .jwts__alg-btn--insecure.jwts__alg-btn--active {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: #fff;
+  }
+
+  /* 算法说明面板 */
+  .jwts__alg-desc {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(43, 108, 255, 0.06);
+    border: 1px solid rgba(43, 108, 255, 0.2);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .jwts__alg-desc code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .jwts__alg-desc--insecure {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  .jwts__alg-desc--insecure code {
+    color: var(--color-error);
+  }
+
+  /* 警告文字 */
+  .jwts__warn-text {
+    color: #d97706;
+    font-weight: 500;
+  }
+
+  .jwts__alg-desc--insecure .jwts__warn-text {
+    color: var(--color-error);
+  }
+
+  /* 通用区块 */
+  .jwts__section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jwts__section:last-of-type {
+    border-bottom: none;
+  }
+
+  .jwts__section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .jwts__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .jwts__label code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+  }
+
+  /* JSON 输入框 */
+  .jwts__json-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jwts__json-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .jwts__json-input[aria-invalid="true"] {
+    border-color: var(--color-error);
+  }
+
+  /* 标准声明字段速查 */
+  .jwts__claims-ref {
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+  }
+
+  .jwts__claims-ref summary {
+    cursor: pointer;
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .jwts__claims-ref ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+  }
+
+  .jwts__claims-ref li {
+    padding: 2px 0;
+  }
+
+  .jwts__claims-ref code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* 密钥输入区 */
+  .jwts__key-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .jwts__key-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .jwts__key-format {
+    display: flex;
+    gap: 12px;
+    font-size: 12.5px;
+  }
+
+  .jwts__radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--color-text-soft);
+  }
+
+  .jwts__radio input {
+    cursor: pointer;
+  }
+
+  .jwts__key-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jwts__key-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .jwts__key-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .jwts__key-hint code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* RSA 密钥输入 */
+  .jwts__rsa-gen {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .jwts__select {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  .jwts__rsa-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .jwts__rsa-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  /* 生成的密钥对面板 */
+  .jwts__keypair {
+    margin-top: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft);
+  }
+
+  .jwts__keypair-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .jwts__keypair-title {
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+  }
+
+  .jwts__keypair-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .jwts__tab {
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    cursor: pointer;
+  }
+
+  .jwts__tab--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .jwts__keypair-body {
+    padding: 8px 12px;
+  }
+
+  .jwts__keypair-body details {
+    margin: 4px 0;
+  }
+
+  .jwts__keypair-body summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--color-primary);
+    padding: 4px 0;
+  }
+
+  .jwts__key-pre {
+    margin: 6px 0;
+    padding: 8px 10px;
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 11.5px;
+    line-height: 1.5;
+    overflow: auto;
+    max-height: 240px;
+    white-space: pre;
+    word-break: break-all;
+  }
+
+  /* none 算法提示 */
+  .jwts__key-area--none .jwts__none-hint {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--color-text);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+
+  .jwts__key-area--none code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-error);
+    font-weight: 600;
+  }
+
+  /* 操作按钮区 */
+  .jwts__actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border);
+    flex-wrap: wrap;
+  }
+
+  /* 错误提示 */
+  .jwts__error {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--color-error);
+    font-size: 13px;
+  }
+
+  .jwts__error-text {
+    color: var(--color-error);
+    font-size: 12px;
+  }
+
+  /* none 算法安全警告横幅 */
+  .jwts__alert {
+    margin: 12px 16px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-left: 4px solid var(--color-error);
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .jwts__alert strong {
+    color: var(--color-error);
+  }
+
+  .jwts__alert code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    background: rgba(220, 38, 38, 0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--color-error);
+    font-weight: 600;
+  }
+
+  .jwts__alert-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  /* 签名结果区 */
+  .jwts__result {
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .jwts__result-row {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .jwts__result-row--token {
+    border-left: 3px solid var(--color-primary);
+  }
+
+  .jwts__result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .jwts__result-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .jwts__copy-btn {
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .jwts__copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .jwts__token-pre {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow: auto;
+    max-height: 200px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .jwts__token-info {
+    margin: 0;
+    padding: 6px 12px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+
+  .jwts__token-info code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* 三段拆分展示 */
+  .jwts__segments {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .jwts__seg {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
+  .jwts__seg--header {
+    border-left: 3px solid #dc2626;
+  }
+
+  .jwts__seg--payload {
+    border-left: 3px solid #7c3aed;
+  }
+
+  .jwts__seg--signature {
+    border-left: 3px solid #2563eb;
+  }
+
+  .jwts__seg-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    flex-wrap: wrap;
+  }
+
+  .jwts__seg-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .jwts__seg-tag--header {
+    background: #dc2626;
+  }
+
+  .jwts__seg-tag--payload {
+    background: #7c3aed;
+  }
+
+  .jwts__seg-tag--signature {
+    background: #2563eb;
+  }
+
+  .jwts__seg-json {
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow: auto;
+    max-height: 240px;
+    white-space: pre;
+  }
+
+  .jwts__seg-b64 {
+    margin: 0;
+    padding: 6px 12px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    color: var(--color-text-muted);
+    font-size: 11.5px;
+    word-break: break-all;
+  }
+
+  .jwts__seg-b64 code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text-soft);
+  }
+
+  .jwts__sig-value {
+    padding: 10px 12px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+    word-break: break-all;
+    line-height: 1.6;
+    max-height: 160px;
+    overflow: auto;
+  }
+
+  /* 后续操作提示 */
+  .jwts__next-hint {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(43, 108, 255, 0.06);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .jwts__next-hint a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  /* 状态提示 */
+  .jwts__notice {
+    margin: 12px 16px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .jwts__seg-tag--header {
+      background: #f87171;
+      color: #1f1414;
+    }
+    .jwts__seg-tag--payload {
+      background: #c084fc;
+      color: #1f1429;
+    }
+    .jwts__seg-tag--signature {
+      background: #60a5fa;
+      color: #0f1a2e;
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .jwts__key-head,
+    .jwts__section-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .jwts__key-format {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .jwts__alg-group {
+      gap: 6px;
+    }
+    .jwts__alg-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .jwts__actions {
+      flex-direction: column;
+    }
+    .jwts__actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .jwts__alg-group {
+      flex-direction: column;
+    }
+    .jwts__alg-btn {
+      width: 100%;
+      text-align: left;
+    }
+  }
+</style>

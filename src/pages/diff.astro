@@ -1,0 +1,513 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import DiffTool from '../components/DiffTool.tsx';
+
+const meta: SiteMeta = {
+  title: '文本对比工具 - 在线 Diff 差异比较（行级 + 字符级/词级高亮 / 分屏 + 统一视图）',
+  description:
+    '免费的在线文本对比工具：粘贴两段文本即可实时计算行级差异，支持分屏对比与统一 diff 两种视图，行内字符级与词级（Git --word-diff 风格）两种高亮模式精确标记被修改的字符段或单词，统计新增 / 删除 / 修改行数与相似度百分比。基于 LCS（最长公共子序列）算法，可选大小写敏感、忽略行首尾空白、忽略空行、行内高亮模式切换。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '文本对比工具',
+    url: 'https://toolbox.example.com/diff',
+    description: '在线文本对比工具：LCS 算法实时计算行级差异，行内字符级与词级（Git --word-diff）两种高亮模式，分屏与统一两种视图，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>文本对比工具</h1>
+      <p>
+        粘贴两段文本即可实时查看差异。基于 LCS（最长公共子序列）算法计算行级差异，
+        并对修改行做行内 LCS 高亮：可选字符级（精确到每个字符）或词级（Git --word-diff 风格，按单词/标点切分），
+        被删除段标红底、被新增段标绿底。
+        支持分屏对比与统一 diff 两种视图，配大小写敏感、忽略空白、忽略空行、行内高亮模式切换等比较选项。
+        所有数据在浏览器本地处理，适合对比配置文件、代码片段、Markdown 文档等。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <DiffTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>LCS 算法是什么？为什么用它做文本对比？</summary>
+        <p>
+          <strong>LCS（Longest Common Subsequence，最长公共子序列）</strong>是经典动态规划算法，
+          用于找出两个序列中最长的、保持相对顺序的公共子序列。在文本对比场景下，把每行视作一个元素，
+          LCS 能找出两段文本中所有相同的行，剩余的行即为新增或删除。
+        </p>
+        <p>
+          LCS 的优势是<strong>结果稳定</strong>：相同输入永远得到相同输出，且能最大化保留相同行，
+          使差异最小化。它的复杂度是 O(m×n)（m、n 为两段文本的行数），对几千行以内的文本足够快。
+          Git 的 diff 也是基于 LCS 的变种算法（Myers diff）。
+        </p>
+      </details>
+      <details>
+        <summary>分屏对比和统一 diff 有什么区别？</summary>
+        <p>
+          <strong>分屏对比</strong>：左右两栏并排显示，左侧原文、右侧修改后，删除的行在左侧用红色高亮，
+          新增的行在右侧用绿色高亮，相同行两侧都显示。适合人工 review，直观对比修改位置。
+        </p>
+        <p>
+          <strong>统一 diff（unified）</strong>：单栏显示，每行前加 <code>+</code> / <code>-</code> / 空格前缀，
+          类似 <code>git diff</code> 的输出格式。适合复制粘贴到 commit message、PR 描述、邮件等场景。
+          本工具的「复制 diff」按钮即复制统一 diff 格式。
+        </p>
+      </details>
+      <details>
+        <summary>为什么我的修改行被识别成「一删一增」而不是「修改」？字符级与词级高亮如何工作？</summary>
+        <p>
+          行级 diff 只能识别<strong>整行的删除与新增</strong>。如果一行中只改了几个字符，
+          LCS 仍会把它视为「删除旧行 + 新增新行」。要识别行内修改，需要对相邻的 delete+insert
+          块再做一次更细粒度的 LCS。
+        </p>
+        <p>
+          本工具提供<strong>三种行内高亮模式</strong>（工具栏「行内高亮」单选组切换）：
+        </p>
+        <ul>
+          <li><strong>字符级</strong>：按字符做 LCS，精确标记每个被修改的字符。粒度最细，但对版本号 <code>1.0.0 → 2.0.0</code> 这类修改可能过于细碎。</li>
+          <li><strong>词级</strong>：按单词 / 标点切分后做 LCS，类似 <code>git diff --word-diff</code>。版本号会被视为整体，<code>1.0.0 → 2.0.0</code> 只标记整体替换。</li>
+          <li><strong>无</strong>：仅行级 diff，不做行内高亮。对比超大文本时可提升性能。</li>
+        </ul>
+        <p>
+          「修改」统计数是<strong>相邻的 delete+insert 配对数</strong>。
+          词级切分使用 Unicode 感知正则（<code>{'\\p{L}'}</code> 字母 + <code>{'\\p{N}'}</code> 数字），
+          能正确处理中文、日文等非 ASCII 字符。
+        </p>
+      </details>
+      <details>
+        <summary>「相似度」百分比是怎么算的？</summary>
+        <p>
+          相似度公式：<code>相似度 = 相同行数 / (相同行数 + max(新增行数, 删除行数)) × 100%</code>。
+          分母用 max 而非 sum，是为了避免「修改一行」被双重计数（修改一行既算删除也算新增，
+          用 max 取较大值更合理）。
+        </p>
+        <p>
+          例如两段文本各 100 行，其中 80 行相同、10 行被修改（10 删 10 增），
+          相似度 = 80 / (80 + 10) = 88.9%。这个指标常用于代码重复度检测、文档相似度评估等场景。
+        </p>
+      </details>
+      <details>
+        <summary>「忽略行首尾空白」和「忽略空行」有什么用？</summary>
+        <p>
+          <strong>忽略行首尾空白</strong>：比较时去掉每行开头和结尾的空格 / 制表符。适用于对比
+          缩进不一致的代码（如 Tab vs 4 空格）、Markdown 列表项的缩进差异等。
+        </p>
+        <p>
+          <strong>忽略空行</strong>：比较时跳过完全空白的行。适用于对比两段格式不同但内容相同的文本，
+          例如一段代码被自动格式化工具插入了空行，启用此选项后差异会显著减少。
+        </p>
+        <p>
+          注意：这两个选项<strong>只影响比较时的相等判断</strong>，差异结果中仍显示原始行内容，
+          不会修改你的文本。
+        </p>
+      </details>
+      <details>
+        <summary>能对比 JSON / YAML / TOML 等结构化数据吗？</summary>
+        <p>
+          可以，但本工具做的是<strong>纯文本对比</strong>（按行 split 后比较）。
+          如果两段 JSON 的字段顺序不同，即使语义相同，本工具也会标记为大量差异。
+        </p>
+        <p>
+          对结构化数据，更准确的做法是先格式化（如 <a href="/json">JSON 工具</a> 的格式化功能、
+          <a href="/yaml">YAML 工具</a>、<a href="/toml">TOML 工具</a>），让字段顺序一致后再对比。
+          也可以用专门的语义化 diff 工具（如 <code>jd</code>、<code>json-diff</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>支持多大的文本？会卡吗？</summary>
+        <p>
+          LCS 算法的复杂度是 O(m×n)，对 1000 行 × 1000 行的文本约需 100 万次比较，
+          现代浏览器毫秒级完成。对 5000 行 × 5000 行约需 2500 万次比较，可能产生 100ms 级延迟，
+          仍可接受。
+        </p>
+        <p>
+          若超过 1 万行，建议先用 <code>diff</code> 命令行工具或专门的性能优化算法
+          （如 Myers diff 的 O((m+n)·D) 复杂度，D 为差异总数，差异少时极快）。
+          本工具面向日常对比需求，未做超大文本优化。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有文本对比在本地完成，不会上传到任何服务器，
+          也不会被记录。适合对比敏感的配置文件、密钥、合同条款等。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Diff 工具专属样式：复用 .jsontool 基础样式，仅补充差异高亮与双栏布局 */
+
+  /* 双栏输入区：左右等宽并排 */
+  .difftool__inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .difftool__input-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .difftool__input-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .difftool__textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px 12px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+    /* 等宽字体下保持制表符对齐 */
+    tab-size: 2;
+  }
+
+  .difftool__textarea:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  /* 统计栏 */
+  .difftool__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+
+  .difftool__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+  }
+
+  .difftool__stat--equal {
+    color: var(--color-text-muted);
+  }
+
+  .difftool__stat--insert {
+    color: #15803d;
+    font-weight: 600;
+  }
+
+  .difftool__stat--delete {
+    color: #b91c1c;
+    font-weight: 600;
+  }
+
+  .difftool__stat--modify {
+    color: #b45309;
+  }
+
+  .difftool__stat--similarity {
+    margin-left: auto;
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* 视图切换按钮组 */
+  .difftool__view-switch {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .difftool__view-btn {
+    padding: 4px 12px;
+    font-size: 13px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    cursor: pointer;
+    border-right: 1px solid var(--color-border);
+    transition: all 0.15s ease;
+  }
+
+  .difftool__view-btn:last-child {
+    border-right: none;
+  }
+
+  .difftool__view-btn:hover {
+    background: var(--color-bg-soft);
+  }
+
+  .difftool__view-btn--active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 比较选项 toggle */
+  .difftool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+  }
+
+  /* 空状态 */
+  .difftool__empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    background: var(--color-bg-soft);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* 结果区 */
+  .difftool__result {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .difftool__result--split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .difftool__result-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .difftool__result-col--left {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .difftool__result-label {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    background: var(--color-bg-soft);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .difftool__result-col--right .difftool__result-label {
+    border-left: none;
+  }
+
+  .difftool__pre {
+    margin: 0;
+    padding: 8px 0;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    background: var(--color-bg);
+    color: var(--color-text);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* diff 单行 */
+  .difftool__line {
+    display: flex;
+    align-items: baseline;
+    padding: 0 12px;
+    min-height: 1.6em;
+  }
+
+  .difftool__line-marker {
+    flex-shrink: 0;
+    width: 1.2em;
+    color: var(--color-text-muted);
+    user-select: none;
+  }
+
+  .difftool__line-text {
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 三种行类型的高亮 */
+  .difftool__line--equal {
+    background: transparent;
+  }
+
+  .difftool__line--insert {
+    background: rgba(22, 163, 74, 0.12);
+    border-left: 3px solid #22c55e;
+    padding-left: 9px;
+  }
+
+  .difftool__line--insert .difftool__line-marker {
+    color: #15803d;
+  }
+
+  .difftool__line--delete {
+    background: rgba(229, 72, 77, 0.12);
+    border-left: 3px solid #e5484d;
+    padding-left: 9px;
+  }
+
+  .difftool__line--delete .difftool__line-marker {
+    color: #b91c1c;
+  }
+
+  /* 字符级高亮：行内被删除/被新增的字符段加粗背景，与整行底色形成层次 */
+  .difftool__char {
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  .difftool__char--del {
+    background: rgba(229, 72, 77, 0.35);
+    color: #7f1d1d;
+    font-weight: 600;
+  }
+
+  .difftool__char--ins {
+    background: rgba(22, 163, 74, 0.35);
+    color: #14532d;
+    font-weight: 600;
+  }
+
+  /* 分屏视图中的占位空行（保持左右对齐） */
+  .difftool__line--placeholder {
+    background: var(--color-bg-soft);
+    border-left: 3px solid var(--color-border);
+    padding-left: 9px;
+    color: transparent;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .difftool__stat--insert {
+      color: #4ade80;
+    }
+
+    .difftool__stat--delete {
+      color: #f87171;
+    }
+
+    .difftool__stat--modify {
+      color: #fbbf24;
+    }
+
+    .difftool__line--insert {
+      background: rgba(22, 163, 74, 0.18);
+    }
+
+    .difftool__line--insert .difftool__line-marker {
+      color: #4ade80;
+    }
+
+    .difftool__line--delete {
+      background: rgba(229, 72, 77, 0.18);
+    }
+
+    .difftool__line--delete .difftool__line-marker {
+      color: #f87171;
+    }
+
+    /* 暗色模式：字符级高亮加深背景，文字保持高对比度 */
+    .difftool__char--del {
+      background: rgba(248, 113, 113, 0.4);
+      color: #fecaca;
+    }
+
+    .difftool__char--ins {
+      background: rgba(74, 222, 128, 0.4);
+      color: #bbf7d0;
+    }
+
+    .difftool__line--placeholder {
+      background: rgba(255, 255, 255, 0.04);
+      border-left-color: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  /* 移动端：双栏输入堆叠为单列，分屏视图改为单列显示 */
+  @media (max-width: 768px) {
+    .difftool__inputs {
+      grid-template-columns: 1fr;
+    }
+
+    .difftool__textarea {
+      min-height: 140px;
+    }
+
+    /* 移动端分屏视图改为上下堆叠，避免横向滚动 */
+    .difftool__result--split {
+      grid-template-columns: 1fr;
+    }
+
+    .difftool__result-col--left {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .difftool__stat--similarity {
+      margin-left: 0;
+    }
+
+    .jsontool__options {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .difftool__view-switch {
+      align-self: flex-start;
+    }
+  }
+
+  /* 超小屏（375px）：缩小字体与间距 */
+  @media (max-width: 414px) {
+    .difftool__pre {
+      font-size: 12px;
+    }
+
+    .difftool__line {
+      padding: 0 8px;
+    }
+
+    .difftool__line--insert,
+    .difftool__line--delete,
+    .difftool__line--placeholder {
+      padding-left: 5px;
+    }
+  }
+</style>

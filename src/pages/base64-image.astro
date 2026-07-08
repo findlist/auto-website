@@ -1,0 +1,507 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import Base64ImageTool from '../components/Base64ImageTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Base64 图片互转工具 - 在线图片与 Base64 双向转换',
+  description:
+    '免费的在线 Base64 图片互转工具：支持图片转 Base64（Data URL）与 Base64 转图片，拖拽 / 粘贴 / 上传三种输入方式，PNG / JPEG / WebP 格式互转与质量调节，一键复制 Data URL、纯 Base64、<img> 标签、CSS 背景四种格式。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Base64 图片互转工具',
+    url: 'https://toolbox.example.com/base64-image',
+    description: '在线 Base64 图片互转工具，支持图片转 Base64 Data URL 与 Base64 转图片，PNG/JPEG/WebP 格式互转，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Base64 图片互转工具</h1>
+      <p>
+        图片与 Base64 双向转换：拖拽 / 粘贴 / 上传图片即可生成 Data URL，
+        也可将 Base64 字符串解码为图片预览。支持 PNG / JPEG / WebP 格式互转与质量调节，
+        一键复制为 Data URL、纯 Base64、<code>&lt;img&gt;</code> 标签或 CSS 背景四种格式。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证拖拽与粘贴交互即时可用 -->
+    <Base64ImageTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Base64 图片 / Data URL？</summary>
+        <p>
+          Base64 图片是将图片二进制数据编码为 Base64 字符串，并拼接 <code>data:image/格式;base64,...</code> 前缀形成
+          Data URL。它可以直接嵌入 HTML / CSS / JS 中作为图片源，无需额外发起 HTTP 请求。
+          例如：<code>&lt;img src="data:image/png;base64,iVBORw..."&gt;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>图片转 Base64 有哪些应用场景？</summary>
+        <p>
+          常见场景包括：① 小图标内联到 HTML / CSS，减少 HTTP 请求数；② 邮件模板中嵌入图片（部分邮件客户端不支持外链）；
+          ③ Markdown 文档中嵌入图片（避免图片外链失效）；④ 将图片作为 JSON 字段传输；⑤ Canvas 绘图导出为可分享的字符串。
+        </p>
+      </details>
+      <details>
+        <summary>Base64 编码后图片体积会变大吗？</summary>
+        <p>
+          会。Base64 编码使用 64 个字符表示 6 位数据，因此每 3 字节二进制数据会被编码为 4 字节 Base64 字符串，
+          体积膨胀约 33%。例如一张 10KB 的 PNG，Base64 后约 13.3KB。加上 <code>data:image/...;base64,</code> 前缀，
+          总体积还会略增。对于大图，建议使用外链而非 Base64 内联。
+        </p>
+      </details>
+      <details>
+        <summary>哪些图片适合 Base64 内联？哪些不适合？</summary>
+        <p>
+          适合：① 体积小于 4KB 的小图标（如 favicon、UI 图标）；② 仅单页使用的装饰图；③ 邮件 / Markdown 中的小图。<br>
+          不适合：① 大于 100KB 的图片（膨胀明显，且 HTML / CSS 解析变慢）；② 多页面共用的图片（无法被浏览器缓存复用）；
+          ③ 需要懒加载的图片（Data URL 会随 HTML 立即加载）。
+        </p>
+      </details>
+      <details>
+        <summary>Base64 图片会影响页面性能吗？</summary>
+        <p>
+          会，且影响是双向的。优点：减少 HTTP 请求，对小图标首屏加载有利。缺点：① 体积膨胀 33%，增加 HTML / CSS 体积；
+          ② 无法被浏览器单独缓存，每次访问页面都重新下载；③ 阻塞 HTML 解析，延迟首屏渲染；④ 无法懒加载。
+          生产环境建议用构建工具（如 Vite、webpack）自动将小图转为 Base64，大图保持外链。
+        </p>
+      </details>
+      <details>
+        <summary>如何在 HTML 与 CSS 中使用 Base64 图片？</summary>
+        <p>
+          HTML：<code>&lt;img src="data:image/png;base64,iVBORw..." alt="图标"&gt;</code><br>
+          CSS：<code>background-image: url("data:image/png;base64,iVBORw...");</code><br>
+          本工具提供四种复制格式：Data URL、纯 Base64（不含前缀）、<code>&lt;img&gt;</code> 标签、CSS 背景，
+          可直接粘贴到对应位置。
+        </p>
+      </details>
+      <details>
+        <summary>格式转换的原理是什么？为什么 SVG 不支持？</summary>
+        <p>
+          格式转换通过 Canvas 实现：将图片绘制到 Canvas，再用 <code>canvas.toDataURL(targetMime, quality)</code>
+          导出为目标格式。JPEG 不支持透明通道，转换时会用白色填充背景。WebP 是现代格式，体积更小但旧浏览器可能不支持。
+          SVG 是矢量格式（XML 文本），不是位图，无法绘制到 Canvas，因此本工具不支持 SVG 的格式转换。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有处理逻辑由 JavaScript 在你本地执行，图片文件不会发送到任何服务器。
+          FileReader 读取文件、Canvas 转换格式、剪贴板粘贴，全程零网络请求。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Base64 图片工具专属样式 */
+  .b64img {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 工具栏 */
+  .b64img__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .b64img__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  /* 拖拽上传区 */
+  .b64img__dropzone {
+    border: 2px dashed var(--color-border, #d1d5db);
+    border-radius: 8px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+    background: var(--color-bg-soft, #f9fafb);
+  }
+
+  .b64img__dropzone:hover,
+  .b64img__dropzone--active {
+    border-color: var(--color-primary, #3b82f6);
+    background: var(--color-bg-hover, #eff6ff);
+  }
+
+  .b64img__dropzone-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .b64img__dropzone-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--color-text, #111827);
+  }
+
+  .b64img__dropzone-hint {
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+    margin: 0 0 8px;
+  }
+
+  .b64img__dropzone-formats {
+    font-size: 12px;
+    color: var(--color-text-mute, #9ca3af);
+    margin: 0;
+  }
+
+  .b64img__dropzone kbd {
+    padding: 1px 6px;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 3px;
+    background: var(--color-bg, #fff);
+    font-size: 12px;
+    font-family: monospace;
+  }
+
+  /* 隐藏 file input */
+  .b64img__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  /* 结果区 */
+  .b64img__result {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 图片预览 */
+  .b64img__preview {
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    padding: 16px;
+    background: var(--color-bg-soft, #f9fafb);
+    text-align: center;
+    /* 棋盘格背景，便于查看透明图片 */
+    background-image:
+      linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .b64img__preview-img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+  }
+
+  /* 信息表格 */
+  .b64img__info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .b64img__info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border, #f3f4f6);
+    gap: 12px;
+  }
+
+  .b64img__info-row:last-child {
+    border-bottom: none;
+  }
+
+  .b64img__info-label {
+    color: var(--color-text-soft, #6b7280);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .b64img__info-value {
+    color: var(--color-text, #111827);
+    font-size: 13px;
+    text-align: right;
+    word-break: break-all;
+  }
+
+  .b64img__section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--color-text, #111827);
+  }
+
+  /* 格式转换区 */
+  .b64img__convert-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .b64img__field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .b64img__field select,
+  .b64img__field input[type='range'] {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 复制按钮网格 */
+  .b64img__copy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .b64img__copy-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 12px;
+    text-align: left;
+    position: relative;
+  }
+
+  .b64img__copy-label {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .b64img__copy-desc {
+    font-size: 11px;
+    color: var(--color-text-mute, #9ca3af);
+  }
+
+  .b64img__copied {
+    color: #10b981;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* Decode 输入区 */
+  .b64img__input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .b64img__label {
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .b64img__textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    resize: vertical;
+    background: var(--color-bg, #fff);
+    color: var(--color-text, #111827);
+  }
+
+  .b64img__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
+
+  .b64img__decode-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .b64img__input-stat {
+    font-size: 12px;
+    color: var(--color-text-mute, #9ca3af);
+  }
+
+  /* 错误提示 */
+  .b64img__error {
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 13px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* 状态条 */
+  .b64img__status {
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .b64img__notice {
+    color: #059669;
+    font-weight: 500;
+  }
+
+  .b64img__hint {
+    color: var(--color-text-mute, #9ca3af);
+  }
+
+  /* 暗色模式 */
+  @media (prefers-color-scheme: dark) {
+    .b64img__dropzone {
+      background: var(--color-bg-soft, #1f2937);
+      border-color: var(--color-border, #374151);
+    }
+
+    .b64img__dropzone:hover,
+    .b64img__dropzone--active {
+      background: var(--color-bg-hover, #1e3a5f);
+      border-color: var(--color-primary, #60a5fa);
+    }
+
+    .b64img__dropzone-title {
+      color: var(--color-text, #f9fafb);
+    }
+
+    .b64img__dropzone kbd {
+      background: var(--color-bg, #111827);
+      border-color: var(--color-border, #374151);
+    }
+
+    .b64img__preview {
+      background-color: var(--color-bg-soft, #1f2937);
+      background-image:
+        linear-gradient(45deg, #374151 25%, transparent 25%),
+        linear-gradient(-45deg, #374151 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #374151 75%),
+        linear-gradient(-45deg, transparent 75%, #374151 75%);
+    }
+
+    .b64img__info {
+      border-color: var(--color-border, #374151);
+    }
+
+    .b64img__info-row {
+      border-bottom-color: var(--color-border, #374151);
+    }
+
+    .b64img__info-label {
+      color: var(--color-text-soft, #9ca3af);
+    }
+
+    .b64img__info-value {
+      color: var(--color-text, #f9fafb);
+    }
+
+    .b64img__section-title {
+      color: var(--color-text, #f9fafb);
+    }
+
+    .b64img__field {
+      color: var(--color-text-soft, #9ca3af);
+    }
+
+    .b64img__textarea {
+      background: var(--color-bg, #111827);
+      color: var(--color-text, #f9fafb);
+      border-color: var(--color-border, #374151);
+    }
+
+    .b64img__error {
+      background: #7f1d1d;
+      border-color: #991b1b;
+      color: #fecaca;
+    }
+
+    .b64img__notice {
+      color: #34d399;
+    }
+
+    .b64img__hint {
+      color: var(--color-text-mute, #6b7280);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .b64img__dropzone {
+      padding: 32px 16px;
+    }
+
+    .b64img__dropzone-icon {
+      font-size: 36px;
+    }
+
+    .b64img__convert-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .b64img__field {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .b64img__info-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .b64img__info-value {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .b64img__copy-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .b64img__preview-img {
+      max-height: 240px;
+    }
+  }
+</style>

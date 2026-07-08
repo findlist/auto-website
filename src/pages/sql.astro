@@ -1,0 +1,507 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import SqlTool from '../components/SqlTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'SQL 格式化与压缩工具 - 在线 SQL 美化 / 压缩 / 校验 / 高亮',
+  description:
+    '免费的在线 SQL 格式化工具：支持 SQL 美化（关键字大写、主子句换行、JOIN 缩进、子查询对齐、CASE/WHEN 缩进）、压缩为一行、基础语法校验（引号 / 括号 / 注释闭合）、关键字 / 字符串 / 数字 / 注释分色高亮，提供 6 个常见 SQL 模板（SELECT / JOIN / INSERT / UPDATE / DELETE / CREATE）。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'SQL 格式化与压缩工具',
+    url: 'https://toolbox.example.com/sql',
+    description: '在线 SQL 格式化工具，支持美化、压缩、校验、语法高亮，提供 6 个常见 SQL 模板。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>SQL 格式化与压缩工具</h1>
+      <p>
+        一站式 SQL 美化与压缩：支持关键字大小写转换、主子句换行、JOIN 前换行、AND/OR 前换行、
+        子查询缩进、CASE/WHEN 缩进、逗号后空格或换行、2/4 空格缩进切换；
+        压缩模式可移除多余空白与换行，可选移除注释；内置基础语法校验
+        （引号 / 括号 / 块注释闭合），关键字 / 字符串 / 数字 / 注释分色高亮；
+        提供 SELECT / JOIN / INSERT / UPDATE / DELETE / CREATE 共 6 个常见 SQL 模板。
+        所有处理在浏览器本地完成，零上传、零追踪。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <SqlTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么要对 SQL 进行格式化？</summary>
+        <p>
+          SQL 格式化将关键字统一大写、按主子句换行、对齐缩进，让长 SQL 语句的层次结构一目了然。
+          这有助于团队协作中快速阅读和理解查询逻辑、定位 WHERE 条件、排查 JOIN 关系错误，
+          也是代码评审与文档归档的基本要求。本工具支持 2/4 空格缩进、逗号后空格或换行等多种风格，
+          可适配不同团队的编码规范。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些 SQL 方言？</summary>
+        <p>
+          本工具基于关键字词法分析，不绑定具体数据库方言，对 MySQL、PostgreSQL、SQLite、
+          Oracle、SQL Server、MariaDB 等主流关系型数据库的 SQL 语句均可格式化与高亮。
+          其中 MySQL 的 <code>#</code> 行注释、<code>`</code> 反引号标识符引用、
+          PostgreSQL 的 <code>$n</code> 位置参数、<code>::</code> 类型转换运算符均被识别。
+          但方言特有的内置函数与系统视图不会被特殊处理，仅按通用标识符识别。
+        </p>
+      </details>
+      <details>
+        <summary>如何处理字符串中的单引号转义？</summary>
+        <p>
+          SQL 标准使用 <code>''</code>（两个连续单引号）表示字符串字面量中的单引号字符，
+          例如 <code>'It''s a test'</code>。本工具的词法分析正确识别该转义规则，
+          不会将字符串内部的 <code>''</code> 误判为字符串结束。同理，双引号标识符
+          （标准 SQL 中表示列名 / 表名）与 MySQL 反引号引用也被识别为独立的 token。
+        </p>
+      </details>
+      <details>
+        <summary>压缩模式与美化模式有什么区别？</summary>
+        <p>
+          美化模式（Format）会按可读性最大化原则换行、缩进、补空格，适合阅读与团队评审；
+          压缩模式（Minify）则移除所有多余空白与换行，仅保留必要的单个空格分隔 token，
+          适合存储到日志、URL 参数、配置文件等对体积敏感的场景。压缩模式可选移除注释，
+          美化模式默认保留注释原样。
+        </p>
+      </details>
+      <details>
+        <summary>能校验 SQL 语法错误吗？</summary>
+        <p>
+          本工具提供基础语法校验，能检测以下常见错误：① 字符串或标识符引号未闭合；
+          ② 括号不配对（左括号多于右括号或反之）；③ 块注释 <code>/*</code> 未闭合；
+          ④ SELECT 语句缺少 FROM 子句（提示，非错误）；⑤ 语句末尾缺少分号（提示）。
+          但不做完整语法分析，无法检测字段不存在、类型不匹配、JOIN 关系错误等数据库层面的问题，
+          这些需依赖具体数据库的 EXPLAIN 或预编译校验。
+        </p>
+      </details>
+      <details>
+        <summary>语法高亮使用了哪些颜色规则？</summary>
+        <p>
+          本工具将 SQL 分为 7 类 token 并分别着色：① 关键字（SELECT、FROM、WHERE 等）；
+          ② 字符串字面量（单引号包裹）；③ 数字字面量（含小数与十六进制）；
+          ④ 注释（行注释 <code>--</code> / <code>#</code>，块注释 <code>/* */</code>）；
+          ⑤ 标识符（表名、列名、函数名）；⑥ 参数占位符（<code>?</code>、<code>:name</code>、
+          <code>@name</code>、<code>$n</code>）；⑦ 标点（逗号、括号、分号、运算符）。
+          颜色在浅色与暗色模式下均经过对比度调校，符合 WCAG AA 标准。
+        </p>
+      </details>
+      <details>
+        <summary>支持子查询和 CASE WHEN 的缩进吗？</summary>
+        <p>
+          支持。子查询（<code>WHERE id IN (SELECT ...)</code>）会自动增加缩进，
+          右括号 <code>)</code> 与子查询内容对齐；CASE / WHEN / THEN / ELSE / END
+          遵循标准缩进规则：CASE 后换行并缩进，每个 WHEN 单独一行，END 与 CASE 对齐。
+          多层嵌套时缩进按深度累加，最多无上限（实际可读性建议不超过 4 层）。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有格式化、压缩、校验、高亮逻辑由 JavaScript
+          在你本地执行，不会发送任何输入或输出到服务器。可在内网环境、离线环境使用，
+          适合处理包含敏感业务逻辑的 SQL 语句。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* SQL 工具专属样式 */
+  .sqltool {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 模式切换栏 */
+  .sqltool__mode-bar {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    align-self: flex-start;
+  }
+
+  .sqltool__mode-btn {
+    padding: 8px 18px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-right: 1px solid var(--color-border);
+  }
+
+  .sqltool__mode-btn:last-child {
+    border-right: none;
+  }
+
+  .sqltool__mode-btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+  }
+
+  .sqltool__mode-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 预设按钮 */
+  .sqltool__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sqltool__preset-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sqltool__preset-btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  /* 格式化选项 */
+  .sqltool__options {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    padding: 10px 14px;
+  }
+
+  .sqltool__options > summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    user-select: none;
+  }
+
+  .sqltool__options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .sqltool__option {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .sqltool__option--check {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sqltool__option select {
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .sqltool__option select:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.15);
+  }
+
+  .sqltool__minify-opts {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* 输入输出双栏 */
+  .sqltool__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .sqltool__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    background: var(--color-bg);
+  }
+
+  .sqltool__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sqltool__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sqltool__panel-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .sqltool__action-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sqltool__action-btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .sqltool__action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .sqltool__copy.is-success {
+    background: var(--color-success, #16a34a);
+    color: #fff;
+    border-color: var(--color-success, #16a34a);
+  }
+
+  .sqltool__textarea {
+    width: 100%;
+    min-height: 320px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .sqltool__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.15);
+  }
+
+  .sqltool__output {
+    width: 100%;
+    min-height: 320px;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    box-sizing: border-box;
+  }
+
+  .sqltool__placeholder {
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  .sqltool__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 校验结果 */
+  .sqltool__validation {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    background: var(--color-bg);
+  }
+
+  .sqltool__val-summary {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .sqltool__val-summary.is-ok {
+    color: var(--color-success, #16a34a);
+  }
+
+  .sqltool__val-summary.is-error {
+    color: var(--color-danger, #dc2626);
+  }
+
+  .sqltool__val-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sqltool__val-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .sqltool__val-item--error .sqltool__val-level {
+    color: var(--color-danger, #dc2626);
+    font-weight: 600;
+  }
+
+  .sqltool__val-item--warning .sqltool__val-level {
+    color: #d97706;
+    font-weight: 600;
+  }
+
+  .sqltool__val-pos {
+    color: var(--color-text-soft);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+  }
+
+  .sqltool__val-msg {
+    color: var(--color-text);
+    flex: 1;
+    min-width: 200px;
+  }
+
+  /* 语法高亮配色（浅色） */
+  .sql-kw {
+    color: #0550ae;
+    font-weight: 600;
+  }
+
+  .sql-str {
+    color: #0a3069;
+  }
+
+  .sql-num {
+    color: #0550ae;
+  }
+
+  .sql-cmt {
+    color: #6e7781;
+    font-style: italic;
+  }
+
+  .sql-id {
+    color: #24292f;
+  }
+
+  .sql-pun {
+    color: #57606a;
+  }
+
+  .sql-par {
+    color: #8250df;
+    font-weight: 500;
+  }
+
+  /* 暗色模式 */
+  @media (prefers-color-scheme: dark) {
+    .sql-kw { color: #79c0ff; }
+    .sql-str { color: #a5d6ff; }
+    .sql-num { color: #79c0ff; }
+    .sql-cmt { color: #8b949e; }
+    .sql-id { color: #e6edf3; }
+    .sql-pun { color: #c9d1d9; }
+    .sql-par { color: #d2a8ff; }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .sqltool__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sqltool__textarea,
+    .sqltool__output {
+      min-height: 220px;
+    }
+
+    .sqltool__options-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .sqltool__mode-btn {
+      padding: 7px 14px;
+      font-size: 13px;
+    }
+
+    .sqltool__preset-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .sqltool__stats {
+      gap: 8px;
+      font-size: 11px;
+    }
+  }
+</style>

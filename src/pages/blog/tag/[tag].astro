@@ -1,0 +1,294 @@
+---
+import BaseLayout, { type SiteMeta } from '../../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { tagToSlug, collectTags } from '../../../utils/tags';
+
+// 为每个标签 slug 生成一个静态筛选页，对齐 tagToSlug 体系，避免链接 404
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog');
+  const tags = await collectTags(allPosts); // [{ slug, name }]
+  // 按 slug 归档文章，避免每个标签重复遍历全部文章
+  const postsBySlug = new Map<string, typeof allPosts>();
+  for (const post of allPosts) {
+    for (const tag of post.data.tags) {
+      const slug = tagToSlug(tag);
+      if (!postsBySlug.has(slug)) postsBySlug.set(slug, []);
+      postsBySlug.get(slug)!.push(post);
+    }
+  }
+  return tags.map(({ slug, name }) => ({
+    params: { tag: slug },
+    props: {
+      tagName: name,
+      tagSlug: slug,
+      posts: (postsBySlug.get(slug) ?? []).sort(
+        (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+      ),
+      // 全部标签及文章数，用于渲染标签云
+      allTags: tags
+        .map(({ slug: s, name: n }) => ({
+          slug: s,
+          name: n,
+          count: (postsBySlug.get(s) ?? []).length,
+        }))
+        .sort((a, b) => b.count - a.count),
+    },
+  }));
+}
+
+const { tagName, tagSlug, posts, allTags } = Astro.props;
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const SITE_URL = 'https://toolbox.example.com';
+const tagUrl = `${SITE_URL}/blog/tag/${tagSlug}`;
+
+const meta: SiteMeta = {
+  title: `标签「${tagName}」的文章 - 技术博客`,
+  description: `浏览技术博客中所有标签为「${tagName}」的文章，共 ${posts.length} 篇。涵盖开发者工具背后的技术原理与最佳实践。`,
+  canonical: tagUrl,
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: `标签：${tagName}`, item: tagUrl },
+    ],
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <nav class="tag-breadcrumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      <span aria-hidden="true">/</span>
+      <a href="/blog">技术博客</a>
+      <span aria-hidden="true">/</span>
+      <a href="/blog/tag">标签</a>
+      <span aria-hidden="true">/</span>
+      <span>{tagName}</span>
+    </nav>
+
+    <div class="page-hero">
+      <h1>标签：{tagName}</h1>
+      <p>共 {posts.length} 篇文章</p>
+    </div>
+
+    <!-- 标签云：可快速切换到其他标签 -->
+    <div class="tag-cloud" role="navigation" aria-label="标签筛选">
+      {allTags.map((t) => (
+        <a
+          href={`/blog/tag/${t.slug}`}
+          class={`tag-cloud__item${t.slug === tagSlug ? ' tag-cloud__item--active' : ''}`}
+          aria-current={t.slug === tagSlug ? 'page' : undefined}
+        >
+          #{t.name}
+          <span class="tag-cloud__count">{t.count}</span>
+        </a>
+      ))}
+    </div>
+
+    <ul class="blog-list" role="list">
+      {posts.map((post) => (
+        <li class="blog-card">
+          <h2 class="blog-card__title">
+            <a href={`/blog/${post.id}`} class="blog-card__link">{post.data.title}</a>
+          </h2>
+          <p class="blog-card__desc">{post.data.description}</p>
+          <div class="blog-card__meta">
+            <time datetime={post.data.pubDate.toISOString()}>
+              {formatDate(post.data.pubDate)}
+            </time>
+            <span class="blog-card__tags">
+              {post.data.tags.map((t) => (
+                <a href={`/blog/tag/${tagToSlug(t)}`} class="blog-card__tag">#{t}</a>
+              ))}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <div class="tag-back">
+      <a href="/blog/tag" class="btn">← 全部标签</a>
+      <a href="/blog" class="btn">返回博客列表</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .tag-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    padding-top: 16px;
+  }
+
+  .tag-breadcrumb a {
+    color: var(--color-primary);
+  }
+
+  .tag-breadcrumb span:last-child {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .page-hero {
+    margin-top: 16px;
+  }
+
+  .page-hero h1 {
+    margin: 0 0 4px;
+  }
+
+  .page-hero p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  /* 标签云 */
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0 32px;
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tag-cloud__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--color-primary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+
+  .tag-cloud__item:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tag-cloud__item--active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .tag-cloud__count {
+    font-size: 11.5px;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 博客卡片：复用列表样式，stretched-link 实现整卡可点击 */
+  .blog-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px;
+    display: grid;
+    gap: 20px;
+  }
+
+  .blog-card {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.18s ease;
+    padding: 24px;
+  }
+
+  .blog-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .blog-card__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .blog-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .blog-card__title {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .blog-card__desc {
+    margin: 0 0 14px;
+    color: var(--color-text-soft);
+    font-size: 14.5px;
+    line-height: 1.7;
+  }
+
+  .blog-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .blog-card__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* 标签置于 stretched-link 之上，保证可独立点击 */
+  .blog-card__tag {
+    position: relative;
+    z-index: 1;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  .blog-card__tag:hover {
+    background: rgba(43, 108, 255, 0.16);
+  }
+
+  .tag-back {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 64px;
+  }
+
+  @media (max-width: 768px) {
+    .blog-card {
+      padding: 20px;
+    }
+    .blog-card__title {
+      font-size: 17px;
+    }
+  }
+</style>

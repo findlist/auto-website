@@ -1,0 +1,386 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import IpSubnetTool from '../components/IpSubnetTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'IP 子网计算器 - IPv4 / IPv6 CIDR 解析与子网划分',
+  description:
+    '免费的在线 IP 子网计算器：支持 IPv4 / IPv6 双栈，输入 CIDR（如 192.168.1.0/24）或 IP / 掩码即可计算网络地址、广播地址、子网掩码、通配符掩码、第一个 / 最后一个主机、可用主机数，自动判定私有 / 环回 / 多播 / 链路本地地址与 IP 类别，提供二进制按位可视化与子网划分功能。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'IP 子网计算器',
+    url: 'https://toolbox.example.com/ip',
+    description: '在线 IP 子网计算器，支持 IPv4 / IPv6 双栈 CIDR 解析、子网划分、二进制可视化与类型判定。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>IP 子网计算器</h1>
+      <p>
+        输入 CIDR（如 <code>192.168.1.0/24</code>、<code>2001:db8::/32</code>）或 IP / 掩码（如 <code>10.0.0.0/255.0.0.0</code>），
+        一键计算网络地址、广播地址、子网掩码、通配符掩码、主机范围与可用主机数；自动判定私有 / 环回 / 多播 / 链路本地 / 保留地址与 IP 类别，
+        提供二进制按位可视化与子网划分功能。支持 IPv4 / IPv6 双栈，所有数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <IpSubnetTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CIDR 表示法是什么？/24、/16、/8 分别代表什么？</summary>
+        <p>CIDR（Classless Inter-Domain Routing，无类别域间路由）用 <code>/数字</code> 表示网络前缀长度。例如 <code>192.168.1.0/24</code> 表示前 24 位是网络位，剩余 8 位是主机位，可容纳 2^8 = 256 个地址（可用 254 个）。<code>/16</code> 表示前 16 位网络位（可用 65534 个主机），<code>/8</code> 表示前 8 位网络位（可用 16777214 个主机）。IPv6 同理，<code>2001:db8::/32</code> 表示前 32 位网络位。</p>
+      </details>
+      <details>
+        <summary>网络地址和广播地址有什么区别？为什么可用主机数要减 2？</summary>
+        <p>网络地址是子网中主机位全为 0 的地址（如 <code>192.168.1.0/24</code> 中的 <code>192.168.1.0</code>），用于标识子网本身；广播地址是主机位全为 1 的地址（如 <code>192.168.1.255</code>），用于向子网内所有主机发送数据包。这两个地址不能分配给具体主机，因此 IPv4 在前缀 ≤ 30 时可用主机数 = 总主机数 - 2。注意 IPv6 没有广播概念，可用主机数 = 总主机数。</p>
+      </details>
+      <details>
+        <summary>通配符掩码（反掩码）是什么？和子网掩码有什么区别？</summary>
+        <p>通配符掩码是子网掩码按位取反的结果。例如 <code>255.255.255.0</code> 的通配符掩码是 <code>0.0.0.255</code>。子网掩码中 1 表示网络位、0 表示主机位；通配符掩码中 0 表示必须匹配、1 表示任意。通配符掩码常用于 ACL（访问控制列表）和 OSPF 等路由协议配置，如 <code>access-list 1 permit 192.168.1.0 0.0.0.255</code> 表示允许 192.168.1.0/24 网段的所有流量。</p>
+      </details>
+      <details>
+        <summary>IPv4 的 A/B/C/D/E 类是什么？现在还在用吗？</summary>
+        <p>这是早期的有类别编址方案：A 类（1-126）前 8 位网络位、B 类（128-191）前 16 位、C 类（192-223）前 24 位、D 类（224-239）多播、E 类（240-255）保留。1993 年起被 CIDR 取代，现代网络全部使用无类别编址（CIDR）。但 A/B/C 类对应了私有地址段（10/8、172.16/12、192.168/16）和默认路由等约定，仍具参考价值。本工具会显示 IP 类别仅作教学参考，实际配置请以 CIDR 为准。</p>
+      </details>
+      <details>
+        <summary>私有 IP 地址段有哪些？为什么家庭路由器默认用 192.168.1.x？</summary>
+        <p>RFC 1918 定义了三段 IPv4 私有地址：<code>10.0.0.0/8</code>（A 类，1677 万个）、<code>172.16.0.0/12</code>（B 类，104 万个）、<code>192.168.0.0/16</code>（C 类，65536 个）。私有地址不能在公网路由，必须通过 NAT 转换为公网 IP。家庭路由器默认使用 192.168.1.x 是因为该网段足够小、易于管理，且与大多数企业网段不冲突。本工具会自动判定并标注「私有地址」标签。</p>
+      </details>
+      <details>
+        <summary>IPv6 为什么没有广播地址？::1 和 fe80:: 分别是什么？</summary>
+        <p>IPv6 取消了广播地址，改用多播（multicast）替代，以减少网络流量。<code>::1/128</code> 是 IPv6 环回地址（等同 IPv4 的 127.0.0.1），仅用于本机内部通信；<code>fe80::/10</code> 是链路本地地址，每个网卡自动分配一个，仅在同一链路（子网）内通信，不会被路由。IPv6 还有 <code>fc00::/7</code>（唯一本地，类似私有地址）、<code>ff00::/8</code>（多播）、<code>2001:db8::/32</code>（文档示例专用）等特殊段。</p>
+      </details>
+      <details>
+        <summary>/31 子网为什么没有网络地址和广播地址？</summary>
+        <p>RFC 3021 定义了 /31 子网用于点对点链路（如路由器之间的直连链路）。/31 只有 2 个地址，如果按传统规则网络位和广播位各占 1 个，可用主机数就是 0，毫无意义。因此 RFC 3021 规定 /31 子网的两个地址都可分配给主机，不再保留网络地址和广播地址。本工具正确处理 /31 边界，可用主机数显示为 2。同理 /32 用于单机地址（如 loopback），可用 1 个。</p>
+      </details>
+      <details>
+        <summary>子网划分（VLSM）是什么？为什么子网数量必须是 2 的幂？</summary>
+        <p>VLSM（Variable Length Subnet Masking，可变长子网掩码）允许在同一网络中使用不同长度的前缀，以更精细地划分子网。子网划分时必须按 2 的幂切分（2/4/8/16...），因为 CIDR 边界要求前缀长度为整数，每次划分增加 1 位前缀 = 子网数翻倍。例如 <code>192.168.1.0/24</code> 划分为 4 个子网 = 前缀 +2 = <code>/26</code>，每个子网 64 个地址。本工具支持 2-256 个子网划分，自动计算每个子网的网络 / 广播 / 主机范围。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* IP 工具专属样式 */
+  .iptool__input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .iptool__input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 15px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .iptool__input:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  .iptool__input[aria-invalid='true'] {
+    border-color: var(--color-danger, #dc2626);
+  }
+
+  /* 预设按钮：grid 布局，桌面 4 列、平板 3 列、移动 2 列 */
+  .iptool__presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .iptool__preset {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  .iptool__preset span {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .iptool__preset code {
+    font-size: 11.5px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .iptool__section-title {
+    margin: 20px 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 子网信息表格：复用 urltool 的 grid 布局风格 */
+  .iptool__table {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .iptool__row {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .iptool__row:last-child {
+    border-bottom: none;
+  }
+
+  .iptool__row-label {
+    color: var(--color-text-soft);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .iptool__row-value {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  /* 二进制视图：等宽字体 + 着色，便于按位对齐 */
+  .iptool__table--binary .iptool__row--binary {
+    grid-template-columns: 100px 1fr auto;
+  }
+
+  .iptool__binary {
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--color-text-soft);
+  }
+
+  /* 类型标签 */
+  .iptool__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0 4px;
+  }
+
+  .iptool__badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+    font-weight: 500;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    color: var(--color-text-soft);
+    border: 1px solid var(--color-border);
+  }
+
+  .badge--private { background: rgba(26, 170, 85, 0.12); color: var(--color-success, #1aa555); border-color: transparent; }
+  .badge--loopback { background: rgba(43, 108, 255, 0.12); color: var(--color-primary, #2b6cff); border-color: transparent; }
+  .badge--multicast { background: rgba(255, 159, 28, 0.15); color: #b45309; border-color: transparent; }
+  .badge--linklocal { background: rgba(122, 76, 255, 0.12); color: #7a4cff; border-color: transparent; }
+  .badge--reserved { background: rgba(220, 38, 38, 0.12); color: var(--color-danger, #dc2626); border-color: transparent; }
+  .badge--unspecified { background: rgba(100, 116, 139, 0.15); color: #64748b; border-color: transparent; }
+  .badge--class { background: rgba(43, 108, 255, 0.08); color: var(--color-primary, #2b6cff); border-color: transparent; }
+
+  /* 子网划分工具栏 */
+  .iptool__divide-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .iptool__divide-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .iptool__divide-label select {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .iptool__divide-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .iptool__divide-summary {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 子网划分结果表格 */
+  .iptool__subnets-table {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  .iptool__subnets-row {
+    display: grid;
+    grid-template-columns: 40px minmax(140px, 1fr) minmax(140px, 1fr) minmax(200px, 1.5fr) 80px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12.5px;
+  }
+
+  .iptool__subnets-row:last-child {
+    border-bottom: none;
+  }
+
+  .iptool__subnets-row--head {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    font-weight: 600;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .iptool__subnets-idx {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  .iptool__subnets-net,
+  .iptool__subnets-bcast,
+  .iptool__subnets-range {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .iptool__subnets-net {
+    color: var(--color-primary, #2b6cff);
+    font-weight: 500;
+  }
+
+  .iptool__subnets-usable {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .badge--multicast { color: #fbbf24; }
+    .badge--linklocal { color: #a78bfa; }
+    .badge--reserved { color: #f87171; }
+    .badge--unspecified { color: #94a3b8; }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .iptool__presets {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .iptool__row {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'label copy'
+        'value value';
+      row-gap: 6px;
+    }
+    .iptool__row-label {
+      grid-area: label;
+    }
+    .iptool__row-value {
+      grid-area: value;
+    }
+    .iptool__row > button {
+      grid-area: copy;
+    }
+    .iptool__table--binary .iptool__row--binary {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'label copy'
+        'value value';
+    }
+    .iptool__binary {
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+    .iptool__subnets-row {
+      grid-template-columns: 30px 1fr 70px;
+      grid-template-areas:
+        'idx net usable'
+        'bcast bcast bcast'
+        'range range range';
+      row-gap: 4px;
+    }
+    .iptool__subnets-idx { grid-area: idx; }
+    .iptool__subnets-net { grid-area: net; }
+    .iptool__subnets-bcast { grid-area: bcast; }
+    .iptool__subnets-range { grid-area: range; }
+    .iptool__subnets-usable { grid-area: usable; }
+    .iptool__subnets-row--head {
+      grid-template-columns: 30px 1fr 70px;
+      grid-template-areas: 'idx net usable';
+    }
+    .iptool__subnets-row--head .iptool__subnets-bcast,
+    .iptool__subnets-row--head .iptool__subnets-range {
+      display: none;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .iptool__presets {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .iptool__input {
+      font-size: 13px;
+    }
+  }
+</style>

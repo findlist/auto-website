@@ -1,0 +1,619 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HttpStatusTool from '../components/HttpStatusTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'HTTP 状态码查询工具 - 1xx/2xx/3xx/4xx/5xx 含义与 RESTful 用法',
+  description:
+    '免费的在线 HTTP 状态码查询工具：覆盖 1xx 信息响应、2xx 成功、3xx 重定向、4xx 客户端错误、5xx 服务端错误共 55+ 状态码，含详细说明、典型场景、常见原因、排查建议、RESTful API 用法、相关响应头与相关状态码对比。支持搜索、分类筛选、一键复制状态码。前端调试、后端 API 设计、SEO 重定向策略（301/302/307/308）、错误码定位（401/403/404/429/500/502/503/504）高频必备，所有查询在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'HTTP 状态码查询工具',
+    url: 'https://toolbox.example.com/http-status',
+    description: '在线 HTTP 状态码查询工具：55+ 状态码详细说明、5 大类分类筛选、搜索、复制，含 RESTful API 用法与相关码对比，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>HTTP 状态码查询工具</h1>
+      <p>
+        覆盖 1xx 信息响应、2xx 成功、3xx 重定向、4xx 客户端错误、5xx 服务端错误共 55+ 状态码，
+        每条含详细说明、典型场景、常见原因、排查建议、RESTful API 用法、相关响应头与相关状态码对比。
+        支持搜索、分类筛选、一键复制状态码。适用于前端调试接口错误、后端设计 RESTful API、
+        SEO 重定向策略（301/302/307/308）、错误码定位（401/403/404/429/500/502/503/504）等场景，
+        所有查询在浏览器本地完成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <HttpStatusTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="httpstat-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>HTTP 状态码五大类有什么区别？首位数字代表什么？</summary>
+        <p>
+          HTTP 状态码是 3 位数字，<strong>首位数字决定类别</strong>：<strong>1xx 信息响应</strong>
+          （请求已接收，继续处理，如 100 Continue、101 Switching Protocols）；
+          <strong>2xx 成功</strong>（请求已成功处理，如 200 OK、201 Created、204 No Content）；
+          <strong>3xx 重定向</strong>（需要进一步操作，如 301 永久重定向、302 临时重定向、304 未修改）；
+          <strong>4xx 客户端错误</strong>（请求有问题，如 400 参数错误、401 未认证、403 无权限、404 资源不存在）；
+          <strong>5xx 服务端错误</strong>（服务器处理出错，如 500 内部错误、502 网关错误、503 服务不可用、504 网关超时）。
+          记忆口诀：<strong>1 收到、2 成功、3 跳转、4 你错、5 我错</strong>。
+        </p>
+      </details>
+      <details>
+        <summary>301 和 302 重定向对 SEO 权重传递有什么区别？</summary>
+        <p>
+          这是 SEO 最容易踩坑的点：<strong>301 Moved Permanently</strong>（永久重定向）会让搜索引擎把旧 URL 的
+          <strong>权重、外链、收录</strong>全部转移到新 URL，几个月后旧 URL 从索引消失，新 URL 出现在索引中；
+          <strong>302 Found</strong>（临时重定向）则<strong>不转移权重</strong>，旧 URL 仍保留在索引中。
+          适用场景：域名迁移、HTTP 升级 HTTPS、旧文章迁移到新路径用 301；临时维护页跳转、A/B 测试、
+          移动端跳转 m.example.com 用 302。注意 307（临时）和 308（永久）是 302/301 的严格版本，
+          会保持原 HTTP 方法（POST 重定向后仍是 POST），避免 301/302 把 POST 改成 GET 的历史遗留问题。
+        </p>
+      </details>
+      <details>
+        <summary>401 和 403 有什么区别？怎么判断该返回哪个？</summary>
+        <p>
+          <strong>401 Unauthorized</strong> 是<strong>未认证</strong>——服务器不知道你是谁。响应应含
+          <code>WWW-Authenticate</code> 头，提示客户端如何认证（如 <code>Bearer realm="api"</code>）。
+          典型场景：未登录访问受保护接口、JWT 过期、Authorization 头缺失或格式错误。
+          <strong>403 Forbidden</strong> 是<strong>未授权</strong>——服务器知道你是谁，但你没有权限。
+          典型场景：普通用户访问管理员接口、JWT 有效但 role 字段不足、IP 被黑名单。
+          判断标准：<strong>先问"你是谁"（401），再问"你能干这个吗"（403）</strong>。
+          调试技巧：用 JWT 解码工具检查 token 中的 role 字段，确认权限是否符合预期。
+        </p>
+      </details>
+      <details>
+        <summary>404 和 410 都是资源不存在，有什么区别？SEO 上怎么选？</summary>
+        <p>
+          <strong>404 Not Found</strong> 表示资源<strong>当前不存在</strong>，但未来可能存在，搜索引擎会保留索引一段时间；
+          <strong>410 Gone</strong> 表示资源<strong>永久消失</strong>，不会再回来，搜索引擎会<strong>立即移除索引</strong>。
+          删除文章时应返回 410 而非 404，加速搜索引擎索引更新。但注意：410 必须持续返回，否则搜索引擎会重新爬取。
+          另外，消极缓存（Negative Caching）机制下，浏览器与 CDN 会缓存 404/410 一段时间，
+          避免对不存在的资源重复请求，这意味着误删的资源需要等缓存过期才会重新可访问，必要时用
+          <code>Cache-Control: no-cache</code> 禁用消极缓存。
+        </p>
+      </details>
+      <details>
+        <summary>400 和 422 都是请求错误，怎么区分使用？</summary>
+        <p>
+          <strong>400 Bad Request</strong> 是<strong>语法错误</strong>——请求无法被服务器理解，如 JSON 解析失败、
+          缺必填字段、参数格式错误。<strong>422 Unprocessable Entity</strong> 是<strong>语义错误</strong>——
+          请求语法正确但字段值非法，如 <code>age: -5</code>（年龄为负）、<code>email: "invalid"</code>（邮箱格式错误）。
+          区分原则：<strong>400 是"我看不懂你说了什么"，422 是"我听懂了但你说得不对"</strong>。
+          RESTful API 设计中，422 已成为校验错误的事实标准，配合结构化错误体返回每个字段的错误原因，
+          如 <code>&#123;"errors": &#123;"email": "邮箱格式不正确", "age": "年龄必须为正整数"&#125;&#125;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>429 Too Many Requests 怎么处理？Retry-After 头有什么作用？</summary>
+        <p>
+          <strong>429 Too Many Requests</strong> 是限流触发的标准响应，<strong>必须配合 <code>Retry-After</code> 头</strong>
+          告诉客户端多久后可以重试（秒数或 HTTP 日期）。响应通常还含 <code>X-RateLimit-Limit</code>（总配额）、
+          <code>X-RateLimit-Remaining</code>（剩余配额）、<code>X-RateLimit-Reset</code>（配额重置时间戳）。
+          客户端应<strong>尊重 Retry-After，不要立即重试</strong>，否则会触发更严格的封禁。
+          指数退避算法的退避基准应基于此值：第 1 次重试等 Retry-After，第 2 次等 2 倍，第 3 次等 4 倍，以此类推。
+          服务端设计限流时，建议用令牌桶或漏桶算法，按用户 ID / IP / 接口维度分别限流。
+        </p>
+      </details>
+      <details>
+        <summary>500、502、503、504 都是服务端错误，怎么快速定位问题？</summary>
+        <p>
+          <strong>500 Internal Server Error</strong>：请求到达了应用服务器，但应用代码出错（如抛异常、数据库连接失败），
+          <strong>查后端日志</strong>。<strong>502 Bad Gateway</strong>：Nginx 等反向代理无法连接后端，
+          或后端返回了无效响应，<strong>后端服务可能挂了</strong>，检查进程是否存活、端口是否监听。
+          <strong>503 Service Unavailable</strong>：服务器<strong>主动拒绝</strong>服务，通常是维护中或过载熔断，
+          配合 <code>Retry-After</code> 头，<strong>查负载与熔断配置</strong>。
+          <strong>504 Gateway Timeout</strong>：反向代理连接后端成功，但后端响应超时，
+          <strong>查后端慢查询、死锁、上游超时配置</strong>（如 Nginx 的 <code>proxy_read_timeout</code>）。
+          定位顺序：先看状态码区分类型 → 502/504 查代理与网络 → 500 查应用日志 → 503 查负载与熔断。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的数据安全吗？查询记录会上传吗？</summary>
+        <p>
+          完全安全。本工具是<strong>纯前端应用</strong>，所有查询、筛选、复制操作均在浏览器本地完成，
+          <strong>不发起任何网络请求</strong>，不上传任何查询内容、不使用 Cookie 追踪、不接入第三方统计。
+          你可以放心查询任何 HTTP 状态码，无数据泄露风险。页面关闭后所有状态自动清除。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* HTTP 状态码工具页专属样式 */
+  :global(.httpstat) {
+    margin: 24px 0;
+  }
+
+  /* 搜索栏：搜索框 + 清空按钮横向布局 */
+  :global(.httpstat__search-bar) {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  :global(.httpstat__search) {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s;
+  }
+
+  :global(.httpstat__search:focus) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  :global(.httpstat__clear-btn) {
+    padding: 10px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.httpstat__clear-btn:hover) {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+  }
+
+  /* 分类筛选标签组：横向滚动，避免移动端换行 */
+  :global(.httpstat__categories) {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  :global(.httpstat__category-btn) {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  :global(.httpstat__category-btn:hover) {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+  }
+
+  :global(.httpstat__category-btn.is-active) {
+    background: var(--color-bg-soft);
+    border-color: currentColor;
+    font-weight: 600;
+  }
+
+  :global(.httpstat__count) {
+    display: inline-block;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--color-bg-code);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  /* 当前分类说明 */
+  :global(.httpstat__category-desc) {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-bg-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 结果统计 */
+  :global(.httpstat__stats) {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+  }
+
+  :global(.httpstat__stats strong) {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* 结果列表 */
+  :global(.httpstat__list) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  :global(.httpstat__item) {
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    overflow: hidden;
+  }
+
+  :global(.httpstat__item:hover) {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  :global(.httpstat__item.is-expanded) {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 卡片头部（可点击展开） */
+  :global(.httpstat__item-header) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-sans);
+    transition: background 0.15s;
+  }
+
+  :global(.httpstat__item-header:hover) {
+    background: var(--color-bg-soft);
+  }
+
+  /* 状态码徽章 */
+  :global(.httpstat__code) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  :global(.httpstat__name) {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  :global(.httpstat__desc) {
+    flex: 1;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.httpstat__common-badge) {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  :global(.httpstat__chevron) {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  :global(.httpstat__chevron.is-open) {
+    transform: rotate(180deg);
+  }
+
+  /* 展开详情区 */
+  :global(.httpstat__detail) {
+    padding: 12px 14px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  :global(.httpstat__detail-actions) {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  :global(.httpstat__copy-btn) {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.httpstat__copy-btn:hover) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  /* 字段列表 */
+  :global(.httpstat__fields) {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  :global(.httpstat__field) {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+
+  :global(.httpstat__field dt) {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    padding-top: 1px;
+  }
+
+  :global(.httpstat__field dd) {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text);
+    line-height: 1.65;
+  }
+
+  /* 响应头列表 */
+  :global(.httpstat__headers) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  :global(.httpstat__headers code) {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* 相关状态码对比 */
+  :global(.httpstat__related) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  :global(.httpstat__related li) {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.httpstat__related-btn) {
+    padding: 2px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  :global(.httpstat__related-btn:hover) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  :global(.httpstat__related-btn strong) {
+    margin-right: 4px;
+  }
+
+  :global(.httpstat__related-diff) {
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+  }
+
+  /* 空状态 */
+  :global(.httpstat__empty) {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+
+  :global(.httpstat__empty p) {
+    margin: 4px 0;
+  }
+
+  :global(.httpstat__empty-hint) {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  /* 隐藏提示 */
+  :global(.httpstat__hidden-hint) {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    font-size: 13px;
+  }
+
+  :global(.httpstat__link-btn) {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: inherit;
+    padding: 0;
+  }
+
+  /* FAQ 区块样式 */
+  .httpstat-faq {
+    margin: 48px 0 24px;
+  }
+
+  .httpstat-faq h2 {
+    margin-bottom: 16px;
+  }
+
+  .httpstat-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: var(--color-bg);
+  }
+
+  .httpstat-faq summary {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text);
+    list-style: none;
+  }
+
+  .httpstat-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .httpstat-faq summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    transition: transform 0.15s;
+  }
+
+  .httpstat-faq details[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  .httpstat-faq details p {
+    padding: 0 18px 16px;
+    color: var(--color-text-soft);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  .httpstat-faq code {
+    background: var(--color-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    :global(.httpstat__search) {
+      padding: 12px 14px;
+      font-size: 16px; /* 避免 iOS 聚焦时缩放 */
+    }
+
+    :global(.httpstat__categories) {
+      gap: 6px;
+    }
+
+    :global(.httpstat__category-btn) {
+      padding: 6px 12px;
+      font-size: 12.5px;
+    }
+
+    :global(.httpstat__item-header) {
+      gap: 8px;
+      padding: 10px 12px;
+      flex-wrap: wrap;
+    }
+
+    :global(.httpstat__desc) {
+      flex-basis: 100%;
+      white-space: normal;
+    }
+
+    :global(.httpstat__field) {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    :global(.httpstat__field dt) {
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    :global(.httpstat__code) {
+      min-width: 42px;
+      font-size: 13px;
+    }
+
+    :global(.httpstat__name) {
+      font-size: 13px;
+    }
+
+    :global(.httpstat__related li) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  }
+</style>

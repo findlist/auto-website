@@ -1,0 +1,630 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import RegexBenchmarkTool from '../components/RegexBenchmarkTool.tsx';
+
+const meta: SiteMeta = {
+  title: '正则表达式性能基准测试工具 - ReDoS 检测与回溯分析',
+  description:
+    '免费的在线正则表达式性能基准测试工具：执行 N 次匹配统计平均/最大/最小/标准差耗时，静态分析检测嵌套量词、重叠分支、通配量词三类 ReDoS 危险模式，渐进式压力测试用递增长度输入判断是否指数级回溯。内置经典 ReDoS 示例 (a+)+ 与安全正则示例。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '正则表达式性能基准测试工具',
+    url: 'https://toolbox.example.com/regex-benchmark',
+    description: '在线正则表达式性能基准测试工具，支持基准测试、ReDoS 静态检测与渐进式压力测试，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>正则表达式性能基准测试工具</h1>
+      <p>
+        执行 N 次正则匹配统计平均/最大/最小/标准差耗时，静态分析检测嵌套量词、重叠分支、通配量词三类 ReDoS 危险模式，
+        渐进式压力测试用递增长度输入判断是否指数级回溯。内置经典 ReDoS 示例 <code>(a+)+</code> 与安全正则示例。所有数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <RegexBenchmarkTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 ReDoS？为什么正则表达式会有安全问题？</summary>
+        <p>
+          ReDoS（Regular Expression Denial of Service，正则表达式拒绝服务）是指攻击者构造恶意输入，
+          使正则表达式匹配时产生指数级回溯，导致 CPU 占用 100% 甚至浏览器/服务崩溃。
+          根本原因是某些正则引擎（如 JavaScript 的 NFA 引擎）在匹配失败时会尝试所有可能的路径，
+          当正则含<strong>嵌套量词</strong>（如 <code>(a+)+</code>）、<strong>重叠分支</strong>（如 <code>(a|a)*</code>）时，
+          回溯路径数会随输入长度呈指数增长。例如正则 <code>^(a+)+$</code> 匹配 <code>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!</code>
+          （30 个 a 加一个 !）可能耗时数秒甚至数分钟。
+        </p>
+      </details>
+      <details>
+        <summary>哪些正则模式容易触发 ReDoS？</summary>
+        <p>
+          常见的三类危险模式：
+          <br />1. <strong>嵌套量词</strong>：<code>(a+)+</code>、<code>(a*)*</code>、<code>{'(a{2,})+'}</code>、<code>([a-z]+)*</code>，
+          捕获组内含量词且组外又跟量词，回溯路径数指数增长；
+          <br />2. <strong>重叠分支 + 量词</strong>：<code>(a|a)*</code>、<code>(ab|a)*</code>、<code>(\d|\w)*</code>，
+          分支间存在重叠时，引擎会尝试所有分支组合；
+          <br />3. <strong>通配量词</strong>：<code>.+</code>、<code>.*</code>、<code>[^x]+</code>，
+          通配符匹配范围过广，在大输入上产生大量回溯。
+          <br />此外，<code>\w+\w+</code>、<code>\d+\d+</code> 等相邻重复量词也会产生回溯。
+        </p>
+      </details>
+      <details>
+        <summary>嵌套量词为什么危险？回溯是如何发生的？</summary>
+        <p>
+          以 <code>(a+)+</code> 匹配 <code>aaaa!</code> 为例：
+          <br />- 内层 <code>a+</code> 先贪婪匹配全部 4 个 a；
+          <br />- 外层 <code>+</code> 满足，继续匹配 <code>$</code> 但遇到 <code>!</code> 失败；
+          <br />- 引擎回溯：内层 <code>a+</code> 释放 1 个 a，匹配 3 个 a；
+          <br />- 外层 <code>+</code> 尝试第二组 <code>(a+)</code>，匹配剩下的 1 个 a；
+          <br />- 继续匹配 <code>$</code> 仍失败，继续回溯……
+          <br />对于 n 个 a，回溯路径数约为 2<sup>n</sup>，n=30 时约 10 亿路径，CPU 直接卡死。
+          这就是 ReDoS 的本质：回溯路径数随输入长度指数增长。
+        </p>
+      </details>
+      <details>
+        <summary>基准测试的迭代次数怎么选？</summary>
+        <p>
+          迭代次数决定统计样本大小：
+          <br />- <strong>1-10 次</strong>：快速验证，结果波动大，仅用于判断正则是否能正常运行；
+          <br />- <strong>100 次</strong>（默认）：推荐值，统计稳定且总耗时可控（&lt; 2 秒）；
+          <br />- <strong>500-1000 次</strong>：高精度统计，适合对比微秒级差异，但总耗时可能较长。
+          <br />本工具内置超时保护：若总耗时超过 2000 ms 自动中止，避免卡死浏览器。
+          对于 ReDoS 正则，建议先用压力测试验证风险，再决定是否做大量迭代。
+        </p>
+      </details>
+      <details>
+        <summary>渐进压力测试如何判断指数增长？</summary>
+        <p>
+          压力测试用 5 个递增长度（10, 20, 30, 40, 50 字符）的输入分别测量执行耗时，然后比较时间增长倍数与长度增长倍数：
+          <br />- 若 <strong>时间增长倍数 &gt; 长度增长倍数 × 5</strong>，且最长耗时 &gt; 10 ms，判定为<strong>指数增长</strong>（高风险）；
+          <br />- 若单次耗时超过 1000 ms 自动中止，标记为<strong>已超时</strong>（高风险）；
+          <br />- 否则判定为<strong>线性增长</strong>（相对安全）。
+          <br />例如长度 10 耗时 0.1 ms，长度 50 耗时 100 ms，时间增长 1000 倍而长度增长 5 倍，1000 &gt; 5×5=25，判定为指数增长。
+          注意：压力测试用测试字符串的第一个字符作为基础字符重复填充，建议载入「经典 ReDoS」示例体验。
+        </p>
+      </details>
+      <details>
+        <summary>与正则表达式测试工具有何区别？</summary>
+        <p>
+          <a href="/regex">正则表达式测试工具</a>关注<strong>功能正确性</strong>：实时高亮匹配、显示捕获组、支持替换，
+          适合验证正则是否匹配预期内容。
+          <br />本工具关注<strong>性能与安全</strong>：测量执行耗时、检测 ReDoS 风险、判断回溯是否指数增长，
+          适合上线前对正则做性能审计。
+          <br />两者互补：先用测试工具验证功能，再用本工具验证性能。本工具的静态分析可在输入正则后实时显示风险等级，
+          无需点击按钮；基准测试与压力测试需手动触发。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有正则编译、匹配、计时逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。性能基准基于浏览器原生的 <code>performance.now()</code> 高精度计时器，测量结果可能因设备性能不同而略有差异。</p>
+      </details>
+      <details>
+        <summary>如何优化 ReDoS 风险正则？</summary>
+        <p>
+          优化策略（按优先级）：
+          <br />1. <strong>消除嵌套量词</strong>：用原子组 <code>(?&gt;...)</code> 或占有量词 <code>a++</code> 限制回溯（JavaScript 不支持时改写为等价线性模式，如 <code>(a+)+</code> → <code>a+</code>）；
+          <br />2. <strong>消除分支重叠</strong>：确保交替分支互斥，如 <code>(a|ab)</code> 改为 <code>(ab|a)</code>（长分支在前）或提取公共前缀；
+          <br />3. <strong>用具体字符集替代通配符</strong>：如用 <code>[^"\r\n]+</code> 替代 <code>.+</code> 匹配带引号字符串；
+          <br />4. <strong>合并相邻量词</strong>：<code>\w+\w+</code> → <code>\w+</code>；
+          <br />5. <strong>对超时敏感场景使用专门库</strong>：如 Node.js 的 <code>re2</code> 模块（基于 Google RE2，线性时间，不支持回溯）；
+          <br />6. <strong>设置超时</strong>：服务端正则匹配应设置超时保护，避免单个请求拖垮服务。
+        </p>
+      </details>
+      <details>
+        <summary>为什么我的正则被标记为「高风险」但实际运行很快？</summary>
+        <p>
+          静态分析是<strong>保守判定</strong>：只要检测到危险结构（如嵌套量词）就标记为高风险，
+          但实际是否触发 ReDoS 取决于输入。例如 <code>(a+)+</code> 匹配 <code>aaa</code>（纯 a）很快，
+          匹配 <code>aaa!</code>（结尾非 a）才会指数回溯。
+          <br />建议结合压力测试验证：若压力测试显示线性增长，说明实际输入不会触发回溯；
+          若显示指数增长或超时，说明确实存在 ReDoS 风险，需优化。
+          <br />静态分析的价值在于<strong>提前预警</strong>：即使当前输入不触发，未来输入变化时可能触发。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 正则性能基准工具专属样式：.rbmtool 前缀避免污染其他页面 */
+  .rbmtool {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+  }
+
+  .rbmtool__input,
+  .rbmtool__result {
+    background: var(--color-bg-code);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    border: 1px solid var(--color-border);
+  }
+
+  .rbmtool__field {
+    margin-bottom: 16px;
+  }
+
+  .rbmtool__label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+  }
+
+  .rbmtool__count {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .rbmtool__regex-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .rbmtool__slash {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--color-text-soft);
+    font-weight: 700;
+  }
+
+  .rbmtool__input-box {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .rbmtool__input-box:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+  }
+
+  .rbmtool__flags-box {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .rbmtool__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .rbmtool__flag {
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .rbmtool__flag--active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .rbmtool__flag:hover {
+    border-color: var(--color-primary);
+  }
+
+  .rbmtool__textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .rbmtool__textarea:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+  }
+
+  .rbmtool__iter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rbmtool__iter-box {
+    width: 100px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .rbmtool__iter-hint {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .rbmtool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .rbmtool__btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .rbmtool__btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .rbmtool__btn--primary {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .rbmtool__btn--primary:hover:not(:disabled) {
+    opacity: 0.9;
+    color: #fff;
+  }
+
+  .rbmtool__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .rbmtool__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .rbmtool__presets-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    margin-right: 4px;
+  }
+
+  .rbmtool__preset-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .rbmtool__preset-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  /* 结果区 */
+  .rbmtool__section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--color-border);
+  }
+
+  .rbmtool__section:last-child {
+    border-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .rbmtool__section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 12px 0;
+  }
+
+  .rbmtool__sub-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 12px 0 6px 0;
+  }
+
+  .rbmtool__badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  .rbmtool__badge--low {
+    background: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+  }
+
+  .rbmtool__badge--medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+  }
+
+  .rbmtool__badge--high {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+  }
+
+  .rbmtool__reasons,
+  .rbmtool__suggestions {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px 0;
+  }
+
+  .rbmtool__reason {
+    padding: 4px 0 4px 16px;
+    font-size: 13px;
+    color: var(--color-text);
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .rbmtool__reason::before {
+    content: '•';
+    position: absolute;
+    left: 4px;
+    color: var(--color-text-soft);
+  }
+
+  .rbmtool__suggestion {
+    padding: 4px 0 4px 16px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .rbmtool__suggestion::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+  }
+
+  /* 统计卡片 */
+  .rbmtool__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .rbmtool__stat {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .rbmtool__stat-label {
+    font-size: 11px;
+    color: var(--color-text-soft);
+  }
+
+  .rbmtool__stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .rbmtool__stat-value--accent {
+    color: var(--color-primary);
+  }
+
+  /* 条形图 */
+  .rbmtool__chart {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+  }
+
+  .rbmtool__chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 80px;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 2px;
+  }
+
+  .rbmtool__bar {
+    flex: 1;
+    min-width: 2px;
+    background: rgba(59, 130, 246, 0.4);
+    border-radius: 1px 1px 0 0;
+    transition: background 0.15s ease;
+  }
+
+  .rbmtool__bar:hover {
+    background: rgba(59, 130, 246, 0.8);
+  }
+
+  .rbmtool__bar--max {
+    background: rgba(239, 68, 68, 0.6);
+  }
+
+  .rbmtool__bar--max:hover {
+    background: rgba(239, 68, 68, 1);
+  }
+
+  .rbmtool__chart-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-text-soft);
+  }
+
+  /* 表格 */
+  .rbmtool__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 13px;
+  }
+
+  .rbmtool__table th,
+  .rbmtool__table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .rbmtool__table th {
+    font-weight: 600;
+    color: var(--color-text-soft);
+    background: var(--color-bg);
+  }
+
+  .rbmtool__table td {
+    font-family: var(--font-mono);
+    color: var(--color-text);
+  }
+
+  /* 提示消息 */
+  .rbmtool__error {
+    color: #dc2626;
+    font-size: 13px;
+    margin: 8px 0;
+  }
+
+  .rbmtool__warn {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+
+  .rbmtool__info {
+    background: rgba(34, 197, 94, 0.1);
+    color: #166534;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+
+  .rbmtool__copy-btn {
+    margin-left: auto;
+    padding: 2px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .rbmtool__copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .rbmtool__empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+  }
+
+  .rbmtool__empty p {
+    margin: 4px 0;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .rbmtool {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .rbmtool__stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rbmtool__actions {
+      flex-direction: column;
+    }
+
+    .rbmtool__btn {
+      width: 100%;
+    }
+  }
+</style>

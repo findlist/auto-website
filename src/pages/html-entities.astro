@@ -1,0 +1,485 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HtmlEntityTool from '../components/HtmlEntityTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'HTML 实体编解码工具 - 支持 &amp; &lt; &copy; 与数字实体互转',
+  description:
+    '免费的在线 HTML 实体编解码工具：支持命名实体（&amp; &lt; &copy; &reg; &trade;）、十进制 &#NN; 与十六进制 &#xNN; 数字实体互转，内置常用实体速查表。三种编码模式可选，所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'HTML 实体编解码工具',
+    url: 'https://toolbox.example.com/html-entities',
+    description: '在线 HTML 实体编解码工具，支持命名实体、数字实体互转与常用实体速查表，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>HTML 实体编解码工具</h1>
+      <p>
+        在文本与 HTML 实体之间双向转换，支持命名实体（&amp; &lt; &copy;）、十进制（&#38;）与十六进制（&#x26;）数字实体，内置常用实体速查表。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <HtmlEntityTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 HTML 实体？为什么需要它？</summary>
+        <p>HTML 实体是用 <code>&amp;</code> 开头、<code>;</code> 结尾的字符串表示特殊字符的机制。它有两个核心用途：①转义 HTML 语法字符（如 <code>&lt;</code> <code>&gt;</code> <code>&amp;</code> <code>&quot;</code>），避免它们被解析为标签或属性边界，防止 XSS 与显示错误；②输入键盘上难以直接输入的符号（如 <code>&copy;</code> ©、<code>&reg;</code> ®、<code>&trade;</code> ™、<code>&mdash;</code> —）。</p>
+      </details>
+      <details>
+        <summary>命名实体、十进制、十六进制有什么区别？</summary>
+        <p>三种写法表示同一个字符：<code>&amp;amp;</code> = <code>&amp;#38;</code> = <code>&amp;#x26;</code>，都表示与号 <code>&amp;</code>。<strong>命名实体</strong>用易记的名字（amp、lt、copy），但只能表示 HTML 规范中预定义的字符；<strong>十进制</strong>用 <code>&amp;#NN;</code> 表示任意 Unicode 码点；<strong>十六进制</strong>用 <code>&amp;#xNN;</code> 表示，常用于代码生成与编程场景。三者可混用，浏览器都会正确解析。</p>
+      </details>
+      <details>
+        <summary>三种编码模式有什么区别？该如何选择？</summary>
+        <p>本工具提供三种编码模式：<br />① <strong>仅必要字符</strong>：只转义 <code>&amp;</code> <code>&lt;</code> <code>&gt;</code> <code>&quot;</code> <code>&#39;</code>，保留中文与符号原样。适用于在 HTML 文档中安全显示用户输入的内容。<br />② <strong>命名实体优先</strong>：必要字符 + 命名实体表中的符号（© ® ™ … 等）优先用命名形式，其余非 ASCII 用数字实体。可读性最好，适合邮件、文档场景。<br />③ <strong>全部数字实体</strong>：所有非 ASCII 字符（含中文）都转为 <code>&amp;#NN;</code>。体积最大但兼容性最高，适合纯 ASCII 通道（如老式邮件、XML 声明前的字符）。</p>
+      </details>
+      <details>
+        <summary>解码时用的是什么方法？支持所有 HTML5 实体吗？</summary>
+        <p>本工具使用浏览器原生 <code>DOMParser</code> 解码，支持 HTML5 规范中定义的所有命名实体（包括 <code>&amp;copy;</code> <code>&amp;reg;</code> <code>&amp;trade;</code> <code>&amp;mdash;</code> 等数百个），以及十进制 <code>&amp;#NN;</code> 与十六进制 <code>&amp;#xNN;</code> 数字实体。比手写映射表更完整、更准确。</p>
+      </details>
+      <details>
+        <summary>HTML 实体能防止 XSS 攻击吗？</summary>
+        <p>能且不能。<strong>能</strong>：在输出用户输入到 HTML 文本节点或属性值之前进行 HTML 实体编码，是防止 XSS 的标准做法（OWASP 推荐）。<strong>不能</strong>：实体编码仅在 HTML 上下文有效，如果你把用户输入插入到 <code>&lt;script&gt;</code> 内、事件处理属性（如 <code>onclick</code>）内、或 URL 上下文（如 <code>href</code>），仍可能被绕过。完整防御需配合 CSP、输入校验、上下文相关编码。本工具内置<strong>XSS 防御演示</strong>模块（见页面下方），可选择 <code>&lt;script&gt;</code> 注入、<code>onerror</code> 事件、<code>javascript:</code> 协议等典型载荷，实时查看编码前后差异与上下文安全提示。详细原理参见博客<a href="/blog/web-security-csp-xss-csrf">《前端安全实战：CSP、XSS、CSRF 防护全景指南》</a>。</p>
+      </details>
+      <details>
+        <summary>XSS 防御演示模块会执行脚本吗？安全吗？</summary>
+        <p>不会执行任何脚本，完全安全。演示模块仅以<strong>纯文本形式</strong>展示攻击载荷的原始内容与 HTML 实体编码后的结果，所有内容通过 React 文本节点渲染（自动转义），浏览器不会将其解析为可执行代码。你可以放心选择任意预设载荷查看编码效果。模块还提供上下文安全提示表，标注 HTML 实体编码在「HTML 文本节点 / 属性值 / <code>&lt;script&gt;</code> 块内 / 事件处理器 / href 属性」五种上下文的有效性，帮助你理解为什么单一编码不能防住所有 XSS。</p>
+      </details>
+      <details>
+        <summary>&amp;amp; 与 &amp; 的区别？为什么会出现双重编码？</summary>
+        <p>这是常见的双重编码问题。如果文本已经是 <code>&amp;amp;</code>（表示字符 <code>&amp;</code>），但被错误地再次编码，会变成 <code>&amp;amp;amp;</code>，显示为字面量 <code>&amp;amp;</code> 而非字符 <code>&amp;</code>。常见于后端已编码一次、前端再次编码的场景。本工具不会重复编码已编码的实体（必要字符优先匹配），但仍建议在编码前确认输入是否已是实体形式。</p>
+      </details>
+      <details>
+        <summary>为什么 &amp;nbsp;（不换行空格）和普通空格不一样？</summary>
+        <p><code>&amp;nbsp;</code>（码点 U+00A0）和普通空格（U+0020）是不同的字符。<strong>不换行空格</strong>不会被浏览器换行截断，常用于防止「100 kg」被拆成两行；HTML 中连续多个 <code>&amp;nbsp;</code> 都会显示，而连续普通空格会被合并为一个。但 <code>&amp;nbsp;</code> 不应被滥用做缩进，应使用 CSS 的 <code>margin</code> 或 <code>padding</code>。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有处理逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* HTML 实体工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .entitytool__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .entitytool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .entitytool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 编码风格下拉选择 */
+  .entitytool__select select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .entitytool__select select:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  /* 速查表区域 */
+  .entitytool__cheatsheet {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .entitytool__cheatsheet-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .entitytool__cheatsheet-head h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .entitytool__filter input {
+    width: 240px;
+    max-width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .entitytool__filter input:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  /* 实体卡片网格 */
+  .entitytool__entity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .entitytool__entity-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    transition: all 0.15s ease;
+  }
+
+  .entitytool__entity-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 大字符显示 */
+  .entitytool__entity-char {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    line-height: 1;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+  }
+
+  .entitytool__entity-info {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .entitytool__entity-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+  }
+
+  .entitytool__entity-code {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+    margin-top: 2px;
+  }
+
+  .entitytool__entity-desc {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .entitytool__entity-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .entitytool__entity-actions .btn {
+    padding: 3px 8px;
+    font-size: 11.5px;
+  }
+
+  .entitytool__empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 24px;
+    font-size: 14px;
+  }
+
+  /* XSS 防御演示模块 */
+  .entitytool__xss {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .entitytool__xss-head h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .entitytool__xss-intro {
+    margin: 0 0 16px;
+    font-size: 13.5px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  /* 载荷按钮组 */
+  .entitytool__xss-payloads {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* 编码前后对比：两栏并排 */
+  .entitytool__xss-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .entitytool__xss-panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    background: var(--color-bg);
+  }
+
+  .entitytool__xss-panel--danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+
+  .entitytool__xss-panel--safe {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+
+  .entitytool__xss-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .entitytool__xss-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .entitytool__xss-badge--danger {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .entitytool__xss-badge--safe {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .entitytool__xss-panel-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 代码块：等宽字体 + 自动换行，避免长载荷撑破布局 */
+  .entitytool__xss-code {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+  }
+
+  .entitytool__xss-code code {
+    font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+    font-size: 12.5px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .entitytool__xss-panel-note {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  .entitytool__xss-panel-note code {
+    padding: 1px 4px;
+    background: var(--color-bg-soft);
+    border-radius: 3px;
+    font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+    font-size: 11.5px;
+  }
+
+  /* 上下文安全提示 */
+  .entitytool__xss-subtitle {
+    margin: 0 0 12px;
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+
+  .entitytool__xss-context-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .entitytool__xss-context {
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    border-left-width: 3px;
+  }
+
+  .entitytool__xss-context--safe {
+    border-left-color: #22c55e;
+  }
+
+  .entitytool__xss-context--danger {
+    border-left-color: #ef4444;
+  }
+
+  .entitytool__xss-context--warn {
+    border-left-color: #f59e0b;
+  }
+
+  .entitytool__xss-context-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .entitytool__xss-context-label {
+    font-size: 12px;
+    font-weight: 600;
+    flex: 0 0 auto;
+  }
+
+  .entitytool__xss-context-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .entitytool__xss-context-example {
+    display: block;
+    margin: 4px 0 8px;
+    padding: 4px 8px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-sm);
+    font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    word-break: break-all;
+  }
+
+  .entitytool__xss-context-note {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  .entitytool__xss-tip {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  .entitytool__xss-tip a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .entitytool__xss-tip a:hover {
+    text-decoration: none;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .entitytool__seg {
+      flex: 1 1 auto;
+    }
+
+    .entitytool__cheatsheet-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .entitytool__filter input {
+      width: 100%;
+    }
+
+    .entitytool__entity-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .entitytool__entity-actions {
+      flex-direction: row;
+    }
+
+    /* XSS 演示模块移动端：对比面板纵向排列、上下文卡片单列 */
+    .entitytool__xss-compare {
+      grid-template-columns: 1fr;
+    }
+
+    .entitytool__xss-context-list {
+      grid-template-columns: 1fr;
+    }
+
+    .entitytool__xss-code code {
+      font-size: 12px;
+    }
+  }
+</style>

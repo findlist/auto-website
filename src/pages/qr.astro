@@ -1,0 +1,412 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import QrTool from '../components/QrTool.tsx';
+
+const meta: SiteMeta = {
+  title: '二维码生成器 - 在线 QR Code 生成（支持自定义颜色与容错等级）',
+  description:
+    '免费的在线二维码生成器：支持文本 / URL / WiFi 配置 / 邮件四类预设，可调节容错等级（L/M/Q/H）、尺寸、留白、前景 / 背景色，实时预览并下载 PNG / SVG。配对比度检查避免扫描失败，所有生成在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '二维码生成器',
+    url: 'https://toolbox.example.com/qr',
+    description: '在线二维码生成器：支持自定义颜色、容错等级、PNG / SVG 下载，全本地处理。',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>二维码生成器</h1>
+      <p>
+        在线生成 QR Code 二维码：支持文本 / URL / WiFi 配置 / 邮件四类预设，
+        可调节容错等级（L/M/Q/H）、尺寸（128-512px）、留白、前景 / 背景色。
+        实时预览，一键下载 PNG 或 SVG。所有生成在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <QrTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>二维码的容错等级是什么？应该怎么选？</summary>
+        <p>
+          容错等级（Error Correction Level）指二维码在部分模块污损或遮挡时仍能正确解码的能力，
+          由 <strong>Reed-Solomon</strong> 纠错算法实现。QR 码规范定义了 4 个等级：
+        </p>
+        <ul>
+          <li><strong>L（Low）</strong>：约 7% 数据可恢复，适合干净环境（如电子屏幕展示）</li>
+          <li><strong>M（Medium）</strong>：约 15% 数据可恢复，默认级别，适合一般打印</li>
+          <li><strong>Q（Quartile）</strong>：约 25% 数据可恢复，适合有少量污损的场景（如外卖单）</li>
+          <li><strong>H（High）</strong>：约 30% 数据可恢复，适合物流、工业场景或需嵌入 Logo</li>
+        </ul>
+        <p>
+          <strong>选型建议</strong>：电子展示选 L 或 M，打印场景选 M，物流 / 工业选 H。
+          注意容错等级越高，相同数据下的二维码模块数越多、密度越大。
+        </p>
+      </details>
+      <details>
+        <summary>二维码能存多少数据？为什么中文比英文少很多？</summary>
+        <p>
+          QR 码的容量取决于版本（1-40）、容错等级和编码模式。版本 40（最大）在容错 L 下：
+        </p>
+        <ul>
+          <li><strong>数字模式</strong>：最多 7089 字符</li>
+          <li><strong>字母数字模式</strong>：最多 4296 字符（仅大写字母 + 数字 + 9 个符号）</li>
+          <li><strong>字节模式</strong>：最多 2953 字节（UTF-8 编码，中文每个 3 字节，即约 984 个汉字）</li>
+          <li><strong>汉字模式</strong>：最多 1817 个 Shift JIS 汉字（仅日文汉字）</li>
+        </ul>
+        <p>
+          中文按 UTF-8 字节模式编码，每个汉字占 3 字节，因此中文二维码的字符数明显少于英文。
+          建议长文本使用短链接服务压缩后再生成二维码。
+        </p>
+      </details>
+      <details>
+        <summary>WiFi 二维码的格式是怎样的？所有手机都支持吗？</summary>
+        <p>
+          WiFi 二维码使用 <code>WIFI:</code> 前缀的特殊格式，由 Android 原生相机与部分第三方扫码 App 识别：
+        </p>
+        <pre><code>WIFI:T:WPA;S:网络名;P:密码;H:false;;</code></pre>
+        <p>字段说明：</p>
+        <ul>
+          <li><code>T</code>：认证类型（WPA / WEP / nopass）</li>
+          <li><code>S</code>：网络名称（SSID，含特殊字符需转义 <code>\;</code> <code>\,</code> <code>\"</code> <code>\\</code>）</li>
+          <li><code>P</code>：密码（nopass 时可省略）</li>
+          <li><code>H</code>：是否隐藏 SSID（true / false）</li>
+          <li>末尾必须以 <code>;;</code> 结尾</li>
+        </ul>
+        <p>
+          <strong>注意</strong>：iOS 系统相机原生不识别 WiFi 二维码，需通过「快捷指令」App 添加对应解析逻辑。
+          本工具的 WiFi 预设仅生成标准格式，扫码能否识别取决于手机系统。
+        </p>
+      </details>
+      <details>
+        <summary>二维码前景色和背景色有什么限制？</summary>
+        <p>
+          QR 码规范要求<strong>前景色（深色）比背景色（浅色）暗</strong>，且对比度 ≥ 3:1 才能稳定扫描。
+          本工具会自动检测对比度并给出提示。常见错误：
+        </p>
+        <ul>
+          <li>前景与背景同色或相近（如黑底深灰）→ 扫描失败</li>
+          <li>背景透明（PNG alpha=0）→ 在不同载体上表现不一致，建议始终用纯色背景</li>
+          <li>使用红色前景 + 红色背景 → 即使亮度不同也容易失败</li>
+          <li>反色（白前景黑背景）→ 部分扫描器支持，但兼容性差，不推荐</li>
+        </ul>
+        <p>
+          <strong>建议</strong>：默认黑底白字（<code>#000000</code> + <code>#ffffff</code>）兼容性最好。
+          如需品牌色，确保前景比背景暗且对比度 ≥ 3:1。
+        </p>
+      </details>
+      <details>
+        <summary>SVG 和 PNG 格式有什么区别？应该下载哪个？</summary>
+        <p>
+          <strong>PNG</strong>是位图格式，由像素组成，放大后会模糊。适合打印小尺寸二维码、嵌入文档、
+          微信分享等场景。文件较小（约 2-10KB）。
+        </p>
+        <p>
+          <strong>SVG</strong>是矢量格式，由路径组成，任意放大不模糊。适合大尺寸印刷（海报、易拉宝）、
+          网页嵌入、需后期编辑的场景。文件略大（约 5-20KB）。
+        </p>
+        <p>
+          <strong>建议</strong>：屏幕展示与小打印选 PNG，大型印刷或需缩放选 SVG。
+        </p>
+      </details>
+      <details>
+        <summary>生成的二维码会保存到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，使用 <code>qrcode</code> JavaScript 库在本地生成二维码，
+          所有数据不离开你的设备。WiFi 密码、邮件地址等敏感信息不会被记录或上传。
+          如需对二维码中的 URL 进行编码转换，可配合 <a href="/url">URL 编解码工具</a>、
+          <a href="/base64">Base64 编解码工具</a> 使用。
+        </p>
+      </details>
+      <details>
+        <summary>二维码中间能放 Logo 吗？会扫描失败吗？</summary>
+        <p>
+          可以放 Logo，但会遮挡部分模块。需选择<strong>容错等级 H（30%）</strong>，
+          并确保 Logo 不超过二维码总面积的 30%。本工具暂不支持自动嵌入 Logo，
+          建议下载 SVG 后用矢量编辑器（如 Inkscape）添加，或下载 PNG 后用图像编辑器合成。
+        </p>
+      </details>
+      <details>
+        <summary>如何生成 vCard 名片二维码？</summary>
+        <p>
+          vCard 是电子名片格式，扫码后可一键导入通讯录。本工具暂未提供 vCard 预设，
+          但可在输入框直接粘贴 vCard 字符串生成。示例：
+        </p>
+        <pre><code>BEGIN:VCARD
+VERSION:3.0
+FN:张三
+TEL;TYPE=CELL:13800138000
+EMAIL:zhangsan@example.com
+END:VCARD</code></pre>
+        <p>注意 vCard 字符较多，建议容错等级选 H 以保证扫描成功率。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 二维码工具专属样式 */
+  .qrtool__panels {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* 预设按钮组 */
+  .qrtool__presets {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .qrtool__preset {
+    padding: 4px 10px;
+    font-size: 12.5px;
+  }
+
+  /* 参数控制区 */
+  .qrtool__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+  }
+
+  .qrtool__field {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .qrtool__field-label {
+    min-width: 80px;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .qrtool__field-hint {
+    flex: 1;
+    min-width: 200px;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+  }
+
+  .qrtool__range {
+    flex: 1;
+    min-width: 180px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+  }
+
+  /* 颜色选择区 */
+  .qrtool__colors {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .qrtool__color-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .qrtool__color-item label {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .qrtool__color-picker {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+  }
+
+  .qrtool__color-picker::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  .qrtool__color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+  }
+
+  .qrtool__color-text {
+    width: 80px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  /* 警告提示 */
+  .qrtool__warn {
+    margin-top: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #92400e;
+    background: rgba(245, 158, 11, 0.12);
+    border-left: 3px solid #f59e0b;
+    border-radius: var(--radius-sm);
+  }
+
+  /* 预览区 */
+  .qrtool__preview-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .qrtool__preview-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .qrtool__canvas-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 320px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    background-image:
+      linear-gradient(45deg, var(--color-bg-soft) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--color-bg-soft) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--color-bg-soft) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--color-bg-soft) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .qrtool__canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+  }
+
+  .qrtool__empty {
+    position: absolute;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  /* 技术指标 */
+  .qrtool__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 0;
+  }
+
+  .qrtool__stat-item {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft);
+    text-align: center;
+  }
+
+  .qrtool__stat-item dt {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    margin-bottom: 2px;
+  }
+
+  .qrtool__stat-item dd {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+  }
+
+  /* 错误提示 */
+  .qrtool__error {
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #991b1b;
+    background: rgba(239, 68, 68, 0.12);
+    border-left: 3px solid #ef4444;
+    border-radius: var(--radius-sm);
+  }
+
+  /* 暗色模式适配：站点使用 prefers-color-scheme */
+  @media (prefers-color-scheme: dark) {
+    .qrtool__warn {
+      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.18);
+    }
+
+    .qrtool__error {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.18);
+    }
+  }
+
+  /* 移动端适配 */
+  @media (max-width: 768px) {
+    .qrtool__panels {
+      grid-template-columns: 1fr;
+    }
+
+    .qrtool__stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .qrtool__field-label {
+      min-width: 64px;
+    }
+
+    .qrtool__field-hint {
+      min-width: 100%;
+      font-size: 12px;
+    }
+
+    .qrtool__canvas-wrap {
+      min-height: 240px;
+      padding: 16px;
+    }
+  }
+
+  @media (max-width: 375px) {
+    .qrtool__stats {
+      grid-template-columns: 1fr;
+    }
+
+    .qrtool__color-item {
+      flex-wrap: wrap;
+    }
+  }
+</style>

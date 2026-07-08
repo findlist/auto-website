@@ -1,0 +1,627 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JsonTool from '../components/JsonTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JSON 格式化 / 压缩 / 校验 / 转义工具',
+  description:
+    '免费的在线 JSON 工具：一键格式化、压缩、校验、转义与去转义。支持中文友好的错误定位（行号 / 列号），所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JSON 格式化工具',
+    url: 'https://toolbox.example.com/json',
+    description: '在线 JSON 格式化、压缩、校验、转义与去转义工具，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JSON 格式化工具</h1>
+      <p>
+        格式化、压缩、校验、转义 / 去转义一站式完成，配套树形视图与关键词搜索高亮，便于浏览大型 JSON。数据仅在浏览器本地处理，敏感信息不外传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JsonTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有处理逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+      <details>
+        <summary>支持多大的 JSON？</summary>
+        <p>理论上无上限，受限于你设备的内存。一般几十 MB 内可流畅处理。</p>
+      </details>
+      <details>
+        <summary>格式化与压缩有什么区别？</summary>
+        <p>格式化会添加缩进与换行，便于人眼阅读；压缩会移除所有空白，适合传输与存储。</p>
+      </details>
+      <details>
+        <summary>转义和去转义用在哪里？</summary>
+        <p>当你需要把一段 JSON 作为字符串嵌入到另一段 JSON 中时，需要对内部的引号等特殊字符进行转义。去转义则相反，把字符串内容还原为原始字符。</p>
+      </details>
+      <details>
+        <summary>树形视图支持搜索吗？</summary>
+        <p>支持。切换到「树形」Tab 后，顶部会出现搜索框，输入关键词即可实时高亮所有匹配的键名与字符串值（不区分大小写），同时自动展开所有容器节点便于查看匹配位置，并显示「找到 N 个匹配」计数。数字、布尔、null 类型不参与匹配。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JSON 工具专属样式：限定在 .jsontool 前缀下，避免污染其他页面 */
+  .jsontool {
+    margin: 24px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .jsontool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .jsontool__actions,
+  .jsontool__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .jsontool__indent {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .jsontool__indent select {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .jsontool__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 420px;
+  }
+
+  .jsontool__panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .jsontool__panel:first-child {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .jsontool__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jsontool__stat {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .jsontool__copy {
+    margin-left: 0;
+  }
+
+  .jsontool__textarea {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    outline: none;
+    resize: vertical;
+    min-height: 380px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    tab-size: 2;
+  }
+
+  .jsontool__textarea--output {
+    background: var(--color-bg-code);
+    color: var(--color-text);
+  }
+
+  .jsontool__textarea::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .jsontool__status {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 13px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  .jsontool__error {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    color: var(--color-error);
+  }
+
+  .jsontool__error-loc {
+    color: var(--color-text-soft);
+  }
+
+  .jsontool__notice {
+    color: var(--color-success);
+  }
+
+  .jsontool__hint {
+    color: var(--color-text-muted);
+  }
+
+  /* ============ 视图切换 Tab ============ */
+  .jsontool__view-tabs {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-sm);
+  }
+
+  .jsontool__view-tab {
+    padding: 3px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .jsontool__view-tab:hover:not(:disabled):not(.is-active) {
+    color: var(--color-text);
+  }
+
+  .jsontool__view-tab.is-active {
+    background: var(--color-bg);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .jsontool__view-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ============ 树形视图 ============ */
+  .jsontool__tree-wrap {
+    flex: 1;
+    overflow: auto;
+    min-height: 380px;
+    max-height: 600px;
+    padding: 12px 16px;
+    background: var(--color-bg-code);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  /* 搜索栏：粘性定位在树形视图顶部，方便用户随时调整关键词 */
+  .jsontool__search-bar {
+    position: sticky;
+    top: -12px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -12px -16px 10px;
+    padding: 10px 16px;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jsontool__search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--color-text);
+    background: var(--color-bg);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jsontool__search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  /* 去掉浏览器原生 search 输入框的清除按钮，避免与本工具的清除逻辑重叠 */
+  .jsontool__search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .jsontool__search-count {
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--color-success);
+    font-weight: 500;
+  }
+
+  .jsontool__search-count.is-empty {
+    color: var(--color-text-muted);
+  }
+
+  /* 高亮匹配文本：<mark> 包裹的关键词片段 */
+  .jsontool__tree-mark {
+    background: rgba(245, 166, 35, 0.4);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+
+  .jsontool__tree {
+    user-select: text;
+  }
+
+  .jsontool__tree-node {
+    position: relative;
+  }
+
+  .jsontool__tree-line {
+    display: inline-block;
+    min-height: 22px;
+    padding: 0 2px;
+    border-radius: 3px;
+    transition: background 0.1s ease;
+  }
+
+  .jsontool__tree-line:hover {
+    background: var(--color-bg-soft);
+  }
+
+  /* 节点悬停时显示复制按钮 */
+  .jsontool__tree-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.1s ease, color 0.1s ease;
+    vertical-align: middle;
+  }
+
+  .jsontool__tree-line:hover .jsontool__tree-copy,
+  .jsontool__tree-copy:focus-visible {
+    opacity: 1;
+  }
+
+  .jsontool__tree-copy:hover {
+    color: var(--color-primary);
+    background: var(--color-bg);
+  }
+
+  .jsontool__tree-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-right: 2px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.1s ease;
+    vertical-align: middle;
+  }
+
+  .jsontool__tree-toggle:hover {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .jsontool__tree-key {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .jsontool__tree-colon {
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .jsontool__tree-bracket {
+    color: var(--color-text-soft);
+    font-weight: 600;
+  }
+
+  .jsontool__tree-bracket--object {
+    color: #c9366f;
+  }
+
+  .jsontool__tree-bracket--array {
+    color: #2b6cff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .jsontool__tree-bracket--object {
+      color: #f0709a;
+    }
+  }
+
+  .jsontool__tree-summary {
+    color: var(--color-text-muted);
+    font-style: italic;
+    cursor: pointer;
+  }
+
+  .jsontool__tree-children {
+    padding-left: 20px;
+    border-left: 1px dashed var(--color-border);
+    margin-left: 8px;
+  }
+
+  .jsontool__tree-empty {
+    color: var(--color-text-muted);
+    font-style: italic;
+    padding: 2px 4px;
+  }
+
+  .jsontool__tree-comma {
+    color: var(--color-text-muted);
+  }
+
+  .jsontool__tree-value {
+    padding: 0 2px;
+  }
+
+  .jsontool__tree-value--string {
+    color: #1aaa55;
+  }
+
+  .jsontool__tree-value--number {
+    color: #2b6cff;
+  }
+
+  .jsontool__tree-value--boolean {
+    color: #f5a623;
+  }
+
+  .jsontool__tree-value--null {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .jsontool__tree-value--string {
+      color: #4ade80;
+    }
+    .jsontool__tree-value--number {
+      color: #5b8cff;
+    }
+    .jsontool__tree-value--boolean {
+      color: #fbbf24;
+    }
+    /* 暗色模式下高亮使用更亮的橙黄，保证在深色背景上可读 */
+    .jsontool__tree-mark {
+      background: rgba(251, 191, 36, 0.32);
+      color: #fde68a;
+    }
+  }
+
+  .jsontool__tree-str-toggle {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    vertical-align: middle;
+  }
+
+  .jsontool__tree-str-toggle:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .jsontool__tree-notice {
+    position: sticky;
+    bottom: 8px;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--color-success);
+    color: #fff;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-family: var(--font-sans);
+    box-shadow: var(--shadow-md);
+  }
+
+  .jsontool__tree-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 380px;
+    padding: 24px;
+    color: var(--color-text-muted);
+    text-align: center;
+    background: var(--color-bg-code);
+  }
+
+  .jsontool__tree-empty-state p {
+    margin: 4px 0;
+    font-size: 13px;
+  }
+
+  /* 移动端：树形视图缩小字号与缩进 */
+  @media (max-width: 768px) {
+    .jsontool__tree-wrap {
+      min-height: 300px;
+      font-size: 12px;
+    }
+    .jsontool__tree-children {
+      padding-left: 14px;
+      margin-left: 4px;
+    }
+    .jsontool__view-tabs {
+      flex-shrink: 0;
+    }
+    /* 移动端搜索栏：缩小内边距，匹配数缩短显示 */
+    .jsontool__search-bar {
+      padding: 8px 12px;
+      margin: -12px -12px 8px;
+      gap: 8px;
+    }
+    .jsontool__search-input {
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+    .jsontool__search-count {
+      font-size: 11px;
+    }
+  }
+
+  /* FAQ */
+  .json-faq {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 0 24px;
+  }
+
+  .json-faq h2 {
+    font-size: 22px;
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  .json-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .json-faq summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+  }
+
+  .json-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .json-faq summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .json-faq details[open] summary::after {
+    content: '−';
+  }
+
+  .json-faq details p {
+    margin: 0;
+    padding: 0 16px 14px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* 移动端：垂直堆叠 */
+  @media (max-width: 768px) {
+    .jsontool__panels {
+      grid-template-columns: 1fr;
+    }
+    .jsontool__panel:first-child {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .jsontool__textarea {
+      min-height: 260px;
+    }
+    .jsontool__toolbar {
+      padding: 10px 12px;
+    }
+  }
+</style>

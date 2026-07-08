@@ -1,0 +1,991 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { tagToSlug } from '../utils/tags';
+
+const meta: SiteMeta = {
+  title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
+  description:
+    '工具盒子是一套面向中文开发者的现代化在线工具集：JSON 格式化 / 压缩 / 校验、Base64 编解码、URL 编解码、HTML 实体编解码、CSV 与 JSON 互转、JSON 转 XML 转换工具、XML 转 JSON 转换工具、YAML 与 JSON 互转、TOML 与 JSON 互转、UUID 生成、SHA 哈希计算、AES 加解密、Unix 时间戳转换、时区转换器、时间单位换算器、正则表达式测试、JWT 解码、JWT 签名生成器、JWT 签名验证工具、JWE 解码、颜色格式转换、WCAG 颜色对比度检查、调色板生成器、Markdown 在线预览器、MIME 类型查询、二维码生成、密码生成器、文本对比工具、CRON 表达式解析器、IP 子网计算器、Base64 图片互转、占位文本与 Mock 数据生成器、SQL 格式化与压缩、HTTP 状态码查询、JSONPath 查询工具、JSON Schema 校验工具、YAML Schema 校验工具、TOML Schema 校验工具、正则表达式性能基准测试工具、Base32 编解码工具、Hex 十六进制编解码工具、Punycode 编解码工具、ASCII Art 文本横幅生成器、HTML 格式化与压缩工具、CSS 格式化与压缩工具、JavaScript 格式化与压缩工具、JSON 转 TypeScript 接口生成器。配套技术博客深度解析原理，所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+};
+
+// 获取最新 3 篇博客文章
+const recentPosts = (await getCollection('blog'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+
+// 工具卡片数据：已上线工具标记 available=true，规划中的工具保持禁用占位
+// category 用于分类筛选，keywords 用于搜索匹配（中英文 + 功能词）
+const tools = [
+  {
+    href: '/json',
+    title: 'JSON 工具',
+    desc: '格式化、压缩、校验、转义 / 去转义，支持中文友好的错误定位。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'json 格式化 压缩 校验 转义 美化',
+  },
+  {
+    href: '/base64',
+    title: 'Base64 编解码',
+    desc: '文本与 Base64 互转，支持 UTF-8 中文与 Emoji，可选 URL 安全变体。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'base64 编码 解码 图片 data url',
+  },
+  {
+    href: '/base32',
+    title: 'Base32 编解码',
+    desc: '文本与 Base32 双向转换，支持 RFC 4648 标准变体与 Crockford Base32 变体，可选 Crockford 校验和生成与校验，识别用户输入错误。适用于 TOTP 共享密钥、账号号码、密钥指纹等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'base32 编码 解码 rfc4648 crockford 校验和 totp 账号',
+  },
+  {
+    href: '/hex',
+    title: 'Hex 十六进制编解码',
+    desc: '文本与 Hex 十六进制双向转换，支持连续、空格分隔、0x 前缀、C 数组、Hex dump（xxd 风格）5 种输出格式，大小写切换。解码时自动识别多种格式，容忍空格、0x 前缀、逗号、注释、Hex dump。适用于二进制调试、字节序列分析、嵌入式开发、颜色值/MAC 地址/Magic Number 查看等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'hex 十六进制 编码 解码 xxd hex dump c 数组 0x 字节 二进制 调试 mac 颜色',
+  },
+  {
+    href: '/punycode',
+    title: 'Punycode 编解码',
+    desc: '国际化域名 IDN 与 ACE（xn-- 前缀）双向转换，逐标签处理，展示标签级转换详情与类型。基于 RFC 3492 Bootstring 算法纯原生实现，支持中文域名、多标签、Emoji、ACE 标签长度校验。适用于中文域名注册查询、邮件域名国际化、URL host IDN 转换、DNS 配置调试等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'punycode idn 国际化域名 ace xn-- 中文域名 rfc 3492 bootstring dns',
+  },
+  {
+    href: '/ascii-art',
+    title: 'ASCII Art 横幅生成器',
+    desc: '输入文本实时渲染为 ASCII Art 大字横幅，内置 Block（5 行方块）、Banner（7 行宽幅）、Small（3 行紧凑）3 种字体，可调节字符间距，支持复制纯文本与下载 .txt 文件。适用于 GitHub README 标题、终端启动横幅、CLI 签名、控制台输出装饰、注释块标题等场景。纯原生 TypeScript 零依赖实现。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'ascii art 文本 横幅 banner figlet figfont 终端 readme 标题 logo 字体 block',
+  },
+  {
+    href: '/html-formatter',
+    title: 'HTML 格式化与压缩',
+    desc: 'HTML 代码美化、压缩与校验三合一：美化模式按层级缩进对齐，压缩模式移除注释与空白减小体积，校验模式输出解析统计与可疑问题清单。基于浏览器原生 DOMParser 解析，符合 HTML5 容错规则，自动修复未闭合标签。支持 2/4 空格与 Tab 缩进、保留注释、小写化标签、移除可选闭合标签等选项。适用于服务器模板渲染产物还原、压缩代码调试、代码风格统一、生产部署体积优化等场景。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'html 格式化 美化 压缩 minify 缩进 校验 domparser void elements 闭合标签 小写化',
+  },
+  {
+    href: '/css-formatter',
+    title: 'CSS 格式化与压缩',
+    desc: 'CSS 代码美化、压缩与校验三合一：美化模式按嵌套层级缩进对齐，压缩模式移除注释与空白并省略末尾分号，校验模式输出规则声明统计与可疑问题清单。手写 CSS 词法分析器，正确处理字符串字面量与注释，支持嵌套 at-rule（@media / @supports / @keyframes）、@import 无块规则、!important 声明、原生 CSS 嵌套语法。适用于压缩 CSS 还原、第三方库样式阅读、代码风格统一、生产部署体积优化等场景。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'css 格式化 美化 压缩 minify 缩进 校验 词法分析 at-rule media keyframes important 嵌套',
+  },
+  {
+    href: '/js-formatter',
+    title: 'JavaScript 格式化与压缩',
+    desc: 'JavaScript 代码美化、压缩与校验三合一：美化模式基于括号深度追踪智能换行缩进，压缩模式移除注释与空白合并为单行，校验模式输出函数语句统计与未闭合括号问题清单。手写 JS 词法分析器，正确识别字符串、模板字符串、注释与正则字面量（通过前一个 token 区分除法与正则），支持箭头函数、类、多字符运算符、数字字面量（0x/0o/0b/科学计数法）。适用于压缩 JS 还原、第三方库代码阅读、代码风格统一等场景。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'javascript js 格式化 美化 压缩 minify 缩进 校验 词法分析 tokenizer 正则 模板字符串 箭头函数',
+  },
+  {
+    href: '/json-to-ts',
+    title: 'JSON 转 TypeScript 接口',
+    desc: '粘贴 JSON 数据自动推断 TypeScript 类型，生成 export interface 声明。支持联合类型合并（数组元素或字段类型不同时自动合并为联合）、可选字段检测（数组对象字段不一致时标记 ?:）、嵌套对象提取为独立 interface、相同结构去重复用。可选根接口名、export 关键字、数组风格（T[] / Array<T>）。递归遍历 JSON 树，纯原生 TypeScript 零依赖实现。适用于从 API 响应、配置文件、Mock 数据生成 TS 类型定义等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'json typescript ts interface 接口 类型推断 联合类型 可选字段 去重 嵌套',
+  },
+  {
+    href: '/url',
+    title: 'URL 编解码',
+    desc: 'encodeURI / encodeURIComponent 双模式，自动处理中文与特殊字符。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'url 编码 解码 中文 百分号 encodeuri',
+  },
+  {
+    href: '/uuid',
+    title: 'UUID 生成器',
+    desc: '批量生成 RFC 4122 版本 4 UUID，可选连字符与大写格式。',
+    badge: '可用',
+    available: true,
+    category: '加密哈希',
+    keywords: 'uuid guid 唯一标识符 随机 生成',
+  },
+  {
+    href: '/hash',
+    title: 'Hash 计算',
+    desc: 'SHA-1 / SHA-256 / SHA-512 哈希摘要，输出 HEX 或 Base64。',
+    badge: '可用',
+    available: true,
+    category: '加密哈希',
+    keywords: 'hash 哈希 sha256 sha1 摘要 加密',
+  },
+  {
+    href: '/aes',
+    title: 'AES 加解密',
+    desc: 'AES-GCM / AES-CBC / AES-CTR 三种模式对称加解密，支持 AES-128/192/256 三种密钥长度。密钥输入支持 Hex、Base64、UTF-8 口令、PBKDF2 密码派生四种来源。加密输出密文、IV/Nonce、盐（派生模式），一键「用加密结果填入解密」闭环验证。基于 Web Crypto API 纯原生零依赖实现，适用于 API 加密接口调试、加密结果验证、学习对称加密原理、PBKDF2 密钥派生演示等场景。',
+    badge: '可用',
+    available: true,
+    category: '加密哈希',
+    keywords: 'aes 加密 解密 对称加密 aes-gcm aes-cbc aes-ctr pbkdf2 iv nonce 认证加密 密钥派生 web crypto',
+  },
+  {
+    href: '/timestamp',
+    title: '时间戳转换',
+    desc: 'Unix 时间戳与本地时间双向转换，支持秒 / 毫秒单位。',
+    badge: '可用',
+    available: true,
+    category: '时间日期',
+    keywords: '时间戳 timestamp unix 转换 日期',
+  },
+  {
+    href: '/timezone',
+    title: '时区转换器',
+    desc: '在线多时区对比与世界时钟：基于 IANA 时区数据库，支持源时区与多个目标时区实时换算、夏令时（DST）识别、UTC 偏移展示、ISO 8601 与 Unix 时间戳复制、12/24 小时制切换。适用于跨时区会议调度、海外团队协作、国际化产品发布时间对齐、航班起落时间换算等场景，纯原生 Intl.DateTimeFormat API 零依赖实现。',
+    badge: '可用',
+    available: true,
+    category: '时间日期',
+    keywords: '时区 timezone utc dst 夏令时 iana iso 8601 unix 时间戳 世界时钟 多时区 转换 国际化 跨时区',
+  },
+  {
+    href: '/time-unit',
+    title: '时间单位换算器',
+    desc: '在线时间单位换算器：毫秒、秒、分钟、小时、天、周、月、年八种单位双向换算，支持复合时长字符串解析（如「1h 30min」「2天3小时」）、毫秒转人类可读表示（如「1 天 2 小时 30 分」）。月年采用 Gregorian 历法平均值（1 年 = 365.2425 天）精确换算。适用于缓存 TTL 配置、超时设置、调度间隔换算、日志时间差分析等开发场景，纯原生 TypeScript 零依赖实现。',
+    badge: '可用',
+    available: true,
+    category: '时间日期',
+    keywords: '时间 单位 换算 毫秒 秒 分钟 小时 天 周 月 年 duration 时长 人类可读 ttl 缓存 超时 gregorian 闰年',
+  },
+  {
+    href: '/regex',
+    title: '正则表达式测试',
+    desc: '实时高亮全部匹配、显示数字与命名捕获组、单条复制、$1/$<name> 替换、内置常用模式速查。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: '正则 regex regexp 表达式 匹配 替换 捕获组 命名组 ReDoS',
+  },
+  {
+    href: '/jwt',
+    title: 'JWT 解码',
+    desc: '解析三段式 JWT，自动 base64url 解码、JSON 美化，显示算法说明、标准声明、过期状态、相对时间（剩余/已过期）、对象/数组字段美化、签名长度参考，并对 alg=none 不安全算法显眼警告。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'jwt json web token 解码 base64url exp 算法 hs256 rs256 es256 安全 alg none 警告 刷新令牌 黑名单',
+  },
+  {
+    href: '/jwt-sign',
+    title: 'JWT 签名生成器',
+    desc: '在线签发 JSON Web Token：支持 HS256/HS384/HS512（HMAC 对称密钥）、RS256/RS384/RS512（RSA 非对称密钥）、ES256/ES384/ES512（ECDSA 椭圆曲线非对称密钥）、none（无签名，仅调试）共 10 种算法。可在线生成 RSA 密钥对（2048/3072/4096 位）与 EC 密钥对（P-256/P-384/P-521 曲线），均输出 PEM 与 JWK 双格式；实时校验 Header/Payload JSON，HMAC 密钥长度不足时警告，签名结果三段拆分展示（Header/Payload/Signature base64url + 美化 JSON）。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥不离开浏览器。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'jwt 签名 生成 签发 sign hs256 hs384 hs512 rs256 rs384 rs512 es256 es384 es512 hmac rsa ecdsa 椭圆曲线 ec p-256 p-384 p-521 密钥对 pem jwk jwks web crypto alg none 不安全 调试',
+  },
+  {
+    href: '/jwt-verify',
+    title: 'JWT 签名验证工具',
+    desc: '在线验证 JWT 签名：支持 HS256/HS384/HS512（HMAC 对称密钥）、RS256/RS384/RS512（RSA 公钥）、ES256/ES384/ES512（ECDSA 椭圆曲线公钥）、none 共 10 种算法验签。粘贴 JWT 自动识别算法并切换密钥输入区，实时校验 exp/nbf/iat 时间声明，算法白名单防御 alg=none 攻击，验签结果三段拆分展示（Header/Payload/Signature base64url + 美化 JSON），区分「签名无效」与「声明不合规」便于排查。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥不离开浏览器。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'jwt 验签 签名验证 verify hs256 hs384 hs512 rs256 rs384 rs512 es256 es384 es512 hmac rsa ecdsa 椭圆曲线 ec p-256 p-384 p-521 公钥 pem jwk jwks web crypto alg none 攻击 exp nbf iat 时间声明 常量时间比较 时序攻击',
+  },
+  {
+    href: '/jwe',
+    title: 'JWE 解码',
+    desc: '解析 JWE 五段式加密令牌（protected.encrypted_key.iv.ciphertext.tag），自动解码 Protected Header 与五段拆分视图，基于 Web Crypto API 本地解密 dir / A128KW / A256KW / RSA-OAEP-256/384/512 等主流算法，明文 JSON 自动美化，若为 JWT 提示继续解码。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'jwe json web encryption 解密 加密令牌 五段式 dir a128kw a256kw rsa-oaep aes-gcm cek 保护头部 cty 加密 payload',
+  },
+  {
+    href: '/color',
+    title: '颜色格式转换',
+    desc: 'HEX / RGB / HSL / HSV / CMYK 五格式互转，含拾色器、大色块预览、5 种和谐配色方案生成。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: '颜色 color hex rgb hsl hsv cmyk 转换 配色 拾色器 调色板',
+  },
+  {
+    href: '/html-entities',
+    title: 'HTML 实体编解码',
+    desc: 'HTML 实体与文本双向转换，支持命名实体、十进制与十六进制数字实体，内置常用实体速查表与 XSS 防御演示。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'html 实体 entity 编码 解码 转义 amp lt gt quot copy reg xss 安全 防御',
+  },
+  {
+    href: '/color-contrast',
+    title: '颜色对比度检查',
+    desc: 'WCAG 2.1 对比度比值实时计算，AA / AAA 评级（普通文字 / 大文字 / UI 组件），配真实文字渲染预览。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: '颜色 对比度 wcag 无障碍 accessibility aa aaa 对比 比值 文字 背景',
+  },
+  {
+    href: '/color-palette',
+    title: '调色板生成器',
+    desc: '在线调色板生成器：6 种和谐配色方案（互补 / 类似 / 三角 / 分割互补 / 四角 / 单色阶）、设计系统色阶（Tailwind 50-950 / Material 100-900）、明度色调（Tints / Shades / Tones）、WCAG 2.1 对比度检查、三种色盲模拟（红色盲 / 绿色盲 / 蓝色盲），支持导出 CSS 变量 / Tailwind 配置 / SCSS / JSON / Android XML / iOS Swift 六种格式。纯原生 TypeScript 零依赖实现，适用于设计系统构建、品牌配色、无障碍色彩合规、色盲友好性验证等场景。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: '调色板 配色 和谐 互补 类似 三角 分割互补 四角 单色阶 tailwind material 色阶 tints shades tones wcag 对比度 色盲 css 变量 导出',
+  },
+  {
+    href: '/csv-json',
+    title: 'CSV / JSON 互转',
+    desc: 'CSV 与 JSON 双向转换，状态机解析引号包裹与字段内换行，嵌套对象展平为点号路径列。配表格预览、智能类型推断（数字 / 布尔 / null 自动识别 + 前导零与大整数风险提示）、Excel 兼容下载。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'csv json 转换 表格 数据 互转 tsv excel 导出 导入 分隔符 类型推断 智能类型',
+  },
+  {
+    href: '/json-to-xml',
+    title: 'JSON 转 XML 转换工具',
+    desc: 'JSON 数据一键转换为 XML 文档，支持根节点名、数组项名、属性风格、CDATA 包裹、XML 声明、缩进（2/4 空格或 Tab）、null 表示（空元素或 xsi:nil）等配置，自动转义特殊字符，非法标签名自动修正，附带 well-formed 校验。适用于 SOAP 服务对接、SVG 生成、Office 文档、Android 资源、旧系统配置等场景，纯原生 TypeScript 零依赖实现。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'json xml 转换 soap svg office android cdata 标签 属性 well-formed xsi:nil 转换器',
+  },
+  {
+    href: '/xml-to-json',
+    title: 'XML 转 JSON 转换工具',
+    desc: 'XML 文档一键解析为 JSON 数据，基于浏览器原生 DOMParser 实现，支持属性名前缀、文本节点名、CDATA 合并 / 分离、空元素表示、类型推断、注释过滤、缩进等配置，同名子元素自动合并为数组，XXE 防护。适用于 SOAP 响应解析、RSS / Atom Feed 读取、SVG / Office 文档解析、Spring / Maven 配置转换等场景，纯原生 TypeScript 零依赖实现。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'xml json 转换 soap rss atom svg domparser cdata 属性 前缀 同名元素 数组 xxe 类型推断',
+  },
+  {
+    href: '/markdown',
+    title: 'Markdown 预览器',
+    desc: '实时分屏预览 Markdown：16 个工具栏快捷按钮、双向同步滚动、字数统计、HTML 导出、草稿自动保存。手写轻量 GFM 解析器，零依赖、XSS 安全。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'markdown 预览 渲染 编辑器 gfm 实时 分屏 html 导出 文档 写作',
+  },
+  {
+    href: '/mime',
+    title: 'MIME 类型查询',
+    desc: '内置 100+ 常见文件扩展名与 MIME 类型对照表，覆盖文档/图片/音频/视频/压缩/代码/字体/应用 8 大类别，支持搜索过滤、类别筛选、一键复制扩展名或 MIME 类型。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'mime 类型 content-type 文件 扩展名 对照表 查询 nginx apache 上传 校验',
+  },
+  {
+    href: '/yaml',
+    title: 'YAML / JSON 互转',
+    desc: 'YAML 与 JSON 双向转换：支持注释、多文档（--- 分隔）、锚点 / 别名、流 / 块样式。配语法校验、精确错误定位、YAML 类型推断陷阱提示（yes/no 布尔、日期自动解析）、缩进配置。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'yaml json 转换 配置文件 kubernetes ci cd openapi 锚点 别名 多文档 类型推断',
+  },
+  {
+    href: '/toml',
+    title: 'TOML / JSON 互转',
+    desc: 'TOML 与 JSON 双向转换：支持注释、数组表 [[...]]、点号键、内联表、多行字符串、4 种日期时间类型。配语法校验、精确错误定位、TOML 类型陷阱提示（日期时间类型丢失、大整数精度丢失、null 不支持）。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'toml json 转换 配置文件 cargo pyproject rust python 数组表 日期时间 类型陷阱',
+  },
+  {
+    href: '/qr',
+    title: '二维码生成器',
+    desc: '在线生成 QR Code 二维码：支持文本 / URL / WiFi 配置 / 邮件四类预设，可调节容错等级（L/M/Q/H）、尺寸、留白、前景 / 背景色，实时预览并下载 PNG / SVG。配对比度检查避免扫描失败。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: '二维码 qr qrcode 生成 wifi url vcard 邮件 容错 颜色 png svg 下载',
+  },
+  {
+    href: '/password',
+    title: '密码生成器',
+    desc: '在线生成强密码：自定义长度（4-128）与字符集（小写 / 大写 / 数字 / 符号 / 排除易混字符），批量生成，实时计算香农熵并评估强度等级。基于 crypto.getRandomValues（CSPRNG）+ 拒绝采样消除模偏差。',
+    badge: '可用',
+    available: true,
+    category: '加密哈希',
+    keywords: '密码 password 生成 随机 强密码 熵 csprng 安全 字符集 易混字符',
+  },
+  {
+    href: '/diff',
+    title: '文本对比工具',
+    desc: '在线文本对比（Diff）：基于 LCS 算法实时计算行级与字符级/词级差异，支持分屏对比与统一 diff 两种视图，行内字符级（精确到字符）与词级（Git --word-diff 风格，按单词/标点切分，Unicode 感知）两种高亮模式精确标记被修改段，统计新增 / 删除 / 修改行数与相似度百分比，可选大小写敏感、忽略行首尾空白、忽略空行、行内高亮模式切换。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'diff 文本对比 差异 对比 lcs 算法 myers 文本比较 行级 字符级 字符级高亮 词级 word-diff 单词 unicode 相似度',
+  },
+  {
+    href: '/cron',
+    title: 'CRON 表达式解析器',
+    desc: '在线解析 CRON 表达式：5 字段语法 + L/W/# 扩展字符，实时生成中文执行描述、计算未来 5 次执行时间。内置 12 个常用预设（每分钟、工作日 9 点、月末等），适用于 crontab、K8s CronJob、systemd timer 等定时任务场景。',
+    badge: '可用',
+    available: true,
+    category: '时间日期',
+    keywords: 'cron 定时任务 crontab 调度 表达式 解析 kubernetes cronjob quartz airflow systemd',
+  },
+  {
+    href: '/ip',
+    title: 'IP 子网计算器',
+    desc: '在线 IP 子网计算器：支持 IPv4 / IPv6 双栈，输入 CIDR 或 IP / 掩码即可计算网络地址、广播地址、子网掩码、通配符掩码、主机范围与可用主机数，自动判定私有 / 环回 / 多播 / 链路本地 / 保留地址与 IP 类别，提供二进制按位可视化与子网划分（VLSM）功能。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'ip 子网 cidr ipv4 ipv6 掩码 网络 路由 vpc 子网划分 vlsm 通配符 广播 网络地址',
+  },
+  {
+    href: '/base64-image',
+    title: 'Base64 图片互转',
+    desc: '在线图片与 Base64 双向转换：拖拽 / 粘贴 / 上传图片生成 Data URL，或将 Base64 字符串解码为图片预览。支持 PNG / JPEG / WebP 格式互转与质量调节，一键复制为 Data URL、纯 Base64、<img> 标签或 CSS 背景四种格式。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'base64 图片 转换 data url 图片转 base64 base64 转图片 png jpeg webp 格式转换 拖拽 粘贴',
+  },
+  {
+    href: '/lorem',
+    title: '占位文本与 Mock 数据生成器',
+    desc: '在线占位文本与 Mock 数据生成器：支持 Lorem Ipsum 英文占位、中文占位文本（段落 / 句子 / 单词三种粒度），以及中英文姓名、邮箱、URL、手机号、UUID、IPv4、颜色、日期、数字、布尔共 11 种假数据，可输出纯文本、JSON 数组、CSV、Markdown 表格四种格式，基于 CSPRNG 保证随机质量。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: '占位文本 lorem ipsum mock 假数据 测试数据 sample data 中文占位 姓名邮箱 uuid 颜色 日期 数据生成',
+  },
+  {
+    href: '/sql',
+    title: 'SQL 格式化与压缩',
+    desc: '在线 SQL 美化与压缩工具：支持关键字大小写转换、主子句换行、JOIN 前换行、AND/OR 前换行、子查询缩进、CASE/WHEN 缩进、2/4 空格缩进切换、逗号后空格或换行；压缩模式可移除注释；内置基础语法校验（引号 / 括号 / 块注释闭合）与关键字 / 字符串 / 数字 / 注释分色高亮，提供 SELECT / JOIN / INSERT / UPDATE / DELETE / CREATE 共 6 个常见 SQL 模板。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: 'sql 格式化 美化 压缩 minify 高亮 校验 select join insert update delete create 关键字 缩进 子查询',
+  },
+  {
+    href: '/http-status',
+    title: 'HTTP 状态码查询',
+    desc: '在线 HTTP 状态码查询工具：覆盖 1xx / 2xx / 3xx / 4xx / 5xx 共 55+ 状态码，含详细说明、典型场景、常见原因、排查建议、RESTful API 用法、相关响应头与相关状态码对比。支持搜索、5 大类分类筛选、一键复制状态码，适用于前端调试接口错误、后端设计 RESTful API、SEO 重定向策略（301/302/307/308）、错误码定位（401/403/404/429/500/502/503/504）等场景。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'http 状态码 404 500 302 301 307 308 401 403 429 502 503 504 restful 重定向 seo 客户端错误 服务端错误',
+  },
+  {
+    href: '/jsonpath',
+    title: 'JSONPath 查询工具',
+    desc: '在线 JSONPath 查询工具：基于 RFC 9535 标准实现的三阶段解析器（词法 / 语法 / 求值），支持 $ 根、.name 子节点、..name 递归下降、[*] 通配符、[index] 索引（含负索引）、[?(filter)] 过滤表达式（==/!=/>/>=/</<=/=~ 与 &&/||/! 组合），内置 12 个预设示例与电商订单 / 用户列表示例数据，查询结果展示索引、类型标签与单条复制，零依赖纯函数实现，适用于 API 响应提取、JSON 数据探查、配置筛选、自动化测试断言等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'jsonpath json 路径 提取 查询 过滤 rfc 9535 递归 通配符 索引 jq 数据探查 api',
+  },
+  {
+    href: '/json-schema',
+    title: 'JSON Schema 校验',
+    desc: '在线 JSON Schema 校验工具：基于 draft-07 标准自实现的轻量校验器，支持 type/required/properties/items/enum/const/数值范围/字符串长度与 pattern 与 format/数组 uniqueItems/对象 additionalProperties/allOf/anyOf/oneOf/not/$ref 内部引用等核心关键字。实时校验、错误路径精确定位、关键字分类徽章、中文错误消息，零依赖纯 TS 实现（约 14KB），适用于 API 请求体校验、配置文件验证、表单数据校验、OpenAPI/Swagger schema 验证等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'json schema 校验 draft-07 validator 验证 type required properties items enum const minimum maximum pattern format $ref allof anyof oneof uniqueitems additionalproperties openapi swagger',
+  },
+  {
+    href: '/yaml-schema',
+    title: 'YAML Schema 校验',
+    desc: '在线 YAML Schema 校验工具：用 JSON Schema（draft-07）校验 YAML 数据，复用轻量校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字。额外检测 YAML 类型推断陷阱（yes/no/on/off 布尔化、版本号被解析为数字等），适用于 Kubernetes 清单（Deployment/Service/Pod）、CI/CD 配置（GitHub Actions/GitLab CI）、Helm values、docker-compose 等场景。实时校验、错误路径定位、关键字分类徽章，全部本地处理。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'yaml schema 校验 json schema k8s kubernetes deployment 清单 配置 ci cd github actions gitlab helm docker-compose 类型推断 陷阱 yes no on off 布尔',
+  },
+  {
+    href: '/toml-schema',
+    title: 'TOML Schema 校验',
+    desc: '在线 TOML Schema 校验工具：用 JSON Schema（draft-07）校验 TOML 数据，复用轻量校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字。额外检测 TOML 类型陷阱（日期时间值转 JSON 丢失类型信息、64 位整数超过 Number.MAX_SAFE_INTEGER 丢失精度），适用于 pyproject.toml（PEP 621）、Cargo.toml、rust-toolchain.toml、renovate.json 等场景。实时校验、错误路径定位、关键字分类徽章，全部本地处理。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'toml schema 校验 json schema pyproject cargo pep 621 rust-toolchain renovate 类型陷阱 日期时间 大整数 精度 丢失',
+  },
+  {
+    href: '/regex-benchmark',
+    title: '正则表达式性能基准',
+    desc: '在线正则表达式性能基准测试工具：执行 N 次匹配统计平均/最大/最小/标准差耗时，静态分析检测嵌套量词、重叠分支、通配量词三类 ReDoS 危险模式，渐进式压力测试用递增长度输入判断是否指数级回溯。内置经典 ReDoS 示例 (a+)+ 与安全正则示例，适用于上线前正则性能审计、ReDoS 漏洞排查、正则优化效果对比等场景。',
+    badge: '可用',
+    available: true,
+    category: '代码调试',
+    keywords: '正则 regex 性能 基准 测试 redos 拒绝服务 回溯 嵌套量词 重叠分支 通配 压力测试 指数增长 安全',
+  },
+];
+
+// 工具分类列表（去重），用于分类筛选按钮
+const categories = ['全部', ...Array.from(new Set(tools.map((t) => t.category)))];
+
+
+// 特色卖点
+const features = [
+  {
+    title: '零广告 · 零追踪',
+    desc: '不嵌入任何广告与统计脚本，没有弹窗干扰，专注于工具本身。',
+    icon: '🚫',
+  },
+  {
+    title: '全本地处理',
+    desc: '所有计算在浏览器内完成，数据不离开你的设备，敏感信息更安全。',
+    icon: '🔒',
+  },
+  {
+    title: '现代化体验',
+    desc: '响应式布局、键盘友好、暗色模式、复制即用，桌面与移动端一致。',
+    icon: '⚡',
+  },
+];
+---
+<BaseLayout meta={meta}>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者工具集</span></h1>
+      <p class="hero__lead">
+        告别广告满天飞的老工具站。所有数据在浏览器本地处理，秒开、零上传、零追踪。
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--primary" href="/json">立即使用 JSON 工具</a>
+        <a class="btn" href="#features">了解特色</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 工具卡片 -->
+  <section id="tools-list" class="container tools" aria-labelledby="tools-title">
+    <h2 id="tools-title" class="section-title">工具列表</h2>
+
+    <!-- 搜索与分类筛选 -->
+    <div class="tools__toolbar">
+      <label class="tools__search">
+        <span class="visually-hidden">搜索工具</span>
+        <input
+          type="search"
+          id="tools-search"
+          placeholder="搜索工具名称或功能…"
+          autocomplete="off"
+          aria-controls="tools-grid"
+        />
+      </label>
+      <div class="tools__filters" role="group" aria-label="按分类筛选工具">
+        {categories.map((cat, i) => (
+          <button
+            type="button"
+            class={`tools__filter${i === 0 ? ' tools__filter--active' : ''}`}
+            data-category={cat}
+            aria-pressed={i === 0 ? 'true' : 'false'}
+          >{cat}</button>
+        ))}
+      </div>
+    </div>
+
+    <ul id="tools-grid" class="tools__grid" role="list">
+      {tools.map((t) => (
+        <li
+          class={`tool-card${t.available ? '' : ' tool-card--soon'}`}
+          data-category={t.category}
+          data-keywords={t.keywords}
+          data-title={t.title}
+        >
+          {t.available ? (
+            <a href={t.href} class="tool-card__link">
+              <span class="tool-card__title">{t.title}</span>
+              <span class="tool-card__desc">{t.desc}</span>
+              <span class="tool-card__badge">{t.badge}</span>
+            </a>
+          ) : (
+            <div class="tool-card__link" aria-disabled="true">
+              <span class="tool-card__title">{t.title}</span>
+              <span class="tool-card__desc">{t.desc}</span>
+              <span class="tool-card__badge tool-card__badge--soon">{t.badge}</span>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+
+    <!-- 空状态：无匹配工具时显示 -->
+    <p class="tools__empty" id="tools-empty" hidden>没有找到匹配的工具，试试其他关键词或分类。</p>
+  </section>
+
+  <!-- 工具筛选逻辑：原生实现，不引入框架，不增加 JS bundle（Astro 内联打包） -->
+  <script>
+    const searchInput = document.getElementById('tools-search');
+    const grid = document.getElementById('tools-grid');
+    const empty = document.getElementById('tools-empty');
+    const filterButtons = document.querySelectorAll('.tools__filter');
+
+    if (searchInput && grid) {
+      let activeCategory = '全部';
+      let query = '';
+
+      // 根据当前分类与搜索词过滤工具卡片
+      const applyFilter = () => {
+        const cards = grid.querySelectorAll('.tool-card');
+        let visibleCount = 0;
+        cards.forEach((card) => {
+          const cat = card.getAttribute('data-category') || '';
+          const title = (card.getAttribute('data-title') || '').toLowerCase();
+          const keywords = (card.getAttribute('data-keywords') || '').toLowerCase();
+          const matchCategory = activeCategory === '全部' || cat === activeCategory;
+          const matchQuery = !query || title.includes(query) || keywords.includes(query);
+          const show = matchCategory && matchQuery;
+          card.style.display = show ? '' : 'none';
+          if (show) visibleCount += 1;
+        });
+        if (empty) empty.hidden = visibleCount !== 0;
+      };
+
+      // 搜索输入：实时过滤
+      searchInput.addEventListener('input', () => {
+        query = searchInput.value.trim().toLowerCase();
+        applyFilter();
+      });
+
+      // 分类按钮：切换激活态并重新过滤
+      filterButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          filterButtons.forEach((b) => {
+            b.classList.remove('tools__filter--active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          btn.classList.add('tools__filter--active');
+          btn.setAttribute('aria-pressed', 'true');
+          activeCategory = btn.getAttribute('data-category') || '全部';
+          applyFilter();
+        });
+      });
+    }
+  </script>
+
+  <!-- 特色 -->
+  <section id="features" class="container features" aria-labelledby="features-title">
+    <h2 id="features-title" class="section-title">为什么选工具盒子</h2>
+    <ul class="features__grid" role="list">
+      {features.map((f) => (
+        <li class="feature">
+          <span class="feature__icon" aria-hidden="true">{f.icon}</span>
+          <h3 class="feature__title">{f.title}</h3>
+          <p class="feature__desc">{f.desc}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <!-- 最新文章 -->
+  <section id="blog" class="container blog-section" aria-labelledby="blog-title">
+    <div class="blog-section__head">
+      <h2 id="blog-title" class="section-title">技术博客</h2>
+      <a href="/blog" class="blog-section__more">查看全部 →</a>
+    </div>
+    <ul class="blog-section__grid" role="list">
+      {recentPosts.map((post) => (
+        <li class="blog-section__card">
+          <h3 class="blog-section__card-title">
+            <a href={`/blog/${post.id}`} class="blog-section__link">{post.data.title}</a>
+          </h3>
+          <p class="blog-section__card-desc">{post.data.description}</p>
+          <div class="blog-section__meta">
+            <time class="blog-section__date" datetime={post.data.pubDate.toISOString()}>
+              {formatDate(post.data.pubDate)}
+            </time>
+            {post.data.tags.length > 0 && (
+              <span class="blog-section__tags">
+                {post.data.tags.slice(0, 2).map((tag) => (
+                  <a href={`/blog/tag/${tagToSlug(tag)}`} class="blog-section__tag">#{tag}</a>
+                ))}
+              </span>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 64px 0 40px;
+    text-align: center;
+    background:
+      radial-gradient(1200px 400px at 50% -10%, rgba(43, 108, 255, 0.12), transparent 60%);
+  }
+
+  .hero__inner h1 {
+    font-size: 40px;
+    line-height: 1.25;
+    margin: 0 auto 16px;
+    max-width: 720px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .hero__accent {
+    background: linear-gradient(120deg, var(--color-primary), #7a4cff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero__lead {
+    max-width: 580px;
+    margin: 0 auto 24px;
+    color: var(--color-text-soft);
+    font-size: 17px;
+  }
+
+  .hero__cta {
+    display: inline-flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 20px;
+    letter-spacing: -0.01em;
+  }
+
+  .tools {
+    padding-top: 24px;
+  }
+
+  /* 工具搜索与分类筛选工具栏 */
+  .tools__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .tools__search input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .tools__search input:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  .tools__filters {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tools__filter {
+    padding: 7px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .tools__filter:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .tools__filter--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .tools__empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 32px 16px;
+    font-size: 14px;
+  }
+
+  /* 无障碍：视觉隐藏但屏幕阅读器可见 */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .tools__grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .tool-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.18s ease;
+    overflow: hidden;
+  }
+
+  .tool-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .tool-card--soon:hover {
+    border-color: var(--color-border);
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tool-card__link {
+    display: block;
+    padding: 20px;
+    color: inherit;
+    position: relative;
+  }
+
+  .tool-card__title {
+    display: block;
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .tool-card__desc {
+    display: block;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .tool-card__badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 2px 8px;
+    font-size: 12px;
+    border-radius: 999px;
+    background: rgba(26, 170, 85, 0.12);
+    color: var(--color-success);
+    font-weight: 500;
+  }
+
+  .tool-card__badge--soon {
+    background: var(--color-bg-soft);
+    color: var(--color-text-muted);
+  }
+
+  .features {
+    padding-top: 56px;
+  }
+
+  .features__grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .feature {
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+  }
+
+  .feature__icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .feature__title {
+    margin: 12px 0 8px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .feature__desc {
+    margin: 0;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* 最新文章模块 */
+  .blog-section {
+    padding-top: 56px;
+  }
+
+  .blog-section__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+  }
+
+  .blog-section__more {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .blog-section__grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .blog-section__card {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.18s ease;
+    overflow: hidden;
+    padding: 20px;
+  }
+
+  .blog-section__card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* 拉伸链接：标题链接撑满整张卡片 */
+  .blog-section__link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .blog-section__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .blog-section__card-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .blog-section__card-desc {
+    margin: 0 0 12px;
+    color: var(--color-text-soft);
+    font-size: 13.5px;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .blog-section__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .blog-section__date {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+  }
+
+  .blog-section__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* 标签链接：z-index 高于拉伸链接，保证可单独点击 */
+  .blog-section__tag {
+    position: relative;
+    z-index: 1;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.08);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .blog-section__tag:hover {
+    background: rgba(43, 108, 255, 0.18);
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      padding: 40px 0 24px;
+    }
+    .hero__inner h1 {
+      font-size: 28px;
+    }
+    .hero__lead {
+      font-size: 15px;
+    }
+    .tools__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>

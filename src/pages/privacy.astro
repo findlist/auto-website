@@ -1,0 +1,59 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+
+const meta: SiteMeta = {
+  title: '隐私政策',
+  description: '工具盒子隐私政策：我们不收集任何用户数据，所有处理在浏览器本地完成，不使用 Cookie 与统计脚本。',
+  // 隐私政策本身允许被搜索引擎收录，但避免误判为重复内容
+  indexable: true,
+};
+---
+<BaseLayout meta={meta}>
+  <article class="container prose">
+    <h1>隐私政策</h1>
+    <p>最后更新日期：2026 年 7 月 2 日</p>
+
+    <p>
+      工具盒子（以下简称"本站"）非常重视你的隐私。本政策用最直白的方式说明我们如何（不）处理你的数据。
+    </p>
+
+    <h2>核心承诺</h2>
+    <ul>
+      <li><strong>不收集</strong>：本站不收集任何可识别个人身份的信息。</li>
+      <li><strong>不上传</strong>：所有工具的处理逻辑在浏览器本地运行，你输入的内容不会发送到任何服务器。</li>
+      <li><strong>不追踪</strong>：不使用 Google Analytics、百度统计或其他用户行为追踪脚本。</li>
+      <li><strong>不存储</strong>：没有后端数据库，不持久化任何用户输入。</li>
+      <li><strong>不卖数据</strong>：因为没有数据，自然也不存在出售或共享给第三方的情况。</li>
+    </ul>
+
+    <h2>Cookie 与本地存储</h2>
+    <p>
+      本站默认不使用 Cookie。如未来某些功能（如记住偏好设置）需要使用 <code>localStorage</code>，
+      仅会存储在你自己的浏览器中，不会上传服务器，且可随时清除。
+    </p>
+
+    <h2>第三方资源</h2>
+    <p>
+      本站为纯静态站点，托管于第三方部署平台（如 Cloudflare Pages / Vercel / Netlify）。
+      这些平台可能记录常规的 HTTP 访问日志（IP、UA、时间），用于其自身的安全与运维，
+      具体政策以部署平台为准。本站本身不主动向任何第三方发送数据。
+    </p>
+
+    <h2>广告</h2>
+    <p>
+      当前本站不展示任何广告。如未来接入广告联盟（如 Google AdSense），
+      我们会在显著位置告知，并仅展示联盟提供的广告，不会主动追踪或上传你的工具输入。
+    </p>
+
+    <h2>儿童隐私</h2>
+    <p>本站面向开发者，不针对 13 岁以下儿童。我们不会 knowingly 收集儿童信息。</p>
+
+    <h2>变更</h2>
+    <p>
+      本政策如发生变更，会在本页面更新并修改"最后更新日期"。重大变更会通过站内公告提示。
+    </p>
+
+    <h2>联系我们</h2>
+    <p>如有隐私相关问题，可邮件至 <code>privacy@toolbox.example.com</code>。</p>
+  </article>
+</BaseLayout>

@@ -1,0 +1,10 @@
+# 工具盒子 robots.txt
+# 友好欢迎搜索引擎抓取，sitemap 由 @astrojs/sitemap 自动生成
+
+User-agent: *
+Allow: /
+
+# 隐私政策与关于页也允许抓取
+Disallow:
+
+Sitemap: https://toolbox.example.com/sitemap-index.xml

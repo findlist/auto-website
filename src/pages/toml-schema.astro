@@ -1,0 +1,497 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TomlSchemaTool from '../components/TomlSchemaTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'TOML Schema 校验工具 - 在线 pyproject.toml/Cargo.toml 配置校验器',
+  description:
+    '免费的在线 TOML Schema 校验工具：用 JSON Schema（draft-07）校验 TOML 数据，支持 pyproject.toml（PEP 621）、Cargo.toml、rust-toolchain.toml、renovate.json 等场景。复用 draft-07 校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字，额外检测 TOML 类型陷阱（日期时间值转 JSON 丢失类型与时区信息、64 位整数超过 Number.MAX_SAFE_INTEGER 丢失精度）。实时校验、错误路径定位、关键字分类徽章、中文错误消息，全部在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'TOML Schema 校验工具',
+    url: 'https://toolbox.example.com/toml-schema',
+    description: '在线 TOML Schema 校验器，用 JSON Schema draft-07 校验 TOML 数据，支持 pyproject.toml 与 Cargo.toml，检测类型陷阱，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>TOML Schema 校验工具</h1>
+      <p>
+        用 JSON Schema（draft-07）校验 TOML 数据：左栏粘贴 Schema，右栏粘贴 TOML，实时校验并精确定位错误路径。复用 JSON Schema 校验引擎，覆盖 type、required、properties、items、enum、数值范围、字符串约束、数组唯一性、$ref 内部引用等核心关键字。额外检测 TOML 类型陷阱（日期时间值转 JSON 时丢失原始类型与时区信息、64 位整数超过 Number.MAX_SAFE_INTEGER 时精度丢失），适用于 pyproject.toml（PEP 621）、Cargo.toml、rust-toolchain.toml、renovate.json 等场景。数据仅在浏览器本地处理，敏感配置不外传。
+      </p>
+    </div>
+
+    <TomlSchemaTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 覆盖长尾搜索意图 -->
+    <section class="tschematool-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么用 JSON Schema 校验 TOML 数据？</summary>
+        <p>JSON Schema 是描述数据结构的标准，与数据格式无关。TOML 解析后会得到与 JSON 等价的 JS 对象（对象、数组、字符串、数字、布尔），因此完全可以用 JSON Schema 校验 TOML。实际上 Cargo 与 PEP 621 都基于类似思路校验配置。本工具让你无需手动转 TOML 为 JSON 即可直接校验。</p>
+      </details>
+      <details>
+        <summary>支持哪些 TOML 特性？</summary>
+        <p>底层使用 smol-toml 解析，支持：表（<code>[table]</code>）、数组表（<code>[[arr]]</code>）、点号键（<code>a.b.c = 1</code>）、内联表（<code>{'{ x = 1, y = 2 }'}</code>）、多行字符串（<code>{'"""..."""'}</code>、<code>{"'''...'''"}</code>）、4 种日期时间类型（offset date-time、local date-time、local date、local time）、整数（含下划线分隔、十六进制 / 八进制 / 二进制）、浮点数（含特殊值 inf / nan）、布尔、数组。注释会被忽略。</p>
+      </details>
+      <details>
+        <summary>什么是 TOML 类型陷阱？</summary>
+        <p>TOML 类型系统与 JSON / JS 不完全等价，主要有两类陷阱：①<strong>日期时间值</strong>：TOML 原生支持 4 种日期时间类型，但 JS 只有 Date 对象，转 JSON 时会统一变成 ISO 8601 字符串（如 <code>2024-01-15T10:30:00+08:00</code> → <code>"2024-01-15T02:30:00.000Z"</code>），原始类型（local date / local time / offset datetime）与时区偏移信息会丢失。②<strong>64 位整数精度</strong>：TOML 支持 64 位整数（最大 9223372036854775807），但 JS Number 只能安全表示到 2^53-1（9007199254740991），超过此值的整数转 JS Number 后会丢失精度。本工具自动扫描并提示这两类陷阱。</p>
+      </details>
+      <details>
+        <summary>适用于哪些场景？</summary>
+        <p>pyproject.toml（PEP 621 项目元数据）校验、Cargo.toml（Rust 包配置）校验、rust-toolchain.toml（Rust 工具链配置）校验、renovate.json（依赖更新配置）校验、AnyAPI.toml 校验、任意 TOML 配置文件结构校验。只要能写出对应的 JSON Schema，就能校验任意 TOML 数据结构。本工具示例采用 PEP 621 pyproject.toml 简化模型。</p>
+      </details>
+      <details>
+        <summary>与 JSON Schema / YAML Schema 校验工具有何区别？</summary>
+        <p>三者共用同一套 draft-07 校验引擎，区别在数据输入格式：JSON Schema 工具校验 JSON 数据，YAML Schema 工具校验 YAML 数据，本工具校验 TOML 数据。如果你写的是 JSON 用前者，写的是 YAML 用 YAML Schema，写的是 TOML 用本工具。TOML 版本额外提供日期时间类型与大整数精度陷阱检测，JSON 不存在此问题（JSON 类型严格且无 64 位整数）。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，Schema 与 TOML 数据均由 JavaScript 在本地校验，不会发送到任何服务器。对于包含敏感信息的 Cargo.toml 或 pyproject.toml，本地校验更安全。</p>
+      </details>
+      <details>
+        <summary>校验失败后如何定位问题？</summary>
+        <p>结果区会列出每条错误：关键字徽章（按类型分类着色）+ 实例路径（JSON Pointer 风格，如 /project/requires-python）+ 中文消息。点击错误项可高亮该路径。若错误由 TOML 类型陷阱引起（如日期时间值被当作字符串校验失败），结果区同时显示类型提示，建议在 Schema 中声明 type=string + format=date-time。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* TOML Schema 工具专属样式：限定 .tschematool 前缀，避免污染其他页面 */
+  .tschematool {
+    margin: 24px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tschematool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .tschematool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .tschematool__hint-text {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .tschematool__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 320px;
+  }
+
+  .tschematool__panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .tschematool__panel:first-child {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .tschematool__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tschematool__stat {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tschematool__textarea {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    outline: none;
+    resize: vertical;
+    min-height: 280px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    tab-size: 2;
+  }
+
+  .tschematool__textarea::placeholder {
+    color: var(--color-text-muted);
+    white-space: pre-wrap;
+  }
+
+  /* ============ 结果区 ============ */
+  .tschematool__result {
+    padding: 14px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    min-height: 80px;
+  }
+
+  .tschematool__result-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .tschematool__result-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .tschematool__badge {
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+  }
+
+  .tschematool__badge--pass {
+    background: rgba(26, 170, 85, 0.14);
+    color: var(--color-success);
+  }
+
+  .tschematool__badge--fail {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--color-error);
+  }
+
+  .tschematool__hint {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  .tschematool__pass {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(26, 170, 85, 0.08);
+    border: 1px solid rgba(26, 170, 85, 0.25);
+    border-radius: var(--radius-sm);
+    color: var(--color-success);
+    font-size: 14px;
+  }
+
+  .tschematool__pass-icon {
+    font-size: 18px;
+  }
+
+  /* ============ 错误列表 ============ */
+  .tschematool__errors {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .tschematool__error-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.06);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    color: var(--color-error);
+    font-weight: 500;
+  }
+
+  .tschematool__error-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .tschematool__error-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    font-size: 13px;
+  }
+
+  .tschematool__error-row:last-child {
+    border-bottom: 0;
+  }
+
+  .tschematool__error-row:hover,
+  .tschematool__error-row--active {
+    background: rgba(239, 68, 68, 0.06);
+  }
+
+  .tschematool__error-row--parse {
+    cursor: default;
+    grid-template-columns: auto 1fr;
+  }
+
+  .tschematool__error-row--parse:hover {
+    background: transparent;
+  }
+
+  /* 关键字徽章：按类型分类着色（与 JsonSchemaTool/YamlSchemaTool 一致） */
+  .tschematool__kw {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--color-bg-code);
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  .tschematool__kw--type { background: rgba(43, 108, 255, 0.12); color: #2b6cff; }
+  .tschematool__kw--object { background: rgba(201, 54, 111, 0.12); color: #c9366f; }
+  .tschematool__kw--array { background: rgba(245, 166, 35, 0.14); color: #b97308; }
+  .tschematool__kw--string { background: rgba(26, 170, 85, 0.12); color: #1aaa55; }
+  .tschematool__kw--number { background: rgba(122, 76, 255, 0.12); color: #7a4cff; }
+  .tschematool__kw--logic { background: rgba(89, 89, 89, 0.12); color: var(--color-text-soft); }
+  .tschematool__kw--other { background: var(--color-bg-code); color: var(--color-text-soft); }
+
+  @media (prefers-color-scheme: dark) {
+    .tschematool__kw--type { color: #5b8cff; }
+    .tschematool__kw--object { color: #f0709a; }
+    .tschematool__kw--array { color: #fbbf24; }
+    .tschematool__kw--string { color: #4ade80; }
+    .tschematool__kw--number { color: #a78bfa; }
+  }
+
+  .tschematool__error-path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text);
+    background: var(--color-bg-code);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tschematool__error-msg {
+    color: var(--color-text-soft);
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  /* ============ TOML 类型陷阱提示区 ============ */
+  .tschematool__traps {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tschematool__traps-head {
+    padding: 8px 12px;
+    background: rgba(245, 166, 35, 0.08);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    color: #b97308;
+    font-weight: 500;
+  }
+
+  .tschematool__trap-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .tschematool__trap-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .tschematool__trap-row:last-child {
+    border-bottom: 0;
+  }
+
+  .tschematool__trap-path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text);
+    background: var(--color-bg-code);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tschematool__trap-msg {
+    color: var(--color-text-soft);
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .tschematool__notice {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--color-success);
+    color: #fff;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  .tschematool__copy {
+    flex-shrink: 0;
+  }
+
+  .tschematool__footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* ============ FAQ ============ */
+  .tschematool-faq {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 0 24px;
+  }
+
+  .tschematool-faq h2 {
+    font-size: 22px;
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  .tschematool-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .tschematool-faq summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+  }
+
+  .tschematool-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .tschematool-faq summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .tschematool-faq details[open] summary::after {
+    content: '−';
+  }
+
+  .tschematool-faq details p {
+    margin: 0;
+    padding: 0 16px 14px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .tschematool-faq code {
+    padding: 1px 5px;
+    background: var(--color-bg-code);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  /* ============ 移动端适配 ============ */
+  @media (max-width: 768px) {
+    .tschematool__panels {
+      grid-template-columns: 1fr;
+    }
+    .tschematool__panel:first-child {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .tschematool__textarea {
+      min-height: 220px;
+    }
+    .tschematool__toolbar {
+      padding: 10px 12px;
+    }
+    .tschematool__hint-text {
+      display: none;
+    }
+    /* 错误行与陷阱行：移动端改为两行布局 */
+    .tschematool__error-row,
+    .tschematool__trap-row {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+    }
+    .tschematool__error-msg,
+    .tschematool__trap-msg {
+      grid-column: 1 / -1;
+    }
+    .tschematool__error-path,
+    .tschematool__trap-path {
+      max-width: 140px;
+    }
+  }
+</style>

@@ -1,0 +1,715 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JweTool from '../components/JweTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JWE 解码工具 - 在线解密 JSON Web Encryption 五段式加密令牌',
+  description:
+    '免费的在线 JWE 解码工具：支持 Compact 与 Flattened JSON 两种序列化格式，自动解析 Protected Header 与五段（protected / encrypted_key / iv / ciphertext / tag），基于 Web Crypto API 本地解密 dir / A128KW / A192KW / A256KW / RSA-OAEP-256/384/512 / RSA1_5 / PBES2-HS256+A128KW / ECDH-ES / ECDH-ES+A128KW 等 16 种密钥管理算法，配套 A128GCM / A192GCM / A256GCM 内容加密算法。PBES2 支持密码派生解密（PBKDF2 + AES-KW），ECDH-ES 支持椭圆曲线协商解密（ECDH + Concat KDF），明文若为 JSON 自动美化，若为 JWT 提示用 JWT 工具继续解码。所有解密在浏览器本地完成，密钥不上传、不存储、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JWE 解码工具',
+    url: 'https://toolbox.example.com/jwe',
+    description: '在线 JWE 解码与解密工具，解析 JSON Web Encryption 五段式结构，支持 dir / AES-KW / RSA-OAEP / PBES2 / ECDH-ES 等 16 种主流算法本地解密，PBES2 支持密码派生解密，ECDH-ES 支持椭圆曲线协商解密，明文 JSON 自动美化。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JWE 解码工具</h1>
+      <p>
+        粘贴 JWE 立即解析 Protected Header 与 <strong>五段式结构</strong>（protected / encrypted_key / iv / ciphertext / tag），
+        自动 base64url 解码并 JSON 美化。支持 <strong>Compact</strong> 与 <strong>Flattened JSON</strong> 两种序列化格式，
+        基于 <strong>Web Crypto API</strong> 本地解密 <code>dir</code>、<code>A128KW/A192KW/A256KW</code>、
+        <code>RSA-OAEP-256/384/512</code>、<code>{'RSA1_5'}</code>、<code>PBES2-HS256+A128KW</code>、
+        <code>ECDH-ES</code>、<code>ECDH-ES+A128KW</code> 等 16 种密钥管理算法，
+        配套 <code>A128GCM/A192GCM/A256GCM</code> 内容加密算法。PBES2 系列支持<strong>密码派生解密</strong>（PBKDF2 + AES-KW），
+        ECDH-ES 系列支持<strong>椭圆曲线协商解密</strong>（ECDH + Concat KDF），
+        明文若为 JSON 自动美化，若为 JWT 提示继续解码。所有密钥不离开浏览器，零上传、零追踪。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JweTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="jwe-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>JWE 是什么？与 JWT、JWS 有什么关系？</summary>
+        <p>
+          <strong>JWE</strong>（JSON Web Encryption）是 RFC 7516 定义的<strong>加密令牌</strong>标准，
+          用于在两方之间安全传递加密后的声明。它由 <strong>五段</strong>组成：
+          <code>Protected Header</code>（头部）、<code>Encrypted Key</code>（加密的 CEK）、
+          <code>IV</code>（初始化向量）、<code>Ciphertext</code>（密文）、<code>Authentication Tag</code>（认证标签），
+          用 <code>.</code> 分隔。<br />
+          <strong>JWS</strong>（JSON Web Signature，RFC 7515）是<strong>签名令牌</strong>，三段式 <code>Header.Payload.Signature</code>，
+          payload 仅 base64url 编码，任何人可解码查看内容，但不可篡改（签名防伪）。<br />
+          <strong>JWT</strong>（JSON Web Token，RFC 7519）是 JWS 或 JWE 的统称，<strong>通常指 JWS</strong>。
+          当 JWT 用 JWE 格式时，payload 被加密，需密钥才能查看内容。简言之：<strong>JWS 防篡改，JWE 防查看</strong>。
+        </p>
+      </details>
+      <details>
+        <summary>JWE 的五段格式分别是什么含义？</summary>
+        <p>
+          JWE Compact 序列化由五段用 <code>.</code> 分隔组成：
+          <br />- <strong>Protected Header</strong>（base64url 编码的 JOSE 头部）：声明 <code>alg</code>（密钥管理算法）、
+          <code>enc</code>（内容加密算法）、<code>kid</code>（密钥 ID）、<code>typ</code>（类型）、<code>zip</code>（压缩）等。
+          <br />- <strong>Encrypted Key</strong>（加密的内容加密密钥 CEK）：用 <code>alg</code> 算法加密后的 CEK。
+          <code>dir</code> 算法时此段为空（CEK 即共享密钥本身）。
+          <br />- <strong>IV</strong>（初始化向量）：AES-GCM 通常为 96 位（12 字节）随机数，每次加密不同。
+          <br />- <strong>Ciphertext</strong>（密文）：用 <code>enc</code> 算法加密后的明文，base64url 编码。
+          <br />- <strong>Authentication Tag</strong>（认证标签）：AEAD 算法（如 GCM）生成的认证标签，固定 128 位（16 字节），
+          用于校验密文与 AAD 完整性。<br />
+          AAD（Additional Authenticated Data）= ASCII 编码的 Protected Header，参与认证但不被加密。
+        </p>
+      </details>
+      <details>
+        <summary>JWE 与 JWS 的区别？什么时候应该用 JWE？</summary>
+        <p>
+          <strong>JWS</strong>：签名令牌，三段式。payload 仅 base64url 编码，<strong>任何人可读</strong>，但签名防止篡改。
+          适用于：身份认证 token（JWT）、OAuth state、SAML 断言等<strong>需要公开内容但防篡改</strong>的场景。<br />
+          <strong>JWE</strong>：加密令牌，五段式。payload 被加密，<strong>无密钥不可读</strong>，同时认证标签防篡改。
+          适用于：<strong>需要保密 payload</strong>的场景，如：
+          <br />- 含敏感信息的声明（用户手机号、身份证号、API 凭证）
+          <br />- 内部服务间传递的机密数据
+          <br />- 需向前保密（forward secrecy）的会话 token
+          <br />- HIPAA / GDPR 等合规场景下的医疗、金融数据传输
+          <br />注意：JWE 仅加密 payload，不提供身份认证，需配合 JWS 签名才能验证签发者身份（即 JWS+JWE 嵌套令牌）。
+        </p>
+      </details>
+      <details>
+        <summary>JWE 支持哪些密钥管理算法（alg）？</summary>
+        <p>
+          RFC 7518 定义了 JWE 的密钥管理算法，主要分五类：
+          <br />- <strong>直接模式</strong>：<code>dir</code>，共享对称密钥直接作为 CEK，Encrypted Key 段为空，最简单。
+          <br />- <strong>对称密钥包装</strong>：<code>A128KW</code> / <code>A192KW</code> / <code>A256KW</code>，
+          用 AES 算法包装（wrap）CEK，接收方用相同 KEK 解包。
+          <br />- <strong>非对称加密</strong>：<code>RSA-OAEP-256</code> / <code>RSA-OAEP-384</code> /
+          <code>RSA-OAEP-512</code>（推荐）/ <code>{'RSA1_5'}</code>（已不推荐，存在 Bleichenbacher 攻击风险），
+          发送方用接收方公钥加密 CEK，接收方用私钥解密。
+          <br />- <strong>密码派生</strong>：<code>PBES2-HS256+A128KW</code> 等，用用户密码派生 KEK 再包装 CEK，
+          适合用户记忆密码场景。
+          <br />- <strong>椭圆曲线协商</strong>：<code>ECDH-ES</code> / <code>ECDH-ES+A128KW</code> /
+          <code>ECDH-ES+A192KW</code> / <code>ECDH-ES+A256KW</code>，
+          基于椭圆曲线 Diffie-Hellman 密钥协商 + Concat KDF 派生密钥，提供前向保密能力。<br />
+          本工具支持解密 <code>dir</code>、<code>A128KW/A192KW/A256KW</code>、
+          <code>RSA-OAEP/RSA-OAEP-256/384/512</code>、<code>{'RSA1_5'}</code>、
+          <code>PBES2-HS256+A128KW</code>、<code>PBES2-HS384+A192KW</code>、<code>PBES2-HS512+A256KW</code>、
+          <code>ECDH-ES</code>、<code>ECDH-ES+A128KW</code>、<code>ECDH-ES+A192KW</code>、<code>ECDH-ES+A256KW</code>
+          共 16 种算法。
+        </p>
+      </details>
+      <details>
+        <summary>JWE 支持哪些内容加密算法（enc）？</summary>
+        <p>
+          RFC 7518 定义了 JWE 的内容加密算法，均为 <strong>AEAD</strong>（Authenticated Encryption with Associated Data）
+          算法，同时提供加密与认证：
+          <br />- <strong>AES-GCM 系列</strong>：<code>A128GCM</code> / <code>A192GCM</code> / <code>A256GCM</code>，
+          基于 AES 与 GCM 模式，性能高（硬件加速），认证标签 128 位。<strong>推荐</strong>，现代 JWE 首选。
+          <br />- <strong>AES-CBC+HMAC 系列</strong>：<code>A128CBC-HS256</code> / <code>A192CBC-HS384</code> /
+          <code>A256CBC-HS512</code>，AES-CBC 加密 + HMAC-SHA 认证，密钥长度是加密长度的两倍（如 A128CBC-HS256 用 256 位密钥，
+          前 128 位 HMAC，后 128 位 AES）。<br />
+          本工具当前仅支持 GCM 系列解密（Web Crypto API 原生支持），CBC+HMAC 系列需手动实现 HMAC 验证与 CBC 解密，
+          后续版本可能补充。<br />
+          <strong>避免使用</strong>：算法设计中应避免 <code>none</code>（无加密）与未识别的 enc 值。
+        </p>
+      </details>
+      <details>
+        <summary>dir 算法与 RSA-OAEP 算法有什么区别？</summary>
+        <p>
+          <strong>dir</strong>（直接密钥）：发送方与接收方<strong>预先共享对称密钥</strong>，
+          该密钥直接作为 CEK 加密 payload，Encrypted Key 段为空。
+          <br />- 优点：实现最简单，性能高，无密钥包装开销。
+          <br />- 缺点：需安全渠道预先交换密钥；多方场景需维护多份密钥；无法实现向前保密。
+          <br />- 适用：内部服务间通信、单一签发方与接收方、调试场景。<br />
+          <strong>RSA-OAEP</strong>（非对称加密）：发送方用<strong>接收方公钥</strong>加密 CEK，
+          接收方用<strong>私钥</strong>解密 CEK，再用 CEK 解密 payload。
+          <br />- 优点：公钥可公开分发，发送方无需持有私钥；多接收方只需各自公钥；提供机密性与认证（私钥持有者才能解密）。
+          <br />- 缺点：RSA 密钥较长（2048+ 位），加密速度慢于对称算法；公钥需通过可信渠道分发（如 JWK Set）。
+          <br />- 适用：OAuth/OIDC、跨组织通信、需要非对称密钥分发的场景。<br />
+          现代实践中，<strong>RSA-OAEP-256</strong>（SHA-256）是推荐选择；旧的 <code>{'RSA1_5'}</code>（PKCS#1 v1.5）
+          存在 Bleichenbacher padding oracle 攻击风险，应避免使用。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 JWE 解密需要密钥而 JWS 解码不需要？</summary>
+        <p>
+          <strong>JWS</strong>（签名令牌）的 payload 仅 base64url 编码，<strong>不加密</strong>，
+          任何人都能解码查看内容。验签才需要密钥（公钥或对称密钥），但本工具<strong>不解码就验签</strong>，仅做格式展示。
+          <br />
+          <strong>JWE</strong>（加密令牌）的 payload 被加密为 ciphertext，<strong>无密钥无法还原明文</strong>。
+          密钥用于：
+          <br />- <code>dir</code>：密钥本身即 CEK，直接用于 AES-GCM 解密。
+          <br />- <code>A128KW</code> 等：密钥是 KEK，用于解包（unwrap）出 CEK，再用 CEK 解密 ciphertext。
+          <br />- <code>RSA-OAEP-*</code>：私钥用于解密 Encrypted Key 段得到 CEK，再用 CEK 解密 ciphertext。
+          <br />
+          本工具的 JWE 解密<strong>完全在浏览器本地</strong>进行，密钥不离开你的设备，不上传任何服务器。
+          这对调试真实业务的 token 尤为重要——可能含用户信息的 JWE 在本地解密可避免泄露。
+        </p>
+      </details>
+      <details>
+        <summary>JWE 解密失败常见原因？</summary>
+        <p>
+          常见解密失败原因：
+          <br />- <strong>密钥不匹配</strong>：dir 算法密钥长度不符（如 A128GCM 需 16 字节，A256GCM 需 32 字节）；
+          A128KW 密钥长度不符；RSA 私钥与加密时使用的公钥不成对。
+          <br />- <strong>密文被篡改</strong>：ciphertext 或 tag 被修改，认证标签校验失败（GCM 报 MAC failed）。
+          <br />- <strong>IV 错误</strong>：IV 段被修改或复制时丢失字符，导致 GCM 解密失败。
+          <br />- <strong>Protected Header 被修改</strong>：AAD 包含 Protected Header，header 修改会导致认证标签校验失败。
+          <br />- <strong>算法不支持</strong>：使用了 A128CBC-HS256 等 CBC+HMAC 系列本工具暂不支持的算法。
+          <br />- <strong>PEM 格式错误</strong>：RSA 私钥缺少 <code>-----BEGIN ... PRIVATE KEY-----</code> 头尾，
+          或 Base64 内容含非法字符（如空格、换行不正确）。
+          <br />- <strong>base64url 解码失败</strong>：JWE 字符串被截断或包含空格、换行等非法字符。
+          <br />
+          本工具会友好化常见错误（如认证标签失败、RSA 解密失败、AES-KW 解包失败），并提供具体原因提示。
+          若提示「暂不支持解密」，可先查看 Protected Header 中的 alg/enc 字段确认算法支持范围。
+        </p>
+      </details>
+      <details>
+        <summary>PBES2 算法是什么？如何用密码解密 JWE？</summary>
+        <p>
+          <strong>PBES2</strong>（Password-Based Encryption Scheme 2）是 RFC 7518 定义的<strong>密码派生密钥</strong>方案，
+          用于将用户密码转为加密密钥。alg 形如 <code>PBES2-HS256+A128KW</code>，由两部分组成：
+          <br />- <strong>PBKDF2</strong>（HS256/HS384/HS512）：用密码 + salt + 迭代次数派生 KEK，
+          HS256 对应 HMAC-SHA-256，HS384 对应 SHA-384，HS512 对应 SHA-512。
+          <br />- <strong>AES-KW</strong>（A128KW/A192KW/A256KW）：用派生的 KEK 包装（wrap）CEK。
+          <br />
+          Protected Header 需包含两个 PBES2 专属参数：
+          <br />- <code>p2s</code>（PBES2 salt）：base64url 编码的盐值，通常 16 字节随机数，防止彩虹表攻击。
+          <br />- <code>p2c</code>（PBES2 count）：PBKDF2 迭代次数，<strong>越大越安全但越慢</strong>。
+          RFC 7518 建议 ≥ 1000，OWASP 2023 建议 ≥ 600,000（针对 HMAC-SHA-256）。
+          <br />
+          <strong>解密流程</strong>：用户输入密码 → PBKDF2（密码 + p2s + p2c + 哈希）派生 KEK →
+          AES-KW 用 KEK 解包（unwrap）出 CEK → 用 CEK 解密 ciphertext。<br />
+          本工具的「载入 PBES2 示例」按钮会现场生成一个可解密的 PBES2 JWE（密码 <code>toolbox-pbes2-demo</code>，
+          迭代次数 1000 仅用于演示，生产环境应大幅提高），密码自动填入输入框，点击「解密」即可验证。
+          <br />
+          <strong>安全提示</strong>：PBES2 适合用户记忆密码场景，但弱密码易被暴力破解。
+          生产环境应使用强密码 + 高迭代次数（≥ 100,000），或优先选择 <code>RSA-OAEP-256</code>、
+          <code>ECDH-ES</code> 等非对称/协商密钥算法。
+        </p>
+      </details>
+      <details>
+        <summary>ECDH-ES 算法是什么？如何用椭圆曲线私钥解密 JWE？</summary>
+        <p>
+          <strong>ECDH-ES</strong>（Elliptic Curve Diffie-Hellman Ephemeral-Static）是 RFC 7518 定义的
+          <strong>椭圆曲线密钥协商</strong>算法，基于 ECDH 让发送方与接收方在不安全的信道上协商出共享密钥。
+          alg 形如 <code>ECDH-ES</code> 或 <code>ECDH-ES+A128KW</code>，区别在于派生密钥的用途：
+          <br />- <strong>ECDH-ES（直接模式）</strong>：ECDH 派生的共享秘密 Z 经 Concat KDF 直接派生为 CEK，
+          Encrypted Key 段为空（与 <code>dir</code> 类似，但 CEK 来源不同）。
+          <br />- <strong>ECDH-ES+A128KW/A192KW/A256KW</strong>：ECDH 派生的 Z 经 Concat KDF 派生为 KEK，
+          再用 KEK 通过 AES-KW 包装（wrap）CEK，Encrypted Key 段非空。
+          <br />
+          Protected Header 需包含 <code>epk</code>（ephemeral public key，临时公钥，JWK 格式 EC 公钥）字段，
+          含 <code>kty</code>、<code>crv</code>、<code>x</code>、<code>y</code> 四个子字段。
+          <br />
+          <strong>支持的曲线</strong>：<code>P-256</code>（secp256r1）、<code>P-384</code>（secp384r1）、
+          <code>P-521</code>（secp521r1）。本工具暂不支持其他曲线（如 secp256k1）。
+          <br />
+          <strong>解密流程</strong>：
+          <br />1. 从 Protected Header 提取 <code>epk</code>（临时公钥 JWK）。
+          <br />2. 用户输入接收方 EC 私钥 JWK（含 <code>kty=EC</code>、<code>crv</code>、<code>d</code> 字段）。
+          <br />3. 用 <code>epk</code> 公钥 + 接收方私钥执行 ECDH 派生，得到共享秘密 Z。
+          <br />4. 用 <strong>Concat KDF</strong>（RFC 7518 Section 4.6.2）从 Z 派生密钥：
+          <br />　- ECDH-ES 直接模式：AlgorithmID = enc 名（如 A128GCM），派生 CEK。
+          <br />　- ECDH-ES+KW 模式：AlgorithmID = alg 名（如 ECDH-ES+A128KW），派生 KEK，再解包 CEK。
+          <br />5. 用 CEK 解密 ciphertext。
+          <br />
+          本工具的「载入 ECDH-ES 示例」按钮会现场生成一个可解密的 ECDH-ES JWE（P-256 曲线 + A128GCM 直接模式），
+          接收方私钥 JWK 自动填入输入框，点击「解密」即可验证 ECDH 派生 + Concat KDF + AES-GCM 解密完整链路。
+          <br />
+          <strong>安全提示</strong>：ECDH-ES 提供<strong>前向保密</strong>能力（ephemeral 临时密钥每次不同，
+          即使接收方私钥泄露，历史 JWE 仍安全），是现代 JWE 的推荐选择。生产环境应优先选择
+          <code>ECDH-ES</code> 或 <code>ECDH-ES+A128KW</code>，避免使用 <code>{'RSA1_5'}</code>。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JWE 工具专属样式 */
+
+  .jwetool {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .jwetool__section {
+    padding: 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jwetool__section:last-child {
+    border-bottom: none;
+  }
+
+  .jwetool__section-title {
+    margin: 0 0 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .jwetool__textarea {
+    width: 100%;
+    min-height: 96px;
+    max-height: 240px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jwetool__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .jwetool__textarea--key {
+    min-height: 120px;
+    font-size: 12px;
+  }
+
+  .jwetool__input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jwetool__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .jwetool__btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .jwetool__btn {
+    padding: 7px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .jwetool__btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .jwetool__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .jwetool__btn--primary {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .jwetool__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    color: #fff;
+  }
+
+  .jwetool__btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-muted);
+  }
+
+  .jwetool__btn--ghost:hover:not(:disabled) {
+    color: var(--color-error);
+  }
+
+  .jwetool__error {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(229, 72, 77, 0.08);
+    border: 1px solid rgba(229, 72, 77, 0.2);
+    color: var(--color-error);
+    font-size: 13px;
+  }
+
+  .jwetool__hint {
+    margin: 8px 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 概览区：格式 + alg + enc 标签 */
+  .jwetool__overview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .jwetool__format-badge,
+  .jwetool__alg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 12.5px;
+    color: var(--color-text);
+  }
+
+  .jwetool__alg-badge code {
+    font-family: var(--font-mono);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .jwetool__alg-badge--ok {
+    border-color: rgba(26, 170, 85, 0.3);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+  }
+
+  .jwetool__alg-badge--warn {
+    border-color: rgba(245, 166, 35, 0.3);
+    background: rgba(245, 166, 35, 0.08);
+    color: #d97706;
+  }
+
+  /* 算法说明区 */
+  .jwetool__alg-info {
+    padding: 12px 14px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text-soft);
+  }
+
+  .jwetool__alg-info p {
+    margin: 4px 0;
+  }
+
+  .jwetool__alg-info strong {
+    color: var(--color-text);
+  }
+
+  /* 区块标题与复制按钮 */
+  .jwetool__block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+  }
+
+  .jwetool__block-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .jwetool__block-subtitle {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+
+  .jwetool__copy-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    transition: all 0.15s ease;
+  }
+
+  .jwetool__copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .jwetool__header-block {
+    margin-bottom: 18px;
+  }
+
+  .jwetool__pre {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .jwetool__pre--json {
+    border-left: 3px solid var(--color-primary);
+  }
+
+  /* 五段表格 */
+  .jwetool__parts {
+    margin-top: 14px;
+  }
+
+  .jwetool__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .jwetool__table th,
+  .jwetool__table td {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .jwetool__table th {
+    background: var(--color-bg-soft);
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 12.5px;
+  }
+
+  .jwetool__table td {
+    color: var(--color-text-soft);
+  }
+
+  .jwetool__table td strong {
+    color: var(--color-text);
+  }
+
+  .jwetool__part-value {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--color-primary);
+    word-break: break-all;
+  }
+
+  /* 解密结果区 */
+  .jwetool__result {
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-sm);
+  }
+
+  .jwetool__key-hint {
+    margin: 6px 0 10px;
+    padding: 8px 12px;
+    background: rgba(43, 108, 255, 0.06);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 12.5px;
+    color: var(--color-text-soft);
+  }
+
+  .jwetool__link {
+    color: var(--color-primary);
+    font-weight: 500;
+    text-decoration: underline;
+  }
+
+  /* FAQ 样式 */
+  .jwe-faq {
+    margin-top: 32px;
+  }
+
+  .jwe-faq h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+
+  .jwe-faq details {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .jwe-faq summary {
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--color-text);
+    font-size: 14.5px;
+  }
+
+  .jwe-faq summary:hover {
+    color: var(--color-primary);
+  }
+
+  .jwe-faq details[open] summary {
+    margin-bottom: 8px;
+  }
+
+  .jwe-faq p {
+    margin: 8px 0;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .jwe-faq strong {
+    color: var(--color-text);
+  }
+
+  .jwe-faq code {
+    padding: 2px 6px;
+    background: var(--color-bg-code);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-primary);
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .jwetool__section {
+      padding: 14px;
+    }
+
+    .jwetool__textarea {
+      font-size: 12px;
+    }
+
+    .jwetool__btn {
+      padding: 6px 12px;
+      font-size: 12.5px;
+    }
+
+    .jwetool__overview {
+      gap: 6px;
+    }
+
+    .jwetool__format-badge,
+    .jwetool__alg-badge {
+      font-size: 11.5px;
+      padding: 3px 8px;
+    }
+
+    .jwetool__table {
+      font-size: 12px;
+    }
+
+    .jwetool__table th,
+    .jwetool__table td {
+      padding: 6px 8px;
+    }
+
+    .jwetool__pre {
+      font-size: 11.5px;
+      padding: 10px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .jwetool__btn-row {
+      gap: 6px;
+    }
+
+    .jwetool__btn {
+      flex: 1 1 calc(50% - 3px);
+      min-width: 0;
+    }
+
+    /* 五段表格在小屏改为竖向卡片式 */
+    .jwetool__table,
+    .jwetool__table thead,
+    .jwetool__table tbody,
+    .jwetool__table th,
+    .jwetool__table td,
+    .jwetool__table tr {
+      display: block;
+    }
+
+    .jwetool__table thead {
+      display: none;
+    }
+
+    .jwetool__table tr {
+      margin-bottom: 8px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .jwetool__table td {
+      border: none;
+      border-bottom: 1px solid var(--color-border);
+      padding: 6px 10px;
+    }
+
+    .jwetool__table td:last-child {
+      border-bottom: none;
+    }
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .jwetool__alg-badge--warn {
+      color: #fbbf24;
+    }
+
+    .jwetool__alg-info {
+      background: var(--color-bg-soft);
+    }
+
+    .jwetool__key-hint {
+      background: rgba(91, 140, 255, 0.08);
+    }
+
+    .jwetool__result {
+      background: var(--color-bg-soft);
+    }
+  }
+</style>

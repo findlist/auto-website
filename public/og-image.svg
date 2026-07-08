@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1115"/>
+      <stop offset="1" stop-color="#1a1f28"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2b6cff"/>
+      <stop offset="1" stop-color="#7a4cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="80" y="240" width="64" height="64" rx="14" fill="url(#accent)"/>
+  <text x="112" y="288" text-anchor="middle" font-family="Microsoft YaHei,sans-serif" font-size="40" font-weight="700" fill="#fff">工</text>
+  <text x="170" y="290" font-family="Microsoft YaHei,sans-serif" font-size="56" font-weight="700" fill="#ffffff">工具盒子</text>
+  <text x="80" y="370" font-family="Microsoft YaHei,sans-serif" font-size="32" font-weight="400" fill="#a8aeb8">零广告 · 全本地处理 · 现代化中文开发者工具集</text>
+  <text x="80" y="430" font-family="Microsoft YaHei,sans-serif" font-size="24" font-weight="400" fill="#6b7280">JSON 格式化 / 压缩 / 校验 / 转义 · 数据不离开你的浏览器</text>
+  <rect x="80" y="500" width="1040" height="2" fill="#262c36"/>
+  <text x="80" y="555" font-family="Microsoft YaHei,sans-serif" font-size="20" fill="#6b7280">toolbox.example.com</text>
+</svg>

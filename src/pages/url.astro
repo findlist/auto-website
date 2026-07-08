@@ -1,0 +1,302 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import UrlTool from '../components/UrlTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'URL 编解码工具 - encodeURI / encodeURIComponent 在线转换',
+  description:
+    '免费的在线 URL 编解码工具：支持 encodeURI、encodeURIComponent 双模式，自动处理中文与特殊字符，兼容 + 与 %20 空格。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'URL 编解码工具',
+    url: 'https://toolbox.example.com/url',
+    description: '在线 URL 编解码工具，支持 encodeURI 与 encodeURIComponent 双模式，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>URL 编解码与解析工具</h1>
+      <p>
+        一键完成 URL 编码与解码，支持保留 URL 结构或完整编码两种粒度，自动处理中文、空格与特殊字符；附带 URL 解析视图，逐项展示 protocol/host/pathname/search/hash 等组成部分与查询参数。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <UrlTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>encodeURI 和 encodeURIComponent 有什么区别？</summary>
+        <p><code>encodeURI</code> 保留 URL 中的保留字符（<code>/ ? : @ & = + $ #</code>），适合编码完整的 URL；<code>encodeURIComponent</code> 会编码所有非字母数字字符，适合编码 URL 的某个部分（如查询参数值）。本工具的"保留 URL 结构"对应前者，"完整编码"对应后者。</p>
+      </details>
+      <details>
+        <summary>解码时遇到 + 号会怎么处理？</summary>
+        <p>在 <code>application/x-www-form-urlencoded</code> 格式中，空格会被编码为 <code>+</code>。本工具在解码前会自动将 <code>+</code> 转换为 <code>%20</code>，因此两种空格表示方式都能正确还原。</p>
+      </details>
+      <details>
+        <summary>为什么中文会被编码成 %XX%XX%XX 这样的序列？</summary>
+        <p>URL 标准要求非 ASCII 字符使用 UTF-8 编码后转为百分号编码。一个中文字符在 UTF-8 下通常占 3 个字节，因此会被表示为 3 个连续的 <code>%XX</code>。本工具使用浏览器原生实现，遵循 RFC 3986 标准。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有处理逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+      <details>
+        <summary>URL 解析视图支持哪些组成部分？</summary>
+        <p>切换到「URL 解析」Tab 后，输入完整 URL 即可看到 protocol（协议）、origin（源）、host（主机+端口）、hostname（主机名）、port（端口）、pathname（路径）、search（查询串）、hash（锚点）、username（用户名）、password（密码）等组成部分，并自动将查询参数解析为键值对表格，每项均可单独复制。解析基于浏览器原生 <code>URL</code> 对象，遵循 <a href="https://url.spec.whatwg.org/" rel="noopener noreferrer" target="_blank">URL 标准</a>。</p>
+      </details>
+      <details>
+        <summary>输入的 URL 缺少协议（如 example.com）会怎样？</summary>
+        <p>浏览器原生 <code>URL</code> 对象要求输入必须包含协议（如 <code>https://</code>）。本工具在解析失败时会自动尝试在输入前补上 <code>https://</code> 重试一次，因此 <code>example.com/path?q=1</code> 这样的输入也能正常解析。如果仍无法解析，会显示明确的错误提示。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* URL 工具专属样式：复用 .jsontool 基础样式，仅补充粒度选择器样式 */
+  .urltool__seg-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .urltool__seg-text {
+    white-space: nowrap;
+  }
+
+  .urltool__seg-label select {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+    max-width: 200px;
+  }
+
+  /* 移动端：选择器宽度收紧，避免工具栏换行混乱 */
+  @media (max-width: 768px) {
+    .urltool__seg-label select {
+      max-width: 140px;
+    }
+  }
+
+  /* 视图切换 Tab 栏 */
+  .urltool__view-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+    padding-left: 4px;
+  }
+
+  .urltool__view-tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .urltool__view-tab:hover {
+    color: var(--color-text);
+  }
+
+  .urltool__view-tab:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .urltool__view-tab.is-active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* URL 解析结果区 */
+  .urltool__parse-result {
+    margin-top: 16px;
+  }
+
+  .urltool__parse-title {
+    margin: 20px 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .urltool__parse-title:first-child {
+    margin-top: 0;
+  }
+
+  .urltool__parse-count {
+    color: var(--color-text-soft);
+    font-weight: 400;
+    font-size: 13px;
+    margin-left: 4px;
+  }
+
+  .urltool__parse-empty {
+    margin: 0;
+    padding: 12px 16px;
+    color: var(--color-text-soft);
+    font-size: 13px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm);
+  }
+
+  /* URL 组成部分列表 */
+  .urltool__parts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .urltool__part {
+    display: grid;
+    grid-template-columns: 160px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .urltool__part:last-child {
+    border-bottom: none;
+  }
+
+  .urltool__part.is-empty {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .urltool__part-label {
+    color: var(--color-text-soft);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .urltool__part-value {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  /* 查询参数表格 */
+  .urltool__params-table {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .urltool__params-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 200px) 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .urltool__params-row:last-child {
+    border-bottom: none;
+  }
+
+  .urltool__params-row--head {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    font-weight: 600;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .urltool__params-key,
+  .urltool__params-value {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .urltool__params-key {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .urltool__params-value {
+    color: var(--color-text);
+  }
+
+  /* 移动端：组成部分与参数表格在小屏改为堆叠布局 */
+  @media (max-width: 600px) {
+    .urltool__part {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'label copy'
+        'value value';
+      row-gap: 6px;
+    }
+    .urltool__part-label {
+      grid-area: label;
+    }
+    .urltool__part-value {
+      grid-area: value;
+    }
+    .urltool__part > button {
+      grid-area: copy;
+    }
+
+    .urltool__params-row {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'key copy'
+        'value value';
+      row-gap: 6px;
+    }
+    .urltool__params-key {
+      grid-area: key;
+    }
+    .urltool__params-value {
+      grid-area: value;
+    }
+    .urltool__params-row > span:last-child {
+      grid-area: copy;
+    }
+    .urltool__params-row--head {
+      grid-template-columns: 1fr 1fr auto;
+      grid-template-areas: 'key value copy';
+    }
+    .urltool__params-row--head .urltool__params-value {
+      grid-area: value;
+    }
+  }
+</style>

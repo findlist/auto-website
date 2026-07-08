@@ -1,0 +1,484 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TimeUnitTool from '../components/TimeUnitTool.tsx';
+
+const meta: SiteMeta = {
+  title: '时间单位换算器 - 毫秒/秒/分/时/天/周/月/年互转与人类可读时长',
+  description:
+    '免费在线时间单位换算器：毫秒、秒、分钟、小时、天、周、月、年八种单位双向换算，支持复合时长字符串解析（如「1h 30min」「2天3小时」）、毫秒转人类可读表示（如「1 天 2 小时 30 分」）。适用于缓存 TTL 配置、超时设置、调度间隔换算、日志时间差分析等开发场景。月年采用 Gregorian 历法平均值精确换算，全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '时间单位换算器',
+    url: 'https://toolbox.example.com/time-unit',
+    description: '在线时间单位换算工具：毫秒/秒/分/时/天/周/月/年互转，复合时长解析，毫秒转人类可读表示。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>时间单位换算器</h1>
+      <p>
+        在毫秒、秒、分钟、小时、天、周、月、年之间双向换算，支持复合时长字符串解析与毫秒转人类可读表示。适用于缓存 TTL、超时配置、调度间隔、日志时间差等开发场景。月年采用 Gregorian 历法平均值（1 年 = 365.2425 天）精确换算，所有计算在浏览器本地完成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <TimeUnitTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>时间单位换算器支持哪些单位？</summary>
+        <p>支持 8 种时间单位互转：<strong>毫秒（ms）</strong>、<strong>秒（s）</strong>、<strong>分钟（min）</strong>、<strong>小时（h）</strong>、<strong>天（d）</strong>、<strong>周（w）</strong>、<strong>月（mo）</strong>、<strong>年（y）</strong>。输入一个数值与源单位，即可同时看到它在全部 8 个单位下的对应值，每张卡片均可一键复制。</p>
+      </details>
+      <details>
+        <summary>月和年的换算为什么标注「近似」？</summary>
+        <p>月和年是<strong>日历单位</strong>，长度随月份与闰年变化：1 月可能是 28、29、30 或 31 天，1 年可能是 365 或 366 天。本工具采用 <strong>Gregorian 历法平均值</strong>进行换算：<strong>1 年 = 365.2425 天</strong>（400 年循环平均，含 97 个闰日），<strong>1 月 = 365.2425 / 12 ≈ 30.436875 天</strong>。这种约定与 ISO 8601 duration、Java <code>java.time.Duration</code>、Python <code>timedelta</code> 等主流库一致，适合需要统一换算系数的场景。若你需要精确日历推算（如「2026-01-01 加 1 个月」），应使用专门的日期库而非本工具。</p>
+      </details>
+      <details>
+        <summary>1 个月到底等于多少天？为什么不同月份天数不同？</summary>
+        <p>实际日历中，1 月、3 月、5 月、7 月、8 月、10 月、12 月为 31 天，4 月、6 月、9 月、11 月为 30 天，2 月平年 28 天、闰年 29 天。因此「1 个月等于多少天」没有唯一答案。本工具采用平均值 <strong>30.436875 天</strong>，这是 Gregorian 历法 400 年循环中所有月份的平均长度。换算示例：1 月 ≈ 30.436875 天 ≈ 730.484 小时 ≈ 2,629,746 秒。如果你需要按特定月份计算，请使用专门的日期库（如 JavaScript 的 <code>Date</code> 对象加减月份）。</p>
+      </details>
+      <details>
+        <summary>1 年等于多少秒？闰年如何影响换算？</summary>
+        <p>平年 365 天 = 31,536,000 秒，闰年 366 天 = 31,622,400 秒。Gregorian 历法 400 年循环中有 97 个闰日，平均每年 <strong>365.2425 天 = 31,556,952 秒</strong>。本工具使用此平均值换算，因此「1 年 = 31,556,952 秒」、「1 年 ≈ 52.1775 周」。闰年规则：能被 4 整除但不能被 100 整除，或能被 400 整除的年份为闰年（如 2024 是闰年，2100 不是闰年）。</p>
+      </details>
+      <details>
+        <summary>如何把「1h 30min」这样的复合时长转成毫秒？</summary>
+        <p>使用本工具的「时长解析」模块，输入 <code>1h 30min</code> 即可解析为 <strong>5,400,000 毫秒</strong>，同时显示人类可读表示「1 小时 30 分钟」与逐项明细。支持的格式包括：<code>1h 30min</code>、<code>1 hour 30 minutes</code>、<code>2天3小时</code>、<code>500ms</code>、<code>1.5h</code>、<code>1w 2d</code> 等。中英文可混用，空格可选，支持小数与负数。多个片段自动累加。</p>
+      </details>
+      <details>
+        <summary>如何把毫秒数格式化为人类可读的「1 天 2 小时」？</summary>
+        <p>使用本工具的「毫秒转人类可读」模块，输入毫秒数（如 <code>90610000</code>），即可输出「1 天 1 小时 10 分钟 10 秒」。可调节最大片段数（2/3/4/全部），避免「1 年 0 月 0 周 1 天」这种冗长表示。算法从最大单位（年）开始贪心匹配，依次扣除，数值向下取整。适用于日志时间差、缓存 TTL、超时配置的可读化展示。</p>
+      </details>
+      <details>
+        <summary>缓存 TTL 与超时配置中常用的时间单位换算</summary>
+        <p>缓存与超时配置常见场景：① Redis <code>EXPIRE key 3600</code>（秒）= 1 小时 = 3,600,000 毫秒；② HTTP <code>Cache-Control: max-age=86400</code>（秒）= 1 天；③ JWT <code>exp</code> 声明通常用秒级 Unix 时间戳，token 有效期 30 分钟 = 1,800 秒；④ Kubernetes <code>livenessProbe.timeoutSeconds</code>（秒）与 <code>terminationGracePeriodSeconds</code>（秒）；⑤ React Query <code>staleTime</code> 与 <code>cacheTime</code>（毫秒）。本工具可快速在这些单位间换算。</p>
+      </details>
+      <details>
+        <summary>HTTP Cache-Control / Retry-After 等场景下的时间单位</summary>
+        <p>HTTP 协议中时间单位约定：① <code>Cache-Control: max-age=N</code> 与 <code>s-maxage=N</code> 的 N 为<strong>秒</strong>；② <code>Retry-After</code> 可为秒数或 HTTP 日期；③ <code>Expires</code> 为 HTTP 日期；④ <code>Set-Cookie: Max-Age=N</code> 为秒；⑤ <code>Age:</code> 头为秒。本工具可快速把这些秒数换算为人类可读表示，便于排查缓存策略。例如 <code>max-age=86400</code> = 1 天，<code>max-age=604800</code> = 1 周。</p>
+      </details>
+      <details>
+        <summary>JavaScript / Python / Go 中如何表示 duration？</summary>
+        <p>各语言 duration 表示差异较大：① <strong>JavaScript</strong> 原生 <code>Date.now()</code> 返回毫秒，<code>setTimeout(fn, 1000)</code> 第二参数为毫秒，无内置 duration 类型（<code>Intl.DurationFormat</code> 提案中）；② <strong>Python</strong> <code>datetime.timedelta</code> 内部存天/秒/微秒，<code>timedelta(seconds=90)</code> = 1 分 30 秒；③ <strong>Go</strong> <code>time.Duration</code> 是 int64 纳秒，字面量如 <code>30 * time.Second</code>，<code>time.ParseDuration("1h30m")</code> 支持 Go 风格字符串；④ <strong>Java</strong> <code>java.time.Duration</code> 基于 ISO 8601（如 <code>PT1H30M</code>）；⑤ <strong>Rust</strong> <code>std::time::Duration</code> 是纳秒。本工具的「时长解析」采用中英文混合语法，比 Go/Java 字面量更直观。</p>
+      </details>
+      <details>
+        <summary>为什么不用 30 天作为 1 个月的换算基准？</summary>
+        <p>部分工具与文档（如 AWS、部分云厂商计费）约定「1 个月 = 30 天」便于简化计算，但这是<strong>商业约定</strong>而非历法事实。本工具选择 <strong>30.436875 天</strong>（Gregorian 平均值）的原因：① 与 ISO 8601、Java <code>Duration</code>、Python <code>timedelta</code> 等主流库的换算系数一致；② 长期统计下误差更小（30 天会每年累积 5.2425 天偏差）；③ 适合需要精确换算系数的场景（如年化利率、月均流量）。若你接受 30 天约定，可在单位换算模块手动输入「30 天」查看对应毫秒数。</p>
+      </details>
+      <details>
+        <summary>时长解析支持哪些输入格式？</summary>
+        <p>支持丰富的输入格式：① <strong>英文缩写</strong>：<code>1h 30min</code>、<code>2d</code>、<code>500ms</code>、<code>1.5y</code>；② <strong>英文全称</strong>：<code>1 hour 30 minutes</code>、<code>2 days</code>；③ <strong>中文</strong>：<code>1小时30分</code>、<code>2天3小时</code>、<code>1周</code>、<code>3.5年</code>；④ <strong>混合</strong>：<code>1h 30分钟</code>、<code>2天 3h</code>；⑤ <strong>无空格</strong>：<code>1h30min</code>、<code>2天3小时</code>；⑥ <strong>纯数字</strong>：按秒解释（可配置）；⑦ <strong>负数</strong>：<code>-1h</code>；⑧ <strong>多片段累加</strong>：<code>1d 2h 30min</code>。未识别片段会在「部分片段未识别」中提示。</p>
+      </details>
+      <details>
+        <summary>本工具与 Unix 时间戳转换工具有何区别？</summary>
+        <p>两者侧重点不同：① <strong>本工具</strong>处理「时长」概念——一段时间有多长，如「1 小时 30 分 = 5400000 毫秒」，是<strong>相对量</strong>；② <strong>Unix 时间戳转换工具</strong>处理「时刻」概念——某个具体瞬间，如「1720000000 对应 2024-07-03 14:26:40 UTC」，是<strong>绝对值</strong>。两者常配合使用：从时间戳 A 减去时间戳 B 得到时长差（毫秒），再用本工具格式化为「3 天 4 小时」人类可读表示。本工具的「毫秒转人类可读」模块正是为此场景设计。</p>
+      </details>
+      <details>
+        <summary>数据是否安全？会上传到服务器吗？</summary>
+        <p>完全安全。本工具所有单位换算、时长解析、人类可读格式化均在浏览器本地完成，<strong>不会上传任何输入数据到服务器</strong>。没有后端、没有数据库、没有统计脚本。你输入的数值与时长字符串仅在你的设备内处理，适合处理敏感的超时配置、缓存策略等场景。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 时间单位换算器专属样式：tu__ 前缀，复用全局 CSS 变量 */
+  .tu {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  /* 区块标题 */
+  .tu__section {
+    padding: 0;
+  }
+
+  .tu__section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 6px;
+  }
+
+  .tu__section-desc {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    margin: 0 0 14px;
+    line-height: 1.6;
+  }
+
+  /* 输入栏 */
+  .tu__input-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+
+  .tu__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .tu__field--value,
+  .tu__field--duration,
+  .tu__field--ms {
+    flex: 1 1 220px;
+  }
+
+  .tu__field--unit,
+  .tu__field--parts {
+    flex: 0 1 180px;
+  }
+
+  .tu__field input,
+  .tu__field select {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s ease;
+  }
+
+  .tu__field input:focus,
+  .tu__field select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  /* 错误提示 */
+  .tu__error {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: var(--radius-md);
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  /* 警告提示（部分未识别） */
+  .tu__warn {
+    padding: 10px 14px;
+    margin-top: 10px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: var(--radius-sm);
+    color: #b45309;
+    font-size: 13px;
+  }
+
+  /* 单位换算卡片网格 */
+  .tu__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .tu__card {
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tu__card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 源单位卡片高亮 */
+  .tu__card--source {
+    border-color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(43, 108, 255, 0.06), rgba(122, 76, 255, 0.04));
+  }
+
+  .tu__card-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tu__card-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tu__card-short {
+    font-size: 11px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    padding: 1px 5px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: var(--radius-sm);
+  }
+
+  /* 近似徽章 */
+  .tu__approx-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #b45309;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  /* 源单位徽章 */
+  .tu__source-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.12);
+    border-radius: var(--radius-sm);
+    margin-left: auto;
+  }
+
+  .tu__card-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    line-height: 1.3;
+  }
+
+  /* 复制按钮 */
+  .tu__copy-btn {
+    appearance: none;
+    align-self: flex-start;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.08);
+    border: 1px solid rgba(43, 108, 255, 0.2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .tu__copy-btn:hover {
+    background: rgba(43, 108, 255, 0.16);
+    border-color: rgba(43, 108, 255, 0.35);
+  }
+
+  .tu__copy-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* 时长解析摘要 */
+  .tu__parse-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(43, 108, 255, 0.06), rgba(122, 76, 255, 0.04));
+    border: 1px solid rgba(43, 108, 255, 0.18);
+    border-radius: var(--radius-md);
+  }
+
+  .tu__parse-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .tu__parse-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    min-width: 80px;
+  }
+
+  .tu__parse-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    flex: 1;
+    word-break: break-all;
+  }
+
+  /* 逐项明细 */
+  .tu__parse-parts {
+    padding: 12px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tu__parse-parts-title {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .tu__parse-parts ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tu__parse-part {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .tu__part-value {
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .tu__part-unit {
+    color: var(--color-text-soft);
+    min-width: 40px;
+  }
+
+  .tu__part-arrow {
+    color: var(--color-text-soft);
+  }
+
+  .tu__part-ms {
+    color: var(--color-primary);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  /* 毫秒→人类可读结果 */
+  .tu__human-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(43, 108, 255, 0.06), rgba(122, 76, 255, 0.04));
+    border: 1px solid rgba(43, 108, 255, 0.18);
+    border-radius: var(--radius-md);
+  }
+
+  .tu__human-value {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+  }
+
+  /* 联动链接 */
+  .tu__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .tu__link {
+    font-size: 13px;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  .tu__link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+
+  /* 状态条 */
+  .tu__status {
+    min-height: 24px;
+    padding-top: 6px;
+  }
+
+  .tu__notice {
+    font-size: 13px;
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .tu__hint {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  /* 移动端适配 */
+  @media (max-width: 768px) {
+    .tu__grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .tu__card {
+      padding: 10px 12px;
+    }
+
+    .tu__card-value {
+      font-size: 14px;
+    }
+
+    .tu__parse-row {
+      flex-wrap: wrap;
+    }
+
+    .tu__parse-label {
+      min-width: 70px;
+    }
+
+    .tu__human-result {
+      flex-wrap: wrap;
+    }
+
+    .tu__links {
+      gap: 12px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global(.dark) .tu__card-short {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  :global(.dark) .tu__parse-parts {
+    background: rgba(255, 255, 255, 0.04);
+  }
+</style>

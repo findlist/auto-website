@@ -1,0 +1,674 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JwtTool from '../components/JwtTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JWT 解码工具 - 在线解析 JSON Web Token 三段式结构与安全警告',
+  description:
+    '免费的在线 JWT 解码工具：粘贴 JWT 立即解码 Header / Payload / Signature 三段，自动 base64url 解码并 JSON 美化，识别 iss/sub/aud/exp/iat/nbf/jti 等标准声明字段，显示算法说明、过期状态、相对时间（剩余/已过期）、对象/数组字段美化、签名长度参考，并对 alg=none 不安全算法显眼警告。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JWT 解码工具',
+    url: 'https://toolbox.example.com/jwt',
+    description: '在线 JWT 解码工具，解析三段式 JSON Web Token，显示算法、声明字段、过期状态、相对时间与安全警告，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JWT 解码工具</h1>
+      <p>
+        粘贴 JWT 立即解码 Header / Payload / Signature 三段，自动 base64url 解码并 JSON 美化，
+        识别 iss/sub/aud/exp/iat/nbf/jti 等标准声明字段，显示算法说明、过期状态、
+        <strong>相对时间</strong>（剩余/已过期 X 天 Y 小时）、<strong>对象/数组字段美化</strong>、
+        <strong>签名长度参考</strong>，并对 <code>alg=none</code> 不安全算法显眼警告。仅解码展示，不验证签名真实性。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JwtTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>JWT 是什么？由哪几部分组成？</summary>
+        <p>
+          JWT（JSON Web Token）是一种用于在两方之间安全传递声明的开放标准（RFC 7519），常见于身份认证与信息交换。
+          JWT 由 <strong>三段</strong>用 <code>.</code> 分隔组成：<code>Header.Payload.Signature</code>。
+          <strong>Header</strong>（头部）描述令牌类型与签名算法，如 <code>{`{"alg":"HS256","typ":"JWT"}`}</code>；
+          <strong>Payload</strong>（载荷）携带声明（claims），如用户 ID、签发者、过期时间等；
+          <strong>Signature</strong>（签名）是服务器用密钥对 Header + Payload 计算出的摘要，用于防篡改。
+          前两段均为 base64url 编码的 JSON，可直接解码查看；第三段是二进制签名的 base64url 表示。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会验证签名吗？</summary>
+        <p>
+          <strong>不会。</strong>本工具仅做解码展示，不持有服务器密钥，无法验证签名真实性。
+          解码成功只代表 JWT 格式正确、base64url 可还原，<strong>不代表令牌可信</strong>。
+          如需验签，需在服务端用对应算法与密钥重新计算签名并比对。请勿仅凭解码成功就信任令牌内容，
+          尤其在调试从客户端传来的令牌时，攻击者可任意伪造 Header 与 Payload。
+        </p>
+      </details>
+      <details>
+        <summary>JWT 的常见算法 HS256 / RS256 / ES256 有什么区别？</summary>
+        <p>
+          <strong>HS256</strong>（HMAC + SHA-256）：对称密钥算法，签发与验签用同一密钥，性能高、实现简单，
+          适合单方服务（如内部系统）；缺点是密钥泄露后可任意伪造。<br />
+          <strong>RS256</strong>（RSA + SHA-256）：非对称算法，私钥签发、公钥验签，适合多方协作（如 OAuth2、SAML），
+          公钥可公开分发；缺点是 RSA 密钥较长、计算稍慢。<br />
+          <strong>ES256</strong>（ECDSA + SHA-256）：基于椭圆曲线的非对称算法，与 RS256 同等安全强度下密钥更短、
+          计算更快，是现代 JWT 实现的推荐选择。<br />
+          另有 <code>none</code> 算法表示无签名，仅用于调试，<strong>严禁用于生产</strong>。
+        </p>
+      </details>
+      <details>
+        <summary>JWT 的标准声明字段有哪些？</summary>
+        <p>
+          RFC 7519 定义了 7 个标准声明（claims）：
+          <code>iss</code>（issuer，签发者）、<code>sub</code>（subject，主题，通常是用户 ID）、
+          <code>aud</code>（audience，受众，目标服务）、<code>exp</code>（expiration，过期时间，Unix 秒级时间戳）、
+          <code>nbf</code>（not before，生效时间）、<code>iat</code>（issued at，签发时间）、
+          <code>jti</code>（JWT ID，唯一标识，用于防重放）。
+          此外常见的非标准声明有 <code>name</code>、<code>email</code>、<code>role</code>、<code>scope</code> 等，
+          可由签发方自定义。本工具会高亮标准声明字段并显示中文说明。
+        </p>
+      </details>
+      <details>
+        <summary>JWT 的 exp 字段是秒还是毫秒？</summary>
+        <p>
+          JWT 标准规定 <code>exp</code>、<code>iat</code>、<code>nbf</code> 均为 <strong>Unix 秒级时间戳</strong>
+          （自 1970-01-01 00:00:00 UTC 起的秒数）。这与 JavaScript <code>Date.now()</code> 返回的毫秒级时间戳不同，
+          转换时需乘以 1000。本工具自动按秒级解析并显示本地化时间。若你的 JWT 用了毫秒级（非标准），
+          本工具显示的时间会是 1970 年附近，可据此识别非标准实现。
+        </p>
+      </details>
+      <details>
+        <summary>base64url 和 base64 有什么区别？</summary>
+        <p>
+          <strong>base64url</strong> 是 base64 的 URL 安全变体，差异在两个字符与 padding：
+          base64 中的 <code>+</code> 在 URL 中会被解析为空格，<code>/</code> 是路径分隔符，都会破坏 URL；
+          base64url 用 <code>-</code> 替换 <code>+</code>，用 <code>_</code> 替换 <code>/</code>，
+          并通常省略末尾的 <code>=</code> padding。解码时需还原：把 <code>-</code> 转回 <code>+</code>、
+          <code>_</code> 转回 <code>/</code>，并按 4 的倍数补 <code>=</code>。本工具自动处理这些转换。
+        </p>
+      </details>
+      <details>
+        <summary>为什么我的 JWT 解码后是一堆乱码？</summary>
+        <p>
+          常见原因：1) <strong>看错了段</strong>：第三段是 Signature（二进制签名的 base64url），
+          解码后是乱码是正常的，本工具不对 Signature 段做 JSON 解析，仅展示原始字符串；
+          2) <strong>token 损坏</strong>：复制时多了空格或换行，或被截断；
+          3) <strong>不是 JWT</strong>：如 SAML token、opaque token、加密的 JWE 等，JWE 通常以 5 段开头
+          （<code>eyJ...</code> 后跟 <code>.</code> 分隔的多段），结构与 JWT 不同。
+        </p>
+      </details>
+      <details>
+        <summary>工具如何识别 alg=none 不安全 token？</summary>
+        <p>
+          当 JWT Header 的 <code>alg</code> 字段为 <code>none</code> 时，表示令牌<strong>无签名</strong>，
+          任何人都能伪造 Payload 内容。<strong>RFC 7519 明确允许此算法仅用于调试，严禁生产使用</strong>。
+          本工具检测到 <code>alg=none</code> 后会在解码区顶部显示红色安全警告横幅，提示用户切换到
+          HS256 / RS256 / ES256 等带签名的算法。点击「不安全示例」按钮可载入演示 token 体验此功能。
+          常见攻击场景：服务端未严格校验 alg 字段，攻击者把 Header 中的 <code>"alg":"HS256"</code>
+          改为 <code>"alg":"none"</code> 并清空签名段，若服务端信任客户端传入的 alg 就会跳过验签。
+          防御：服务端必须硬编码允许的算法白名单，不读取 token 自身声明的 alg。详见
+          <a href="/blog/jwt-security-best-practices">JWT 安全实践</a>。
+        </p>
+      </details>
+      <details>
+        <summary>exp / iat / nbf 字段的相对时间怎么算的？</summary>
+        <p>
+          JWT 标准声明 <code>exp</code>（过期时间）、<code>nbf</code>（生效时间）、<code>iat</code>（签发时间）
+          均为 Unix 秒级时间戳。本工具除显示本地化的绝对时间（如 <code>2026/1/1 12:00:00</code>）外，
+          还会显示相对时间徽章，方便快速判断令牌时效状态：
+          <br />- <code>exp</code> 未来时间显示「剩余 X 天 Y 小时」（绿色徽章）
+          <br />- <code>exp</code> 已过期显示「已过期 X 天 Y 小时」（红色徽章）
+          <br />- <code>nbf</code> 未来时间显示「剩余 X 天 Y 小时」（生效前）
+          <br />- <code>iat</code> 历史时间显示「X 天前」（签发距今多久）
+          <br />相对时间每秒重新计算（输入变化时触发），无需刷新页面。
+          拆分规则：1 天 = 86400000 毫秒，1 小时 = 3600000 毫秒，1 分钟 = 60000 毫秒。
+        </p>
+      </details>
+      <details>
+        <summary>签名长度参考有什么用？</summary>
+        <p>
+          不同算法的 JWT 签名段在 base64url 编码后字符数有固定或常见范围：
+          <br />- <strong>HS256</strong>：约 43 字符（256 位 HMAC，32 字节 base64url 后）
+          <br />- <strong>HS384</strong>：约 64 字符（384 位 HMAC）
+          <br />- <strong>HS512</strong>：约 86 字符（512 位 HMAC）
+          <br />- <strong>RS256/384/512</strong>：约 344 字符（2048 位 RSA 签名，长度取决于密钥）
+          <br />- <strong>ES256</strong>：约 86 字符（256 位 ECDSA，64 字节 r+s）
+          <br />本工具在 Signature 段下方显示「当前签名长度 N 字符 · 算法预期 约 M 字符」，
+          当实际长度远小于预期（&lt; 10 字符）时额外提示「签名过短，可能已被截断」，
+          帮助开发者快速识别 token 复制不完整或被中间件截断的问题。
+          注意：RSA/ECDSA 签名长度取决于密钥长度，预期值仅供参考。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有 base64url 解码、JSON 解析、过期检查逻辑由 JavaScript 在你本地执行，
+          输入的 JWT 内容不会发送到任何服务器。这对你调试真实业务的 token 尤为重要——令牌可能含用户信息，
+          本地处理可避免泄露。但请注意：JWT 一旦泄露给他人（如截图、复制粘贴），他人可解码查看全部内容，
+          因此 JWT <strong>不应</strong>携带敏感信息（如密码、身份证号），即使有签名保护。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JWT 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+
+  /* 输入区头部：标签 + 操作按钮 */
+  .jwttool__input-area {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jwttool__input-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .jwttool__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .jwttool__input {
+    width: 100%;
+    min-height: 96px;
+    max-height: 200px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .jwttool__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .jwttool__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .jwttool__warn {
+    color: var(--color-error);
+    font-weight: 500;
+  }
+
+  /* 整体错误提示 */
+  .jwttool__error {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: var(--color-error);
+    font-size: 13px;
+  }
+
+  /* 算法与过期状态信息卡片 */
+  .jwttool__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .jwttool__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 12.5px;
+  }
+
+  .jwttool__meta-label {
+    color: var(--color-text-muted);
+    font-size: 11.5px;
+  }
+
+  .jwttool__meta-value {
+    color: var(--color-text);
+  }
+
+  .jwttool__meta-value code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* 过期状态颜色 */
+  .jwttool__meta-item--valid {
+    border-color: rgba(26, 170, 85, 0.3);
+    background: rgba(26, 170, 85, 0.08);
+  }
+  .jwttool__meta-item--valid .jwttool__meta-value {
+    color: var(--color-success);
+  }
+
+  .jwttool__meta-item--expiring {
+    border-color: rgba(245, 166, 35, 0.3);
+    background: rgba(245, 166, 35, 0.08);
+  }
+  .jwttool__meta-item--expiring .jwttool__meta-value {
+    color: #d97706;
+  }
+
+  .jwttool__meta-item--expired {
+    border-color: rgba(220, 38, 38, 0.3);
+    background: rgba(220, 38, 38, 0.08);
+  }
+  .jwttool__meta-item--expired .jwttool__meta-value {
+    color: var(--color-error);
+  }
+
+  .jwttool__meta-item--no-exp .jwttool__meta-value {
+    color: var(--color-text-muted);
+  }
+
+  .jwttool__meta-item--alg {
+    border-color: rgba(43, 108, 255, 0.3);
+    background: rgba(43, 108, 255, 0.06);
+  }
+
+  /* 算法安全等级：insecure 红色、warning 黄色、safe 保持 alg 蓝色 */
+  .jwttool__meta-item--sec-insecure {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.08);
+  }
+  .jwttool__meta-item--sec-insecure .jwttool__meta-value code {
+    color: var(--color-error);
+  }
+
+  .jwttool__meta-item--sec-warning {
+    border-color: rgba(245, 166, 35, 0.4);
+    background: rgba(245, 166, 35, 0.08);
+  }
+  .jwttool__meta-item--sec-warning .jwttool__meta-value code {
+    color: #d97706;
+  }
+
+  /* none 算法安全警告横幅 */
+  .jwttool__alert {
+    margin: 12px 16px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-left: 4px solid var(--color-error);
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .jwttool__alert strong {
+    color: var(--color-error);
+  }
+
+  .jwttool__alert code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    background: rgba(220, 38, 38, 0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--color-error);
+    font-weight: 600;
+  }
+
+  .jwttool__alert-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .jwttool__alert-link:hover {
+    text-decoration: none;
+  }
+
+  /* 不安全示例按钮：橙色边框提示风险 */
+  .jwttool__btn-insecure {
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #b91c1c;
+  }
+
+  .jwttool__btn-insecure:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  /* 签名长度参考提示 */
+  .jwttool__sig-hint {
+    margin: 0;
+    padding: 8px 14px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .jwttool__sig-hint code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .jwttool__sig-warn {
+    color: #d97706;
+    font-weight: 500;
+  }
+
+  /* 三段展示区 */
+  .jwttool__segments {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .jwttool__seg {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
+  .jwttool__seg--header {
+    border-left: 3px solid #dc2626;
+  }
+  .jwttool__seg--payload {
+    border-left: 3px solid #7c3aed;
+  }
+  .jwttool__seg--signature {
+    border-left: 3px solid #2563eb;
+  }
+
+  .jwttool__seg-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    flex-wrap: wrap;
+  }
+
+  .jwttool__seg-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .jwttool__seg-tag--header {
+    background: #dc2626;
+  }
+  .jwttool__seg-tag--payload {
+    background: #7c3aed;
+  }
+  .jwttool__seg-tag--signature {
+    background: #2563eb;
+  }
+
+  .jwttool__seg-desc {
+    flex: 1;
+    min-width: 0;
+    color: var(--color-text-soft);
+    font-size: 12.5px;
+  }
+
+  .jwttool__copy-btn {
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .jwttool__copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  /* 解码后的 JSON 展示 */
+  .jwttool__seg-json {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow: auto;
+    max-height: 320px;
+    white-space: pre;
+  }
+
+  .jwttool__seg-error {
+    padding: 12px 14px;
+    color: var(--color-error);
+    font-size: 13px;
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  /* Payload 字段说明列表 */
+  .jwttool__claims {
+    list-style: none;
+    margin: 0;
+    padding: 8px 14px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .jwttool__claim {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12.5px;
+    flex-wrap: wrap;
+  }
+
+  .jwttool__claim + .jwttool__claim {
+    border-top: 1px dashed var(--color-border);
+  }
+
+  /* 标准声明字段高亮 */
+  .jwttool__claim--standard .jwttool__claim-key {
+    color: #7c3aed;
+    font-weight: 600;
+  }
+
+  .jwttool__claim-key {
+    flex-shrink: 0;
+    min-width: 56px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .jwttool__claim-value {
+    flex: 1;
+    min-width: 0;
+    color: var(--color-text);
+    word-break: break-all;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* 对象/数组字段值：多行美化展示 */
+  .jwttool__claim-json {
+    margin: 0;
+    padding: 8px 10px;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: auto;
+    max-height: 200px;
+    white-space: pre;
+  }
+
+  .jwttool__claim-text {
+    word-break: break-all;
+  }
+
+  .jwttool__claim-time {
+    color: var(--color-text-muted);
+    font-style: normal;
+    font-size: 11.5px;
+  }
+
+  /* 相对时间徽章颜色：未来绿色、过去红色 */
+  .jwttool__claim-time--future {
+    color: var(--color-success);
+  }
+
+  .jwttool__claim-time--past {
+    color: var(--color-error);
+  }
+
+  .jwttool__claim-desc {
+    flex-shrink: 0;
+    color: var(--color-primary);
+    font-size: 11.5px;
+    background: rgba(43, 108, 255, 0.08);
+    padding: 1px 8px;
+    border-radius: 999px;
+  }
+
+  /* Signature 段：原始字符串 + 安全提示 */
+  .jwttool__sig-value {
+    padding: 12px 14px;
+    background: var(--color-bg-code);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 12.5px;
+    word-break: break-all;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow: auto;
+  }
+
+  .jwttool__sig-note {
+    margin: 0;
+    padding: 10px 14px;
+    border-top: 1px solid var(--color-border);
+    background: rgba(245, 166, 35, 0.06);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .jwttool__sig-note strong {
+    color: #d97706;
+  }
+
+  /* 状态提示 */
+  .jwttool__notice {
+    margin: 12px 16px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .jwttool__seg-tag--header {
+      background: #f87171;
+      color: #1f1414;
+    }
+    .jwttool__seg-tag--payload {
+      background: #c084fc;
+      color: #1f1429;
+    }
+    .jwttool__seg-tag--signature {
+      background: #60a5fa;
+      color: #0f1a2e;
+    }
+    .jwttool__claim--standard .jwttool__claim-key {
+      color: #c084fc;
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .jwttool__input-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .jwttool__meta {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .jwttool__meta-item {
+      width: 100%;
+    }
+    .jwttool__seg-head {
+      flex-wrap: wrap;
+    }
+    .jwttool__seg-desc {
+      width: 100%;
+      order: 3;
+    }
+    .jwttool__claim {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    .jwttool__claim-key {
+      min-width: 0;
+    }
+  }
+</style>

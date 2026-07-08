@@ -1,0 +1,497 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import YamlSchemaTool from '../components/YamlSchemaTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'YAML Schema 校验工具 - 在线 K8s/配置文件 YAML 校验器',
+  description:
+    '免费的在线 YAML Schema 校验工具：用 JSON Schema（draft-07）校验 YAML 数据，支持 K8s Deployment/Service/Pod 清单、CI/CD 配置（GitHub Actions/GitLab CI）、Helm values、docker-compose 等场景。复用 draft-07 校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字，额外检测 YAML 类型推断陷阱（yes/no/on/off 布尔化、版本号被解析为数字等）。实时校验、错误路径定位、关键字分类徽章、中文错误消息，全部在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'YAML Schema 校验工具',
+    url: 'https://toolbox.example.com/yaml-schema',
+    description: '在线 YAML Schema 校验器，用 JSON Schema draft-07 校验 YAML 数据，支持 K8s 清单与 CI/CD 配置，检测类型推断陷阱，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>YAML Schema 校验工具</h1>
+      <p>
+        用 JSON Schema（draft-07）校验 YAML 数据：左栏粘贴 Schema，右栏粘贴 YAML，实时校验并精确定位错误路径。复用 JSON Schema 校验引擎，覆盖 type、required、properties、items、enum、数值范围、字符串约束、数组唯一性、$ref 内部引用等核心关键字。额外检测 YAML 类型推断陷阱（on/yes/no/off 布尔化、版本号被解析为数字），适用于 Kubernetes 清单、CI/CD 配置、Helm values、docker-compose 等场景。数据仅在浏览器本地处理，敏感配置不外传。
+      </p>
+    </div>
+
+    <YamlSchemaTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 覆盖长尾搜索意图 -->
+    <section class="yschematool-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么用 JSON Schema 校验 YAML 数据？</summary>
+        <p>JSON Schema 是描述数据结构的标准，与数据格式无关。YAML 解析后会得到与 JSON 等价的 JS 对象（对象、数组、字符串、数字、布尔、null），因此完全可以用 JSON Schema 校验 YAML。实际上 Kubernetes 就是这么做的——K8s 资源用 YAML 编写，但校验用的是 OpenAPI（基于 JSON Schema 子集）。本工具让你无需手动转 YAML 为 JSON 即可直接校验。</p>
+      </details>
+      <details>
+        <summary>支持哪些 YAML 特性？</summary>
+        <p>底层使用 js-yaml 解析，支持：多文档（<code>---</code> 分隔，仅校验第一个文档）、锚点（<code>&amp;anchor</code>）与别名（<code>*alias</code>）、块样式与流样式、注释。注意：多文档 YAML 仅校验第一个文档，若需校验全部文档请逐个粘贴。YAML 的特殊类型（如 !!timestamp 日期、!!binary 二进制）会按解析后的 JS 类型参与校验。</p>
+      </details>
+      <details>
+        <summary>什么是 YAML 类型推断陷阱？</summary>
+        <p>YAML 1.1 会自动推断无引号值的类型：<code>yes</code>/<code>no</code>/<code>on</code>/<code>off</code> 被解析为布尔值，<code>null</code>/<code>~</code> 被解析为 null，<code>1.25</code> 被解析为数字，<code>2024-01-01</code> 被解析为日期。这会导致 <code>replicas: on</code> 被当作布尔 true、<code>image: nginx:1.25</code> 中的版本号被当作数字等隐蔽 bug。本工具自动扫描并提示这些陷阱，建议对易误解的值加引号（如 <code>replicas: "on"</code>、<code>version: "1.25"</code>）。</p>
+      </details>
+      <details>
+        <summary>适用于哪些场景？</summary>
+        <p>Kubernetes 资源清单（Deployment/Service/Pod/ConfigMap 等）校验、CI/CD 配置（GitHub Actions / GitLab CI / CircleCI）校验、Helm values.yaml 校验、docker-compose.yml 校验、Prometheus 规则校验、任意 YAML 配置文件结构校验。只要能写出对应的 JSON Schema，就能校验任意 YAML 数据结构。</p>
+      </details>
+      <details>
+        <summary>与 JSON Schema 校验工具有何区别？</summary>
+        <p>两者共用同一套 draft-07 校验引擎，区别在数据输入格式：JSON Schema 工具校验 JSON 数据，本工具校验 YAML 数据。如果你写的是 JSON 用前者，写的是 YAML 用本工具。YAML 版本额外提供类型推断陷阱检测，JSON 不存在此问题（JSON 类型严格）。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，Schema 与 YAML 数据均由 JavaScript 在本地校验，不会发送到任何服务器。对于包含敏感信息的 K8s Secret 配置或生产环境配置，本地校验更安全。</p>
+      </details>
+      <details>
+        <summary>校验失败后如何定位问题？</summary>
+        <p>结果区会列出每条错误：关键字徽章（按类型分类着色）+ 实例路径（JSON Pointer 风格，如 /spec/replicas）+ 中文消息。点击错误项可高亮该路径。若错误由 YAML 类型推断陷阱引起（如 <code>on</code> 被解析为布尔），结果区同时显示类型提示，建议加引号修复。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* YAML Schema 工具专属样式：限定 .yschematool 前缀，避免污染其他页面 */
+  .yschematool {
+    margin: 24px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .yschematool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .yschematool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .yschematool__hint-text {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .yschematool__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 320px;
+  }
+
+  .yschematool__panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .yschematool__panel:first-child {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .yschematool__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .yschematool__stat {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .yschematool__textarea {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    outline: none;
+    resize: vertical;
+    min-height: 280px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    tab-size: 2;
+  }
+
+  .yschematool__textarea::placeholder {
+    color: var(--color-text-muted);
+    white-space: pre-wrap;
+  }
+
+  /* ============ 结果区 ============ */
+  .yschematool__result {
+    padding: 14px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    min-height: 80px;
+  }
+
+  .yschematool__result-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .yschematool__result-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .yschematool__badge {
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+  }
+
+  .yschematool__badge--pass {
+    background: rgba(26, 170, 85, 0.14);
+    color: var(--color-success);
+  }
+
+  .yschematool__badge--fail {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--color-error);
+  }
+
+  .yschematool__hint {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  .yschematool__pass {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(26, 170, 85, 0.08);
+    border: 1px solid rgba(26, 170, 85, 0.25);
+    border-radius: var(--radius-sm);
+    color: var(--color-success);
+    font-size: 14px;
+  }
+
+  .yschematool__pass-icon {
+    font-size: 18px;
+  }
+
+  /* ============ 错误列表 ============ */
+  .yschematool__errors {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .yschematool__error-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.06);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    color: var(--color-error);
+    font-weight: 500;
+  }
+
+  .yschematool__error-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .yschematool__error-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    font-size: 13px;
+  }
+
+  .yschematool__error-row:last-child {
+    border-bottom: 0;
+  }
+
+  .yschematool__error-row:hover,
+  .yschematool__error-row--active {
+    background: rgba(239, 68, 68, 0.06);
+  }
+
+  .yschematool__error-row--parse {
+    cursor: default;
+    grid-template-columns: auto 1fr;
+  }
+
+  .yschematool__error-row--parse:hover {
+    background: transparent;
+  }
+
+  /* 关键字徽章：按类型分类着色 */
+  .yschematool__kw {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--color-bg-code);
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  .yschematool__kw--type { background: rgba(43, 108, 255, 0.12); color: #2b6cff; }
+  .yschematool__kw--object { background: rgba(201, 54, 111, 0.12); color: #c9366f; }
+  .yschematool__kw--array { background: rgba(245, 166, 35, 0.14); color: #b97308; }
+  .yschematool__kw--string { background: rgba(26, 170, 85, 0.12); color: #1aaa55; }
+  .yschematool__kw--number { background: rgba(122, 76, 255, 0.12); color: #7a4cff; }
+  .yschematool__kw--logic { background: rgba(89, 89, 89, 0.12); color: var(--color-text-soft); }
+  .yschematool__kw--other { background: var(--color-bg-code); color: var(--color-text-soft); }
+
+  @media (prefers-color-scheme: dark) {
+    .yschematool__kw--type { color: #5b8cff; }
+    .yschematool__kw--object { color: #f0709a; }
+    .yschematool__kw--array { color: #fbbf24; }
+    .yschematool__kw--string { color: #4ade80; }
+    .yschematool__kw--number { color: #a78bfa; }
+  }
+
+  .yschematool__error-path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text);
+    background: var(--color-bg-code);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .yschematool__error-msg {
+    color: var(--color-text-soft);
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  /* ============ YAML 类型陷阱提示区 ============ */
+  .yschematool__traps {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .yschematool__traps-head {
+    padding: 8px 12px;
+    background: rgba(245, 166, 35, 0.08);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    color: #b97308;
+    font-weight: 500;
+  }
+
+  .yschematool__trap-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .yschematool__trap-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .yschematool__trap-row:last-child {
+    border-bottom: 0;
+  }
+
+  .yschematool__trap-path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text);
+    background: var(--color-bg-code);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .yschematool__trap-msg {
+    color: var(--color-text-soft);
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .yschematool__notice {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--color-success);
+    color: #fff;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  .yschematool__copy {
+    flex-shrink: 0;
+  }
+
+  .yschematool__footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* ============ FAQ ============ */
+  .yschematool-faq {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 0 24px;
+  }
+
+  .yschematool-faq h2 {
+    font-size: 22px;
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  .yschematool-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .yschematool-faq summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+  }
+
+  .yschematool-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .yschematool-faq summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .yschematool-faq details[open] summary::after {
+    content: '−';
+  }
+
+  .yschematool-faq details p {
+    margin: 0;
+    padding: 0 16px 14px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .yschematool-faq code {
+    padding: 1px 5px;
+    background: var(--color-bg-code);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  /* ============ 移动端适配 ============ */
+  @media (max-width: 768px) {
+    .yschematool__panels {
+      grid-template-columns: 1fr;
+    }
+    .yschematool__panel:first-child {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .yschematool__textarea {
+      min-height: 220px;
+    }
+    .yschematool__toolbar {
+      padding: 10px 12px;
+    }
+    .yschematool__hint-text {
+      display: none;
+    }
+    /* 错误行与陷阱行：移动端改为两行布局 */
+    .yschematool__error-row,
+    .yschematool__trap-row {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+    }
+    .yschematool__error-msg,
+    .yschematool__trap-msg {
+      grid-column: 1 / -1;
+    }
+    .yschematool__error-path,
+    .yschematool__trap-path {
+      max-width: 140px;
+    }
+  }
+</style>

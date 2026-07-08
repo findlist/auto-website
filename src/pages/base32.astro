@@ -1,0 +1,119 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import Base32Tool from '../components/Base32Tool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Base32 编解码工具 - RFC 4648 与 Crockford 双变体 + 校验和',
+  description:
+    '免费的在线 Base32 工具：一键编码 / 解码，支持 RFC 4648 标准变体（A-Z2-7）与 Crockford Base32（0-9A-Z 去除易混字符），可选 Crockford 校验和生成与校验。适用于 TOTP 共享密钥、账号号码、密钥指纹等场景。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Base32 编解码工具',
+    url: 'https://toolbox.example.com/base32',
+    description: '在线 Base32 编解码工具，支持 RFC 4648 与 Crockford 双变体及校验和，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Base32 编解码工具</h1>
+      <p>
+        文本与 Base32 双向转换，支持 RFC 4648 标准变体与 Crockford Base32 变体。Crockford 模式可选生成或校验校验和，识别用户输入错误。完美支持中文与 Emoji，数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <Base32Tool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Base32？与 Base64 有何区别？</summary>
+        <p>Base32 是一种将二进制数据编码为可打印 ASCII 字符的方案，每 5 字节（40 位）数据编码为 8 个字符。与 Base64 相比，Base32 字符集更小（32 vs 64），编码后体积更大（约 60% 膨胀 vs 33%），但具有以下优势：①不区分大小写，适合口述、电话、手写场景；②字符集仅含字母与数字，无 <code>+</code>/<code>/</code>/<code>=</code> 等特殊符号，URL 友好；③更易被二维码、OCR 系统识别。</p>
+      </details>
+      <details>
+        <summary>什么是 RFC 4648 标准 Base32？</summary>
+        <p>RFC 4648 是 IETF 制定的 Base16/Base32/Base64 编码规范。标准 Base32 字符集为 <code>A-Z</code> 与 <code>2-7</code>（共 32 字符），不足 8 字符的尾部用 <code>=</code> 填充。该规范广泛应用于 TOTP 共享密钥（如 Google Authenticator）、DNS 主机名编码、P2P 协议握手等场景。</p>
+      </details>
+      <details>
+        <summary>什么是 Crockford Base32？适用于什么场景？</summary>
+        <p>Crockford Base32 是 Douglas Crockford 设计的变体，字符集为 <code>0-9</code> 与 <code>A-Z</code> 去除 <code>I</code>/<code>L</code>/<code>O</code>/<code>U</code>（共 32 字符）。解码时 <code>I</code>/<code>L</code> 归一化为 <code>1</code>，<code>O</code> 归一化为 <code>0</code>，避免易混字符导致的输入错误。不使用 <code>=</code> 填充。适用于账号号码、订单号、密钥指纹、许可证密钥等需要人工输入且对错误容忍度低的场景。</p>
+      </details>
+      <details>
+        <summary>Crockford 校验和如何工作？</summary>
+        <p>Crockford 规范支持在编码末尾附加 1 个校验字符。校验值 = （字节序列视为大整数） mod 37，映射到字符表 <code>0-9A-Z*~$=U</code>（共 37 字符）。本工具在编码时勾选「附加校验和」会在结果末尾追加该字符；解码时勾选「校验校验和」会自动验证末位字符是否符合期望值，不匹配则提示「数据可能被误输入」。校验和可识别大部分单字符替换错误与部分换位错误。</p>
+      </details>
+      <details>
+        <summary>Base32 解码时大小写敏感吗？</summary>
+        <p>不敏感。本工具在解码时自动将输入归一化为大写再查表，无论输入是小写、大写还是混合大小写都能正确解码。这是 RFC 4648 与 Crockford 共同的设计：Base32 字符集本身不区分大小写，解码器应接受任意大小写组合。</p>
+      </details>
+      <details>
+        <summary>Crockford 模式下 I/L/O/U 字符如何处理？</summary>
+        <p>Crockford 规范将易混字符归一化：<code>I</code>/<code>i</code>/<code>L</code>/<code>l</code> 全部解码为数字 <code>1</code>，<code>O</code>/<code>o</code> 解码为数字 <code>0</code>。<code>U</code>/<code>u</code> 不在编码字符集内（仅作为校验字符表的一员），出现在数据部分会被识别为非法字符。这种归一化设计让用户在输入时即使误输 <code>O</code> 当 <code>0</code>，工具仍能正确解码。</p>
+      </details>
+      <details>
+        <summary>什么场景适合用 Base32 而非 Base64？</summary>
+        <p>①<strong>TOTP 共享密钥</strong>：Google Authenticator、TOTP 应用要求 Base32 编码的密钥；②<strong>账号/订单号</strong>：需要人工输入或口述的标识符，Base32 不区分大小写、无特殊字符，错误率更低；③<strong>二维码短链</strong>：Base32 字符集仅含字母与数字，二维码编码效率高于含特殊符号的 Base64；④<strong>OCR 识别</strong>：自动识别系统对纯字母数字的识别率更高；⑤<strong>无障碍场景</strong>：屏幕阅读器对字母数字的朗读更清晰，<code>+</code>/<code>/</code> 等符号容易引起歧义。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有编码/解码/校验和逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Base32 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .b32tool__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .b32tool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .b32tool__toggle--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .b32tool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .b32tool__toggle--disabled input {
+    cursor: not-allowed;
+  }
+
+  /* 移动端响应式：工具栏选项换行 */
+  @media (max-width: 640px) {
+    .b32tool .jsontool__options {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .b32tool__toggle {
+      font-size: 12px;
+    }
+  }
+</style>

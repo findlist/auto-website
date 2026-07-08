@@ -1,0 +1,52 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+
+const meta: SiteMeta = {
+  title: '关于工具盒子',
+  description:
+    '工具盒子是一个面向中文开发者的现代化在线工具集，主打零广告、零追踪、全本地处理。介绍我们的设计理念与规划路线。',
+};
+---
+<BaseLayout meta={meta}>
+  <article class="container prose">
+    <h1>关于工具盒子</h1>
+
+    <p>
+      <strong>工具盒子</strong>是一套面向中文开发者的现代化在线工具集。我们做这件事的初衷很简单：
+      市面上的在线工具站要么广告满天飞，要么界面陈旧、功能单一，要么对中文用户不友好。
+      我们希望提供一个干净、高效、不打扰的替代方案。
+    </p>
+
+    <h2>我们的设计理念</h2>
+    <ul>
+      <li><strong>零广告 · 零追踪</strong>：不嵌入任何广告联盟脚本，不部署任何用户行为统计，没有弹窗与插页。</li>
+      <li><strong>全本地处理</strong>：所有计算在浏览器内完成，数据不离开你的设备，敏感信息更安全。</li>
+      <li><strong>现代化体验</strong>：响应式布局、键盘友好、暗色模式、复制即用，桌面与移动端一致。</li>
+      <li><strong>开源透明</strong>：核心逻辑可审查，无后端、无数据库、无隐藏接口。</li>
+    </ul>
+
+    <h2>谁适合使用</h2>
+    <ul>
+      <li>后端 / 前端开发者：日常处理 JSON、Base64、URL 编解码、Hash 等</li>
+      <li>测试与运维工程师：快速校验数据格式、生成 UUID、转换时间戳</li>
+      <li>学生与学习者：理解数据结构、观察格式化效果</li>
+      <li>任何厌倦了广告弹窗、想要一个干净工具的人</li>
+    </ul>
+
+    <h2>规划路线</h2>
+    <p>我们从最常用的 JSON 工具开始，逐步扩展工具与内容：</p>
+    <ol>
+      <li><strong>已上线</strong>：JSON、Base64、Base32、Hex 十六进制、Punycode 编解码、ASCII Art 文本横幅生成器、HTML 格式化与压缩、CSS 格式化与压缩、URL、HTML 实体、CSV / JSON 互转、JSON 转 XML 转换工具、YAML / JSON 互转、TOML / JSON 互转、UUID、Hash、AES 加解密、时间戳、时区转换器、时间单位换算器、正则表达式、JWT 解码、JWT 签名生成器、JWT 签名验证工具、JWE 解码、颜色格式转换、颜色对比度检查、调色板生成器、Markdown 预览器、MIME 类型查询、二维码生成器、密码生成器、文本对比工具、CRON 表达式解析器、IP 子网计算器、Base64 图片互转、占位文本与 Mock 数据生成器、SQL 格式化与压缩、HTTP 状态码查询、JSONPath 查询工具、JSON Schema 校验、YAML Schema 校验、TOML Schema 校验、正则表达式性能基准、JavaScript 格式化与压缩、JSON 转 TypeScript 接口、JSON 转 XML 转换工具、XML 转 JSON 转换工具共 47 个工具</li>
+      <li><strong>已上线</strong>：技术博客，深度解析工具背后的原理（UUID 生成、JSON 格式化、正则入门、JWT 实战、色彩理论、前端编码全景、无障碍颜色对比度、数据格式转换全景、Markdown 实战指南、前端安全 CSP/XSS/CSRF 防护、HTTP 状态码全景、正则表达式实战、JWT 安全进阶、JWT 签名实战与算法选型、椭圆曲线密码学与 ECDSA 签名实践、JWT 验签实战与声明合规、AES 加密实战与认证加密、YAML/JSON/TOML 配置格式对比、TOML 配置文件实战指南、二维码应用场景与设计指南、密码强度与熵、文本对比算法 LCS 与 Myers diff、CRON 表达式与定时任务调度、IPv4 与 IPv6 子网划分、占位文本与 Mock 数据工程实践、SQL 格式化与 SQL 解析器设计、JSON Schema 与数据校验实践、调色板与设计系统色阶构建指南、时区转换与国际化时间处理实战指南等）</li>
+      <li><strong>近期</strong>：HTTP 请求测试工具、更多 JWE 内容加密算法支持（AES-CBC+HMAC）、ASCII Art 字体扩展（小写字母、ANSI 颜色输出）、JS 格式化运算符空格优化、对象字面量按属性拆分</li>
+      <li><strong>中期</strong>：更多博客内容，覆盖 Base64、Hash、时间戳、正则表达式、正则与性能基准测试、WebSocket 与 SSE 实时通信对比等技术专题</li>
+      <li><strong>远期</strong>：差异化工具，由用户投票决定优先级</li>
+    </ol>
+
+    <h2>反馈渠道</h2>
+    <p>
+      工具出 bug、有改进建议、或者希望我们加一个新工具？欢迎在 GitHub Issue 提出，
+      或邮件至 <code>feedback@toolbox.example.com</code>。每条反馈都会被认真阅读。
+    </p>
+  </article>
+</BaseLayout>

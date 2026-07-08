@@ -1,0 +1,548 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import CronTool from '../components/CronTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CRON 表达式解析器 - 在线定时任务语法生成与下次执行时间计算',
+  description:
+    '免费的在线 CRON 表达式解析工具：输入 5 字段 cron 表达式即可实时生成中文描述、计算未来 5 次执行时间。支持 * / , - ? L W # 全部特殊字符，内置 12 个常用预设（每分钟、每小时整点、每天 0 点、工作日 9 点、月末等）。所有解析在浏览器本地完成，零上传、零追踪、零广告，适合配置 crontab、Kubernetes CronJob、systemd timer、Airflow DAG 等定时任务场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CRON 表达式解析器',
+    url: 'https://toolbox.example.com/cron',
+    description: '在线 CRON 表达式解析工具：实时生成中文描述、计算下次执行时间，支持 L/W/# 扩展字符。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>CRON 表达式解析器</h1>
+      <p>
+        输入 5 字段 cron 表达式，实时生成中文执行描述、计算未来 5 次执行时间。支持
+        <code>*</code> <code>?</code> <code>,</code> <code>-</code> <code>/</code>
+        <code>L</code> <code>W</code> <code>#</code> 全部特殊字符，内置 12 个常用预设。
+        适用于配置 crontab、Kubernetes CronJob、systemd timer、Airflow DAG 等定时任务场景。
+        所有解析在浏览器本地完成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <CronTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CRON 表达式是什么？5 个字段分别表示什么？</summary>
+        <p>
+          <strong>CRON 表达式</strong>是一种用于描述定时任务执行时间的字符串格式，起源于 Unix
+          <code>cron</code> 守护进程。标准格式由 5 个字段组成，用空格分隔：
+        </p>
+        <pre><code>分钟  小时  日  月  周
+0    9    *   *   1-5</code></pre>
+        <ul>
+          <li><strong>分钟</strong>（0-59）：每小时的第几分钟执行</li>
+          <li><strong>小时</strong>（0-23）：每天的第几小时执行（24 小时制）</li>
+          <li><strong>日</strong>（1-31）：每月的第几号执行</li>
+          <li><strong>月</strong>（1-12）：每年的第几月执行（也支持 JAN-DEC 缩写）</li>
+          <li><strong>周</strong>（0-6）：每周的第几天执行（0=周日，也支持 SUN-SAT 缩写）</li>
+        </ul>
+        <p>
+          例如 <code>0 9 * * 1-5</code> 表示「每个工作日（周一到周五）上午 9 点 0 分」执行。
+        </p>
+      </details>
+      <details>
+        <summary><code>*</code> 和 <code>?</code> 有什么区别？</summary>
+        <p>
+          <strong><code>*</code></strong> 表示「任意值」，即该字段不做限制。例如 <code>* * * * *</code>
+          表示每分钟执行（5 个字段都为任意）。
+        </p>
+        <p>
+          <strong><code>?</code></strong> 表示「不指定」，语义上与 <code>*</code> 等价，但仅用于
+          <strong>日</strong>和<strong>周</strong>两个字段。它的存在是为了消除歧义：当你只想用「周」
+          字段而不管「日」时，写 <code>?</code> 比写 <code>*</code> 更明确。
+        </p>
+        <p>
+          例如 <code>0 0 ? * 1</code> 表示「每周一 0 点」，<code>?</code> 表示「日字段不参与判断」。
+          本工具中 <code>?</code> 与 <code>*</code> 行为一致。
+        </p>
+      </details>
+      <details>
+        <summary><code>L</code> / <code>W</code> / <code>#</code> 特殊字符是什么意思？</summary>
+        <p>这三个是 cron 的常见扩展字符（非 POSIX 标准，但被大多数现代 cron 实现支持）：</p>
+        <ul>
+          <li>
+            <strong><code>L</code>（Last，最后）</strong>：用于日或周字段。
+            <code>0 0 L * *</code> 表示「每月最后一天 0 点」；
+            <code>0 0 * * 5L</code> 表示「每月最后一个周五 0 点」。
+          </li>
+          <li>
+            <strong><code>W</code>（Weekday，最近工作日）</strong>：仅用于日字段。
+            <code>0 0 15W * *</code> 表示「最接近 15 号的工作日 0 点」——
+            若 15 号是周六，则提前到周五 14 号；若是周日，则顺延到周一 16 号。
+          </li>
+          <li>
+            <strong><code>#</code>（第几周）</strong>：仅用于周字段，格式为 <code>周几#第几</code>。
+            <code>0 0 * * 5#3</code> 表示「每月第 3 个周五 0 点」。
+          </li>
+        </ul>
+        <p>这些字符在 Kubernetes CronJob、Quartz Scheduler、Spring Scheduler 中都受支持。</p>
+      </details>
+      <details>
+        <summary>标准 cron（POSIX）和 Quartz cron 有什么区别？</summary>
+        <p>主要区别在字段数量与周几编号：</p>
+        <ul>
+          <li>
+            <strong>POSIX cron</strong>（Linux <code>crontab</code>）：5 字段，周几 0-6（0=周日），
+            不支持秒。本工具采用此格式。
+          </li>
+          <li>
+            <strong>Quartz Scheduler</strong>：6-7 字段，最前面多一个「秒」字段（0-59），
+            最后可选「年」字段。周几 1-7（1=周日）。支持 <code>L</code> <code>W</code> <code>#</code>
+            等扩展字符。
+          </li>
+          <li>
+            <strong>Spring <code>@Scheduled</code></strong>：6 字段（含秒），周几 0-6（0=周日）。
+          </li>
+        </ul>
+        <p>
+          迁移时注意：把 Quartz 的 6 字段表达式去掉第一个「秒」字段，即可用于本工具与 POSIX cron。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 <code>0 0 31 2 *</code>（2 月 31 日）不会执行？</summary>
+        <p>
+          <strong>cron 不会校验「日」字段是否在该月真实存在</strong>。2 月最多只有 28 或 29 天，
+          没有 31 号，所以 <code>0 0 31 2 *</code> 永远不会触发——但 cron 解析器不会报错，
+          只是静默不执行。
+        </p>
+        <p>
+          类似的陷阱还有 <code>0 0 30 2 *</code>（2 月 30 日）、<code>0 0 31 4,6,9,11 *</code>
+          （4/6/9/11 月 31 日）。若想表达「月末」，应该用 <code>0 0 L * *</code>（L 字符），
+          它会自动适配每月的实际天数（28/29/30/31）。
+        </p>
+      </details>
+      <details>
+        <summary>CRON 的时区怎么处理？夏令时会有什么问题？</summary>
+        <p>
+          <strong>POSIX cron</strong> 默认使用服务器本地时区。容器化部署时，Docker / Kubernetes
+          默认 UTC，需在 <code>Dockerfile</code> 设置 <code>TZ=Asia/Shanghai</code> 或在
+          <code>deployment.yaml</code> 注入 <code>TZ</code> 环境变量。
+        </p>
+        <p>
+          <strong>夏令时（DST）</strong>是 cron 的著名陷阱：在实行夏令时的地区（如欧美），
+          春季「拨快 1 小时」会跳过凌晨 2:00-3:00，秋季「拨慢 1 小时」会重复凌晨 1:00-2:00。
+          若 cron 表达式恰好落在此时段，可能<strong>跳过执行</strong>或<strong>重复执行</strong>。
+          Kubernetes CronJob 文档专门警告了这个问题。
+        </p>
+        <p>
+          本工具按<strong>浏览器本地时区</strong>计算下次执行时间。生产环境部署时请以服务器时区为准。
+        </p>
+      </details>
+      <details>
+        <summary>日字段和周字段同时指定时，是 AND 还是 OR？</summary>
+        <p>
+          这是 cron 最容易踩坑的语义之一。POSIX 标准规定：
+        </p>
+        <ul>
+          <li>
+            当<strong>日</strong>或<strong>周</strong>中至少一个为 <code>*</code> 或 <code>?</code> 时，
+            取 <strong>AND</strong>（两者都必须匹配）。
+          </li>
+          <li>
+            当<strong>日</strong>和<strong>周</strong>都<strong>被显式指定</strong>（都不是 <code>*</code>/<code>?</code>）时，
+            取 <strong>OR</strong>（任一匹配即执行）。
+          </li>
+        </ul>
+        <p>
+          例如 <code>0 0 1 * 1</code> 表示「每月 1 号 <strong>或</strong> 每周一 0 点」（OR），
+          而不是「每月 1 号且是周一」（AND）。本工具遵循此标准。
+        </p>
+        <p>
+          若想表达「每月 1 号且是周一」，需要写成两条 cron 表达式，或在代码层判断
+          <code>date.getDate() === 1 && date.getDay() === 1</code>。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有 cron 解析、描述生成、下次执行时间计算都在本地完成，
+          不会上传到任何服务器，也不会被记录。适合在配置生产环境定时任务前做语法校验。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Cron 工具专属样式：复用 .jsontool 基础样式，仅补充输入区与预设网格 */
+
+  .crontool__input-area {
+    margin-bottom: 16px;
+  }
+
+  .crontool__input-label {
+    display: block;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  /* 单行输入框：等宽字体显示表达式 */
+  .crontool__input {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 16px;
+    line-height: 1.5;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .crontool__input:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+    border-color: var(--color-primary);
+  }
+
+  /* 输入错误时的红色边框 */
+  .crontool__input[aria-invalid='true'] {
+    border-color: var(--color-danger, #e5484d);
+  }
+
+  /* 字段分隔显示：5 个字段横向排列 */
+  .crontool__fields {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .crontool__field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 6px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  .crontool__field-value {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .crontool__field-label {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  /* 错误提示 */
+  .crontool__error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: rgba(229, 72, 77, 0.08);
+    border: 1px solid rgba(229, 72, 77, 0.3);
+    border-radius: var(--radius-sm);
+    color: #b91c1c;
+    font-size: 13.5px;
+  }
+
+  .crontool__error-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .crontool__error-field {
+    color: var(--color-text-muted);
+    font-size: 12.5px;
+  }
+
+  /* 描述区 */
+  .crontool__desc {
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: rgba(43, 108, 255, 0.06);
+    border: 1px solid rgba(43, 108, 255, 0.2);
+    border-radius: var(--radius-sm);
+  }
+
+  .crontool__desc-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .crontool__desc-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  /* 下次执行时间 */
+  .crontool__next {
+    margin-bottom: 16px;
+  }
+
+  .crontool__next-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .crontool__next-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .crontool__next-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13.5px;
+  }
+
+  .crontool__next-item:last-child {
+    border-bottom: none;
+  }
+
+  .crontool__next-item:first-child {
+    background: rgba(22, 163, 74, 0.06);
+  }
+
+  .crontool__next-index {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-bg-soft);
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+  }
+
+  .crontool__next-item:first-child .crontool__next-index {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .crontool__next-time {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    color: var(--color-text);
+  }
+
+  .crontool__next-relative {
+    margin-left: auto;
+    color: var(--color-success, #15803d);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  /* 预设示例网格 */
+  .crontool__presets {
+    margin-bottom: 16px;
+  }
+
+  .crontool__presets-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .crontool__presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+
+  .crontool__preset-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+  }
+
+  .crontool__preset-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-soft);
+    transform: translateY(-1px);
+  }
+
+  .crontool__preset-label {
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .crontool__preset-expr {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+  }
+
+  /* 字段语法说明 */
+  .crontool__syntax {
+    margin-top: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .crontool__syntax-summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    user-select: none;
+  }
+
+  .crontool__syntax-content {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .crontool__syntax-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .crontool__syntax-table caption {
+    text-align: left;
+    padding: 4px 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+
+  .crontool__syntax-table th,
+  .crontool__syntax-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  .crontool__syntax-table th {
+    background: var(--color-bg-soft);
+    font-weight: 600;
+  }
+
+  .crontool__syntax-table code {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    background: var(--color-bg-soft);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12.5px;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .crontool__error {
+      background: rgba(229, 72, 77, 0.14);
+      color: #f87171;
+    }
+
+    .crontool__desc {
+      background: rgba(43, 108, 255, 0.12);
+    }
+
+    .crontool__next-item:first-child {
+      background: rgba(22, 163, 74, 0.12);
+    }
+
+    .crontool__next-relative {
+      color: #4ade80;
+    }
+
+    .crontool__syntax-table code {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  /* 移动端：5 字段显示改为 2 列；预设网格 1 列 */
+  @media (max-width: 768px) {
+    .crontool__fields {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .crontool__presets-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .crontool__next-item {
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+
+    .crontool__next-relative {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    .crontool__syntax-content {
+      overflow-x: auto;
+    }
+
+    .crontool__syntax-table {
+      min-width: 480px;
+    }
+  }
+
+  /* 超小屏（375px）：预设网格 1 列 */
+  @media (max-width: 414px) {
+    .crontool__presets-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .crontool__input {
+      font-size: 14px;
+    }
+  }
+</style>

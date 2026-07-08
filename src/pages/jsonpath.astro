@@ -1,0 +1,588 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JsonPathTool from '../components/JsonPathTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'JSONPath 查询工具 - JSON 路径提取与过滤表达式在线执行',
+  description:
+    '免费的在线 JSONPath 查询工具：自研零依赖 JSONPath 引擎，支持 $.path、..递归下降、[*]通配符、[index]数组索引、[?(filter)]过滤表达式（==、!=、>、<、=~正则匹配、&&、||、!）。12 个预设示例覆盖电商订单、用户列表等典型场景，一键复制单条或全部结果。适用于 API 响应数据提取、JSON 配置查询、嵌套数据筛选、自动化测试断言等场景，所有查询在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JSONPath 查询工具',
+    url: 'https://toolbox.example.com/jsonpath',
+    description: '在线 JSONPath 查询工具：支持 $.path、..递归下降、[*]通配符、[?(filter)]过滤表达式，12 个预设示例，一键复制结果，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JSONPath 查询工具</h1>
+      <p>
+        使用 JSONPath 表达式从 JSON 数据中提取指定节点。支持 <code>$</code> 根节点、<code>.name</code> 子节点、
+        <code>..name</code> 递归下降、<code>[*]</code> 通配符、<code>[0]</code> 数组索引、
+        <code>[?(expr)]</code> 过滤表达式（<code>==</code>、<code>!=</code>、<code>&gt;</code>、<code>&lt;</code>、<code>=~</code> 正则匹配、
+        <code>&amp;&amp;</code>、<code>||</code>、<code>!</code>）。12 个预设示例覆盖典型场景，所有查询在浏览器本地完成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <JsonPathTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="jpath-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 JSONPath？它和 JSON Pointer、jq 有什么区别？</summary>
+        <p>
+          <strong>JSONPath</strong> 是一种 JSON 数据查询语言，语法形如 <code>$.store.book[0].title</code>，
+          通过路径表达式从 JSON 中提取节点。它由 Stefan Gössner 于 2007 年提出，2024 年由 IETF 标准化为 RFC 9535。
+          <strong>JSON Pointer</strong>（RFC 6901）是更简单的路径语法，形如 <code>/store/book/0/title</code>，
+          不支持过滤表达式、通配符、递归下降，主要用于 JSON Patch。<strong>jq</strong> 是功能更强的命令行 JSON 处理工具，
+          支持管道、函数、变量、条件分支等图灵完备语法，但语法学习成本较高。JSONPath 介于两者之间，适合嵌入式查询场景。
+        </p>
+      </details>
+      <details>
+        <summary>JSONPath 表达式中 $ 和 @ 有什么区别？</summary>
+        <p>
+          <strong>$</strong> 表示<strong>根节点</strong>，是路径的起始点，形如 <code>$.store.book</code> 表示从根开始访问 store.book。
+          <strong>@</strong> 表示<strong>当前节点</strong>，仅在过滤表达式 <code>[?(...)]</code> 内部使用，
+          用于引用当前正在判断的数组元素或对象值。例如 <code>$..book[?(@.price &lt; 10)]</code> 中，
+          <code>@</code> 表示 book 数组中的每个元素，<code>@.price</code> 表示该元素的 price 字段。
+          <code>@</code> 不能出现在路径主体中，<code>$</code> 通常不出现在过滤表达式内（除非显式引用根节点）。
+        </p>
+      </details>
+      <details>
+        <summary>递归下降（..）是什么？和点号访问有什么区别？</summary>
+        <p>
+          <strong>点号访问</strong> <code>.name</code> 只访问当前节点的直接子字段，例如 <code>$.store.book</code> 只访问 root.store.book。
+          <strong>递归下降</strong> <code>..name</code> 会遍历 JSON 树的所有层级，返回所有名为 name 的字段值，
+          无论它们嵌套多深。例如 <code>$..author</code> 会找到 JSON 中所有层级的 author 字段。
+          递归下降还可以用 <code>..*</code> 收集所有节点（对象、数组、原始值），
+          或 <code>..book[0]</code> 先递归找 book 字段，再取每个 book 数组的第一个元素。
+          递归下降是 JSONPath 最强大的特性之一，但性能开销比点号访问大，深度嵌套数据上需注意。
+        </p>
+      </details>
+      <details>
+        <summary>过滤表达式 [?(expr)] 支持哪些运算符？</summary>
+        <p>
+          本工具支持以下过滤运算符：
+          <strong>比较</strong>：<code>==</code>（等于）、<code>!=</code>（不等于）、<code>&gt;</code>（大于）、
+          <code>&gt;=</code>（大于等于）、<code>&lt;</code>（小于）、<code>&lt;=</code>（小于等于）；
+          <strong>正则匹配</strong>：<code>=~</code>（如 <code>@.email =~ ".*@example\\.com"</code>）；
+          <strong>逻辑</strong>：<code>&amp;&amp;</code>（与）、<code>||</code>（或）、<code>!</code>（非）；
+          <strong>存在性</strong>：单独的 <code>@.field</code> 表示该字段存在且非 null。
+          例如 <code>$..book[?(@.price &lt; 10 &amp;&amp; @.category == "fiction")]</code> 表示价格小于 10 且类别为 fiction 的书。
+          过滤表达式内字符串字面量可用单引号或双引号，数字直接写，布尔与 null 用 <code>true</code> / <code>false</code> / <code>null</code>。
+        </p>
+      </details>
+      <details>
+        <summary>数组索引支持哪些形式？负索引怎么用？</summary>
+        <p>
+          <strong>单索引</strong>：<code>[0]</code> 取第一个元素，<code>[2]</code> 取第三个元素；
+          <strong>多索引</strong>：<code>[0,1,2]</code> 或 <code>[0,2,4]</code> 一次取多个元素，用逗号分隔；
+          <strong>负索引</strong>：<code>[-1]</code> 取最后一个元素，<code>[-2]</code> 取倒数第二个，负索引从 -1 开始；
+          <strong>通配符</strong>：<code>[*]</code> 取数组所有元素，等价于遍历。
+          本工具暂不支持切片语法 <code>[1:5]</code>（起始:结束）与步长 <code>[::2]</code>，
+          如需取连续范围可用多索引 <code>[1,2,3,4]</code> 替代。索引超出范围时返回空结果，不会报错。
+        </p>
+      </details>
+      <details>
+        <summary>JSONPath 在实际开发中有哪些典型应用场景？</summary>
+        <p>
+          <strong>API 响应数据提取</strong>：RESTful API 返回复杂嵌套 JSON，前端只需部分字段时用 JSONPath 提取，避免手写多层解构；
+          <strong>自动化测试断言</strong>：测试框架（如 Postman、JMeter、RestAssured）用 JSONPath 定位响应中的特定字段做断言；
+          <strong>JSON 配置查询</strong>：大型 JSON 配置文件（如 K8s manifest、OpenAPI spec）中查找特定资源或字段；
+          <strong>日志分析</strong>：JSON 格式日志中提取关键字段（如 <code>$..error.message</code> 找所有层级的 error.message）；
+          <strong>数据转换</strong>：JSON 转 CSV、JSON 转表格时用 JSONPath 指定字段映射；
+          <strong>前端动态表单</strong>：根据 JSON Schema 用 JSONPath 实现字段联动与条件显示。
+          本工具的「复制全部结果」功能可直接生成 JSON 数组，粘贴到代码或文档中使用。
+        </p>
+      </details>
+      <details>
+        <summary>本工具的 JSONPath 实现与标准 RFC 9535 有什么差异？</summary>
+        <p>
+          本工具自研实现，覆盖 RFC 9535 常用语法子集，差异如下：
+          <strong>已支持</strong>：$、.name、['name']、[index]、[0,1] 多索引、[*] 通配符、..name 递归下降、..* 递归所有、
+          [?(filter)] 过滤表达式（==、!=、&gt;、&gt;=、&lt;、&lt;=、=~、&amp;&amp;、||、!）、@ 当前节点、负索引；
+          <strong>暂不支持</strong>：切片 <code>[1:5]</code> 与步长 <code>[::2]</code>、
+          函数（<code>length()</code>、<code>count()</code>、<code>min()</code>、<code>max()</code> 等）、
+          父节点引用 <code>^</code>、命名过滤器 <code>[?(@.a>&@.b)]</code> 复杂比较、
+          多键 <code>['a','b']</code>（仅单键生效）。
+          实现采用三阶段架构：tokenizer（词法分析）→ parser（语法分析构建 AST）→ evaluator（求值），
+          全程零依赖纯函数，便于扩展。如需完整 RFC 9535 实现，可考虑引入 jsonpath-plus 库（约 50KB）。
+        </p>
+      </details>
+      <details>
+        <summary>查询结果是数组还是单个值？如何区分？</summary>
+        <p>
+          JSONPath 查询结果<strong>始终是数组</strong>（节点列表），即使只匹配到一个元素。
+          例如 <code>$.store.book[0].title</code> 返回 <code>["Sayings of the Century"]</code>（含一个字符串的数组），
+          而非裸字符串 <code>"Sayings of the Century"</code>。
+          这是因为 JSONPath 设计上需要支持多匹配场景（如 <code>$..author</code> 返回多个作者），
+          为保持一致性，单匹配也用数组包裹。
+          本工具的「复制单条」按钮会复制该元素的原始值（去除数组包裹），
+          「复制全部」按钮会复制完整的 JSON 数组。在代码中使用时需注意取第一个元素：
+          <code>jsonpath.query(data, '$.store.book[0].title')[0]</code>。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* JSONPath 工具页专属样式 */
+  :global(.jpath) {
+    margin: 24px 0;
+  }
+
+  /* 顶部：JSONPath 表达式输入区 */
+  :global(.jpath__expr-section) {
+    margin-bottom: 16px;
+  }
+
+  :global(.jpath__label) {
+    display: inline-block;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+
+  :global(.jpath__expr-row) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.jpath__expr-input) {
+    flex: 1;
+    min-width: 240px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: var(--font-mono);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s;
+  }
+
+  :global(.jpath__expr-input:focus) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  :global(.jpath__expr-badge) {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(43, 108, 255, 0.1);
+    color: var(--color-primary);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  :global(.jpath__expr-error) {
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    font-size: 13px;
+  }
+
+  /* 预设示例区 */
+  :global(.jpath__presets) {
+    margin-bottom: 24px;
+  }
+
+  :global(.jpath__presets-title) {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+
+  :global(.jpath__presets-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+
+  :global(.jpath__preset-btn) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+
+  :global(.jpath__preset-btn:hover) {
+    border-color: var(--color-primary);
+    background: var(--color-bg-soft);
+  }
+
+  :global(.jpath__preset-btn.is-active) {
+    border-color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.06);
+    box-shadow: 0 0 0 2px rgba(43, 108, 255, 0.15);
+  }
+
+  :global(.jpath__preset-label) {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  :global(.jpath__preset-path) {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    word-break: break-all;
+  }
+
+  /* 主体：左右双栏 */
+  :global(.jpath__main) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  :global(.jpath__input-pane),
+  :global(.jpath__result-pane) {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  :global(.jpath__pane-header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.jpath__pane-actions) {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  :global(.jpath__action-btn) {
+    padding: 4px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.jpath__action-btn:hover:not(:disabled)) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  :global(.jpath__action-btn:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  :global(.jpath__textarea) {
+    flex: 1;
+    min-height: 360px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+    outline: none;
+  }
+
+  :global(.jpath__json-error) {
+    padding: 8px 14px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    font-size: 12.5px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  :global(.jpath__json-ok) {
+    padding: 8px 14px;
+    background: rgba(16, 185, 129, 0.08);
+    color: #059669;
+    font-size: 12.5px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* 结果区 */
+  :global(.jpath__result-count) {
+    margin-left: 6px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+
+  :global(.jpath__error-state),
+  :global(.jpath__empty-state) {
+    flex: 1;
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+  }
+
+  :global(.jpath__error-text) {
+    color: #dc2626;
+    font-size: 14px;
+    word-break: break-word;
+  }
+
+  :global(.jpath__empty-hint) {
+    font-size: 12.5px;
+    opacity: 0.75;
+  }
+
+  :global(.jpath__result-list) {
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+    overflow-y: auto;
+    max-height: 520px;
+  }
+
+  :global(.jpath__result-item) {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  :global(.jpath__result-header) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--color-bg-soft);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+  }
+
+  :global(.jpath__result-index) {
+    font-weight: 600;
+    color: var(--color-primary);
+    font-family: var(--font-mono);
+  }
+
+  :global(.jpath__result-type) {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+  }
+
+  :global(.jpath__copy-btn) {
+    margin-left: auto;
+    padding: 2px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.jpath__copy-btn:hover) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  :global(.jpath__result-value) {
+    padding: 10px 12px;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--color-text);
+    background: var(--color-bg);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  :global(.jpath__result-value.is-short) {
+    padding: 6px 12px;
+  }
+
+  :global(.jpath__result-value code) {
+    font-family: inherit;
+  }
+
+  /* FAQ 区块样式 */
+  .jpath-faq {
+    margin: 48px 0 24px;
+  }
+
+  .jpath-faq h2 {
+    margin-bottom: 16px;
+  }
+
+  .jpath-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: var(--color-bg);
+  }
+
+  .jpath-faq summary {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text);
+    list-style: none;
+  }
+
+  .jpath-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .jpath-faq summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    transition: transform 0.15s;
+  }
+
+  .jpath-faq details[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  .jpath-faq details p {
+    padding: 0 18px 16px;
+    color: var(--color-text-soft);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  .jpath-faq code {
+    background: var(--color-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* 暗色模式适配 */
+  :global(html[data-theme="dark"] .jpath__expr-badge),
+  :global(:root[data-theme="dark"] .jpath__expr-badge) {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(html:not([data-theme="light"]) .jpath__expr-badge) {
+      background: rgba(96, 165, 250, 0.15);
+      color: #93c5fd;
+    }
+    :global(html:not([data-theme="light"]) .jpath__expr-error) {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+    }
+    :global(html:not([data-theme="light"]) .jpath__json-error) {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+    }
+    :global(html:not([data-theme="light"]) .jpath__json-ok) {
+      background: rgba(16, 185, 129, 0.12);
+      color: #6ee7b7;
+    }
+    :global(html:not([data-theme="light"]) .jpath__preset-btn.is-active) {
+      background: rgba(96, 165, 250, 0.1);
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    :global(.jpath__main) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.jpath__textarea) {
+      min-height: 240px;
+      font-size: 14px;
+    }
+
+    :global(.jpath__expr-input) {
+      font-size: 16px;
+    }
+
+    :global(.jpath__presets-grid) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.jpath__pane-header) {
+      padding: 8px 10px;
+    }
+
+    :global(.jpath__result-list) {
+      max-height: 400px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    :global(.jpath__expr-row) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    :global(.jpath__expr-badge) {
+      align-self: flex-start;
+    }
+
+    :global(.jpath__pane-actions) {
+      gap: 4px;
+    }
+
+    :global(.jpath__action-btn) {
+      padding: 4px 8px;
+      font-size: 11.5px;
+    }
+  }
+</style>

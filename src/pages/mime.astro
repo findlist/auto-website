@@ -1,0 +1,414 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import MimeTool from '../components/MimeTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'MIME 类型查询工具 - 文件扩展名与 MIME 对照表在线查询',
+  description:
+    '免费的在线 MIME 类型查询工具：内置 100+ 常见文件扩展名与 MIME 类型对照表，覆盖文档、图片、音频、视频、压缩、代码、字体、应用 8 大类别。支持搜索过滤、类别筛选、一键复制扩展名或 MIME 类型。HTTP Content-Type 头设置、Nginx / Apache 配置、前端文件上传校验高频必备，所有查询在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'MIME 类型查询工具',
+    url: 'https://toolbox.example.com/mime',
+    description: '在线 MIME 类型查询工具：100+ 常见文件扩展名与 MIME 类型对照表，支持搜索、类别筛选、一键复制，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>MIME 类型查询工具</h1>
+      <p>
+        内置 100+ 常见文件扩展名与 MIME 类型对照表，覆盖文档、图片、音频、视频、压缩、代码、字体、应用 8 大类别。
+        支持搜索过滤、类别筛选、一键复制扩展名或 MIME 类型。适用于 HTTP Content-Type 头设置、
+        Nginx / Apache MIME 配置、前端文件上传校验等场景，所有查询在浏览器本地完成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <MimeTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="mime-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 MIME 类型？它和文件扩展名有什么关系？</summary>
+        <p>
+          <strong>MIME 类型</strong>（Multipurpose Internet Mail Extensions）是一种标准化的文件格式标识，
+          形如 <code>type/subtype</code>，例如 <code>text/html</code>、<code>image/png</code>、
+          <code>application/json</code>。它最初用于邮件附件，后来被 HTTP 协议采用，成为 Web 传输文件的标准格式标识。
+          <strong>文件扩展名</strong>是操作系统层面的文件类型约定（如 <code>.html</code>、<code>.png</code>），
+          两者通常是<strong>一一对应</strong>关系，但并非绝对：同一扩展名可能对应多个 MIME 类型（如 <code>.ts</code>
+          既可能是 TypeScript 也可能是 MPEG-TS 视频流），同一 MIME 类型也可能对应多个扩展名（如 <code>image/jpeg</code>
+          对应 <code>.jpg</code> 和 <code>.jpeg</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>HTTP Content-Type 头有什么作用？如何设置？</summary>
+        <p>
+          <strong>Content-Type</strong> 是 HTTP 响应头（也可用于请求头），用于告诉浏览器服务器返回的内容类型，
+          例如 <code>Content-Type: text/html; charset=utf-8</code>。浏览器根据该值决定如何渲染内容：
+          若为 <code>text/html</code> 则解析为网页，若为 <code>application/json</code> 则显示为 JSON，
+          若为 <code>application/octet-stream</code> 则触发下载。设置方式：①Nginx 在 <code>mime.types</code>
+          文件中配置扩展名到 MIME 类型的映射；②Apache 在 <code>.htaccess</code> 中用
+          <code>AddType application/json .json</code> 指令；③后端代码直接设置响应头（如 Node.js 的
+          <code>res.setHeader('Content-Type', 'application/json')</code>）；④前端用 <code>&lt;a download&gt;</code>
+          或 <code>Blob</code> 触发下载时也可指定类型。
+        </p>
+      </details>
+      <details>
+        <summary>浏览器是按扩展名还是 MIME 类型识别文件？</summary>
+        <p>
+          <strong>HTTP 传输时以 MIME 类型为准</strong>：服务器返回的 <code>Content-Type</code> 头决定浏览器如何处理响应体，
+          即使 URL 扩展名是 <code>.jpg</code> 但 Content-Type 是 <code>text/html</code>，浏览器仍会当网页渲染。
+          <strong>本地文件以扩展名为主</strong>：操作系统按扩展名关联应用程序打开文件。但<strong>现代浏览器有 MIME 嗅探机制</strong>：
+          若服务器未设置 Content-Type 或设置为 <code>application/octet-stream</code>，浏览器可能嗅探文件内容前几个字节
+          （文件签名 / magic number）来推断真实类型。出于安全考虑，可通过
+          <code>X-Content-Type-Options: nosniff</code> 头禁用嗅探，强制浏览器严格遵守 Content-Type。
+        </p>
+      </details>
+      <details>
+        <summary>常见的 MIME 类型有哪些？按类别怎么分类？</summary>
+        <p>
+          本工具内置 100+ 常见 MIME 类型，按用途分为 8 大类别：
+          <strong>文档</strong>（txt/html/css/csv/md/pdf/doc/xls/ppt 等）；
+          <strong>图片</strong>（jpg/png/gif/webp/svg/bmp/ico/heic/avif 等）；
+          <strong>音频</strong>（mp3/wav/ogg/flac/aac/m4a/opus 等）；
+          <strong>视频</strong>（mp4/webm/avi/mov/mkv/3gp 等）；
+          <strong>压缩</strong>（zip/rar/7z/tar/gz/bz2/xz 等）；
+          <strong>代码</strong>（js/ts/py/java/go/rs/sql/yaml/json/xml 等）；
+          <strong>字体</strong>（ttf/otf/woff/woff2/eot）；
+          <strong>应用</strong>（exe/dll/apk/ipa/dmg/deb/rpm/jar 等）。
+          每条记录含扩展名、MIME 类型、类别、中文描述，点击扩展名或 MIME 类型即可一键复制。
+        </p>
+      </details>
+      <details>
+        <summary>为什么有些文件的 MIME 类型是 application/octet-stream？</summary>
+        <p>
+          <code>application/octet-stream</code> 是<strong>通用的二进制流类型</strong>，意为"未知的二进制数据"。
+          当服务器不认识文件类型、或故意不暴露类型时，会返回此值，浏览器收到后通常会<strong>触发下载</strong>而非尝试渲染。
+          常见场景：①可执行文件（<code>.exe</code>、<code>.dll</code>、<code>.so</code>）；②安装包
+          （<code>.ipa</code>、<code>.bin</code>）；③没有标准 MIME 类型的私有格式。若希望浏览器内联显示而非下载，
+          需在服务器配置正确的 MIME 类型。
+        </p>
+      </details>
+      <details>
+        <summary>前端文件上传时如何校验文件类型？只校验扩展名够吗？</summary>
+        <p>
+          <strong>只校验扩展名不够安全</strong>：用户可随意改扩展名（如把 <code>.exe</code> 改成 <code>.png</code>）。
+          推荐的校验策略：①<code>&lt;input type="file" accept="image/*"&gt;</code> 或
+          <code>accept=".jpg,.png"</code> 做前端筛选；②读取 <code>file.type</code>（浏览器根据扩展名或内容嗅探得到的 MIME 类型）
+          做初步校验；③<code>file.name</code> 扩展名校验；④关键场景读取<strong>文件头 magic number</strong>
+          （如 PNG 文件前 8 字节是 <code>89 50 4E 47 0D 0A 1A 0A</code>）做最终校验；⑤后端再次校验，前端校验仅为体验，
+          不能作为安全边界。本工具可帮助你快速查询目标 MIME 类型，用于 <code>accept</code> 属性与 <code>file.type</code> 比对。
+        </p>
+      </details>
+      <details>
+        <summary>Nginx 和 Apache 如何配置自定义 MIME 类型？</summary>
+        <p>
+          <strong>Nginx</strong>：在 <code>nginx.conf</code> 的 <code>http</code> 或 <code>server</code> 块中用
+          <code>types &#123; ... &#125;</code> 指令配置映射，例如
+          <code>types &#123; application/json json; text/markdown md; &#125;</code>，
+          也可用 <code>default_type application/octet-stream;</code> 设置默认类型。<br />
+          <strong>Apache</strong>：在 <code>.htaccess</code> 或主配置中用 <code>AddType</code> 指令，
+          例如 <code>AddType application/json .json</code>，或用 <code>&lt;FilesMatch&gt;</code> 针对特定文件设置。<br />
+          配置后记得重启 / reload 服务使配置生效。若 MIME 类型配置错误，可能导致浏览器无法正确渲染内容
+          （如 CSS 文件被当成 HTML 下载、JSON 文件无法在浏览器内联显示）。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的数据安全吗？查询记录会上传吗？</summary>
+        <p>
+          完全安全。本工具是<strong>纯前端应用</strong>，所有查询、过滤、复制操作均在浏览器本地完成，
+          <strong>不发起任何网络请求</strong>，不上传任何查询内容、不使用 Cookie 追踪、不接入第三方统计。
+          你可以放心查询任何 MIME 类型，无数据泄露风险。页面关闭后所有状态自动清除。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* MIME 工具页专属样式 */
+  :global(.mimetool) {
+    margin: 24px 0;
+  }
+
+  /* 搜索栏：搜索框 + 清空按钮横向布局 */
+  :global(.mimetool__search-bar) {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  :global(.mimetool__search) {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s;
+  }
+
+  :global(.mimetool__search:focus) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  :global(.mimetool__clear-btn) {
+    padding: 10px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.mimetool__clear-btn:hover) {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+  }
+
+  /* 类别筛选标签组：横向滚动，避免移动端换行 */
+  :global(.mimetool__categories) {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    /* 隐藏滚动条但保留滚动能力 */
+    scrollbar-width: thin;
+  }
+
+  :global(.mimetool__category-btn) {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  :global(.mimetool__category-btn:hover) {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+  }
+
+  :global(.mimetool__category-btn.is-active) {
+    background: var(--color-bg-soft);
+    border-color: currentColor;
+    font-weight: 600;
+  }
+
+  /* 结果统计 */
+  :global(.mimetool__stats) {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+  }
+
+  :global(.mimetool__stats strong) {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* 结果列表：自适应网格，每张卡片含扩展名、MIME、类别、描述 */
+  :global(.mimetool__list) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+
+  :global(.mimetool__item) {
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    background: var(--color-bg);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+
+  :global(.mimetool__item:hover) {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 卡片主区：扩展名按钮 + MIME 类型按钮 */
+  :global(.mimetool__item-main) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.mimetool__ext-btn),
+  :global(.mimetool__mime-btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  :global(.mimetool__ext-btn:hover),
+  :global(.mimetool__mime-btn:hover) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  :global(.mimetool__ext) {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  :global(.mimetool__mime) {
+    color: var(--color-text-soft);
+    word-break: break-all;
+  }
+
+  :global(.mimetool__copied) {
+    color: var(--color-success);
+    font-weight: 600;
+  }
+
+  /* 卡片元信息：类别徽章 + 描述 */
+  :global(.mimetool__item-meta) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  :global(.mimetool__badge) {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  :global(.mimetool__desc) {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+  }
+
+  /* 空状态 */
+  :global(.mimetool__empty) {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+
+  :global(.mimetool__empty p) {
+    margin: 4px 0;
+  }
+
+  :global(.mimetool__empty-hint) {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  /* FAQ 区块样式 */
+  .mime-faq {
+    margin: 48px 0 24px;
+  }
+
+  .mime-faq h2 {
+    margin-bottom: 16px;
+  }
+
+  .mime-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: var(--color-bg);
+  }
+
+  .mime-faq summary {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text);
+    list-style: none;
+  }
+
+  .mime-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mime-faq summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    transition: transform 0.15s;
+  }
+
+  .mime-faq details[open] summary::before {
+    transform: rotate(90deg);
+  }
+
+  .mime-faq details p {
+    padding: 0 18px 16px;
+    color: var(--color-text-soft);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  .mime-faq code {
+    background: var(--color-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    :global(.mimetool__list) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.mimetool__search) {
+      padding: 12px 14px;
+      font-size: 16px; /* 避免 iOS 聚焦时缩放 */
+    }
+
+    :global(.mimetool__categories) {
+      gap: 6px;
+    }
+
+    :global(.mimetool__category-btn) {
+      padding: 6px 12px;
+      font-size: 12.5px;
+    }
+  }
+</style>

@@ -1,0 +1,365 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TimestampTool from '../components/TimestampTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Unix 时间戳转换工具 - 在线时间戳与日期双向转换',
+  description:
+    '免费的在线 Unix 时间戳转换工具：时间戳与本地时间双向转换，支持秒 / 毫秒单位切换，提供 ISO 8601、本地时间、UTC 时间、相对时间多种格式。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Unix 时间戳转换工具',
+    url: 'https://toolbox.example.com/timestamp',
+    description: '在线 Unix 时间戳与日期双向转换工具，支持秒/毫秒单位与多种输出格式，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Unix 时间戳转换工具</h1>
+      <p>
+        Unix 时间戳与本地日期时间双向转换，支持秒 / 毫秒单位切换，提供 ISO 8601、本地时间、UTC 时间、相对时间多种格式输出；附带批量转换模式，粘贴多个时间戳自动识别秒/毫秒并一次性转换为日期表格。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <TimestampTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Unix 时间戳？</summary>
+        <p>Unix 时间戳是从协调世界时（UTC）1970 年 1 月 1 日 00:00:00 起经过的秒数（或毫秒数），不考虑闰秒。它是跨平台、跨语言通用的"绝对时间"表示方式，广泛应用于数据库存储、API 通信、日志记录、缓存过期等场景。32 位有符号整数能表示的最大秒级时间戳是 2147483647（2038 年 1 月 19 日），即著名的"2038 年问题"。</p>
+      </details>
+      <details>
+        <summary>秒级时间戳和毫秒级时间戳有什么区别？</summary>
+        <p>两者的起点相同，区别仅在于精度：<strong>秒级</strong>时间戳是 10 位数字（如 <code>1700000000</code>），常见于 Unix/Linux 系统与多数后端语言（如 PHP 的 <code>time()</code>、Python 的 <code>time.time()</code>）；<strong>毫秒级</strong>时间戳是 13 位数字（如 <code>1700000000000</code>），常见于 JavaScript（<code>Date.now()</code>）、Java（<code>System.currentTimeMillis()</code>）。本工具提供单位切换，方便在不同系统间换算。</p>
+      </details>
+      <details>
+        <summary>为什么 JavaScript 的 Date.now() 返回 13 位数字？</summary>
+        <p>JavaScript 的 <code>Date</code> 对象内部以毫秒为单位存储时间，因此 <code>Date.now()</code>、<code>Date.prototype.getTime()</code>、<code>Date.prototype.valueOf()</code> 都返回毫秒级时间戳（13 位）。如果你需要秒级时间戳，可以用 <code>Math.floor(Date.now() / 1000)</code> 进行换算。</p>
+      </details>
+      <details>
+        <summary>ISO 8601 是什么格式？</summary>
+        <p>ISO 8601 是国际标准化组织定义的日期时间表示格式，标准形式为 <code>YYYY-MM-DDTHH:mm:ss.sssZ</code>，其中 <code>T</code> 分隔日期与时间，<code>Z</code> 表示 UTC 时区（如 <code>2023-11-14T22:13:20.000Z</code>）。它是 JSON、API、数据库中最常用的日期时间格式，可被几乎所有编程语言解析。本工具的 ISO 输出即为该格式。</p>
+      </details>
+      <details>
+        <summary>转换使用的是哪个时区？</summary>
+        <p>本工具的"本地时间"输出使用你浏览器/操作系统设置的时区，"UTC 时间"输出使用协调世界时，"ISO 8601"输出固定为 UTC（带 <code>Z</code> 后缀）。Unix 时间戳本身与时区无关，它表示的是绝对的某一刻。</p>
+      </details>
+      <details>
+        <summary>批量转换如何识别秒与毫秒？</summary>
+        <p>切换到「批量转换」Tab 后，每行一个时间戳。工具按整数位数自动识别：<strong>10 位</strong>视为秒级（如 <code>1700000000</code>），<strong>13 位</strong>视为毫秒级（如 <code>1700000000000</code>）。其他位数（如 9 位或 12 位）会标记为"未知"并按毫秒兜底解析，仍能输出结果但会提示单位不确定。无效行（非数字、空行）会被标红并显示错误原因。点击「复制全部」可导出有效结果的 CSV 格式。</p>
+      </details>
+      <details>
+        <summary>批量转换支持哪些常见场景？</summary>
+        <p>典型场景包括：日志分析（Nginx/Apache 日志中的时间戳批量转日期）、数据库导出数据（<code>created_at</code> 字段为时间戳的批量转换）、API 调试（多个响应中的时间戳字段对照）、历史数据回放（按时间戳序列还原事件时间线）。将时间戳列表粘贴到输入框，即可在结果表格中看到每条对应的本地时间与 ISO 8601 格式。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 时间戳工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .tstool__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .tstool__input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    transition: border-color 0.15s ease;
+  }
+
+  .tstool__input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  /* 当前时间戳卡片：醒目展示，便于快速获取 */
+  .tstool__now {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(43, 108, 255, 0.08), rgba(122, 76, 255, 0.06));
+    border: 1px solid rgba(43, 108, 255, 0.18);
+    border-radius: var(--radius-md);
+  }
+
+  .tstool__now-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    flex-shrink: 0;
+  }
+
+  .tstool__now-value {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-primary);
+    flex: 1;
+    word-break: break-all;
+  }
+
+  .tstool__now-copy {
+    flex-shrink: 0;
+  }
+
+  /* 多格式输出列表 */
+  .tstool__outputs {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .tstool__out-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tstool__out-item:last-child {
+    border-bottom: none;
+  }
+
+  .tstool__out-label {
+    flex-shrink: 0;
+    width: 90px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .tstool__out-value {
+    flex: 1;
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 13px;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  /* 移动端：当前时间戳卡片与输出列表自适应 */
+  @media (max-width: 768px) {
+    .tstool__now {
+      flex-wrap: wrap;
+    }
+
+    .tstool__now-value {
+      font-size: 18px;
+    }
+
+    .tstool__out-item {
+      flex-wrap: wrap;
+    }
+
+    .tstool__out-label {
+      width: auto;
+    }
+  }
+
+  /* 视图切换 Tab 栏 */
+  .tstool__view-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+    padding-left: 4px;
+  }
+
+  .tstool__view-tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+  }
+
+  .tstool__view-tab:hover {
+    color: var(--color-text);
+  }
+
+  .tstool__view-tab:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .tstool__view-tab.is-active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .tstool__seg-text {
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 批量结果区 */
+  .tstool__batch-result {
+    margin-top: 16px;
+  }
+
+  /* 统计栏 */
+  .tstool__batch-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .tstool__batch-stat {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .tstool__batch-stat--ok {
+    color: #16a34a;
+    background: rgba(22, 163, 74, 0.1);
+  }
+
+  .tstool__batch-stat--err {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+  }
+
+  /* 批量结果表格 */
+  .tstool__batch-table {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .tstool__batch-row {
+    display: grid;
+    grid-template-columns: 48px 160px 70px minmax(160px, 1fr) minmax(180px, 1.2fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+  }
+
+  .tstool__batch-row:last-child {
+    border-bottom: none;
+  }
+
+  .tstool__batch-row--head {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    font-weight: 600;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .tstool__batch-row.is-error {
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .tstool__batch-idx {
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  .tstool__batch-raw code,
+  .tstool__batch-iso code {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    word-break: break-all;
+    color: var(--color-text);
+  }
+
+  .tstool__batch-unit {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .tstool__batch-local {
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  .tstool__batch-err {
+    color: #dc2626;
+    font-style: normal;
+    font-size: 12px;
+  }
+
+  /* 移动端：批量表格改为卡片式堆叠 */
+  @media (max-width: 700px) {
+    .tstool__batch-row {
+      grid-template-columns: 32px 1fr;
+      grid-template-areas:
+        'idx raw'
+        'idx unit'
+        'idx local'
+        'idx iso';
+      row-gap: 4px;
+      padding: 10px 12px;
+    }
+
+    .tstool__batch-idx {
+      grid-area: idx;
+      align-self: start;
+      padding-top: 2px;
+    }
+
+    .tstool__batch-raw {
+      grid-area: raw;
+    }
+
+    .tstool__batch-unit {
+      grid-area: unit;
+    }
+
+    .tstool__batch-local {
+      grid-area: local;
+    }
+
+    .tstool__batch-iso {
+      grid-area: iso;
+    }
+
+    /* 表头在小屏隐藏，改用每行内联标签 */
+    .tstool__batch-row--head {
+      display: none;
+    }
+  }
+</style>

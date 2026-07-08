@@ -1,0 +1,508 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ColorContrastTool from '../components/ColorContrastTool.tsx';
+
+const meta: SiteMeta = {
+  title: '颜色对比度检查工具 - WCAG 2.1 无障碍对比度在线检测',
+  description:
+    '免费的在线颜色对比度检查工具：输入前景色与背景色，实时计算 WCAG 2.1 对比度比值，自动评级 AA / AAA 是否达标（普通文字、大文字、UI 组件），并渲染真实文字预览。前端开发无障碍合规必备，所有计算在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '颜色对比度检查工具',
+    url: 'https://toolbox.example.com/color-contrast',
+    description: '在线 WCAG 2.1 颜色对比度检查工具：实时计算对比度比值，AA / AAA 评级，无障碍合规检查，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>颜色对比度检查工具</h1>
+      <p>
+        输入前景色与背景色，实时计算 WCAG 2.1 对比度比值，自动评级 AA / AAA 是否达标。
+        覆盖普通文字、大文字、UI 组件三类场景，配真实文字渲染预览，所见即所得。
+        所有计算在浏览器本地完成，无需上传。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <ColorContrastTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 WCAG 颜色对比度？为什么前端开发需要关注？</summary>
+        <p>
+          <strong>WCAG</strong>（Web Content Accessibility Guidelines，Web 内容无障碍指南）是 W3C 制定的
+          Web 无障碍国际标准。<strong>颜色对比度</strong>指前景色（如文字）与背景色之间的亮度差异，用比值
+          <code>1.0:1</code> 到 <code>21.0:1</code> 表示（1.0 为同色，21.0 为黑底白字）。
+          对比度过低会导致色弱用户、老年用户、强光环境下用户难以阅读，许多国家（如美国 ADA、欧盟 EN 301 549）
+          将 WCAG 列为法律法规要求。前端开发在交付前应检查所有文字 / 图标 / 控件边框的对比度是否达标。
+        </p>
+      </details>
+      <details>
+        <summary>WCAG 2.1 的 AA 和 AAA 级别有什么区别？</summary>
+        <p>
+          WCAG 分为三个合规级别：<strong>A</strong>（最低）、<strong>AA</strong>（行业基准，多数政府与商业网站要求）、
+          <strong>AAA</strong>（最高，特殊场景如医疗、政府关键信息才要求）。
+          对比度要求：<strong>AA 普通文字 ≥ 4.5:1</strong>、<strong>AA 大文字 ≥ 3.0:1</strong>；
+          <strong>AAA 普通文字 ≥ 7.0:1</strong>、<strong>AAA 大文字 ≥ 4.5:1</strong>。
+          大文字定义为 <code>≥ 18px</code>（约 14pt）普通字重，或 <code>≥ 14px</code>（约 11pt）加粗。
+          UI 组件（按钮边框、图标、表单控件）≥ 3.0:1 即可。
+        </p>
+      </details>
+      <details>
+        <summary>对比度比值 4.5:1 是怎么算出来的？</summary>
+        <p>
+          WCAG 使用<strong>相对亮度</strong>（relative luminance）计算对比度。每个 RGB 通道先做 gamma 解码
+          （<code>c ≤ 0.03928 ? c/12.92 : ((c+0.055)/1.055)^2.4</code>），然后按人眼对绿色的敏感度加权求和
+          （<code>L = 0.2126·R + 0.7152·G + 0.0722·B</code>）。两色的对比度公式为
+          <code>(L1 + 0.05) / (L2 + 0.05)</code>，其中 L1 为较亮色、L2 为较暗色。
+          加 0.05 是为了补偿显示器的最低亮度（不是纯黑）和环境光反射。
+          本工具完全使用此公式计算，结果与 W3C 官方计算器一致。
+        </p>
+      </details>
+      <details>
+        <summary>同一种颜色在不同背景下对比度不同吗？</summary>
+        <p>
+          是的。<strong>对比度只取决于两色的相对亮度差</strong>，与色相无关。
+          例如 <code>#1f2937</code>（深灰）在白底上对比度约 14.7:1（达标 AAA），但在
+          <code>#374151</code>（中灰）底上对比度仅约 3.5:1（普通文字不达标）。
+          因此配色方案应在实际背景下逐一验证，不能假设「深色文字一定合规」。
+          本工具支持一键交换前景/背景色，便于快速验证双向场景。
+        </p>
+      </details>
+      <details>
+        <summary>为什么我用了品牌色，对比度总是不达标？</summary>
+        <p>
+          品牌色通常饱和度高、明度中等，与白色背景对比度往往不足 4.5:1。
+          常见解决方案：1) <strong>加深品牌色</strong>作为文字色，原色仅用于按钮背景、图标等大面积色块；
+          2) <strong>改用更深的同色相变体</strong>（如品牌蓝 <code>#2b6cff</code> 文字不达标，可改用
+          <code>#1e3a8a</code>）；3) <strong>加大字号</strong>使其符合「大文字」标准（≥ 18px 或 ≥ 14px 加粗），
+          只需 ≥ 3.0:1；4) <strong>更换背景色</strong>，如浅灰 <code>#f9fafb</code> 替代纯白，差异虽小但有时足够。
+        </p>
+      </details>
+      <details>
+        <summary>渐变背景或图片背景的对比度怎么算？</summary>
+        <p>
+          WCAG 对渐变与图片背景没有精确公式，建议做法：1) 在渐变<strong>最浅</strong>和<strong>最深</strong>
+          两端分别测试文字对比度，取较低值；2) 图片背景应在图片上<strong>叠加半透明遮罩</strong>
+          （如 <code>rgba(0,0,0,0.5)</code>）后再测文字对比度；3) 若图片背景复杂无法保证一致对比度，
+          应改为<strong>纯色背景文字区</strong>（如卡片、胶囊背景）。本工具仅支持纯色对比纯色，
+          渐变场景需手动取代表点验证。
+        </p>
+      </details>
+      <details>
+        <summary>暗色模式下还需要满足对比度要求吗？</summary>
+        <p>
+          需要。WCAG 对比度要求<strong>与主题无关</strong>，暗色模式下文字与背景的对比度同样需达到
+          AA / AAA 标准。常见误区是认为「暗色背景天然高对比」，但实际上许多暗色 UI 使用
+          <code>#374151</code> 背景 + <code>#9ca3af</code> 文字，对比度仅 4.0:1，不达 AA。
+          建议暗色模式下文字色至少使用 <code>#e5e7eb</code> 以上亮度，背景色不超过 <code>#1f2937</code>，
+          才能稳定达到 4.5:1。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有颜色解析、对比度计算、评级判断逻辑由 JavaScript 在你本地执行，
+          输入的颜色值不会发送到任何服务器。这对于处理品牌色、商业设计稿配色尤其重要，
+          可避免配色方案提前泄露。但请注意：浏览器历史记录、屏幕截图、共享设备可能留下痕迹，
+          如需彻底保密请在隐私模式中使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 颜色对比度工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+
+  /* 输入区 */
+  .contrasttool__input-area {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .contrasttool__input-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .contrasttool__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  /* 输入行：前景色 + 交换按钮 + 背景色 三栏布局 */
+  .contrasttool__input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* 单个颜色输入字段：标签 + 拾色器/文本框 */
+  .contrasttool__color-field {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .contrasttool__field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .contrasttool__field-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  /* 拾色器：原生 input[type=color]，方形美化 */
+  .contrasttool__picker {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .contrasttool__picker::-webkit-color-swatch-wrapper {
+    padding: 4px;
+  }
+
+  .contrasttool__picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+
+  .contrasttool__picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
+  }
+
+  .contrasttool__text-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .contrasttool__text-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  .contrasttool__field-error {
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--color-error);
+  }
+
+  /* 交换按钮：居中放置，圆形 */
+  .contrasttool__swap-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    margin-top: 22px; /* 对齐拾色器（label 高度 18px + gap 6px ≈ 24px - 按钮高 44px/2 ≈ 22px） */
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .contrasttool__swap-btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: rotate(180deg);
+  }
+
+  .contrasttool__swap-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 对比度结果区 */
+  .contrasttool__result {
+    padding: 24px 16px;
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+  }
+
+  .contrasttool__ratio-box {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .contrasttool__ratio-value {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-text);
+    letter-spacing: -0.02em;
+  }
+
+  .contrasttool__ratio-unit {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+
+  .contrasttool__copy-btn {
+    margin-left: 12px;
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    align-self: center;
+  }
+
+  .contrasttool__copy-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .contrasttool__ratio-hint {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+  }
+
+  /* WCAG 评级展示 */
+  .contrasttool__levels {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .contrasttool__levels-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .contrasttool__level-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  /* 单个评级卡片：通过/未达用边框色区分 */
+  .contrasttool__level {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .contrasttool__level--pass {
+    border-color: rgba(26, 170, 85, 0.4);
+    background: rgba(26, 170, 85, 0.06);
+  }
+
+  .contrasttool__level--fail {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.06);
+  }
+
+  .contrasttool__level-badge {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .contrasttool__level--pass .contrasttool__level-badge {
+    background: rgba(26, 170, 85, 0.15);
+    color: var(--color-success);
+  }
+
+  .contrasttool__level--fail .contrasttool__level-badge {
+    background: rgba(220, 38, 38, 0.15);
+    color: var(--color-error);
+  }
+
+  .contrasttool__level-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .contrasttool__level-desc {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+  }
+
+  .contrasttool__level-threshold {
+    font-size: 11.5px;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  /* 视觉示例区 */
+  .contrasttool__preview {
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .contrasttool__preview-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* 渲染画布：内联样式动态设置前景/背景色 */
+  .contrasttool__preview-canvas {
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .contrasttool__preview-normal {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .contrasttool__preview-large {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.5;
+  }
+
+  .contrasttool__preview-link {
+    margin: 0;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .contrasttool__preview-btn {
+    padding: 6px 16px;
+    border: 2px solid;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  .contrasttool__preview-btn:hover {
+    opacity: 0.85;
+  }
+
+  /* 不达标建议提示 */
+  .contrasttool__advice {
+    margin: 16px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(234, 88, 12, 0.08);
+    border: 1px solid rgba(234, 88, 12, 0.2);
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* 空状态提示 */
+  .contrasttool__empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 13.5px;
+  }
+
+  /* 状态提示 */
+  .contrasttool__notice {
+    margin: 12px 16px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(26, 170, 85, 0.08);
+    color: var(--color-success);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .contrasttool__input-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .contrasttool__input-row {
+      flex-direction: column;
+    }
+    .contrasttool__swap-btn {
+      align-self: center;
+      margin-top: 0;
+      transform: rotate(90deg);
+    }
+    .contrasttool__swap-btn:hover:not(:disabled) {
+      transform: rotate(270deg);
+    }
+    .contrasttool__ratio-value {
+      font-size: 36px;
+    }
+    .contrasttool__ratio-unit {
+      font-size: 16px;
+    }
+    .contrasttool__level-list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

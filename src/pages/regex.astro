@@ -1,0 +1,496 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import RegexTool from '../components/RegexTool.tsx';
+
+const meta: SiteMeta = {
+  title: '正则表达式在线测试工具 - 实时高亮匹配与命名捕获组',
+  description:
+    '免费的在线正则表达式测试工具：实时高亮全部匹配、显示数字捕获组与命名捕获组、支持 g/i/m/s/u/y 标志位切换、内置邮箱/URL/IPv4/手机号等常用模式速查、提供基于 $1/$2 与 $<name> 引用的替换功能。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '正则表达式测试工具',
+    url: 'https://toolbox.example.com/regex',
+    description: '在线正则表达式测试工具，支持实时高亮、数字/命名捕获组、标志位切换与 $<name> 替换，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>正则表达式在线测试工具</h1>
+      <p>
+        实时高亮全部匹配片段，逐项展示数字捕获组与命名捕获组、位置，支持单条复制；支持 g/i/m/s/u/y 标志位切换，内置邮箱、URL、IPv4、手机号等常用模式速查；提供基于 $1/$2 与 $<name> 引用的替换功能。所有数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <RegexTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>正则表达式的标志位 g/i/m/s/u/y 分别是什么意思？</summary>
+        <p>
+          <code>g</code>（global）全局匹配，找出全部匹配项而非仅第一个；<code>i</code>（ignoreCase）忽略大小写；
+          <code>m</code>（multiline）多行模式，使 <code>^</code> 与 <code>$</code> 匹配每行的首尾而非整个字符串的首尾；
+          <code>s</code>（dotAll）使 <code>.</code> 能匹配换行符 <code>\n</code>；
+          <code>u</code>（unicode）Unicode 模式，正确处理中文与 Emoji 等多字节字符；
+          <code>y</code>（sticky）粘滞匹配，从 <code>lastIndex</code> 位置开始且必须紧贴该位置。
+        </p>
+      </details>
+      <details>
+        <summary>什么是捕获组？如何用 $1 / $2 引用？</summary>
+        <p>
+          用圆括号 <code>(...)</code> 包裹的子模式会形成捕获组，按左括号出现顺序编号为 <code>$1</code>、<code>$2</code>、<code>$3</code>……
+          例如 <code>(\w+)@(\w+)\.(\w+)</code> 匹配邮箱时，<code>$1</code> 是用户名、<code>$2</code> 是域名、<code>$3</code> 是顶级域。
+          在替换字符串中可用 <code>$1</code>、<code>$2</code> 引用对应捕获组，<code>$$</code> 转义为字面 <code>$</code>。
+          非捕获组 <code>(?:...)</code> 不编号、不消耗 $N。
+        </p>
+      </details>
+      <details>
+        <summary>什么是命名捕获组？如何用 $&lt;name&gt; 引用？</summary>
+        <p>
+          ES2018 起支持命名捕获组 <code>(?&lt;name&gt;...)</code>，给捕获组起一个有意义的名字，避免按数字编号时数错顺序。
+          例如 <code>(?&lt;user&gt;[\w.+-]+)@(?&lt;domain&gt;[\w-]+)\.(?&lt;tld&gt;[\w.-]+)</code> 匹配邮箱，
+          匹配列表会同时展示 <code>$1/$2/$3</code> 数字组与 <code>user / domain / tld</code> 命名组。
+          替换字符串中可用 <code>$&lt;user&gt;</code>、<code>$&lt;domain&gt;</code>、<code>$&lt;tld&gt;</code> 引用，
+          也可继续用 <code>$1</code>、<code>$2</code> 数字组引用（命名组同时占用数字编号）。
+          命名组的核心价值：可读性高、调整组顺序后无需重排替换串、长期维护更稳健。
+        </p>
+      </details>
+      <details>
+        <summary>为什么我的正则没有匹配任何结果？</summary>
+        <p>
+          常见原因：1) 忘记勾选 <code>g</code> 标志位导致只显示第一个匹配，本工具默认勾选；2) 正则模式中含特殊字符未转义，
+          如 <code>.</code>、<code>*</code>、<code>+</code>、<code>?</code>、<code>()</code>、<code>[]</code>、<code>{}</code>、
+          <code>\</code>、<code>^</code>、<code>$</code>、<code>|</code> 需用 <code>\</code> 转义；
+          3) 输入的测试字符串与模式确实不匹配；4) 模式中含中文/Emoji 但未启用 <code>u</code> 标志位。
+        </p>
+      </details>
+      <details>
+        <summary>如何避免正则表达式性能问题（ReDoS）？</summary>
+        <p>
+          含嵌套量词（如 <code>(a+)+</code>）或重叠交替（如 <code>(a|a)*</code>）的正则可能在恶意输入下指数级耗时，称为 ReDoS 攻击。
+          本工具对输入长度（10000 字）与匹配数（5000 个）设上限保护浏览器。生产环境应：1) 避免嵌套量词；
+          2) 优先使用具体字符类（如 <code>[a-z]</code>）而非 <code>.</code>；3) 用非捕获组 <code>(?:...)</code> 替代捕获组；
+          4) 对超时敏感场景使用专门的正则超时库。
+        </p>
+      </details>
+      <details>
+        <summary>替换模式中如何使用 $1 / $2 / $&lt;name&gt; 引用捕获组？</summary>
+        <p>
+          切换到「替换」Tab 后，在替换字符串输入框中可用三种引用方式：
+          <code>$1</code>、<code>$2</code>、<code>$3</code> 数字组；
+          <code>$&lt;name&gt;</code> 命名组（ES2018，需正则用 <code>(?&lt;name&gt;...)</code>）；
+          <code>$$</code> 转义为字面 <code>$</code>。
+          例如模式 <code>(\w+)@(\w+)\.(\w+)</code> + 替换 <code>[$1 at $2.$3]</code> 可将 <code>dev@example.com</code>
+          替换为 <code>[dev at example.com]</code>；用命名组写法 <code>(?&lt;user&gt;\w+)@(?&lt;domain&gt;\w+)\.(?&lt;tld&gt;\w+)</code>
+          + 替换 <code>[$&lt;user&gt; at $&lt;domain&gt;.$&lt;tld&gt;]</code> 结果相同但可读性更高。
+          本工具的替换永远使用全局匹配，所有匹配项都会被替换（即使你没勾选 <code>g</code> 标志位也会自动加 <code>g</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>匹配列表中的「复制」按钮复制什么内容？</summary>
+        <p>
+          匹配列表每条匹配右侧的「复制」按钮会复制该条匹配的完整信息：序号、匹配文本、位置区间 <code>@起-止</code>、
+          所有数字捕获组 <code>$1=... $2=...</code>、所有命名捕获组 <code>name=...</code>（如有），用 Tab 分隔便于粘贴到 Excel 或编辑器。
+          顶部「复制匹配」按钮则一次性复制全部匹配，每条一行。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有正则编译、匹配、替换逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+      <details>
+        <summary>支持哪些 JavaScript 正则特性？</summary>
+        <p>
+          支持所有标准 ECMAScript 正则特性：字符类、量词、锚点、分组（捕获组与非捕获组）、反向引用、零宽断言（
+          <code>(?=...)</code> 正向、<code>(?!...)</code> 负向）。命名捕获组 <code>(?&lt;name&gt;...)</code> 与
+          后行断言 <code>(?&lt;=...)</code>、<code>(?&lt;!...)</code> 在现代浏览器中可用。具体兼容性请参考
+          <a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/RegExp" rel="noopener noreferrer" target="_blank">MDN RegExp 文档</a>。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 正则工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .regextool__view-tabs {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-sm);
+  }
+
+  .regextool__view-tab {
+    padding: 3px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+
+  .regextool__view-tab:hover:not(.is-active) {
+    color: var(--color-text);
+  }
+
+  .regextool__view-tab.is-active {
+    background: var(--color-bg);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 正则模式输入栏：模仿 /pattern/flags 外观 */
+  .regextool__regex-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .regextool__regex-label {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 16px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .regextool__pattern-input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .regextool__pattern-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+  }
+
+  /* 标志位复选框组 */
+  .regextool__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .regextool__flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+  }
+
+  .regextool__flag:hover {
+    border-color: var(--color-primary);
+  }
+
+  .regextool__flag input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .regextool__flag-label {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-weight: 600;
+    color: var(--color-primary);
+  }
+
+  .regextool__flag-desc {
+    color: var(--color-text-soft);
+    font-size: 11.5px;
+  }
+
+  /* 常用模式速查 */
+  .regextool__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .regextool__presets-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    margin-right: 4px;
+  }
+
+  .regextool__preset {
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .regextool__preset:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  /* 主体面板：与 JSON 工具一致的左右分栏 */
+  .regextool__panels {
+    min-height: 460px;
+  }
+
+  .regextool__result-panel {
+    background: var(--color-bg-code);
+  }
+
+  /* 高亮预览区 */
+  .regextool__preview {
+    flex: 1;
+    overflow: auto;
+    min-height: 160px;
+    max-height: 240px;
+    padding: 12px 16px;
+    background: var(--color-bg-code);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .regextool__preview-pre {
+    margin: 0;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+  }
+
+  .regextool__placeholder {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* 匹配高亮：<mark> 包裹的匹配片段 */
+  .regextool__hl {
+    background: rgba(245, 166, 35, 0.4);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+    cursor: help;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .regextool__hl {
+      background: rgba(251, 191, 36, 0.32);
+      color: #fde68a;
+    }
+  }
+
+  /* 匹配列表 */
+  .regextool__match-list {
+    overflow: auto;
+    max-height: 240px;
+    padding: 8px 12px;
+  }
+
+  .regextool__match-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    font-size: 12.5px;
+  }
+
+  .regextool__match-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .regextool__match-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .regextool__match-idx {
+    flex-shrink: 0;
+    width: 28px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    background: var(--color-primary);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .regextool__match-text {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+    word-break: break-all;
+    background: rgba(245, 166, 35, 0.16);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .regextool__match-pos {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  .regextool__match-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .regextool__match-group {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 2px 6px;
+    background: var(--color-bg-soft);
+    border-radius: 3px;
+    font-size: 11.5px;
+  }
+
+  .regextool__group-key {
+    color: var(--color-primary);
+    font-weight: 600;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+
+  /* 命名捕获组键样式：用紫色与数字组蓝色区分 */
+  .regextool__group-key--named {
+    color: #7c3aed;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .regextool__group-key--named {
+      color: #c4b5fd;
+    }
+  }
+
+  /* 命名组容器：与数字组之间留出间隔 */
+  .regextool__match-named {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .regextool__group-val {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  /* 单条复制按钮：紧凑、贴右 */
+  .regextool__match-copy {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 1px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* 替换模式输入框 */
+  .regextool__replace-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 13px;
+    outline: none;
+  }
+
+  .regextool__replace-input:focus {
+    border-bottom-color: var(--color-primary);
+  }
+
+  .regextool__replace-output {
+    min-height: 240px;
+  }
+
+  /* 输入超限警告 */
+  .regextool__warn {
+    color: var(--color-error);
+    font-weight: 500;
+  }
+
+  /* 移动端：垂直堆叠 + 紧凑布局 */
+  @media (max-width: 768px) {
+    .regextool__panels {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .regextool__flag-desc {
+      display: none;
+    }
+
+    .regextool__flag {
+      padding: 3px 8px;
+    }
+
+    .regextool__preview {
+      max-height: 200px;
+    }
+
+    .regextool__match-list {
+      max-height: 320px;
+    }
+
+    .regextool__regex-bar {
+      flex-wrap: wrap;
+    }
+  }
+</style>

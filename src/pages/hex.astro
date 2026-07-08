@@ -1,0 +1,125 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HexTool from '../components/HexTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Hex 十六进制编解码工具 - 5 种格式输出 + Hex dump + C 数组',
+  description:
+    '免费的在线 Hex 十六进制工具：一键编码 / 解码，支持连续、空格分隔、0x 前缀、C 数组、Hex dump（xxd 风格）5 种输出格式，大小写切换。解码时自动识别多种格式，容忍空格、0x 前缀、逗号、注释、Hex dump。完美支持中文与 Emoji，适用于二进制调试、字节序列分析、嵌入式开发、颜色值/MAC 地址/Magic Number 查看等场景。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Hex 十六进制编解码工具',
+    url: 'https://toolbox.example.com/hex',
+    description: '在线 Hex 十六进制编解码工具，支持 5 种输出格式与多格式自动识别解码，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Hex 十六进制编解码工具</h1>
+      <p>
+        文本与 Hex 十六进制双向转换，支持连续、空格分隔、0x 前缀、C 数组、Hex dump 五种输出格式。解码时自动识别多种格式，容忍空格、0x 前缀、逗号、注释、Hex dump，完美支持中文与 Emoji，数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <HexTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Hex 十六进制编码？</summary>
+        <p>Hex（Hexadecimal）是基数为 16 的数制系统，使用 <code>0-9</code> 与 <code>A-F</code>（或 <code>a-f</code>）共 16 个字符表示数值。在计算机领域，Hex 常用于将二进制数据以可读形式呈现：每个字节（8 位）恰好对应 2 个 Hex 字符（00-FF）。例如 ASCII 字符 <code>H</code> 的字节值为 72，Hex 表示为 <code>48</code>；中文字符「你」的 UTF-8 编码为 <code>e4 bd a0</code>。</p>
+      </details>
+      <details>
+        <summary>Hex 与 Base64、Base32 有什么区别？</summary>
+        <p>三者都是将二进制数据编码为可打印字符的方案，核心差异在字符集大小与膨胀率：①<strong>Hex</strong> 字符集 16 个（0-9A-F），每字节 2 字符，体积膨胀 100%，适合字节级精确查看与调试；②<strong>Base32</strong> 字符集 32 个，每 5 字节编码为 8 字符，体积膨胀 60%，适合人工输入与二维码；③<strong>Base64</strong> 字符集 64 个，每 3 字节编码为 4 字符，体积膨胀 33%，适合机器间传输。Hex 膨胀最大但最直观，Base64 膨胀最小但含 <code>+/=</code> 等特殊字符。</p>
+      </details>
+      <details>
+        <summary>支持的 5 种 Hex 输出格式分别是什么？</summary>
+        <p>本工具在编码模式下支持 5 种输出格式：①<strong>连续</strong>：<code>48656c6c6f</code>，无分隔，最紧凑；②<strong>空格分隔</strong>：<code>48 65 6c 6c 6f</code>，字节间空格，便于阅读；③<strong>0x 前缀</strong>：<code>0x48 0x65 0x6c 0x6c 0x6f</code>，C/编程语言风格；④<strong>C 数组</strong>：<code>{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }</code>，可直接粘贴到 C/C++ 代码；⑤<strong>Hex dump</strong>：xxd 风格，每行 16 字节，含偏移量、hex 部分、ASCII 部分，适合查看二进制文件内容。</p>
+      </details>
+      <details>
+        <summary>Hex dump 格式是什么样的？</summary>
+        <p>Hex dump 是 xxd、hexdump 等命令行工具的经典输出格式，每行 16 字节，分三部分：①<code>偏移量</code>：8 位 hex，表示当前行在数据中的起始位置；②<code>hex 部分</code>：16 个字节对应的 hex 值，字节间空格，第 8 字节后多一空格分组；③<code>ASCII 部分</code>：可打印字符原样显示，不可打印字符用 <code>.</code> 替代。例如「Hello」的 Hex dump 为：<pre><code>00000000: 48 65 6c 6c 6f                                  Hello</code></pre></p>
+      </details>
+      <details>
+        <summary>解码时支持哪些输入格式？</summary>
+        <p>本工具解码时自动识别多种格式，无需手动切换：①连续 hex 字符串 <code>48656c6c6f</code>；②空格分隔 <code>48 65 6c 6c 6f</code>；③0x 前缀 <code>0x48 0x65</code>；④C 数组 <code>{ 0x48, 0x65 }</code>；⑤Hex dump 格式（自动提取每行的 hex 字节部分，忽略偏移量与 ASCII）；⑥含 C 块注释 <code>/* ... */</code>、C 行注释 <code>//</code>、Shell/Python 行注释 <code>#</code> 的输入；⑦含逗号、分号、冒号、管道符等分隔符的输入。奇数长度自动在前补 0，容忍用户漏输前导 0。</p>
+      </details>
+      <details>
+        <summary>Hex 编码支持中文与 Emoji 吗？</summary>
+        <p>支持。本工具使用 UTF-8 编码处理输入文本，中文字符与 Emoji 都会被正确编码为多字节 hex 序列。例如「你」的 UTF-8 编码为 <code>e4 bd a0</code>（3 字节），「🎉」的 UTF-8 编码为 <code>f0 9f 8e 89</code>（4 字节）。解码时同样使用 UTF-8 解码字节数组，若输入含非法 UTF-8 字节序列会给出警告提示并用替换字符显示可解码部分。</p>
+      </details>
+      <details>
+        <summary>什么场景适合用 Hex 而非 Base64/Base32？</summary>
+        <p>①<strong>二进制调试</strong>：查看文件头、Magic Number、协议字节，Hex 直观显示每字节值；②<strong>嵌入式开发</strong>：固件字节数据、寄存器值、内存映像，C 数组格式可直接粘贴到代码；③<strong>颜色值</strong>：CSS 颜色 <code>#FF5733</code> 本质是 RGB 三字节 hex；④<strong>MAC 地址 / UUID</strong>：<code>00:1A:2B:3C:4D:5E</code> 用 hex 表示网卡硬件地址；⑤<strong>哈希摘要</strong>：SHA-256、MD5 等哈希值通常以 hex 输出；⑥<strong>加密密钥</strong>：AES 密钥、IV 通常以 hex 表示便于核对。需要体积最小化时才用 Base64。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有编码/解码逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Hex 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .hextool__seg {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .hextool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hextool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* Hex dump 输出使用等宽字体（继承 textarea 样式即可） */
+  .hextool .jsontool__textarea--output {
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  }
+
+  /* 移动端响应式：工具栏选项换行 */
+  @media (max-width: 640px) {
+    .hextool .jsontool__options {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hextool__toggle {
+      font-size: 12px;
+    }
+
+    .hextool__seg {
+      gap: 2px;
+    }
+
+    .hextool__seg .btn--sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+  }
+</style>

@@ -1,0 +1,89 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import Base64Tool from '../components/Base64Tool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Base64 编解码工具 - 支持 UTF-8 中文与 URL 安全变体',
+  description:
+    '免费的在线 Base64 工具：一键编码 / 解码，支持 UTF-8 中文与 Emoji，可选 URL 安全变体（- 与 _ 替换 + 与 /）。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Base64 编解码工具',
+    url: 'https://toolbox.example.com/base64',
+    description: '在线 Base64 编解码工具，支持 UTF-8 中文与 URL 安全变体，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Base64 编解码工具</h1>
+      <p>
+        文本与 Base64 双向转换，完美支持中文与 Emoji。可选 URL 安全变体，适用于 JWT、Data URL 与查询参数。数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <Base64Tool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么浏览器自带的 btoa 不能直接编码中文？</summary>
+        <p>btoa 只能处理 ASCII 字符（码点 0-255），遇到中文等多字节字符会抛出异常。本工具先用 TextEncoder 将字符串转为 UTF-8 字节序列，再进行 Base64 编码，因此可以正确处理任意 Unicode 文本。</p>
+      </details>
+      <details>
+        <summary>什么是 URL 安全 Base64？</summary>
+        <p>标准 Base64 中包含 <code>+</code>、<code>/</code> 与 <code>=</code>，它们在 URL 与查询参数中有特殊含义，可能导致解析错误。URL 安全变体将 <code>+</code> 替换为 <code>-</code>、<code>/</code> 替换为 <code>_</code>，并去掉末尾填充的 <code>=</code>。常见于 JWT、Data URL、OAuth 等场景。</p>
+      </details>
+      <details>
+        <summary>解码时为什么不需要补齐等号？</summary>
+        <p>本工具会自动根据输入长度补齐缺失的 <code>=</code> 填充，因此即使你粘贴的 Base64 字符串没有填充符也能正确解码。但长度对 4 取模为 1 的字符串属于非法 Base64，会返回错误提示。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有处理逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Base64 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .b64tool__seg {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .b64tool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .b64tool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 移动端：工具栏允许换行，选项间距收紧 */
+  @media (max-width: 768px) {
+    .b64tool__seg {
+      flex: 1 1 auto;
+    }
+  }
+</style>

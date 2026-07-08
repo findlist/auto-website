@@ -1,0 +1,510 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import XmlToJsonTool from '../components/XmlToJsonTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'XML 转 JSON 转换工具 - 在线 XML 文档解析为 JSON 数据',
+  description:
+    '免费的在线 XML 转 JSON 转换器：基于浏览器原生 DOMParser 解析，支持属性名前缀、文本节点名、CDATA 合并 / 分离、空元素表示、类型推断、注释过滤、缩进等配置，同名子元素自动合并为数组，XXE 防护。适用于 SOAP 响应解析、RSS / Atom Feed 读取、SVG / Office 文档解析、Spring / Maven 配置转换等场景。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'XML 转 JSON 转换工具',
+    url: 'https://toolbox.example.com/xml-to-json',
+    description: '在线 XML 转 JSON 转换器：可配置属性前缀、CDATA、空元素、类型推断、缩进，同名子元素合并数组，XXE 防护，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>XML 转 JSON 转换工具</h1>
+      <p>
+        将 XML 文档一键解析为 JSON 数据，基于浏览器原生 DOMParser 实现，支持属性名前缀、CDATA 处理、空元素表示、类型推断等配置，同名子元素自动合并为数组，XXE 防护。适用于 SOAP 响应解析、RSS / Atom Feed 读取、SVG / Office 文档解析、Spring / Maven 配置转换等场景，所有数据在浏览器本地处理。
+      </p>
+    </div>
+
+    <XmlToJsonTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+
+      <details>
+        <summary>1. XML 转 JSON 有哪些常见应用场景？</summary>
+        <p>尽管 JSON 已是现代 Web API 的事实标准，XML 在以下场景仍广泛存在，需要转换为 JSON 便于前端处理：</p>
+        <ul>
+          <li><strong>SOAP Web Service 响应</strong>：传统企业级服务（银行、保险、SAP）的响应均为 XML</li>
+          <li><strong>RSS / Atom Feed</strong>：博客订阅源、新闻聚合仍以 XML 为主</li>
+          <li><strong>SVG 图形解析</strong>：可缩放矢量图形本质是 XML，提取元数据时需转为 JSON</li>
+          <li><strong>Office 文档</strong>：docx / xlsx / pptx 内部均为 XML（Office Open XML 标准）</li>
+          <li><strong>Spring / Maven 配置</strong>：旧版 Java 项目配置文件 pom.xml / web.xml</li>
+          <li><strong>Android 资源</strong>：strings.xml / AndroidManifest.xml 解析</li>
+          <li><strong>Apple Plist</strong>：iOS / macOS 配置文件（XML 格式变体）</li>
+          <li><strong>Sitemap</strong>：搜索引擎站点地图 protocol.xml</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>2. 属性名前缀 @ 是什么意思？为什么需要它？</summary>
+        <p>XML 元素可以同时拥有属性和子元素，而 JSON 对象的 key 必须唯一。如果不加前缀，属性名可能与子元素名冲突。例如：</p>
+        <pre><code>&lt;user id="1"&gt;
+  &lt;id&gt;100&lt;/id&gt;
+  &lt;name&gt;Aether&lt;/name&gt;
+&lt;/user&gt;</code></pre>
+        <p>加上 <code>@</code> 前缀后转为 JSON：</p>
+        <pre><code>&#123;
+  "@id": "1",
+  "id": "100",
+  "name": "Aether"
+&#125;</code></pre>
+        <p><code>@id</code> 表示属性，<code>id</code> 表示子元素，互不冲突。可在选项中改为其他前缀（如 <code>_</code>、<code>$</code>）或留空（不推荐，可能冲突）。</p>
+      </details>
+
+      <details>
+        <summary>3. XML 的同名子元素如何转换为 JSON？</summary>
+        <p>XML 允许同名元素重复出现（如多个 <code>&lt;tag&gt;</code>），JSON 没有原生的「重复键」概念。本工具采用 XML → JSON 的标准做法：同名子元素自动合并为数组。例如：</p>
+        <pre><code>&lt;tags&gt;
+  &lt;tag&gt;前端&lt;/tag&gt;
+  &lt;tag&gt;工具&lt;/tag&gt;
+&lt;/tags&gt;</code></pre>
+        <p>转换为：</p>
+        <pre><code>&#123;
+  "tags": &#123;
+    "tag": ["前端", "工具"]
+  &#125;
+&#125;</code></pre>
+        <p>若只有一个同名元素，默认不包数组（保持简洁）。开启「子元素始终为数组」选项后，即便只有一个也会包成数组，便于下游统一处理。</p>
+      </details>
+
+      <details>
+        <summary>4. CDATA 合并与分离有什么区别？</summary>
+        <p>CDATA 用 <code>&lt;![CDATA[...]]&gt;</code> 包裹原样文本，常用于嵌入含特殊字符的内容（HTML 片段、代码、正则）。两种处理方式：</p>
+        <ul>
+          <li><strong>合并（默认）</strong>：CDATA 内容与普通文本节点合并，统一放入 <code>#text</code> 字段。适合只关心最终文本的场景</li>
+          <li><strong>分离</strong>：CDATA 单独放入 <code>#cdata</code> 字段，与 <code>#text</code> 区分。适合需要保留 CDATA 边界信息的场景（如反向重建 XML）</li>
+        </ul>
+        <p>分离模式下，单个 CDATA 为字符串，多个 CDATA 自动包为数组。</p>
+      </details>
+
+      <details>
+        <summary>5. XML 的空元素如何表示为 JSON？</summary>
+        <p>XML 空元素（如 <code>&lt;note/&gt;</code> 或 <code>&lt;note&gt;&lt;/note&gt;</code>）没有内容，JSON 没有统一的「空」表示。三种选项：</p>
+        <ul>
+          <li><strong>null（默认）</strong>：转为 <code>null</code>，最简洁，明确表示「无值」</li>
+          <li><strong>空字符串</strong>：转为 <code>""</code>，与空文本元素一致</li>
+          <li><strong>空对象</strong>：转为 <code>&#123;&#125;</code>，保留「这是一个元素」的语义，便于下游统一类型判断</li>
+        </ul>
+        <p>注意：空元素与「有属性但无文本 / 子元素」的元素不同，后者仍转为对象（包含属性字段）。</p>
+      </details>
+
+      <details>
+        <summary>6. 类型推断有什么用？有什么风险？</summary>
+        <p>XML 是纯文本格式，所有值都是字符串。开启「类型推断」后，工具会自动识别：</p>
+        <ul>
+          <li><code>"true"</code> / <code>"false"</code> → 布尔值</li>
+          <li><code>"null"</code> → null</li>
+          <li><code>"95"</code> → 数字 95</li>
+          <li><code>"3.14"</code> → 数字 3.14</li>
+        </ul>
+        <p><strong>风险</strong>：可能误判。例如手机号 <code>"13800138000"</code> 会被转为数字，丢失前导零（如 <code>"007"</code> → 7）；ID <code>"0001"</code> 也会丢失前导零。若数据需要保留原始字符串形式（如编号、电话、邮政编码），建议关闭类型推断。</p>
+        <p>本工具仅转换安全整数（<code>Number.isSafeInteger</code>）与有限浮点数，避免大整数精度丢失。</p>
+      </details>
+
+      <details>
+        <summary>7. XML 注释怎么处理？</summary>
+        <p>XML 注释格式为 <code>&lt;!-- 注释内容 --&gt;</code>。本工具默认忽略注释（<code>ignoreComments: true</code>），转换结果中不包含注释信息。</p>
+        <p>关闭「忽略注释」选项后，注释会被保留——但由于 JSON 没有原生注释语法，注释会被放入特殊字段（如 <code>#comment</code>）。多数场景建议保持默认忽略。</p>
+        <p>注意：XML 声明 <code>&lt;?xml version="1.0"?&gt;</code> 不是注释，而是处理指令，本工具会自动跳过，不纳入转换结果。</p>
+      </details>
+
+      <details>
+        <summary>8. 混合内容（既有文本又有子元素）怎么处理？</summary>
+        <p>XML 允许元素同时包含文本和子元素（混合内容），常见于富文本格式（如 XHTML、DocBook）。例如：</p>
+        <pre><code>&lt;p&gt;Hello &lt;strong&gt;world&lt;/strong&gt;!&lt;/p&gt;</code></pre>
+        <p>本工具会将文本放入 <code>#text</code> 字段，子元素作为普通字段：</p>
+        <pre><code>&#123;
+  "p": &#123;
+    "#text": "Hello !",
+    "strong": "world"
+  &#125;
+&#125;</code></pre>
+        <p>注意：混合内容的文本会被拆分（文本节点在子元素前后会分别保留），但合并后可能丢失原始顺序信息。若需保留顺序，建议使用专门的 XML 处理库（如 fast-xml-parser 的 preserveOrder 选项）。</p>
+      </details>
+
+      <details>
+        <summary>9. 与 JSON 转 XML 工具是什么关系？</summary>
+        <p>两者互为反向工具，共同覆盖 XML 与 JSON 的双向转换：</p>
+        <ul>
+          <li><strong>JSON 转 XML</strong>（/json-to-xml）：JSON → XML 单向导出，可配置根节点名、数组项名、属性风格、CDATA 包裹、XML 声明。面向 SOAP 请求构造、SVG 生成、Office 文档生成等场景</li>
+          <li><strong>XML 转 JSON</strong>（/xml-to-json，本工具）：XML → JSON 单向解析，可配置属性前缀、CDATA 处理、空元素表示、类型推断。面向 SOAP 响应解析、RSS 读取、配置文件转换等场景</li>
+        </ul>
+        <p>由于两种格式的语义差异（XML 同名重复 vs JSON 数组、XML 属性 vs JSON 字段），往返转换可能不保证完全一致。建议根据场景选择单向工具。</p>
+      </details>
+
+      <details>
+        <summary>10. 如何防护 XXE 攻击？</summary>
+        <p>XXE（XML External Entity）是利用 XML 外部实体引用读取本地文件 / 发起 SSRF 的攻击手法。例如：</p>
+        <pre><code>&lt;!DOCTYPE foo [&lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;]&gt;
+&lt;foo&gt;&amp;xxe;&lt;/foo&gt;</code></pre>
+        <p>本工具使用浏览器原生 <code>DOMParser</code> 的 <code>text/xml</code> 模式解析，该模式：</p>
+        <ul>
+          <li>不加载外部实体（天然防 XXE）</li>
+          <li>不发起网络请求（防 SSRF）</li>
+          <li>不解析 DTD（防实体爆炸攻击 Billion Laughs）</li>
+        </ul>
+        <p>即使输入含恶意 DOCTYPE 声明，也会被安全忽略，不会读取本地文件或发起网络请求。</p>
+      </details>
+
+      <details>
+        <summary>11. 大文件解析性能如何？</summary>
+        <p>本工具基于浏览器原生 <code>DOMParser</code>，性能接近原生 XML 解析器。常见文件规模参考：</p>
+        <ul>
+          <li><strong>小型配置文件</strong>（&lt; 10KB，如 pom.xml、web.xml）：瞬时完成（&lt; 1ms）</li>
+          <li><strong>中型文档</strong>（10KB - 1MB，如 RSS Feed、SVG）：&lt; 50ms</li>
+          <li><strong>大型文档</strong>（1MB - 10MB，如 SOAP 响应、Office 文档）：100ms - 1s</li>
+          <li><strong>超大型文档</strong>（&gt; 10MB）：可能卡顿，建议改用流式解析（SAX）</li>
+        </ul>
+        <p>由于 <code>DOMParser</code> 会将整个文档加载到内存构建 DOM 树，超大型文件可能占用较多内存。本工具在前端实时转换，不会阻塞主线程太久（&lt; 100ms 的转换不会感知卡顿）。</p>
+      </details>
+
+      <details>
+        <summary>12. 数据会上传到服务器吗？</summary>
+        <p>不会。所有转换在浏览器本地完成，不发起任何网络请求。本工具基于纯原生 TypeScript + 浏览器 DOMParser 实现，无第三方依赖，数据不会离开你的设备。适合处理敏感配置、密钥、个人信息等不可外泄的数据。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+/* ============================================================
+   XML 转 JSON 工具样式（xtj__ 前缀）
+   ============================================================ */
+.xtj__container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.xtj__panel {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  overflow: hidden;
+}
+
+.xtj__panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--card-header, #f8fafc);
+}
+
+.xtj__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text, #1e293b);
+}
+
+.xtj__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.xtj__btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  background: var(--btn-bg, #fff);
+  color: var(--text, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.xtj__btn:hover:not(:disabled) {
+  border-color: var(--primary, #3b82f6);
+  color: var(--primary, #3b82f6);
+}
+
+.xtj__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.xtj__btn--ghost {
+  background: transparent;
+}
+
+.xtj__textarea,
+.xtj__input,
+.xtj__select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  border: none;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--input-bg, #fff);
+  color: var(--text, #1e293b);
+  resize: vertical;
+}
+
+.xtj__textarea {
+  min-height: 220px;
+  line-height: 1.5;
+}
+
+.xtj__input,
+.xtj__select {
+  font-family: inherit;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+.xtj__input:disabled,
+.xtj__select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--code-bg, #f1f5f9);
+}
+
+/* 选项面板 */
+.xtj__options {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+}
+
+.xtj__options-summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text, #1e293b);
+  user-select: none;
+}
+
+.xtj__options-summary:hover {
+  color: var(--primary, #3b82f6);
+}
+
+.xtj__options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 0 1rem 1rem;
+}
+
+.xtj__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.xtj__option-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.xtj__option--checks {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.xtj__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text, #1e293b);
+}
+
+.xtj__check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.xtj__check input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+/* 输出区 */
+.xtj__output {
+  margin: 0;
+  padding: 1rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  background: var(--code-bg, #f8fafc);
+  color: var(--text, #1e293b);
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.xtj__error {
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-left: 3px solid #dc2626;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.xtj__warnings {
+  margin: 0 1rem 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: #fffbeb;
+  color: #b45309;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.xtj__warnings ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.xtj__stats {
+  margin: 0 1rem 1rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--code-bg, #f1f5f9);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.xtj__empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.9rem;
+}
+
+.xtj__notice {
+  padding: 0.6rem 1rem;
+  background: var(--primary-bg, #eff6ff);
+  color: var(--primary, #3b82f6);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.xtj__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #64748b);
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+
+.xtj__links a {
+  color: var(--primary, #3b82f6);
+  text-decoration: none;
+}
+
+.xtj__links a:hover {
+  text-decoration: underline;
+}
+
+/* 暗色模式 */
+:global([data-theme="dark"]) .xtj__panel,
+:global([data-theme="dark"]) .xtj__options {
+  background: var(--card-bg, #1e293b);
+  border-color: var(--border, #334155);
+}
+
+:global([data-theme="dark"]) .xtj__panel-header {
+  background: var(--card-header, #0f172a);
+  border-bottom-color: var(--border, #334155);
+}
+
+:global([data-theme="dark"]) .xtj__textarea,
+:global([data-theme="dark"]) .xtj__input,
+:global([data-theme="dark"]) .xtj__select {
+  background: var(--input-bg, #0f172a);
+  color: var(--text, #e2e8f0);
+  border-bottom-color: var(--border, #334155);
+}
+
+:global([data-theme="dark"]) .xtj__input,
+:global([data-theme="dark"]) .xtj__select {
+  border-color: var(--border, #334155);
+}
+
+:global([data-theme="dark"]) .xtj__btn {
+  background: var(--btn-bg, #1e293b);
+  color: var(--text, #e2e8f0);
+  border-color: var(--border, #334155);
+}
+
+:global([data-theme="dark"]) .xtj__output {
+  background: var(--code-bg, #0f172a);
+  color: var(--text, #e2e8f0);
+}
+
+:global([data-theme="dark"]) .xtj__stats {
+  background: var(--code-bg, #0f172a);
+  color: var(--text-secondary, #94a3b8);
+}
+
+:global([data-theme="dark"]) .xtj__notice {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+:global([data-theme="dark"]) .xtj__links {
+  border-top-color: var(--border, #334155);
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .xtj__options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .xtj__option--checks {
+    gap: 0.6rem;
+  }
+
+  .xtj__textarea {
+    min-height: 160px;
+    font-size: 0.8rem;
+  }
+
+  .xtj__output {
+    font-size: 0.75rem;
+    max-height: 360px;
+  }
+
+  .xtj__actions {
+    gap: 0.4rem;
+  }
+
+  .xtj__btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+  }
+}
+</style>

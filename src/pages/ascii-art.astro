@@ -1,0 +1,159 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import AsciiArtTool from '../components/AsciiArtTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'ASCII Art 文本横幅生成器 - Block/Banner/Small 三字体实时渲染',
+  description:
+    '免费的在线 ASCII Art 文本横幅生成器：输入文本实时渲染为 ASCII Art 大字横幅，内置 Block（5 行方块）、Banner（7 行宽幅）、Small（3 行紧凑）3 种字体，可调节字符间距，支持复制纯文本与下载 .txt 文件。适用于 GitHub README 标题、终端启动横幅、CLI 签名、控制台输出装饰、注释块标题等场景。纯原生 TypeScript 零依赖实现，所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'ASCII Art 文本横幅生成器',
+    url: 'https://toolbox.example.com/ascii-art',
+    description: '在线 ASCII Art 文本横幅生成器，内置 3 种字体，实时渲染，支持复制与下载，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>ASCII Art 文本横幅生成器</h1>
+      <p>
+        输入文本实时渲染为 ASCII Art 大字横幅，内置 Block、Banner、Small 三种字体，可调节字符间距，支持复制纯文本与下载 .txt 文件。适用于 GitHub README 标题、终端启动横幅、CLI 签名等场景，数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <AsciiArtTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 ASCII Art？</summary>
+        <p>ASCII Art（ASCII 艺术）是指仅用 ASCII 字符集中的可打印字符（如 <code>#</code>、<code>*</code>、<code>|</code>、<code>/</code>、<code>\</code>、空格等）拼合成图案的视觉艺术形式。在计算机早期，图形显示能力有限，开发者常用 ASCII Art 在终端、文本文件、注释块中绘制标题、横幅、Logo。即使在现代，ASCII Art 仍广泛用于 GitHub README、CLI 启动横幅、源码注释装饰、终端签名等场景，因其纯文本特性可在任何环境下正确显示。</p>
+      </details>
+      <details>
+        <summary>什么是 FIGlet 与 FIGfont？</summary>
+        <p><strong>FIGlet</strong> 是最经典的 ASCII Art 字体渲染程序，由 Glenn Chappell 与 Ian Chai 于 1991 年开发。<strong>FIGfont</strong>（FIGlet Font）是 FIGlet 使用的字体文件格式（<code>.flf</code>），定义了每个字符的多行 ASCII Art 表示与渲染参数（硬空白、高度、基线等）。FIGlet 社区维护了数百种字体。本工具不依赖外部字体文件，而是内置精简的 Block、Banner、Small 三种字体，每字体覆盖 A-Z、0-9 与常用标点，纯原生 TypeScript 实现。</p>
+      </details>
+      <details>
+        <summary>三种字体各有什么特点？如何选择？</summary>
+        <p>①<strong>Block（5 行高）</strong>：方块风格，字符宽度统一，视觉最整齐，适合终端、README 标题；②<strong>Banner（7 行高）</strong>：宽幅风格，视觉最醒目，适合大标题、启动横幅、文档醒目位置；③<strong>Small（3 行高）</strong>：紧凑风格，占用行数最少，适合多行输出、注释块、CLI 签名。选择建议：标题用 Banner 或 Block，注释与签名用 Small，多行内容用 Small。</p>
+      </details>
+      <details>
+        <summary>为什么输入会自动转大写？</summary>
+        <p>本工具内置的字体仅包含大写字母（A-Z）的字符数据，小写字母无对应字形。为保证渲染结果不出现 <code>?</code> 占位符，输入文本会统一转为大写再渲染。这是 FIGlet 字体的常见设计：大写字母的字形更宽、更易识别，而小写字母的字形差异较小、渲染效果不佳。如需区分大小写，可使用支持大小写的完整 FIGlet 字体（如 FIGlet 的 <code>small.flf</code>）。</p>
+      </details>
+      <details>
+        <summary>未覆盖的字符如何处理？</summary>
+        <p>本工具字体覆盖 A-Z、0-9、空格与常用标点（<code>! ? . , - _ : ; ' " ( ) / \ @ # $ % & * + = ~ ^ &lt; &gt; [ ]</code>）。对于未覆盖的字符（如中文字符、Emoji、Unicode 符号），统一用 <code>?</code> 占位符渲染，占位符的尺寸与字体高度一致，保证输出不变形。建议在输入前将文本中的非 ASCII 字符替换为等价表达（如中文「工具」替换为拼音「GONGJU」）。</p>
+      </details>
+      <details>
+        <summary>字符间距有什么作用？</summary>
+        <p>字符间距指相邻字符之间的空格列数，可选 0、1、2。间距 0 时字符紧挨，视觉最紧凑，但部分字符可能粘连（如 <code>H</code> 与 <code>I</code>）；间距 1（默认）时字符间有 1 列空格分隔，可读性最佳；间距 2 时字符间距更宽，适合大字体或需要强调分隔的场景。多数情况下间距 1 即可。</p>
+      </details>
+      <details>
+        <summary>如何在 GitHub README 中使用？</summary>
+        <p>在工具中输入标题文本（如项目名 <code>MyProject</code>），选择 Block 或 Banner 字体，点击「复制」按钮，将 ASCII Art 粘贴到 README.md 文件顶部，用 <code>```</code> 代码块包裹即可保持等宽对齐。建议在代码块后空一行再写项目描述。GitHub 的 Markdown 渲染器会保留 ASCII Art 的等宽与换行，显示效果与工具预览一致。</p>
+      </details>
+      <details>
+        <summary>如何在终端 / CLI 中使用？</summary>
+        <p>点击「下载」按钮保存为 <code>.txt</code> 文件，或复制后用 <code>echo</code> 命令输出：<code>echo "$(cat banner.txt)"</code>。在 Node.js 脚本中可用 <code>console.log</code> 输出多行字符串：<code>console.log(\`粘贴的 ASCII Art\`)</code>。注意终端需使用等宽字体（如 Consolas、Monaco、Source Code Pro）才能正确对齐，等宽字体下 ASCII Art 显示效果最佳。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有渲染逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* ASCII Art 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .asciitool__seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .asciitool__seg-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    margin-right: 2px;
+  }
+
+  /* 单行输入框样式 */
+  .asciitool__input {
+    width: 100%;
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  /* 输入提示 */
+  .asciitool__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.6;
+  }
+
+  /* 输出区：等宽字体 + 横向滚动 + 反白背景 */
+  .asciitool__output {
+    margin: 0;
+    padding: 16px;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Source Code Pro', 'Menlo', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.25;
+    white-space: pre;
+    overflow-x: auto;
+    background: var(--color-bg-soft, #f6f8fa);
+    border-radius: 8px;
+    color: var(--color-text);
+    tab-size: 4;
+    /* 防止长横幅撑破容器 */
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  /* 统计信息 */
+  .asciitool__stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 移动端响应式：工具栏选项换行 */
+  @media (max-width: 640px) {
+    .asciitool .jsontool__toolbar {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .asciitool__seg-label {
+      font-size: 11px;
+    }
+
+    .asciitool__output {
+      font-size: 10px;
+      padding: 10px;
+      /* 移动端字号更小，减少横向滚动 */
+      line-height: 1.2;
+    }
+
+    .asciitool__hint {
+      font-size: 11px;
+    }
+  }
+</style>

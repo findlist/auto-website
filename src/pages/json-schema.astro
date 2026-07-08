@@ -1,0 +1,449 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import JsonSchemaTool from '../components/JsonSchemaTool.tsx';
+
+// keywords 信息已融入 description 与 FAQ，不单独输出 meta keywords 标签（现代 SEO 已忽略该字段）
+const meta: SiteMeta = {
+  title: 'JSON Schema 校验工具 - 在线 draft-07 数据校验器',
+  description:
+    '免费的在线 JSON Schema 校验工具：基于 draft-07 标准，支持 type/required/properties/items/enum/const/数值范围/字符串长度与 pattern 与 format/数组 uniqueItems/对象 additionalProperties/allOf/anyOf/oneOf/not/$ref 内部引用等核心关键字。实时校验、错误路径定位、关键字分类徽章、中文错误消息，全部在浏览器本地处理，零上传、零追踪、零广告。适用于 API 请求体校验、配置文件验证、表单数据校验、OpenAPI/Swagger schema 验证等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'JSON Schema 校验工具',
+    url: 'https://toolbox.example.com/json-schema',
+    description: '在线 JSON Schema draft-07 校验器，支持核心关键字与 $ref 内部引用，实时校验、错误路径定位，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>JSON Schema 校验工具</h1>
+      <p>
+        基于 draft-07 标准实现的轻量校验器：支持 type、required、properties、items、enum、const、数值范围、字符串约束、数组唯一性、对象额外属性、allOf/anyOf/oneOf/not 组合与 $ref 内部引用。实时校验、错误路径精确定位、关键字分类徽章，适用于 API 请求体校验、配置文件验证、表单数据校验。数据仅在浏览器本地处理，敏感信息不外传。
+      </p>
+    </div>
+
+    <JsonSchemaTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 覆盖长尾搜索意图 -->
+    <section class="jschematool-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 JSON Schema？</summary>
+        <p>JSON Schema 是描述 JSON 数据结构的标准。它本身也是一个 JSON 对象，用关键字（如 type、required、properties）声明数据必须满足的约束。常用于 API 请求 / 响应校验、配置文件验证、表单数据校验、OpenAPI / Swagger 文档定义。当前主流版本为 draft-07（2020-12 为更新草案）。</p>
+      </details>
+      <details>
+        <summary>本工具支持哪些 draft-07 关键字？</summary>
+        <p>支持的类型关键字：type（单值或数组）、enum、const；对象关键字：required、properties、patternProperties、additionalProperties、minProperties、maxProperties；数组关键字：items（单 schema 与元组模式）、additionalItems、minItems、maxItems、uniqueItems；字符串关键字：minLength、maxLength、pattern、format；数值关键字：minimum、maximum、exclusiveMinimum、exclusiveMaximum、multipleOf；组合关键字：allOf、anyOf、oneOf、not；引用关键字：$ref（同文档内部引用，如 #/definitions/User）。</p>
+      </details>
+      <details>
+        <summary>$ref 内部引用如何使用？</summary>
+        <p>在 Schema 顶层定义 <code>definitions</code> 或 <code>$defs</code> 对象，内部通过 <code>{'"$ref": "#/definitions/User"'}</code> 引用。本工具仅支持同文档内部引用（以 #/ 开头的 JSON Pointer），不支持跨文档外部引用。循环引用（如 A 引用 B、B 又引用 A）会被自动检测并跳过，避免无限递归。</p>
+      </details>
+      <details>
+        <summary>format 校验支持哪些格式？</summary>
+        <p>支持 9 种常见 format：date-time（RFC 3339 日期时间）、date（YYYY-MM-DD）、time（HH:MM:SS）、email、uri（含协议头的 URI）、ipv4、ipv6、uuid、hostname。format 校验默认开启，若需关闭可移除 schema 中的 format 字段。注意本工具的 format 校验为启发式正则实现，与 ajv 等严格实现可能在边界用例上存在差异。</p>
+      </details>
+      <details>
+        <summary>与 ajv 有何区别？</summary>
+        <p>ajv 是功能最完整的 JSON Schema 校验库（支持 draft-04 到 2020-12 全部关键字、自定义 format、外部 $ref、异步校验、编译优化等），bundle 体积较大（min 约 130KB+）。本工具为轻量自实现，仅覆盖 draft-07 核心 80% 场景，零依赖、bundle 小（约 10KB），适合在浏览器端快速校验常见 schema，不适合需要严格规范一致性或复杂外部引用的场景。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，Schema 与数据均由 JavaScript 在本地校验，不会发送到任何服务器，敏感信息更安全。</p>
+      </details>
+      <details>
+        <summary>校验失败后如何定位问题？</summary>
+        <p>结果区会列出每条错误：关键字徽章（按类型分类着色）+ 实例路径（JSON Pointer 风格，如 /users/0/email）+ 中文消息。点击错误项可高亮该路径，便于多次比对。点击「复制错误」可导出纯文本错误列表，方便贴到 issue 或文档中。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* JSON Schema 工具专属样式：限定 .jschematool 前缀，避免污染其他页面 */
+  .jschematool {
+    margin: 24px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .jschematool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+  }
+
+  .jschematool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .jschematool__hint-text {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .jschematool__hint-text code {
+    padding: 1px 5px;
+    background: var(--color-bg-code);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .jschematool__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 320px;
+  }
+
+  .jschematool__panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .jschematool__panel:first-child {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .jschematool__label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .jschematool__stat {
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .jschematool__textarea {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    outline: none;
+    resize: vertical;
+    min-height: 280px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    tab-size: 2;
+  }
+
+  .jschematool__textarea::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* ============ 结果区 ============ */
+  .jschematool__result {
+    padding: 14px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    min-height: 80px;
+  }
+
+  .jschematool__result-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .jschematool__result-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .jschematool__badge {
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+  }
+
+  .jschematool__badge--pass {
+    background: rgba(26, 170, 85, 0.14);
+    color: var(--color-success);
+  }
+
+  .jschematool__badge--fail {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--color-error);
+  }
+
+  .jschematool__hint {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    padding: 6px 0;
+  }
+
+  .jschematool__pass {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(26, 170, 85, 0.08);
+    border: 1px solid rgba(26, 170, 85, 0.25);
+    border-radius: var(--radius-sm);
+    color: var(--color-success);
+    font-size: 14px;
+  }
+
+  .jschematool__pass-icon {
+    font-size: 18px;
+  }
+
+  /* ============ 错误列表 ============ */
+  .jschematool__errors {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .jschematool__error-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.06);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    color: var(--color-error);
+    font-weight: 500;
+  }
+
+  .jschematool__error-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .jschematool__error-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s ease;
+    font-size: 13px;
+  }
+
+  .jschematool__error-row:last-child {
+    border-bottom: 0;
+  }
+
+  .jschematool__error-row:hover,
+  .jschematool__error-row--active {
+    background: rgba(239, 68, 68, 0.06);
+  }
+
+  .jschematool__error-row--parse {
+    cursor: default;
+    grid-template-columns: auto 1fr;
+  }
+
+  .jschematool__error-row--parse:hover {
+    background: transparent;
+  }
+
+  /* 关键字徽章：按类型分类着色 */
+  .jschematool__kw {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--color-bg-code);
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  .jschematool__kw--type { background: rgba(43, 108, 255, 0.12); color: #2b6cff; }
+  .jschematool__kw--object { background: rgba(201, 54, 111, 0.12); color: #c9366f; }
+  .jschematool__kw--array { background: rgba(245, 166, 35, 0.14); color: #b97308; }
+  .jschematool__kw--string { background: rgba(26, 170, 85, 0.12); color: #1aaa55; }
+  .jschematool__kw--number { background: rgba(122, 76, 255, 0.12); color: #7a4cff; }
+  .jschematool__kw--logic { background: rgba(89, 89, 89, 0.12); color: var(--color-text-soft); }
+  .jschematool__kw--other { background: var(--color-bg-code); color: var(--color-text-soft); }
+
+  @media (prefers-color-scheme: dark) {
+    .jschematool__kw--type { color: #5b8cff; }
+    .jschematool__kw--object { color: #f0709a; }
+    .jschematool__kw--array { color: #fbbf24; }
+    .jschematool__kw--string { color: #4ade80; }
+    .jschematool__kw--number { color: #a78bfa; }
+  }
+
+  .jschematool__error-path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--color-text);
+    background: var(--color-bg-code);
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .jschematool__error-msg {
+    color: var(--color-text-soft);
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .jschematool__notice {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--color-success);
+    color: #fff;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  .jschematool__copy {
+    flex-shrink: 0;
+  }
+
+  .jschematool__footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* ============ FAQ ============ */
+  .jschematool-faq {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 0 24px;
+  }
+
+  .jschematool-faq h2 {
+    font-size: 22px;
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  .jschematool-faq details {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .jschematool-faq summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    list-style: none;
+    user-select: none;
+  }
+
+  .jschematool-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .jschematool-faq summary::after {
+    content: '+';
+    float: right;
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .jschematool-faq details[open] summary::after {
+    content: '−';
+  }
+
+  .jschematool-faq details p {
+    margin: 0;
+    padding: 0 16px 14px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .jschematool-faq code {
+    padding: 1px 5px;
+    background: var(--color-bg-code);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+
+  /* ============ 移动端适配 ============ */
+  @media (max-width: 768px) {
+    .jschematool__panels {
+      grid-template-columns: 1fr;
+    }
+    .jschematool__panel:first-child {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .jschematool__textarea {
+      min-height: 220px;
+    }
+    .jschematool__toolbar {
+      padding: 10px 12px;
+    }
+    .jschematool__hint-text {
+      display: none;
+    }
+    /* 错误行：移动端改为两行布局（关键字+路径 / 消息） */
+    .jschematool__error-row {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+    }
+    .jschematool__error-msg {
+      grid-column: 1 / -1;
+    }
+    .jschematool__error-path {
+      max-width: 140px;
+    }
+  }
+</style>

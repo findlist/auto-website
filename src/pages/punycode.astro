@@ -1,0 +1,247 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import PunycodeTool from '../components/PunycodeTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'Punycode 编解码工具 - 国际化域名 IDN 与 ACE 转换',
+  description:
+    '免费的在线 Punycode 编解码工具：国际化域名 IDN 与 ACE（xn-- 前缀）双向转换，逐标签处理，展示标签级转换详情与类型（ASCII 保留 / 已编码 / 已解码）。基于 RFC 3492 Bootstring 算法纯原生实现，支持中文域名、多标签、Emoji、ACE 标签长度校验。适用于中文域名注册查询、邮件域名国际化、URL host IDN 转换、DNS 配置调试等场景。所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Punycode 编解码工具',
+    url: 'https://toolbox.example.com/punycode',
+    description: '在线 Punycode 编解码工具，国际化域名 IDN 与 ACE 双向转换，逐标签处理并展示转换详情。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>Punycode 编解码工具</h1>
+      <p>
+        国际化域名 IDN 与 ACE（xn-- 前缀）双向转换，逐标签处理，展示标签级转换详情与类型。基于 RFC 3492 Bootstring 算法纯原生实现，支持中文域名、多标签与 Emoji，数据仅在浏览器本地处理。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <PunycodeTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 Punycode？</summary>
+        <p>Punycode 是一种用于表示国际化域名（IDN，Internationalized Domain Name）的编码方案，定义于 <a href="https://datatracker.ietf.org/doc/html/rfc3492" rel="noopener noreferrer">RFC 3492</a>。它基于 Bootstring 算法，将 Unicode 字符串转换为仅含字母与数字的 ASCII 字符串，使包含中文、日文、韩文、阿拉伯文等非 ASCII 字符的域名能在传统 DNS 系统中解析。例如中文域名「<code>例子.com</code>」经 Punycode 编码后变为「<code>xn--fsqu00a.com</code>」。</p>
+      </details>
+      <details>
+        <summary>什么是 IDN 与 ACE？</summary>
+        <p><strong>IDN</strong>（Internationalized Domain Name）指包含非 ASCII 字符的国际化域名，如「<code>例子.公司</code>」「<code>中文.com</code>」。<strong>ACE</strong>（ASCII Compatible Encoding）指 IDN 经 Punycode 编码后的 ASCII 兼容形式，所有 ACE 标签都以「<code>xn--</code>」前缀标识。DNS 系统只识别 ACE 形式，浏览器在地址栏显示 Unicode 形式供用户阅读，实际查询时使用 ACE 形式。</p>
+      </details>
+      <details>
+        <summary>Punycode 算法的核心原理是什么？</summary>
+        <p>Punycode 使用 Bootstring 算法，核心思路分三步：①<strong>分离基本字符</strong>：所有 ASCII 字符（&lt; 128）直接复制到输出，并以「<code>-</code>」分隔基本部分与编码部分；②<strong>按码点升序编码非基本字符</strong>：从码点 128 开始升序遍历，每找到一个新字符就计算其位置 delta 值；③<strong>base 36 与 bias 自适应</strong>：将 delta 值用 base 36 编码（0-9a-z），并通过 bias 自适应算法调整阈值使输出分布均匀。固定常量为 base=36、tmin=1、tmax=26、skew=38、damp=700、initial_bias=72、initial_n=128。</p>
+      </details>
+      <details>
+        <summary>为什么 ACE 标签以 xn-- 开头？</summary>
+        <p>「<code>xn--</code>」是 <a href="https://datatracker.ietf.org/doc/html/rfc5891" rel="noopener noreferrer">RFC 5891</a> 规定的 ACE 前缀，用于让 DNS 解析器与浏览器识别这是一个 Punycode 编码的国际化标签。前缀本身在 DNS 中是合法的 ASCII 字符串，能被传统 DNS 系统正确处理。当浏览器看到「<code>xn--</code>」开头的标签时，会去掉前缀并执行 Punycode 解码，将结果显示为 Unicode 字符供用户阅读。</p>
+      </details>
+      <details>
+        <summary>ACE 标签长度上限是多少？</summary>
+        <p>根据 <a href="https://datatracker.ietf.org/doc/html/rfc1035" rel="noopener noreferrer">RFC 1035</a>，单个 DNS 标签长度上限为 63 字符（含 <code>xn--</code> 前缀）。本工具在编码时会校验：若编码后 ACE 标签长度超过 63 字符，会返回错误提示，避免生成无法在 DNS 中注册的非法域名。完整域名总长度上限为 253 字符。</p>
+      </details>
+      <details>
+        <summary>本工具如何处理多标签域名？</summary>
+        <p>本工具按点号「<code>.</code>」分隔标签，逐个标签独立判断与转换：①<strong>编码模式</strong>下，含非 ASCII 字符的标签会被 Punycode 编码并加 <code>xn--</code> 前缀，纯 ASCII 标签（如 <code>com</code>、<code>cn</code>）原样保留；②<strong>解码模式</strong>下，以 <code>xn--</code> 开头的标签会被解码为 Unicode，非 ACE 标签原样保留。标签级转换详情面板会显示每个标签的输入、输出与类型（ASCII 保留 / 已编码 / 已解码）。</p>
+      </details>
+      <details>
+        <summary>支持 Emoji 域名吗？</summary>
+        <p>支持编码。Emoji 属于 Unicode 增补平面字符（码点 &gt; 65535），本工具使用 <code>for...of</code> 按码点切分，正确处理代理对。例如「🎉.com」会被编码为「<code>xn--q266a.com</code>」。但需注意：①多数顶级域名注册商不支持 Emoji 域名注册；②即使能编码，浏览器与 DNS 系统对 Emoji 域名的支持也参差不齐；③实际使用中 Emoji 域名常被用于钓鱼与欺诈，建议谨慎。</p>
+      </details>
+      <details>
+        <summary>Punycode 与 Base64/Base32 编码有什么区别？</summary>
+        <p>三者目标场景不同：①<strong>Punycode</strong> 专为国际化域名设计，输出仅含字母数字与连字符（DNS 安全字符），可还原原始 Unicode；②<strong>Base64</strong> 通用二进制→文本编码，含 <code>+/=</code> 等特殊字符，不适合 DNS；③<strong>Base32</strong> 字符集更小（A-Z2-7），适合人工输入与二维码，但膨胀率（60%）高于 Punycode 在域名场景的实际表现。Punycode 是 IDN 场景的事实标准，不可被 Base64/Base32 替代。</p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有编解码逻辑由 JavaScript 在你本地执行，输入内容不会发送到任何服务器。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Punycode 工具专属样式：复用 .jsontool 基础样式，仅补充差异部分 */
+  .punytool__seg {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  /* 单行输入框：比 textarea 更紧凑，适合域名输入 */
+  .punytool__field {
+    margin-bottom: 16px;
+  }
+
+  .punytool__input {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .punytool__input:focus {
+    outline: none;
+    border-color: var(--color-primary, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .punytool__input--output {
+    background-color: var(--color-bg-soft, #f8fafc);
+    color: var(--color-text-soft);
+  }
+
+  /* 标签级转换详情面板 */
+  .punytool__labels {
+    margin-top: 20px;
+    padding: 16px;
+    background-color: var(--color-bg-soft, #f8fafc);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+  }
+
+  .punytool__labels-title {
+    margin: 0 0 12px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .punytool__labels-count {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+    margin-left: 6px;
+  }
+
+  .punytool__labels-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .punytool__label-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 24px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background-color: var(--color-bg, #fff);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    overflow: hidden;
+  }
+
+  .punytool__label-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--color-border, #e2e8f0);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .punytool__label-input,
+  .punytool__label-output {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .punytool__label-arrow {
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  .punytool__label-kind {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background-color: var(--color-border, #e2e8f0);
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  /* 类型徽章配色：ASCII 灰色 / 已编码 蓝色 / 已解码 绿色 */
+  .punytool__label-row--ascii .punytool__label-kind {
+    background-color: rgba(100, 116, 139, 0.15);
+    color: #475569;
+  }
+
+  .punytool__label-row--encoded .punytool__label-kind {
+    background-color: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+  }
+
+  .punytool__label-row--decoded .punytool__label-kind {
+    background-color: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+  }
+
+  /* 移动端响应式：标签行堆叠为两行 */
+  @media (max-width: 640px) {
+    .punytool__label-row {
+      grid-template-columns: 24px 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 4px 8px;
+    }
+
+    .punytool__label-input {
+      grid-column: 2 / 3;
+      grid-row: 1;
+    }
+
+    .punytool__label-arrow {
+      grid-column: 3 / 4;
+      grid-row: 1;
+    }
+
+    .punytool__label-output {
+      grid-column: 2 / 4;
+      grid-row: 2;
+    }
+
+    .punytool__label-kind {
+      grid-column: 1 / 2;
+      grid-row: 2;
+      justify-self: start;
+    }
+
+    .punytool__input {
+      font-size: 13px;
+    }
+  }
+</style>

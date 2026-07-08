@@ -1,0 +1,158 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import UuidTool from '../components/UuidTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'UUID 生成器 - 在线批量生成 UUID v4（RFC 4122）',
+  description:
+    '免费的在线 UUID 生成器：批量生成 RFC 4122 版本 4 UUID，可选连字符与大写格式，一键复制单条或全部。使用原生 crypto.randomUUID，全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'UUID 生成器',
+    url: 'https://toolbox.example.com/uuid',
+    description: '在线 UUID v4 批量生成器，支持连字符与大写格式切换，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero">
+      <h1>UUID 生成器</h1>
+      <p>
+        批量生成 RFC 4122 版本 4 UUID，可选连字符与大写格式。基于浏览器原生 crypto API，所有随机数在你本地生成。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <UuidTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 UUID？它有什么用？</summary>
+        <p>UUID（Universally Unique Identifier，通用唯一识别码）是一个 128 位的标识符，标准格式为 8-4-4-4-12 的十六进制字符串，例如 <code>550e8400-e29b-41d4-a716-446655440000</code>。UUID 在分布式系统中常用于生成全局唯一 ID，无需中心化协调即可保证极低碰撞概率，广泛应用于数据库主键、API 请求追踪、文件命名、会话令牌等场景。</p>
+      </details>
+      <details>
+        <summary>UUID v4 的碰撞概率有多低？</summary>
+        <p>UUID v4 使用随机数生成，版本与变体位占用 6 位，剩余 122 位为随机位。理论上同一 UUID 重复的概率约为 1/2^122，相当于在数十亿年内每秒生成 10 亿个 UUID 仍几乎不会碰撞。在工程实践中可以认为 UUID v4 是唯一的。</p>
+      </details>
+      <details>
+        <summary>为什么用 crypto.randomUUID 而不是 Math.random？</summary>
+        <p><code>crypto.randomUUID</code> 基于浏览器加密安全的伪随机数生成器（CSPRNG），其随机性满足密码学要求，能保证 UUID 的不可预测性。而 <code>Math.random</code> 仅适用于一般用途，随机性较弱，不适合用于安全敏感场景（如会话令牌、防重放攻击）。</p>
+      </details>
+      <details>
+        <summary>带连字符和不带连字符的 UUID 有区别吗？</summary>
+        <p>功能上完全等价。连字符仅为可读性而设，RFC 4122 规范中的 5 段分隔符不参与哈希或比较。某些场景（如作为数据库主键或文件名）为了节省空间会去掉连字符，得到 32 位十六进制字符串。本工具提供开关让你按需切换。</p>
+      </details>
+      <details>
+        <summary>生成的 UUID 会发送到服务器吗？</summary>
+        <p>不会。本工具完全在浏览器内运行，所有 UUID 由你本地的加密随机数生成器产生，不会上传到任何服务器，也不会被记录。</p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* UUID 工具专属样式：复用 .jsontool 基础样式，仅补充列表与表单元素差异 */
+  .uuidtool__field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .uuidtool__select {
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .uuidtool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .uuidtool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* UUID 列表：等宽字体便于识别，hover 高亮 */
+  .uuidtool__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 460px;
+    overflow-y: auto;
+  }
+
+  .uuidtool__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+    transition: background 0.15s ease;
+  }
+
+  .uuidtool__item:hover {
+    background: var(--color-bg-soft);
+  }
+
+  .uuidtool__item:last-child {
+    border-bottom: none;
+  }
+
+  .uuidtool__code {
+    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-size: 14px;
+    color: var(--color-text);
+    word-break: break-all;
+    flex: 1;
+  }
+
+  .uuidtool__copy-one {
+    flex-shrink: 0;
+  }
+
+  .uuidtool__empty {
+    padding: 32px 12px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  /* 移动端：工具栏允许换行，UUID 单条布局自适应 */
+  @media (max-width: 768px) {
+    .uuidtool__item {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .uuidtool__copy-one {
+      align-self: flex-end;
+    }
+  }
+</style>

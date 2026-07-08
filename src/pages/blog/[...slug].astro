@@ -1,0 +1,363 @@
+---
+import BaseLayout, { type SiteMeta } from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { tagToSlug } from '../../utils/tags';
+
+// 静态生成所有博客文章页面，同时计算上一篇/下一篇
+export async function getStaticPaths() {
+  // 按发布日期倒序排列（最新在前）
+  const posts = (await getCollection('blog')).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  );
+  return posts.map((post, index) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      // 上一篇 = 更早发布的文章（列表中位于当前之后）
+      prev: posts[index + 1] ?? null,
+      // 下一篇 = 更晚发布的文章（列表中位于当前之前）
+      next: posts[index - 1] ?? null,
+    },
+  }));
+}
+
+const { post, prev, next } = Astro.props;
+const { Content } = await render(post);
+
+// 格式化日期
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+
+// 文章 URL（用于 JSON-LD 与 canonical）
+const SITE_URL = 'https://toolbox.example.com';
+const articleUrl = `${SITE_URL}/blog/${post.id}`;
+
+// Article JSON-LD：帮助搜索引擎识别文章结构
+const meta: SiteMeta = {
+  title: post.data.title,
+  description: post.data.description,
+  canonical: articleUrl,
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.pubDate.toISOString(),
+    dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+    author: {
+      '@type': 'Organization',
+      name: '工具盒子',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: '工具盒子',
+      url: SITE_URL,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': articleUrl,
+    },
+    keywords: post.data.tags.join(', '),
+    url: articleUrl,
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <article class="container prose blog-article">
+    <header class="blog-article__header">
+      <h1>{post.data.title}</h1>
+      <div class="blog-article__meta">
+        <time datetime={post.data.pubDate.toISOString()}>
+          {formatDate(post.data.pubDate)}
+        </time>
+        {post.data.tags.length > 0 && (
+          <span class="blog-article__tags">
+            {post.data.tags.map((tag) => (
+              <a href={`/blog/tag/${tagToSlug(tag)}`} class="blog-article__tag">#{tag}</a>
+            ))}
+          </span>
+        )}
+      </div>
+    </header>
+
+    <!-- markdown 渲染内容 -->
+    <div class="blog-article__content">
+      <Content />
+    </div>
+
+    <!-- 文末引导：关联工具入口 -->
+    {post.data.relatedTool && (
+      <footer class="blog-article__cta">
+        <p>读完文章，立即上手实践？</p>
+        <a class="btn btn--primary" href={post.data.relatedTool}>
+          打开配套工具 →
+        </a>
+        <a class="btn" href="/blog">返回博客列表</a>
+      </footer>
+    )}
+
+    <!-- 上一篇 / 下一篇导航：提升文章间跳转率与停留时长 -->
+    {(prev || next) && (
+      <nav class="post-nav" aria-label="文章导航">
+        {prev ? (
+          <a class="post-nav__link post-nav__link--prev" href={`/blog/${prev.id}`}>
+            <span class="post-nav__label">← 上一篇</span>
+            <span class="post-nav__title">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span class="post-nav__link post-nav__link--placeholder" aria-hidden="true" />
+        )}
+        {next ? (
+          <a class="post-nav__link post-nav__link--next" href={`/blog/${next.id}`}>
+            <span class="post-nav__label">下一篇 →</span>
+            <span class="post-nav__title">{next.data.title}</span>
+          </a>
+        ) : (
+          <span class="post-nav__link post-nav__link--placeholder" aria-hidden="true" />
+        )}
+      </nav>
+    )}
+  </article>
+</BaseLayout>
+
+<style is:global>
+  /* 博客详情页样式：扩展 prose 以适配 markdown 渲染 */
+  .blog-article {
+    max-width: 760px;
+    padding-top: 16px;
+  }
+
+  .blog-article__header {
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .blog-article__header h1 {
+    font-size: 32px;
+    line-height: 1.3;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .blog-article__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 13.5px;
+    color: var(--color-text-muted);
+  }
+
+  .blog-article__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .blog-article__tag {
+    color: var(--color-primary);
+    background: rgba(43, 108, 255, 0.08);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .blog-article__tag:hover {
+    background: rgba(43, 108, 255, 0.18);
+  }
+
+  /* markdown 内容渲染样式 */
+  .blog-article__content h2 {
+    font-size: 22px;
+    margin: 36px 0 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .blog-article__content h3 {
+    font-size: 18px;
+    margin: 28px 0 10px;
+    font-weight: 600;
+  }
+
+  .blog-article__content p {
+    margin: 0 0 16px;
+    line-height: 1.8;
+    color: var(--color-text);
+  }
+
+  .blog-article__content ul,
+  .blog-article__content ol {
+    padding-left: 24px;
+    margin: 0 0 16px;
+  }
+
+  .blog-article__content li {
+    margin-bottom: 8px;
+    line-height: 1.75;
+  }
+
+  .blog-article__content code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-bg-code);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--color-primary);
+  }
+
+  .blog-article__content pre {
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 0 0 18px;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+
+  .blog-article__content pre code {
+    background: none;
+    padding: 0;
+    color: var(--color-text);
+    font-size: inherit;
+  }
+
+  .blog-article__content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 18px;
+    font-size: 14px;
+  }
+
+  .blog-article__content th,
+  .blog-article__content td {
+    border: 1px solid var(--color-border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .blog-article__content th {
+    background: var(--color-bg-soft);
+    font-weight: 600;
+  }
+
+  .blog-article__content blockquote {
+    border-left: 3px solid var(--color-primary);
+    margin: 0 0 16px;
+    padding: 8px 16px;
+    background: var(--color-bg-soft);
+    color: var(--color-text-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .blog-article__content blockquote p {
+    margin: 0;
+  }
+
+  .blog-article__content strong {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .blog-article__content a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* 文末 CTA */
+  .blog-article__cta {
+    margin-top: 48px;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    text-align: center;
+  }
+
+  .blog-article__cta p {
+    margin: 0 0 16px;
+    font-size: 15px;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .blog-article__cta .btn {
+    margin: 0 6px 8px;
+  }
+
+  /* 上一篇 / 下一篇导航 */
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .post-nav__link {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: inherit;
+    transition: all 0.18s ease;
+  }
+
+  .post-nav__link:hover:not(.post-nav__link--placeholder) {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .post-nav__link--next {
+    text-align: right;
+  }
+
+  .post-nav__link--placeholder {
+    visibility: hidden;
+  }
+
+  .post-nav__label {
+    font-size: 12.5px;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .post-nav__title {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  @media (max-width: 600px) {
+    .post-nav {
+      grid-template-columns: 1fr;
+    }
+    .post-nav__link--next {
+      text-align: left;
+    }
+    .post-nav__link--placeholder {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .blog-article__header h1 {
+      font-size: 26px;
+    }
+    .blog-article__content pre {
+      font-size: 12.5px;
+      padding: 14px;
+    }
+  }
+</style>
