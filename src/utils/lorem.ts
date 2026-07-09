@@ -291,9 +291,9 @@ function generateColor(): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-/** 生成日期（YYYY-MM-DD，范围 2000-01-01 至 2025-12-31） */
+/** 生成日期（YYYY-MM-DD，范围 2000-01-01 至当前年份 12-31） */
 function generateDate(): string {
-  const year = randomIntRange(2000, 2025);
+  const year = randomIntRange(2000, new Date().getFullYear());
   const month = randomIntRange(1, 12);
   const day = randomIntRange(1, 28); // 用 28 避免月份天数差异
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;

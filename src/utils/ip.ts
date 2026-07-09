@@ -281,7 +281,8 @@ export function parseIp(input: string): { ok: true; info: IpInfo } | { ok: false
     return { ok: true, info: makeIpInfo(v, 6) };
   }
   // IPv4
-  const octets = trimmed.split('.').map((n) => parseInt(n, 10));
+  // 校验每段为纯数字，避免 parseInt("0x1f",10)=0 等隐式解析导致非法 IP 被接受
+  const octets = trimmed.split('.').map((n) => (/^\d+$/.test(n) ? parseInt(n, 10) : NaN));
   if (octets.length !== 4 || octets.some((n) => isNaN(n) || n < 0 || n > 255)) {
     return { ok: false, error: '无效的 IPv4 地址（应为 4 个 0-255 数字，点分十进制）' };
   }

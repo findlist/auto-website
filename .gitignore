@@ -36,6 +36,9 @@ _diag_log.txt
 # Playwright 浏览器缓存
 .pw-browsers/
 
+# Lighthouse 报告产物
+lighthouse-*.report.*
+
 # IDE/工具目录
 .trae/
 .workbuddy/

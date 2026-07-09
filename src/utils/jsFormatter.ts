@@ -258,7 +258,7 @@ function tokenize(src: string): { tokens: Token[]; error: string } {
       // 收集 flags（gimsuyd）
       end++; // 跳过闭合 /
       let flagsEnd = end;
-      while (flagsEnd < len && /[gimsuy]/.test(src[flagsEnd])) flagsEnd++;
+      while (flagsEnd < len && /[gimsuyd]/.test(src[flagsEnd])) flagsEnd++;
       pushSignificant({ type: 'regex', value: src.slice(i, flagsEnd) });
       i = flagsEnd;
       continue;

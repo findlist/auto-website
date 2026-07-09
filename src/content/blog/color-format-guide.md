@@ -157,7 +157,7 @@ function rgbToCmyk({ r, g, b }) {
 }
 ```
 
-HSL → RGB、HSV → RGB 涉及 6 个色相区间分段函数，代码较长，本文从略。完整实现可参考[配套工具的源码](https://toolbox.example.com/color)（DevTools 即可查看）。
+HSL → RGB、HSV → RGB 涉及 6 个色相区间分段函数，代码较长，本文从略。完整实现可参考[配套工具的源码](/color)（DevTools 即可查看）。
 
 ## 五种和谐配色方案
 

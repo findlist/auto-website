@@ -756,28 +756,33 @@ function evaluateOperand(node: unknown, operand: FilterOperand): unknown {
   return result.length > 0 ? result[0] : undefined;
 }
 
-/** 宽松相等：处理数字与字符串数字的比较 */
+/** 将字符串解析为数字：空字符串与非数字字符串（如 "123abc"）返回 NaN */
+function toNumber(value: string): number {
+  return value.trim() === '' ? NaN : Number(value);
+}
+
+/** 宽松相等：数字与数字字符串按数值比较，其余按严格相等 */
 function looseEquals(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a === null || a === undefined) return b === null || b === undefined;
   if (b === null || b === undefined) return false;
   // 数字与字符串数字比较：转为数字后比较
   if (typeof a === 'number' && typeof b === 'string') {
-    const n = parseFloat(b);
+    const n = toNumber(b);
     return !isNaN(n) && a === n;
   }
   if (typeof b === 'number' && typeof a === 'string') {
-    const n = parseFloat(a);
+    const n = toNumber(a);
     return !isNaN(n) && b === n;
   }
-  // eslint-disable-next-line eqeqeq
-  return a == b;
+  // 其他类型组合按严格相等（避免 false == 0 等非预期匹配）
+  return false;
 }
 
 /** 数值比较：返回 -1/0/1；非数字场景返回 0 表示无法比较 */
 function compareNumeric(a: unknown, b: unknown): number {
-  const na = typeof a === 'number' ? a : typeof a === 'string' ? parseFloat(a) : NaN;
-  const nb = typeof b === 'number' ? b : typeof b === 'string' ? parseFloat(b) : NaN;
+  const na = typeof a === 'number' ? a : typeof a === 'string' ? toNumber(a) : NaN;
+  const nb = typeof b === 'number' ? b : typeof b === 'string' ? toNumber(b) : NaN;
   if (isNaN(na) || isNaN(nb)) return 0;
   if (na < nb) return -1;
   if (na > nb) return 1;
