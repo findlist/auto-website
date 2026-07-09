@@ -83,7 +83,7 @@ function detectYamlTypeTraps(text: string): YamlWarning[] {
   // 日期正则：YYYY-MM-DD
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-  lines.forEach((line, idx) => {
+  lines.forEach((line) => {
     // 跳过注释行与空行
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) return;

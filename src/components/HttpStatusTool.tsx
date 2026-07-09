@@ -6,7 +6,6 @@ import {
   searchStatuses,
   getCategoryMeta,
   getStatusStats,
-  type HttpStatus,
   type StatusCategory,
 } from '../utils/httpStatus';
 

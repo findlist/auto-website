@@ -1,14 +1,11 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { copyText } from '../utils/clipboard';
 import {
   verifyJwt,
-  CLAIM_DESC,
-  SAMPLE_HS256_TOKEN,
   SAMPLE_HMAC_KEY,
   MAX_JWT_INPUT_LENGTH,
   type JwtVerifyResult,
-  type ClaimCheck,
 } from '../utils/jwtVerify';
 import { ALG_MAP, ALG_LIST, type JwtAlg, type AlgCategory } from '../utils/jwtSign';
 

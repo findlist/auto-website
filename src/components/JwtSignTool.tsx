@@ -9,7 +9,6 @@ import {
   ALG_MAP,
   checkHmacKeyLength,
   getHmacKeyBits,
-  SAMPLE_HEADER,
   SAMPLE_PAYLOAD,
   SAMPLE_HMAC_KEY,
   CLAIM_DESC,

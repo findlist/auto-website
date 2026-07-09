@@ -144,7 +144,7 @@ function decodeHex(input: string): Result {
   // 每 2 字符解析为一个字节
   const bytes = new Uint8Array(cleaned.length / 2);
   for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(cleaned.substr(i * 2, 2), 16);
+    bytes[i] = parseInt(cleaned.substring(i * 2, i * 2 + 2), 16);
   }
 
   // 尝试 UTF-8 解码，非法字节序列给出友好错误

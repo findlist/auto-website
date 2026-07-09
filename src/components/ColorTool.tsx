@@ -432,7 +432,6 @@ export default function ColorTool() {
   // 调色板（5 种和谐方案，仅在有颜色时生成）
   const palettes = useMemo(() => {
     if (!currentRgb) return null;
-    const hsl = rgbToHsl(currentRgb);
     const types: HarmonyType[] = ['complementary', 'analogous', 'triadic', 'splitComplement', 'tetradic'];
     return types.map((t) => ({
       type: t,

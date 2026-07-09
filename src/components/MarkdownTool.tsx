@@ -48,7 +48,7 @@ function sanitizeUrl(url: string): string {
 function parseInline(text: string): string {
   // 用占位符先提取行内代码，避免被后续规则误伤
   const codePlaceholders: string[] = [];
-  text = text.replace(/(`+)([\s\S]+?)\1/g, (_, quotes, code) => {
+  text = text.replace(/(`+)([\s\S]+?)\1/g, (_, _quotes, code) => {
     const idx = codePlaceholders.length;
     // 行内代码内不做任何解析，仅保留原样（已转义）
     codePlaceholders.push(`<code>${code}</code>`);
