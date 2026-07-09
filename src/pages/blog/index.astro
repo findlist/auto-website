@@ -2,6 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../../utils/tags';
+import { getSiteUrl } from '../../utils/site';
 
 // 获取所有博客文章，按发布日期倒序排列
 const posts = (await getCollection('blog')).sort(
@@ -12,8 +13,8 @@ const posts = (await getCollection('blog')).sort(
 const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：集中化获取，未配置时构建报错
+const SITE_URL = getSiteUrl(Astro.site);
 
 // 博客发布者实体：与首页 Organization 保持一致，形成站点级实体呼应
 const orgEntity = {

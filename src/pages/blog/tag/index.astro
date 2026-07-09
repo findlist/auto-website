@@ -2,6 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../../../utils/tags';
+import { getSiteUrl } from '../../../utils/site';
 
 // 获取所有文章
 const posts = await getCollection('blog');
@@ -26,8 +27,8 @@ const tags = Array.from(tagStats.values()).sort((a, b) => {
   return a.name.localeCompare(b.name, 'zh-CN');
 });
 
-// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：集中化获取，未配置时构建报错
+const SITE_URL = getSiteUrl(Astro.site);
 
 const meta: SiteMeta = {
   title: '全部标签 - 技术博客',

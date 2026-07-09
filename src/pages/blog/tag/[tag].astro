@@ -2,6 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug, collectTags } from '../../../utils/tags';
+import { getSiteUrl } from '../../../utils/site';
 
 // 为每个标签 slug 生成一个静态筛选页，对齐 tagToSlug 体系，避免链接 404
 export async function getStaticPaths() {
@@ -41,8 +42,8 @@ const { tagName, tagSlug, posts, allTags } = Astro.props;
 const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：集中化获取，未配置时构建报错
+const SITE_URL = getSiteUrl(Astro.site);
 const tagUrl = `${SITE_URL}/blog/tag/${tagSlug}`;
 
 const meta: SiteMeta = {
