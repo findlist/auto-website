@@ -48,7 +48,7 @@ const meta: SiteMeta = {
       </details>
       <details>
         <summary>支持的 5 种 Hex 输出格式分别是什么？</summary>
-        <p>本工具在编码模式下支持 5 种输出格式：①<strong>连续</strong>：<code>48656c6c6f</code>，无分隔，最紧凑；②<strong>空格分隔</strong>：<code>48 65 6c 6c 6f</code>，字节间空格，便于阅读；③<strong>0x 前缀</strong>：<code>0x48 0x65 0x6c 0x6c 0x6f</code>，C/编程语言风格；④<strong>C 数组</strong>：<code>{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }</code>，可直接粘贴到 C/C++ 代码；⑤<strong>Hex dump</strong>：xxd 风格，每行 16 字节，含偏移量、hex 部分、ASCII 部分，适合查看二进制文件内容。</p>
+        <p>本工具在编码模式下支持 5 种输出格式：①<strong>连续</strong>：<code>48656c6c6f</code>，无分隔，最紧凑；②<strong>空格分隔</strong>：<code>48 65 6c 6c 6f</code>，字节间空格，便于阅读；③<strong>0x 前缀</strong>：<code>0x48 0x65 0x6c 0x6c 0x6f</code>，C/编程语言风格；④<strong>C 数组</strong>：<code>{'{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }'}</code>，可直接粘贴到 C/C++ 代码；⑤<strong>Hex dump</strong>：xxd 风格，每行 16 字节，含偏移量、hex 部分、ASCII 部分，适合查看二进制文件内容。</p>
       </details>
       <details>
         <summary>Hex dump 格式是什么样的？</summary>
@@ -56,7 +56,7 @@ const meta: SiteMeta = {
       </details>
       <details>
         <summary>解码时支持哪些输入格式？</summary>
-        <p>本工具解码时自动识别多种格式，无需手动切换：①连续 hex 字符串 <code>48656c6c6f</code>；②空格分隔 <code>48 65 6c 6c 6f</code>；③0x 前缀 <code>0x48 0x65</code>；④C 数组 <code>{ 0x48, 0x65 }</code>；⑤Hex dump 格式（自动提取每行的 hex 字节部分，忽略偏移量与 ASCII）；⑥含 C 块注释 <code>/* ... */</code>、C 行注释 <code>//</code>、Shell/Python 行注释 <code>#</code> 的输入；⑦含逗号、分号、冒号、管道符等分隔符的输入。奇数长度自动在前补 0，容忍用户漏输前导 0。</p>
+        <p>本工具解码时自动识别多种格式，无需手动切换：①连续 hex 字符串 <code>48656c6c6f</code>；②空格分隔 <code>48 65 6c 6c 6f</code>；③0x 前缀 <code>0x48 0x65</code>；④C 数组 <code>{'{ 0x48, 0x65 }'}</code>；⑤Hex dump 格式（自动提取每行的 hex 字节部分，忽略偏移量与 ASCII）；⑥含 C 块注释 <code>/* ... */</code>、C 行注释 <code>//</code>、Shell/Python 行注释 <code>#</code> 的输入；⑦含逗号、分号、冒号、管道符等分隔符的输入。奇数长度自动在前补 0，容忍用户漏输前导 0。</p>
       </details>
       <details>
         <summary>Hex 编码支持中文与 Emoji 吗？</summary>

@@ -574,7 +574,7 @@ const features = [
 
   <!-- 工具筛选逻辑：原生实现，不引入框架，不增加 JS bundle（Astro 内联打包） -->
   <script>
-    const searchInput = document.getElementById('tools-search');
+    const searchInput = document.getElementById('tools-search') as HTMLInputElement | null;
     const grid = document.getElementById('tools-grid');
     const empty = document.getElementById('tools-empty');
     const filterButtons = document.querySelectorAll('.tools__filter');
@@ -585,7 +585,7 @@ const features = [
 
       // 根据当前分类与搜索词过滤工具卡片
       const applyFilter = () => {
-        const cards = grid.querySelectorAll('.tool-card');
+        const cards = grid.querySelectorAll<HTMLElement>('.tool-card');
         let visibleCount = 0;
         cards.forEach((card) => {
           const cat = card.getAttribute('data-category') || '';

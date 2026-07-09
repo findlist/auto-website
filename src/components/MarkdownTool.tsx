@@ -174,7 +174,8 @@ function parseBlocks(markdown: string): string {
     }
 
     // 水平线 --- 或 *** 或 ___
-    if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/.test(line)) {
+    // 匹配水平线：3 个以上相同的 - * _，中间可有空格（字符类中不能用反向引用 \1，改用 (?:\s*\1){2,}）
+    if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
       html.push('<hr />');
       i++;
       continue;

@@ -42,7 +42,8 @@ import {
  */
 
 /** 五段元数据配置 */
-const PART_LABELS: Array<{ key: keyof ParsedJwe['parts']; name: string; desc: string }> = [
+// parts 为可选字段，用 NonNullable 去除 undefined 后取 keyof，避免推断为 never
+const PART_LABELS: Array<{ key: keyof NonNullable<ParsedJwe['parts']>; name: string; desc: string }> = [
   { key: 'protectedHeader', name: 'Protected Header', desc: 'base64url 编码的 JOSE 头部' },
   { key: 'encryptedKey', name: 'Encrypted Key', desc: '加密的 CEK（dir 算法时为空）' },
   { key: 'iv', name: 'IV', desc: '初始化向量（96 位）' },

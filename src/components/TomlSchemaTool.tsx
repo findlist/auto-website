@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { parse as tomlParse, TomlDate } from 'smol-toml';
+import { parse as tomlParse, TomlDate, TomlError } from 'smol-toml';
 import { copyText } from '../utils/clipboard';
 import { validate, type ValidationError } from '../utils/jsonSchema';
 

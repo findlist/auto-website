@@ -393,7 +393,8 @@ export function exportScale(
   name: string,
   format: ExportFormat
 ): string {
-  const hexMap = scale.map(({ level, rgb }) => ({ level, hex: rgbToHex(rgb) }));
+  // 保留 rgb 供 ios 格式使用（其他格式仅取 level/hex，多余属性自动忽略）
+  const hexMap = scale.map(({ level, rgb }) => ({ level, hex: rgbToHex(rgb), rgb }));
   switch (format) {
     case 'css':
       return `:root {\n${hexMap
