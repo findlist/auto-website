@@ -36,7 +36,7 @@ const PRESETS: Preset[] = [
   {
     key: 'url',
     label: '网址',
-    value: 'https://toolbox.example.com/json',
+    value: 'https://website.niuzi.asia/json',
     hint: 'URL 二维码最常见，扫码即可跳转',
   },
   {

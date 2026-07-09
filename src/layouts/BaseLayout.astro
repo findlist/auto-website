@@ -44,7 +44,25 @@ const siteLd = {
 };
 // 合并站点级与页面级 JSON-LD，统一以数组形式输出
 const pageLd = meta.jsonLd ? (Array.isArray(meta.jsonLd) ? meta.jsonLd : [meta.jsonLd]) : [];
-const allLd = [siteLd, ...pageLd];
+
+// 集中修正 WebApplication 的 url：历史工具页硬编码了占位域名 toolbox.example.com，
+// 线上 URL 确定后（astro.config.mjs 的 site 已改为 website.niuzi.asia），在此统一覆盖。
+// 仅当 url 缺失或仍指向占位域名时用 canonical 覆盖，已正确配置的页面（如 blog 已动态化）不受影响。
+const PLACEHOLDER_ORIGIN = 'https://toolbox.example.com';
+const normalizedPageLd = pageLd.map((ld) => {
+  if (
+    ld &&
+    typeof ld === 'object' &&
+    (ld as Record<string, unknown>)['@type'] === 'WebApplication'
+  ) {
+    const url = (ld as Record<string, unknown>).url;
+    if (!url || (typeof url === 'string' && url.startsWith(PLACEHOLDER_ORIGIN))) {
+      return { ...ld, url: canonical };
+    }
+  }
+  return ld;
+});
+const allLd = [siteLd, ...normalizedPageLd];
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -96,10 +114,11 @@ const allLd = [siteLd, ...pageLd];
             <span>工具盒子</span>
           </a>
           <nav class="site-header__nav" aria-label="主导航">
-            <a href="/">首页</a>
-            <a href="/#tools-list">工具</a>
-            <a href="/blog">博客</a>
-            <a href="/about">关于</a>
+            {/* aria-current 标记当前页面，配合 CSS 提供激活态视觉反馈 */}
+            <a href="/" aria-current={Astro.url.pathname === '/' ? 'page' : undefined}>首页</a>
+            <a href="/#tools-list" aria-current={Astro.url.pathname.startsWith('/json') || Astro.url.pathname.startsWith('/base') || Astro.url.pathname.startsWith('/hash') || Astro.url.pathname.startsWith('/jwt') || Astro.url.pathname.startsWith('/regex') ? 'page' : undefined}>工具</a>
+            <a href="/blog" aria-current={Astro.url.pathname.startsWith('/blog') ? 'page' : undefined}>博客</a>
+            <a href="/about" aria-current={Astro.url.pathname === '/about' ? 'page' : undefined}>关于</a>
           </nav>
         </div>
       </header>
