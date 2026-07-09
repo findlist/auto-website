@@ -658,6 +658,14 @@ export async function decryptJwe(
           error: 'PBES2 算法要求 Protected Header 包含 p2c（正整数迭代次数）字段',
         };
       }
+      // p2c 上限 1000 万，防止恶意 JWE 设超大迭代次数导致 PBKDF2 耗尽 CPU（DoS，参考 RFC 7518 4.8.1.2）
+      const PBES2_MAX_ITERATIONS = 10_000_000;
+      if (p2c > PBES2_MAX_ITERATIONS) {
+        return {
+          ok: false,
+          error: `PBES2 迭代次数 p2c=${p2c} 超过上限 ${PBES2_MAX_ITERATIONS}，拒绝执行以防 DoS`,
+        };
+      }
       let saltBytes: Uint8Array;
       try {
         saltBytes = base64urlDecode(p2s);

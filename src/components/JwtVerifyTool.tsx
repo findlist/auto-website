@@ -10,7 +10,7 @@ import {
   type JwtVerifyResult,
   type ClaimCheck,
 } from '../utils/jwtVerify';
-import { ALG_MAP, type JwtAlg, type AlgCategory } from '../utils/jwtSign';
+import { ALG_MAP, ALG_LIST, type JwtAlg, type AlgCategory } from '../utils/jwtSign';
 
 /**
  * JWT 签名验证工具
@@ -100,8 +100,8 @@ export default function JwtVerifyTool() {
   const [rsaKeyInput, setRsaKeyInput] = useState<string>('');
   // EC 公钥输入（PEM 或 JWK）
   const [ecKeyInput, setEcKeyInput] = useState<string>('');
-  // 算法白名单开关（开启时强制校验 token.alg 与检测到的 alg 一致）
-  const [enforceAlgWhitelist, setEnforceAlgWhitelist] = useState<boolean>(true);
+  // 期望算法（用户明确指定，防御算法混淆攻击；'off' 表示信任 token 声明的 alg）
+  const [expectedAlgSelect, setExpectedAlgSelect] = useState<JwtAlg | 'off'>('off');
 
   // 验签结果
   const [verifyResult, setVerifyResult] = useState<JwtVerifyResult | null>(null);
@@ -148,8 +148,8 @@ export default function JwtVerifyTool() {
       } else if (algCategory === 'ec') {
         keyInput = ecKeyInput;
       }
-      // 算法白名单：若开启，传入 expectedAlg
-      const expectedAlg = enforceAlgWhitelist ? detected.alg : undefined;
+      // 期望算法校验：用户明确指定期望算法时传入，防御算法混淆攻击（如 RS256 被篡改为 HS256）
+      const expectedAlg = expectedAlgSelect === 'off' ? undefined : expectedAlgSelect;
       const result = await verifyJwt(tokenInput, keyInput, keyFormat, expectedAlg);
       setVerifyResult(result);
       if (result.ok) {
@@ -167,7 +167,7 @@ export default function JwtVerifyTool() {
     } finally {
       setVerifying(false);
     }
-  }, [detected, algCategory, hmacKey, hmacKeyFormat, rsaKeyInput, ecKeyInput, tokenInput, enforceAlgWhitelist]);
+  }, [detected, algCategory, hmacKey, hmacKeyFormat, rsaKeyInput, ecKeyInput, tokenInput, expectedAlgSelect]);
 
   /** 载入示例（HS256 token + 对应密钥） */
   const handleSample = useCallback(async () => {
@@ -390,19 +390,26 @@ export default function JwtVerifyTool() {
       {/* 密钥输入 */}
       {keyInputPanel && <div className="jwv__section">{keyInputPanel}</div>}
 
-      {/* 算法白名单开关 */}
+      {/* 期望算法校验（防御算法混淆攻击） */}
       {detected.alg && (
         <div className="jwv__section">
-          <label className="jwv__checkbox">
-            <input
-              type="checkbox"
-              checked={enforceAlgWhitelist}
-              onChange={(e) => setEnforceAlgWhitelist(e.target.checked)}
-            />
-            <span>强制算法白名单（推荐开启）：若 token 声明的 alg 与检测到的不一致，直接拒绝</span>
-          </label>
+          <label htmlFor="jwv-expected-alg" className="jwv__label">期望算法校验</label>
+          <select
+            id="jwv-expected-alg"
+            className="jwv__select"
+            value={expectedAlgSelect}
+            onChange={(e) => setExpectedAlgSelect(e.target.value as JwtAlg | 'off')}
+          >
+            <option value="off">不校验（信任 token 声明的 alg）</option>
+            {ALG_LIST.filter((a) => a.alg !== 'none').map((a) => (
+              <option key={a.alg} value={a.alg}>
+                {a.alg}（{a.category === 'hmac' ? 'HMAC 对称' : a.category === 'rsa' ? 'RSA 非对称' : 'ECDSA 椭圆曲线'}）
+              </option>
+            ))}
+          </select>
           <p className="jwv__key-hint">
-            防御 alg=none 攻击：攻击者可能把 Header 中的 <code>alg</code> 改为 <code>none</code> 以绕过验签。
+            防御算法混淆攻击：攻击者可能把 <code>RS256</code> 篡改为 <code>HS256</code>，并用 RSA 公钥当 HMAC 密钥验签以伪造令牌。
+            选择你期望的算法，若 token 声明的 alg 不匹配将直接拒绝。<code>none</code> 算法已被独立拦截，无需在此设置。
           </p>
         </div>
       )}

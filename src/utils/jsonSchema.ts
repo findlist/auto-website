@@ -205,13 +205,20 @@ function validateNode(
       errors.push({ path, message: `字符串长度 ${[...instance].length} 大于 maxLength ${sch.maxLength}`, keyword: 'maxLength' });
     }
     if (typeof sch.pattern === 'string') {
-      try {
-        const re = new RegExp(sch.pattern);
-        if (!re.test(instance)) {
-          errors.push({ path, message: `字符串不匹配 pattern ${sch.pattern}`, keyword: 'pattern' });
+      // 限制 pattern 与被匹配字符串长度，防御恶意回溯型正则导致 ReDoS
+      if (sch.pattern.length > 1000) {
+        errors.push({ path, message: 'pattern 长度超过 1000 字符，已跳过校验以防 ReDoS', keyword: 'pattern' });
+      } else if (instance.length > 100000) {
+        errors.push({ path, message: '字符串长度超过 100000，已跳过 pattern 校验以防 ReDoS', keyword: 'pattern' });
+      } else {
+        try {
+          const re = new RegExp(sch.pattern);
+          if (!re.test(instance)) {
+            errors.push({ path, message: `字符串不匹配 pattern ${sch.pattern}`, keyword: 'pattern' });
+          }
+        } catch {
+          errors.push({ path, message: `pattern 非法：${sch.pattern}`, keyword: 'pattern' });
         }
-      } catch {
-        errors.push({ path, message: `pattern 非法：${sch.pattern}`, keyword: 'pattern' });
       }
     }
     if (typeof sch.format === 'string' && FORMAT_VALIDATORS[sch.format]) {
@@ -301,6 +308,8 @@ function validateNode(
       // patternProperties：正则匹配键名
       if (patternProperties) {
         for (const [pat, sub] of Object.entries(patternProperties)) {
+          // 限制正则与键名长度，防御恶意回溯型正则导致 ReDoS
+          if (pat.length > 1000 || key.length > 100000) continue;
           try {
             if (new RegExp(pat).test(key)) {
               matched = true;

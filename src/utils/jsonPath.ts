@@ -750,6 +750,8 @@ function evaluateCompare(node: unknown, expr: { op: string; left: FilterOperand;
     case '=~':
       // 正则匹配：右操作数应为字符串形式的正则
       if (typeof rightVal !== 'string' || typeof leftVal !== 'string') return false;
+      // 限制正则与被匹配字符串长度，防御恶意回溯型正则导致 ReDoS
+      if (rightVal.length > 1000 || leftVal.length > 100000) return false;
       try {
         const regex = new RegExp(rightVal);
         return regex.test(leftVal);
