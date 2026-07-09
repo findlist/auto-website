@@ -223,7 +223,9 @@ function prettySerialize(node: Node, indent: string, opts: PrettyOptions, lines:
     } else if (child.nodeType === Node.TEXT_NODE) {
       const text = (child.textContent || '').replace(/\s+/g, ' ');
       if (text.trim() !== '' || opts.preserveWhitespace) {
-        lines.push(indent + text.trim() + (opts.preserveWhitespace ? text : ''));
+        // preserveWhitespace 模式保留折叠后的空白边界，否则 trim；避免 trim+原文导致内容重复
+        const display = opts.preserveWhitespace ? text : text.trim();
+        lines.push(indent + display);
       }
     } else if (child.nodeType === Node.COMMENT_NODE) {
       if (opts.preserveComments) {

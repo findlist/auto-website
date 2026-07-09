@@ -174,20 +174,20 @@ export default function XmlToJsonTool() {
   }, []);
 
   return (
-    <div class="xtj__container">
+    <div className="xtj__container">
       {/* 输入区 */}
-      <div class="xtj__panel">
-        <div class="xtj__panel-header">
-          <label for="xtj-input" class="xtj__label">XML 输入</label>
-          <div class="xtj__actions">
-            <button type="button" class="xtj__btn xtj__btn--ghost" onClick={handleExample}>示例</button>
-            <button type="button" class="xtj__btn xtj__btn--ghost" onClick={handleClear}>清空</button>
+      <div className="xtj__panel">
+        <div className="xtj__panel-header">
+          <label htmlFor="xtj-input" className="xtj__label">XML 输入</label>
+          <div className="xtj__actions">
+            <button type="button" className="xtj__btn xtj__btn--ghost" onClick={handleExample}>示例</button>
+            <button type="button" className="xtj__btn xtj__btn--ghost" onClick={handleClear}>清空</button>
           </div>
         </div>
         <textarea
           id="xtj-input"
-          class="xtj__textarea"
-          spellcheck={false}
+          className="xtj__textarea"
+          spellCheck={false}
           placeholder="在此粘贴 XML 数据..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -195,71 +195,71 @@ export default function XmlToJsonTool() {
       </div>
 
       {/* 选项面板 */}
-      <details class="xtj__options" open>
-        <summary class="xtj__options-summary">转换选项</summary>
-        <div class="xtj__options-grid">
-          <div class="xtj__option">
-            <label for="xtj-attr-prefix" class="xtj__option-label">属性名前缀</label>
+      <details className="xtj__options" open>
+        <summary className="xtj__options-summary">转换选项</summary>
+        <div className="xtj__options-grid">
+          <div className="xtj__option">
+            <label htmlFor="xtj-attr-prefix" className="xtj__option-label">属性名前缀</label>
             <input
               id="xtj-attr-prefix"
               type="text"
-              class="xtj__input"
+              className="xtj__input"
               value={attributeNamePrefix}
               onChange={(e) => setAttributeNamePrefix(e.target.value)}
               placeholder="@"
             />
           </div>
-          <div class="xtj__option">
-            <label for="xtj-text-name" class="xtj__option-label">文本节点字段名</label>
+          <div className="xtj__option">
+            <label htmlFor="xtj-text-name" className="xtj__option-label">文本节点字段名</label>
             <input
               id="xtj-text-name"
               type="text"
-              class="xtj__input"
+              className="xtj__input"
               value={textNodeName}
               onChange={(e) => setTextNodeName(e.target.value)}
               placeholder="#text"
             />
           </div>
-          <div class="xtj__option">
-            <label for="xtj-cdata-name" class="xtj__option-label">CDATA 字段名</label>
+          <div className="xtj__option">
+            <label htmlFor="xtj-cdata-name" className="xtj__option-label">CDATA 字段名</label>
             <input
               id="xtj-cdata-name"
               type="text"
-              class="xtj__input"
+              className="xtj__input"
               value={cdataNodeName}
               onChange={(e) => setCdataNodeName(e.target.value)}
               placeholder="#cdata"
               disabled={mergeCdata}
             />
           </div>
-          <div class="xtj__option">
-            <label for="xtj-empty" class="xtj__option-label">空元素表示</label>
+          <div className="xtj__option">
+            <label htmlFor="xtj-empty" className="xtj__option-label">空元素表示</label>
             <select
               id="xtj-empty"
-              class="xtj__select"
+              className="xtj__select"
               value={emptyElementValue}
               onChange={(e) => setEmptyElementValue(e.target.value as XmlToJsonOptions['emptyElementValue'])}
             >
               {EMPTY_OPTIONS.map((opt) => (
-                <option value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
-          <div class="xtj__option">
-            <label for="xtj-indent" class="xtj__option-label">缩进</label>
+          <div className="xtj__option">
+            <label htmlFor="xtj-indent" className="xtj__option-label">缩进</label>
             <select
               id="xtj-indent"
-              class="xtj__select"
+              className="xtj__select"
               value={String(indentChoice)}
               onChange={(e) => setIndentChoice(Number(e.target.value))}
             >
               {INDENT_OPTIONS.map((opt) => (
-                <option value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
-          <div class="xtj__option xtj__option--checks">
-            <label class="xtj__check">
+          <div className="xtj__option xtj__option--checks">
+            <label className="xtj__check">
               <input
                 type="checkbox"
                 checked={ignoreComments}
@@ -267,7 +267,7 @@ export default function XmlToJsonTool() {
               />
               <span>忽略注释</span>
             </label>
-            <label class="xtj__check">
+            <label className="xtj__check">
               <input
                 type="checkbox"
                 checked={ignoreWhitespace}
@@ -275,7 +275,7 @@ export default function XmlToJsonTool() {
               />
               <span>忽略空白文本</span>
             </label>
-            <label class="xtj__check">
+            <label className="xtj__check">
               <input
                 type="checkbox"
                 checked={mergeCdata}
@@ -283,7 +283,7 @@ export default function XmlToJsonTool() {
               />
               <span>CDATA 合并到文本</span>
             </label>
-            <label class="xtj__check">
+            <label className="xtj__check">
               <input
                 type="checkbox"
                 checked={coerceTypes}
@@ -291,7 +291,7 @@ export default function XmlToJsonTool() {
               />
               <span>类型推断（数字 / 布尔 / null）</span>
             </label>
-            <label class="xtj__check">
+            <label className="xtj__check">
               <input
                 type="checkbox"
                 checked={alwaysArray}
@@ -304,13 +304,13 @@ export default function XmlToJsonTool() {
       </details>
 
       {/* 输出区 */}
-      <div class="xtj__panel">
-        <div class="xtj__panel-header">
-          <span class="xtj__label">JSON 输出</span>
-          <div class="xtj__actions">
+      <div className="xtj__panel">
+        <div className="xtj__panel-header">
+          <span className="xtj__label">JSON 输出</span>
+          <div className="xtj__actions">
             <button
               type="button"
-              class="xtj__btn"
+              className="xtj__btn"
               onClick={handleCopy}
               disabled={!result?.ok}
             >
@@ -318,7 +318,7 @@ export default function XmlToJsonTool() {
             </button>
             <button
               type="button"
-              class="xtj__btn"
+              className="xtj__btn"
               onClick={handleDownload}
               disabled={!result?.ok}
             >
@@ -329,7 +329,7 @@ export default function XmlToJsonTool() {
 
         {/* 错误提示 */}
         {result && !result.ok && (
-          <div class="xtj__error" role="alert">
+          <div className="xtj__error" role="alert">
             <strong>转换失败：</strong>
             {result.error}
           </div>
@@ -338,11 +338,11 @@ export default function XmlToJsonTool() {
         {/* 输出内容 */}
         {result?.ok && (
           <>
-            <pre class="xtj__output" aria-live="polite">{result.json}</pre>
+            <pre className="xtj__output" aria-live="polite">{result.json}</pre>
 
             {/* 警告列表 */}
             {result.warnings.length > 0 && (
-              <div class="xtj__warnings">
+              <div className="xtj__warnings">
                 <strong>警告：</strong>
                 <ul>
                   {result.warnings.map((w, i) => (
@@ -353,25 +353,25 @@ export default function XmlToJsonTool() {
             )}
 
             {/* 统计信息 */}
-            <div class="xtj__stats">{formatStats(result.stats)}</div>
+            <div className="xtj__stats">{formatStats(result.stats)}</div>
           </>
         )}
 
         {/* 空状态 */}
         {!result && (
-          <div class="xtj__empty">输入 XML 后将自动转换为 JSON</div>
+          <div className="xtj__empty">输入 XML 后将自动转换为 JSON</div>
         )}
       </div>
 
       {/* 状态条 */}
       {notice && (
-        <div class="xtj__notice" role="status" aria-live="polite">
+        <div className="xtj__notice" role="status" aria-live="polite">
           {notice}
         </div>
       )}
 
       {/* 联动链接 */}
-      <nav class="xtj__links" aria-label="相关工具">
+      <nav className="xtj__links" aria-label="相关工具">
         <span>相关工具：</span>
         <a href="/json-to-xml">JSON 转 XML</a>
         <a href="/csv-json">CSV / JSON 互转</a>

@@ -152,20 +152,20 @@ export default function JsonToXmlTool() {
   }, []);
 
   return (
-    <div class="jtx__container">
+    <div className="jtx__container">
       {/* 输入区 */}
-      <div class="jtx__panel">
-        <div class="jtx__panel-header">
-          <label for="jtx-input" class="jtx__label">JSON 输入</label>
-          <div class="jtx__actions">
-            <button type="button" class="jtx__btn jtx__btn--ghost" onClick={handleExample}>示例</button>
-            <button type="button" class="jtx__btn jtx__btn--ghost" onClick={handleClear}>清空</button>
+      <div className="jtx__panel">
+        <div className="jtx__panel-header">
+          <label htmlFor="jtx-input" className="jtx__label">JSON 输入</label>
+          <div className="jtx__actions">
+            <button type="button" className="jtx__btn jtx__btn--ghost" onClick={handleExample}>示例</button>
+            <button type="button" className="jtx__btn jtx__btn--ghost" onClick={handleClear}>清空</button>
           </div>
         </div>
         <textarea
           id="jtx-input"
-          class="jtx__textarea"
-          spellcheck={false}
+          className="jtx__textarea"
+          spellCheck={false}
           placeholder="在此粘贴 JSON 数据..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -173,46 +173,46 @@ export default function JsonToXmlTool() {
       </div>
 
       {/* 选项面板 */}
-      <details class="jtx__options" open>
-        <summary class="jtx__options-summary">转换选项</summary>
-        <div class="jtx__options-grid">
-          <div class="jtx__option">
-            <label for="jtx-root" class="jtx__option-label">根节点名</label>
+      <details className="jtx__options" open>
+        <summary className="jtx__options-summary">转换选项</summary>
+        <div className="jtx__options-grid">
+          <div className="jtx__option">
+            <label htmlFor="jtx-root" className="jtx__option-label">根节点名</label>
             <input
               id="jtx-root"
               type="text"
-              class="jtx__input"
+              className="jtx__input"
               value={rootName}
               onChange={(e) => setRootName(e.target.value)}
               placeholder="root"
             />
           </div>
-          <div class="jtx__option">
-            <label for="jtx-item" class="jtx__option-label">数组项名</label>
+          <div className="jtx__option">
+            <label htmlFor="jtx-item" className="jtx__option-label">数组项名</label>
             <input
               id="jtx-item"
               type="text"
-              class="jtx__input"
+              className="jtx__input"
               value={arrayItemName}
               onChange={(e) => setArrayItemName(e.target.value)}
               placeholder="item"
             />
           </div>
-          <div class="jtx__option">
-            <label for="jtx-indent" class="jtx__option-label">缩进</label>
+          <div className="jtx__option">
+            <label htmlFor="jtx-indent" className="jtx__option-label">缩进</label>
             <select
               id="jtx-indent"
-              class="jtx__select"
+              className="jtx__select"
               value={String(indentChoice)}
               onChange={(e) => setIndentChoice(Number(e.target.value))}
             >
               {INDENT_OPTIONS.map((opt) => (
-                <option value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
-          <div class="jtx__option jtx__option--checks">
-            <label class="jtx__check">
+          <div className="jtx__option jtx__option--checks">
+            <label className="jtx__check">
               <input
                 type="checkbox"
                 checked={includeDeclaration}
@@ -220,7 +220,7 @@ export default function JsonToXmlTool() {
               />
               <span>包含 XML 声明</span>
             </label>
-            <label class="jtx__check">
+            <label className="jtx__check">
               <input
                 type="checkbox"
                 checked={useAttributes}
@@ -228,7 +228,7 @@ export default function JsonToXmlTool() {
               />
               <span>扁平对象用属性</span>
             </label>
-            <label class="jtx__check">
+            <label className="jtx__check">
               <input
                 type="checkbox"
                 checked={useCdata}
@@ -236,7 +236,7 @@ export default function JsonToXmlTool() {
               />
               <span>特殊字符用 CDATA</span>
             </label>
-            <label class="jtx__check">
+            <label className="jtx__check">
               <input
                 type="checkbox"
                 checked={nilForNull}
@@ -249,13 +249,13 @@ export default function JsonToXmlTool() {
       </details>
 
       {/* 输出区 */}
-      <div class="jtx__panel">
-        <div class="jtx__panel-header">
-          <span class="jtx__label">XML 输出</span>
-          <div class="jtx__actions">
+      <div className="jtx__panel">
+        <div className="jtx__panel-header">
+          <span className="jtx__label">XML 输出</span>
+          <div className="jtx__actions">
             <button
               type="button"
-              class="jtx__btn"
+              className="jtx__btn"
               onClick={handleCopy}
               disabled={!result?.ok}
             >
@@ -263,7 +263,7 @@ export default function JsonToXmlTool() {
             </button>
             <button
               type="button"
-              class="jtx__btn"
+              className="jtx__btn"
               onClick={handleDownload}
               disabled={!result?.ok}
             >
@@ -274,7 +274,7 @@ export default function JsonToXmlTool() {
 
         {/* 错误提示 */}
         {result && !result.ok && (
-          <div class="jtx__error" role="alert">
+          <div className="jtx__error" role="alert">
             <strong>转换失败：</strong>
             {result.error}
           </div>
@@ -283,11 +283,11 @@ export default function JsonToXmlTool() {
         {/* 输出内容 */}
         {result?.ok && (
           <>
-            <pre class="jtx__output" aria-live="polite">{result.xml}</pre>
+            <pre className="jtx__output" aria-live="polite">{result.xml}</pre>
 
             {/* 校验状态 */}
             {validation && (
-              <div class={`jtx__validation ${validation.valid ? 'jtx__validation--ok' : 'jtx__validation--err'}`}>
+              <div className={`jtx__validation ${validation.valid ? 'jtx__validation--ok' : 'jtx__validation--err'}`}>
                 {validation.valid ? (
                   <span>well-formed 校验通过</span>
                 ) : (
@@ -302,7 +302,7 @@ export default function JsonToXmlTool() {
 
             {/* 警告列表 */}
             {result.warnings.length > 0 && (
-              <div class="jtx__warnings">
+              <div className="jtx__warnings">
                 <strong>警告：</strong>
                 <ul>
                   {result.warnings.map((w, i) => (
@@ -313,25 +313,25 @@ export default function JsonToXmlTool() {
             )}
 
             {/* 统计信息 */}
-            <div class="jtx__stats">{formatStats(result.stats)}</div>
+            <div className="jtx__stats">{formatStats(result.stats)}</div>
           </>
         )}
 
         {/* 空状态 */}
         {!result && (
-          <div class="jtx__empty">输入 JSON 后将自动转换为 XML</div>
+          <div className="jtx__empty">输入 JSON 后将自动转换为 XML</div>
         )}
       </div>
 
       {/* 状态条 */}
       {notice && (
-        <div class="jtx__notice" role="status" aria-live="polite">
+        <div className="jtx__notice" role="status" aria-live="polite">
           {notice}
         </div>
       )}
 
       {/* 联动链接 */}
-      <nav class="jtx__links" aria-label="相关工具">
+      <nav className="jtx__links" aria-label="相关工具">
         <span>相关工具：</span>
         <a href="/csv-json">CSV / JSON 互转</a>
         <a href="/yaml">YAML 格式化</a>
