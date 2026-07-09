@@ -784,9 +784,9 @@ export const SAMPLE_HEADER = {
 
 /** 默认 Payload 示例（含标准声明） */
 export const SAMPLE_PAYLOAD = {
-  iss: 'toolbox.example.com',
+  iss: 'website.niuzi.asia',
   sub: '10001',
-  aud: 'api.toolbox.example.com',
+  aud: 'api.website.niuzi.asia',
   iat: 1700000000,
   exp: 1900000000,
   jti: 'jwt-demo-token-001',

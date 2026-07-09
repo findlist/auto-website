@@ -919,9 +919,9 @@ export const SAMPLE_JWE_RSA =
 /** 默认示例明文（生成测试 JWE 时使用） */
 export const SAMPLE_PLAINTEXT = JSON.stringify(
   {
-    iss: 'toolbox.example.com',
+    iss: 'website.niuzi.asia',
     sub: '10001',
-    aud: 'api.toolbox.example.com',
+    aud: 'api.website.niuzi.asia',
     iat: 1700000000,
     exp: 1900000000,
     jti: 'jwe-demo-token-001',
