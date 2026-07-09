@@ -143,8 +143,8 @@ npm run check        # Astro 类型检查
 
 | 文件 | 占位域名 | 说明 |
 | --- | --- | --- |
-| `astro.config.mjs` 的 `site` | `https://toolbox.example.com` | 主站 URL，影响 sitemap 与 RSS |
-| `public/robots.txt` 的 `Sitemap` | `https://toolbox.example.com/sitemap-index.xml` | 爬虫 sitemap 地址 |
+| `astro.config.mjs` 的 `site` | `https://website.niuzi.asia` | 主站 URL，已配置，影响 sitemap 与 RSS |
+| `public/robots.txt` 的 `Sitemap` | `https://website.niuzi.asia/sitemap-index.xml` | 爬虫 sitemap 地址，需同步更新 |
 
 ---
 
@@ -179,7 +179,7 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 158 页（含 42 篇博客 + 91 个标签筛选页）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 258 页（含 42 篇博客 + 91 个标签筛选页 + 47 个工具页及其它）。
 
 ---
 
@@ -271,11 +271,12 @@ auto-website/
 - 所有代码注释、页面前端文案使用中文
 - 每个页面具备完整的空状态、加载态、错误提示
 
-首次运行任务：
-1. 联网调研 2026 年高流量、低竞争的工具站/内容站赛道，分析竞品优缺点与差异化机会
-2. 敲定最终产品方向，明确目标用户、核心痛点、MVP 最小功能集
-3. 完成技术选型，初始化项目架构与基础目录结构
-4. 按规范模板输出本轮工作摘要，明确下一轮开发计划
+每轮运行任务（项目已超过 MVP 阶段）：
+1. 读取 docs/site-config.md 与最近 topics.md，判定阶段并承接上轮进度
+2. 阶段一末尾：补齐 MVP 上线前遗留项（工具页 WebApplication.url 动态化、Lighthouse 基线测量、移动端三档适配抽检）
+3. 阶段二：基于线上访问数据做数据驱动优化，提升 SEO/性能/体验
+4. 阶段三：功能与内容拓展、粘性功能、流量渠道拓展
+5. 按规范模板输出本轮工作摘要，明确下一轮开发计划
 
 需用户操作时（如部署、域名配置、第三方服务申请）明确提示。默默干活，结束后按规范第十节模板输出工作摘要。
 ```
