@@ -2,6 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../utils/tags';
+import { getSiteUrl } from '../utils/site';
 
 const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
@@ -449,8 +450,8 @@ const tools = [
 // 工具分类列表（去重），用于分类筛选按钮
 const categories = ['全部', ...Array.from(new Set(tools.map((t) => t.category)))];
 
-// 站点绝对 URL：用于结构化数据中的 url 字段（取 astro.config.mjs 的 site 配置）
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：用于结构化数据中的 url 字段（集中化获取，未配置时构建报错）
+const SITE_URL = getSiteUrl(Astro.site);
 
 // Organization 结构化数据：站点运营方实体，帮助搜索引擎建立品牌识别
 const organizationLd = {

@@ -2,6 +2,7 @@
 // 原生实现，零额外依赖，遵循 RSS 2.0 + Atom 自引用规范
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
+import { getSiteUrl } from '../utils/site';
 
 // XML 特殊字符转义，避免破坏文档结构
 function escapeXml(str: string): string {
@@ -14,8 +15,8 @@ function escapeXml(str: string): string {
 }
 
 export const GET: APIRoute = async ({ site }) => {
-  // 站点根 URL，回退到占位域名（上线后由 astro.config.mjs 的 site 字段提供）
-  const SITE_URL = (site?.toString() || 'https://toolbox.example.com').replace(/\/$/, '');
+  // 站点根 URL：集中化获取，未配置时构建报错（防止 RSS 指向错误域名）
+  const SITE_URL = getSiteUrl(site);
 
   // 博客文章按发布时间倒序
   const posts = (await getCollection('blog')).sort(

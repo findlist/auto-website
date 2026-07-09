@@ -1,6 +1,7 @@
 ---
 // 引入全局样式：Astro 会自动打包并注入，避免外部 link 在构建后 404
 import '../styles/global.css';
+import { getSiteUrl } from '../utils/site';
 
 // 站点元数据与全局 SEO 配置
 export interface SiteMeta {
@@ -17,9 +18,8 @@ export interface SiteMeta {
 }
 
 const SITE_NAME = '工具盒子';
-// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
-// 部署后用户只需改 astro.config.mjs 的 site，全站 JSON-LD / canonical / OG 自动同步
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：集中化获取，未配置时构建直接报错（fail-fast），防止部署遗漏
+const SITE_URL = getSiteUrl(Astro.site);
 
 interface Props {
   meta: SiteMeta;

@@ -1,8 +1,9 @@
 ---
 import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import { getSiteUrl } from '../utils/site';
 
-// 站点绝对 URL：用于结构化数据中的 url 字段（取 astro.config.mjs 的 site 配置）
-const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+// 站点绝对 URL：用于结构化数据中的 url 字段（集中化获取，未配置时构建报错）
+const SITE_URL = getSiteUrl(Astro.site);
 
 // AboutPage 结构化数据：明确告知搜索引擎本页为「关于页」，
 // mainEntity 关联站点 Organization 实体，建立品牌识别
