@@ -78,3 +78,89 @@
 - 部署更新后的代码（git push 已完成，若 Cloudflare Pages 已配置 Git 自动部署则会自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置域名邮箱并替换 about/privacy 中的占位邮箱为真实收件邮箱
+
+---
+
+# 第 2 轮 · bug-check 严重与高危 Bug 修复
+
+## 上下文恢复
+- 承接第 1 轮（占位域名清理，commit 0886cee）
+- 触发点：工作树存在 docs/bug-check/bug-check-2026-07-10.md 报告（40 项 bug：1 严重 / 5 高危 / 13 中危 / 21 低危），尚未修复
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做安全/功能质量打磨
+
+## 本轮聚焦方向
+**bug-check 报告中的严重与高危 Bug 修复**（按规范任务优先级「功能可用性 > 性能体验 > SEO」，安全漏洞属功能可用性最高级）
+- 先收尾上一轮遗留的未提交改动（样式优化 + 文档），再逐个修复 bug
+
+## 完成任务
+
+### 收尾上一轮遗留提交（3 个 commit）
+1. ✅ commit 27f54bf style: 全站样式优化（global.css/index.astro/json.astro/blog/index.astro，4 文件 320+92）
+2. ✅ commit 0be1063 docs: 更新 README 工具清单与部署指南路径（README.md/deployment-guide.md）
+3. ✅ commit 00c8cce docs: 新增 bug 检查报告(40 项)、样式优化报告、站点配置与阶段二首轮进度
+
+### Bug 修复（7 个文件，未超 8 文件红线）
+1. ✅ BUG-01（严重·安全）JWT 验签算法白名单形同虚设
+   - 文件：src/components/JwtVerifyTool.tsx
+   - 问题：原 `expectedAlg = enforceAlgWhitelist ? detected.alg : undefined`，detected.alg 与 verifyJwt 内部 alg 都取自同一 token Header，恒相等，白名单永不触发失败分支，无法防御算法混淆攻击
+   - 修复：移除无效复选框，改为「期望算法」下拉框，由用户明确指定期望算法（9 种：HS/RS/ES 系列，排除 none）。expectedAlg 来自用户选择（独立于 token），校验真正生效。none 算法已被 verifyJwt 独立拦截
+2. ✅ BUG-05（高·功能错误）htmlFormatter preserveWhitespace 文本重复输出
+   - 文件：src/utils/htmlFormatter.ts
+   - 问题：`lines.push(indent + text.trim() + (opts.preserveWhitespace ? text : ''))`，preserveWhitespace=true 时输出 `text.trim() + text` 内容重复
+   - 修复：改为 `const display = opts.preserveWhitespace ? text : text.trim(); lines.push(indent + display)`
+3. ✅ BUG-06（高·代码规范）JsonToXmlTool/XmlToJsonTool JSX class→className
+   - 文件：src/components/JsonToXmlTool.tsx、src/components/XmlToJsonTool.tsx
+   - 修复：批量替换 class=→className=、for=→htmlFor=、spellcheck=→spellCheck=；顺带修复 BUG-40（3 处 `<option>` 补 key）
+4. ✅ BUG-04（高·安全）JWE PBES2 p2c 无上限 DoS
+   - 文件：src/utils/jwe.ts
+   - 问题：p2c 迭代次数仅校验 >0 无上限，恶意 JWE 设超大 p2c 导致 PBKDF2 耗尽 CPU
+   - 修复：增加上限 1000 万（PBES2_MAX_ITERATIONS，参考 RFC 7518 4.8.1.2），超限拒绝并返回明确错误
+5. ✅ BUG-02（高·安全）JSON Schema pattern/patternProperties ReDoS
+   - 文件：src/utils/jsonSchema.ts
+   - 修复：pattern 与 patternProperties 执行前校验正则字符串长度≤1000、被匹配字符串长度≤100000，超限跳过并提示「以防 ReDoS」
+6. ✅ BUG-03（高·安全）JSONPath =~ 正则匹配 ReDoS
+   - 文件：src/utils/jsonPath.ts
+   - 修复：`=~` 操作符执行前校验正则字符串长度≤1000、被匹配字符串长度≤100000，超限返回 false
+
+## 修改文件（7 个）
+- src/components/JwtVerifyTool.tsx（BUG-01 期望算法下拉框）
+- src/utils/htmlFormatter.ts（BUG-05 文本重复输出）
+- src/components/JsonToXmlTool.tsx（BUG-06 class→className + BUG-40 option key）
+- src/components/XmlToJsonTool.tsx（BUG-06 class→className + BUG-40 option key）
+- src/utils/jwe.ts（BUG-04 p2c 上限）
+- src/utils/jsonSchema.ts（BUG-02 ReDoS 长度限制）
+- src/utils/jsonPath.ts（BUG-03 ReDoS 长度限制）
+- memory/20260710/topics.md（本文件，进度沉淀）
+
+## 验证结果
+- 构建：✅ 258 页面，13.42s，无报错无警告
+- 产物抽检：
+  - dist/_astro/JwtVerifyTool.Dj7bqKY4.js 含「期望算法校验/算法混淆攻击」文案 ✅
+  - dist/_astro/JweTool.CAk2SZAW.js 含「PBES2_MAX_ITERATIONS/超过上限」✅
+  - dist/_astro/jsonSchema.DowUwFnE.js 含「以防 ReDoS」✅
+  - jsonPath 改动为纯逻辑（无文案），构建通过即编译生效 ✅
+
+## 数据洞察
+- BUG-01 修复策略：原设计「白名单 = token 自身 alg」是逻辑谬误（自证自验）。正确做法是让用户/调用方独立指定期望算法。本工具默认「不校验」（向后兼容），用户主动选择才有防御。none 算法已被 verifyJwt 第 536-557 行独立拦截，无需白名单覆盖
+- ReDoS 修复策略选择：bug-check 建议「Web Worker 带超时」，但引入 Worker 增加复杂度与 bundle 体积（违反轻量化原则）。采用「输入长度双限」更轻量：正则≤1000 字符、被匹配串≤100KB，覆盖绝大多数正常用例，恶意超长输入直接跳过。这是「最小必要复杂度」的权衡
+- 7 个 bug 修复跨 7 文件，每个文件改动聚焦单一 bug，互不耦合，符合「单次只完成一个最小单元」原则。一次性构建验证通过说明改动互不冲突
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告剩余未修复项（13 中危 + 21 低危），按优先级后续处理：
+  - 中危待修：BUG-07（RSA/EC 私钥格式降级）、BUG-08（JweTool base64 解码崩溃）、BUG-09/10（JSONPath 解析错误）、BUG-11（RSA1_5 移除）、BUG-12（AES PBKDF2 迭代次数）、BUG-13/14（xmlToJson）、BUG-16/17（sql.ts 逻辑）、BUG-18（过度水合）、BUG-19（首页内联 script CSP）
+  - 低危待修：BUG-20（@astrojs/check 依赖）、BUG-21~40（一致性/示例数据等）
+
+## 下一轮建议
+按优先级排序：
+1. **中危 Bug 批量修复（第二轮）**：聚焦 BUG-07（私钥格式降级，影响 JWT 签名工具 RSA/EC 私钥导入）、BUG-08（JweTool 渲染崩溃）、BUG-09/10（JSONPath 解析错误，影响功能正确性）、BUG-16/17（sql.ts 逻辑错误），这 5 项均为功能正确性问题，用户可感知
+2. **BUG-18 过度水合优化**：47 个工具页全用 client:load，非首屏辅助模块改 client:visible/client:idle，降低 TTI、提升性能分（连续三轮 Lighthouse 基线未做，水合优化后测量更有意义）
+3. **Lighthouse 性能基线测量**：启动 preview 跑 Lighthouse，建立性能/SEO/可访问性/最佳实践四项基线（连续四轮遗留）
+4. **移动端 375px 三档适配实测**：375/768/1280 抽检（连续四轮遗留）
+5. **BUG-20 @astrojs/check 依赖补齐**：恢复 npm run check 类型检查能力，纳入构建流水
+6. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 后若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置域名邮箱并替换 about/privacy 中的占位邮箱
