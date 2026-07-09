@@ -575,8 +575,13 @@ export function formatSql(sql: string, options: FormatOptions = DEFAULT_FORMAT_O
   }
 
   // 清理：移除尾部空白
-  let result = out.join('').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
-  return result + (result.endsWith(';') ? '' : ';');
+  const result = out.join('').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+  // 已以分号结尾则直接返回
+  if (result.endsWith(';')) return result;
+  // 若末尾为行注释（-- ...），分号需另起一行，否则会被注释吞掉改变 SQL 语义
+  const lastLine = result.split('\n').pop() || '';
+  if (lastLine.includes('--')) return result + '\n;';
+  return result + ';';
 }
 
 // ============================================================
@@ -746,11 +751,10 @@ export function validateSql(sql: string): ValidationResult {
   // 检查 SELECT 后是否有 FROM 或 VALUES（仅 warning，子查询/常数 SELECT 可能误报）
   const upperSql = sql.toUpperCase();
   const selectMatch = upperSql.match(/\bSELECT\b/);
-  if (selectMatch && !/\bFROM\b|\bVALUES\b|\bINTO\b/.test(upperSql) &&
-      !upperSql.trim().endsWith(';') === false) {
+  if (selectMatch && !/\bFROM\b|\bVALUES\b|\bINTO\b/.test(upperSql)) {
     // 仅当无 FROM 且无 VALUES 且无 INTO 时给出提示
     // 注意：SELECT 1 + 1; 是合法的常数查询，这里只做 warning 不阻塞
-    // 为避免误报，仅当语句较长（>20 字符）且不含函数调用时不提示
+    // 为避免误报，仅当语句较长（>30 字符）且不含函数调用时不提示
     if (sql.length > 30 && !/\(/.test(sql)) {
       issues.push({
         level: 'warning',

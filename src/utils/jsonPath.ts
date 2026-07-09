@@ -267,6 +267,7 @@ function tokenize(path: string): Token[] {
 type Segment =
   | { kind: 'root' }
   | { kind: 'child'; name: string }
+  | { kind: 'multi-child'; names: string[] } // 多键 ['a','b'] 访问
   | { kind: 'index'; indices: number[] }
   | { kind: 'wildcard' }
   | { kind: 'recursive'; name: string | null } // null 表示 ..*
@@ -368,16 +369,8 @@ function parseSegment(ctx: ParserContext): Segment {
     }
     // ..[index] 或 ..['name'] 递归后跟括号形式
     if (next.type === 'LBRACKET') {
-      // 先解析为递归所有节点，再解析括号段
-      const bracketSeg = parseBracket(ctx);
-      // 递归下降后接括号：转换为 recursive + bracket 两段
-      // 这里返回 recursive(null) 表示「先递归所有」，调用方需要继续处理 bracket
-      // 简化处理：返回 recursive(null)，bracket 段由外层循环继续解析
-      // 但 advance 已经消费了 LBRACKET，需要回退
-      // 改为：将 bracket 解析结果与 recursive 合并
-      // 为避免复杂度，这里直接返回 recursive(null)，外层循环会再解析括号
-      // 但需要回退到 LBRACKET 之前
-      ctx.pos--; // 回退到 LBRACKET
+      // 返回递归所有节点，后续 [expr] 段由外层循环自然解析
+      // 不在此处消费 LBRACKET，保持 ctx.pos 指向 LBRACKET
       return { kind: 'recursive', name: null };
     }
     throw new Error(`位置 ${next.pos}：.. 后应为标识符、* 或 [，但遇到 ${next.type}`);
@@ -426,11 +419,10 @@ function parseBracket(ctx: ParserContext): Segment {
     return { kind: 'index', indices };
   }
 
-  // ['name'] 字符串键名
+  // ['name'] 字符串键名，支持多键 ['a','b']
   if (tok.type === 'STRING') {
     const name = tok.value;
     advance(ctx);
-    // 多键支持：['a','b']
     const names: string[] = [name];
     while (peek(ctx).type === 'COMMA') {
       advance(ctx);
@@ -438,24 +430,11 @@ function parseBracket(ctx: ParserContext): Segment {
       names.push(strTok.value);
     }
     expect(ctx, 'RBRACKET');
-    // 多键时返回 wildcard 形式简化处理；单键时返回 child
-    // 为保持语义，多键场景返回 child 但只取第一个不合适
-    // 改为：单键返回 child，多键暂用 child(name) 仅返回第一个
-    // 更优解：扩展 Segment 支持 multi-child，但为控制复杂度，多键场景返回 wildcard 后由 evaluator 二次过滤
-    // 实际上多键场景较少，这里简化为：单键返回 child，多键返回 child(第一个) 仅作兼容
+    // 单键返回 child，多键返回 multi-child（求值时分别取每个键并合并）
     if (names.length === 1) {
       return { kind: 'child', name: names[0] };
     }
-    // 多键场景：用 filter 实现等价语义
-    return {
-      kind: 'filter',
-      expr: {
-        kind: 'compare',
-        op: '==',
-        left: { kind: 'path', segments: [{ kind: 'root' }] },
-        right: { kind: 'literal', value: '__MULTI_KEY_PLACEHOLDER__' },
-      },
-    };
+    return { kind: 'multi-child', names };
   }
 
   throw new Error(`位置 ${tok.pos}：[ 内应为数字、字符串、* 或 ?，但遇到 ${tok.type}`);
@@ -612,6 +591,10 @@ function evaluateSegment(node: unknown, seg: Segment): unknown[] {
   switch (seg.kind) {
     case 'child':
       return evaluateChild(node, seg.name);
+
+    case 'multi-child':
+      // 多键访问：对每个 name 分别求值并合并结果，保持出现顺序
+      return seg.names.flatMap((name) => evaluateChild(node, name));
 
     case 'index':
       return evaluateIndex(node, seg.indices);

@@ -71,6 +71,9 @@ export const DEFAULT_OPTIONS: XmlToJsonOptions = {
   indent: 2,
 };
 
+/** 递归深度上限：防止恶意深度嵌套 XML 导致调用栈溢出 */
+const MAX_RECURSION_DEPTH = 500;
+
 /** 内部解析状态 */
 interface ParseState {
   elements: number;
@@ -103,6 +106,11 @@ function coerceValue(text: string, coerceTypes: boolean): unknown {
   }
   if (trimmed !== '' && /^-?\d+\.\d+$/.test(trimmed)) {
     const num = parseFloat(trimmed);
+    if (Number.isFinite(num)) return num;
+  }
+  // 科学计数法（如 1e10、6.022e23、-1.5E-5）
+  if (trimmed !== '' && /^-?\d+(\.\d+)?[eE][+-]?\d+$/.test(trimmed)) {
+    const num = Number(trimmed);
     if (Number.isFinite(num)) return num;
   }
   return text;
@@ -170,6 +178,10 @@ function elementToJson(
 ): unknown {
   state.elements++;
   if (depth > state.maxDepth) state.maxDepth = depth;
+  // 深度上限校验：防止恶意深度嵌套 XML 导致调用栈溢出
+  if (depth > MAX_RECURSION_DEPTH) {
+    throw new Error(`XML 嵌套深度超过上限 ${MAX_RECURSION_DEPTH}，可能为恶意输入`);
+  }
 
   // 空元素处理
   if (isEmptyElement(element, options)) {
@@ -381,7 +393,27 @@ export function xmlToJson(
   }
 
   // 递归转换（注释默认忽略，DOMParser 解析后可通过 nodeType 过滤，此处不单独统计）
-  const data = elementToJson(root, opts, 0, state);
+  // 用 try-catch 包裹：捕获深度超限等递归异常，避免整个调用栈崩溃
+  let data: unknown;
+  try {
+    data = elementToJson(root, opts, 0, state);
+  } catch (e) {
+    return {
+      ok: false,
+      json: '',
+      data: null,
+      error: `XML 转换失败：${e instanceof Error ? e.message : String(e)}`,
+      warnings: state.warnings,
+      stats: {
+        elements: state.elements,
+        attributes: state.attributes,
+        textNodes: state.textNodes,
+        cdataSections: state.cdataSections,
+        comments: state.comments,
+        maxDepth: state.maxDepth,
+      },
+    };
+  }
 
   // 序列化为 JSON 字符串
   let json: string;

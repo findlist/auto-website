@@ -280,6 +280,85 @@ export function pemToDer(pem: string, label: RegExp): Uint8Array {
   return bytes;
 }
 
+// ===== 最小 ASN.1 DER 编码工具（仅用于私钥格式转换，不引入第三方依赖）=====
+// 背景：Web Crypto API 的 importKey 对 RSA/EC 私钥仅支持 'pkcs8' 与 'jwk'，
+// 不支持 PKCS#1（BEGIN RSA PRIVATE KEY）与 SEC1（BEGIN EC PRIVATE KEY）。
+// 此处实现最小 DER 编码，将 PKCS#1/SEC1 私钥 DER 包裹为 PKCS#8 容器，
+// 再用现有 'pkcs8' 逻辑导入，避免实现完整的 ASN.1 解析器。
+
+/** DER 长度编码：短格式（<128）单字节，长格式带前缀 */
+function encodeDerLength(len: number): number[] {
+  if (len < 128) return [len];
+  const bytes: number[] = [];
+  let tmp = len;
+  while (tmp > 0) {
+    bytes.unshift(tmp & 0xff);
+    tmp >>= 8;
+  }
+  return [0x80 | bytes.length, ...bytes];
+}
+
+/** 构造 DER SEQUENCE：tag(0x30) + 长度 + 子元素拼接 */
+function derSequence(...elements: Uint8Array[]): Uint8Array {
+  const totalLen = elements.reduce((sum, el) => sum + el.length, 0);
+  const header = [0x30, ...encodeDerLength(totalLen)];
+  const result = new Uint8Array(header.length + totalLen);
+  result.set(header, 0);
+  let offset = header.length;
+  for (const el of elements) {
+    result.set(el, offset);
+    offset += el.length;
+  }
+  return result;
+}
+
+/** 构造 DER OID：tag(0x06) + 长度 + OID 字节内容 */
+function derOid(oidBytes: number[]): Uint8Array {
+  const header = [0x06, ...encodeDerLength(oidBytes.length)];
+  return new Uint8Array([...header, ...oidBytes]);
+}
+
+/** 构造 DER OCTET STRING：tag(0x04) + 长度 + 内容 */
+function derOctetString(content: Uint8Array): Uint8Array {
+  const header = [0x04, ...encodeDerLength(content.length)];
+  const result = new Uint8Array(header.length + content.length);
+  result.set(header, 0);
+  result.set(content, header.length);
+  return result;
+}
+
+// RSA 算法 OID: 1.2.840.113549.1.1.1（已编码为 DER 字节）
+const RSA_OID_BYTES = [0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01];
+// EC 公钥算法 OID: 1.2.840.10045.2.1（已编码为 DER 字节）
+const EC_OID_BYTES = [0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01];
+// 椭圆曲线 OID 映射（P-256/P-384/P-521）
+const CURVE_OID_BYTES: Record<EcCurve, number[]> = {
+  'P-256': [0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07], // 1.2.840.10045.3.1.7
+  'P-384': [0x2B, 0x81, 0x04, 0x00, 0x22], // 1.3.132.0.34
+  'P-521': [0x2B, 0x81, 0x04, 0x00, 0x23], // 1.3.132.0.35
+};
+
+/**
+ * 将 PKCS#1/SEC1 私钥 DER 包裹为 PKCS#8 PrivateKeyInfo 容器
+ * 结构：SEQUENCE { version(0), AlgorithmIdentifier, OCTET STRING privateKey }
+ * 这样即可用 importKey('pkcs8') 导入，无需完整 ASN.1 解析
+ */
+function wrapPrivateKeyToPkcs8(privateKeyDer: Uint8Array, algId: Uint8Array): Uint8Array {
+  const version = new Uint8Array([0x02, 0x01, 0x00]); // INTEGER 0
+  const keyOctetString = derOctetString(privateKeyDer);
+  return derSequence(version, algId, keyOctetString);
+}
+
+/** 构造 RSA AlgorithmIdentifier：SEQUENCE { OID rsaEncryption, NULL } */
+function rsaAlgorithmIdentifier(): Uint8Array {
+  return derSequence(derOid(RSA_OID_BYTES), new Uint8Array([0x05, 0x00]));
+}
+
+/** 构造 EC AlgorithmIdentifier：SEQUENCE { OID id-ecPublicKey, OID 曲线 } */
+function ecAlgorithmIdentifier(curve: EcCurve): Uint8Array {
+  return derSequence(derOid(EC_OID_BYTES), derOid(CURVE_OID_BYTES[curve]));
+}
+
 /**
  * 将 DER 字节数组转为 PEM 字符串
  * @param der DER 字节数组
@@ -372,11 +451,17 @@ async function importRsaPrivateKey(
     );
   }
   // PEM 格式（PKCS#1 或 PKCS#8）
+  // 检测标签：BEGIN RSA PRIVATE KEY 为 PKCS#1，需包装为 PKCS#8
+  const isPkcs1 = /-----BEGIN RSA PRIVATE KEY-----/.test(trimmed);
   let derBytes: Uint8Array;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PRIVATE KEY-----/g);
   } catch (e) {
     throw new Error(`PEM 解析失败：${e instanceof Error ? e.message : ''}`);
+  }
+  // PKCS#1 格式私钥 Web Crypto 不直接支持，包裹为 PKCS#8 容器后再导入
+  if (isPkcs1) {
+    derBytes = wrapPrivateKeyToPkcs8(derBytes, rsaAlgorithmIdentifier());
   }
   return crypto.subtle.importKey(
     'pkcs8',
@@ -465,12 +550,18 @@ async function importEcPrivateKey(
       ['sign'],
     );
   }
-  // PEM 格式（PKCS#8）
+  // PEM 格式（SEC1 或 PKCS#8）
+  // 检测标签：BEGIN EC PRIVATE KEY 为 SEC1，需包装为 PKCS#8
+  const isSec1 = /-----BEGIN EC PRIVATE KEY-----/.test(trimmed);
   let derBytes: Uint8Array;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PRIVATE KEY-----/g);
   } catch (e) {
     throw new Error(`PEM 解析失败：${e instanceof Error ? e.message : ''}`);
+  }
+  // SEC1 格式私钥 Web Crypto 不直接支持，包裹为 PKCS#8 容器（含曲线 OID）后再导入
+  if (isSec1) {
+    derBytes = wrapPrivateKeyToPkcs8(derBytes, ecAlgorithmIdentifier(curve));
   }
   return crypto.subtle.importKey(
     'pkcs8',

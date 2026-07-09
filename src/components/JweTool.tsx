@@ -573,12 +573,20 @@ export default function JweTool() {
                   <tbody>
                     {PART_LABELS.map((label) => {
                       const value = parsed.parts?.[label.key] || '';
-                      const bytes = value ? base64urlDecode(value) : new Uint8Array(0);
-                      // protected header 解码后预览
+                      // 安全解码：非法 base64url 时返回空字节数组，避免渲染崩溃
+                      let bytes = new Uint8Array(0);
+                      if (value) {
+                        try {
+                          bytes = base64urlDecode(value);
+                        } catch {
+                          // value 非合法 base64url，保持空字节数组
+                        }
+                      }
+                      // protected header 解码后预览（复用已解码的 bytes，避免重复解码）
                       let preview = value.slice(0, 40);
                       if (label.key === 'protectedHeader' && value) {
                         try {
-                          const decoded = decodeUtf8(base64urlDecode(value));
+                          const decoded = decodeUtf8(bytes);
                           preview = decoded.slice(0, 40);
                         } catch {
                           // 保留原值
