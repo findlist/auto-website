@@ -669,15 +669,16 @@ const features = [
 
 <style>
   .hero {
-    padding: 64px 0 40px;
+    padding: 72px 0 48px;
     text-align: center;
     background:
-      radial-gradient(1200px 400px at 50% -10%, rgba(43, 108, 255, 0.12), transparent 60%);
+      radial-gradient(1200px 400px at 50% -10%, rgba(43, 108, 255, 0.12), transparent 60%),
+      radial-gradient(800px 300px at 80% 20%, rgba(122, 76, 255, 0.06), transparent 60%);
   }
 
   .hero__inner h1 {
-    font-size: 40px;
-    line-height: 1.25;
+    font-size: 42px;
+    line-height: 1.2;
     margin: 0 auto 16px;
     max-width: 720px;
     letter-spacing: -0.02em;
@@ -685,7 +686,7 @@ const features = [
   }
 
   .hero__accent {
-    background: linear-gradient(120deg, var(--color-primary), #7a4cff);
+    background: linear-gradient(120deg, var(--color-primary), var(--color-accent));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -693,9 +694,10 @@ const features = [
 
   .hero__lead {
     max-width: 580px;
-    margin: 0 auto 24px;
+    margin: 0 auto 28px;
     color: var(--color-text-soft);
     font-size: 17px;
+    line-height: 1.7;
   }
 
   .hero__cta {
@@ -726,6 +728,11 @@ const features = [
     margin-bottom: 20px;
   }
 
+  .tools__search {
+    flex: 1;
+    min-width: 240px;
+  }
+
   .tools__search input {
     width: 100%;
     padding: 10px 14px;
@@ -735,12 +742,13 @@ const features = [
     color: var(--color-text);
     font-size: 14px;
     font-family: inherit;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .tools__search input:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 1px;
+    outline: none;
     border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
   }
 
   .tools__filters {
@@ -758,7 +766,8 @@ const features = [
     font-size: 13px;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: border-color var(--transition-fast), color var(--transition-fast),
+      background-color var(--transition-fast);
   }
 
   .tools__filter:hover {
@@ -770,6 +779,7 @@ const features = [
     background: var(--color-primary);
     border-color: var(--color-primary);
     color: #fff;
+    box-shadow: 0 2px 6px var(--color-primary-ring);
   }
 
   .tools__empty {
@@ -802,24 +812,48 @@ const features = [
   }
 
   .tool-card {
+    position: relative;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-bg);
     box-shadow: var(--shadow-sm);
-    transition: all 0.18s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
     overflow: hidden;
+  }
+
+  /* 悬停时左侧出现主色指示条，增强视觉反馈 */
+  .tool-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform var(--transition-base);
   }
 
   .tool-card:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .tool-card:hover::before {
+    transform: scaleY(1);
   }
 
   .tool-card--soon:hover {
     border-color: var(--color-border);
     transform: none;
     box-shadow: var(--shadow-sm);
+  }
+
+  .tool-card--soon:hover::before {
+    transform: scaleY(0);
   }
 
   .tool-card__link {
@@ -849,7 +883,7 @@ const features = [
     padding: 2px 8px;
     font-size: 12px;
     border-radius: 999px;
-    background: rgba(26, 170, 85, 0.12);
+    background: var(--color-success-soft);
     color: var(--color-success);
     font-weight: 500;
   }
@@ -877,6 +911,14 @@ const features = [
     border-radius: var(--radius-md);
     background: var(--color-bg-soft);
     border: 1px solid var(--color-border);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
+  }
+
+  .feature:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
   }
 
   .feature__icon {
@@ -929,7 +971,8 @@ const features = [
     border-radius: var(--radius-md);
     background: var(--color-bg);
     box-shadow: var(--shadow-sm);
-    transition: all 0.18s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
     overflow: hidden;
     padding: 20px;
   }
@@ -937,7 +980,7 @@ const features = [
   .blog-section__card:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 
   /* 拉伸链接：标题链接撑满整张卡片 */
@@ -993,24 +1036,24 @@ const features = [
     position: relative;
     z-index: 1;
     color: var(--color-primary);
-    background: rgba(43, 108, 255, 0.08);
+    background: var(--color-primary-soft);
     padding: 1px 7px;
     border-radius: 999px;
     font-size: 11.5px;
     text-decoration: none;
-    transition: background 0.15s ease;
+    transition: background-color var(--transition-fast);
   }
 
   .blog-section__tag:hover {
-    background: rgba(43, 108, 255, 0.18);
+    background: var(--color-primary-ring);
   }
 
   @media (max-width: 768px) {
     .hero {
-      padding: 40px 0 24px;
+      padding: 48px 0 32px;
     }
     .hero__inner h1 {
-      font-size: 28px;
+      font-size: 30px;
     }
     .hero__lead {
       font-size: 15px;

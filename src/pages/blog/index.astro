@@ -99,15 +99,34 @@ const meta: SiteMeta = {
     border-radius: var(--radius-md);
     background: var(--color-bg);
     box-shadow: var(--shadow-sm);
-    transition: all 0.18s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
     overflow: hidden;
     padding: 24px;
+  }
+
+  /* 悬停时左侧出现主色指示条，与首页工具卡片视觉风格统一 */
+  .blog-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform var(--transition-base);
   }
 
   .blog-card:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .blog-card:hover::before {
+    transform: scaleY(1);
   }
 
   /* 拉伸链接：标题链接的 ::after 撑满整张卡片，实现"整卡可点击" */
@@ -156,16 +175,16 @@ const meta: SiteMeta = {
     position: relative;
     z-index: 1;
     color: var(--color-primary);
-    background: rgba(43, 108, 255, 0.08);
+    background: var(--color-primary-soft);
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 12px;
     text-decoration: none;
-    transition: background 0.15s ease;
+    transition: background-color var(--transition-fast);
   }
 
   .blog-card__tag:hover {
-    background: rgba(43, 108, 255, 0.18);
+    background: var(--color-primary-ring);
   }
 
   /* 标签入口 */

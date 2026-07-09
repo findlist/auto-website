@@ -71,6 +71,11 @@ const meta: SiteMeta = {
     background: var(--color-bg);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base);
+  }
+
+  .jsontool:hover {
+    box-shadow: var(--shadow-md);
   }
 
   .jsontool__toolbar {
@@ -556,57 +561,7 @@ const meta: SiteMeta = {
     }
   }
 
-  /* FAQ */
-  .json-faq {
-    max-width: 760px;
-    margin: 48px auto;
-    padding: 0 0 24px;
-  }
-
-  .json-faq h2 {
-    font-size: 22px;
-    margin: 0 0 16px;
-    font-weight: 600;
-  }
-
-  .json-faq details {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg);
-    margin-bottom: 8px;
-    overflow: hidden;
-  }
-
-  .json-faq summary {
-    padding: 12px 16px;
-    cursor: pointer;
-    font-weight: 500;
-    list-style: none;
-    user-select: none;
-  }
-
-  .json-faq summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .json-faq summary::after {
-    content: '+';
-    float: right;
-    color: var(--color-text-muted);
-    font-weight: 400;
-  }
-
-  .json-faq details[open] summary::after {
-    content: '−';
-  }
-
-  .json-faq details p {
-    margin: 0;
-    padding: 0 16px 14px;
-    color: var(--color-text-soft);
-    font-size: 14px;
-    line-height: 1.7;
-  }
+  /* FAQ 样式已统一迁移至 global.css 的 .json-faq 通用样式 */
 
   /* 移动端：垂直堆叠 */
   @media (max-width: 768px) {

@@ -6,14 +6,21 @@
   --color-bg-soft: #f7f8fa;
   --color-bg-code: #f4f4f5;
   --color-border: #e4e6eb;
+  --color-border-strong: #d1d5db;
   --color-text: #1f2329;
   --color-text-soft: #646a73;
   --color-text-muted: #8a8f99;
   --color-primary: #2b6cff;
   --color-primary-hover: #1a57f0;
+  --color-primary-soft: rgba(43, 108, 255, 0.08);
+  --color-primary-ring: rgba(43, 108, 255, 0.16);
   --color-success: #1aaa55;
+  --color-success-soft: rgba(26, 170, 85, 0.08);
   --color-warning: #f5a623;
+  --color-warning-soft: rgba(245, 166, 35, 0.08);
   --color-error: #e5484d;
+  --color-error-soft: rgba(229, 72, 77, 0.08);
+  --color-accent: #7a4cff;
 
   /* 字体 */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
@@ -27,6 +34,18 @@
   --radius-lg: 14px;
   --shadow-sm: 0 1px 2px rgba(20, 25, 35, 0.06);
   --shadow-md: 0 4px 12px rgba(20, 25, 35, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 25, 35, 0.12);
+
+  /* 过渡曲线 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 0.12s var(--ease-out);
+  --transition-base: 0.18s var(--ease-out);
+  --transition-slow: 0.28s var(--ease-out);
+
+  /* z-index 层级 */
+  --z-header: 50;
+  --z-overlay: 100;
+  --z-toast: 200;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,13 +54,20 @@
     --color-bg-soft: #161a21;
     --color-bg-code: #1a1f28;
     --color-border: #262c36;
+    --color-border-strong: #3a4150;
     --color-text: #e6e8eb;
     --color-text-soft: #a8aeb8;
     --color-text-muted: #6b7280;
     --color-primary: #5b8cff;
     --color-primary-hover: #7aa1ff;
+    --color-primary-soft: rgba(91, 140, 255, 0.12);
+    --color-primary-ring: rgba(91, 140, 255, 0.24);
+    --color-success-soft: rgba(26, 170, 85, 0.14);
+    --color-warning-soft: rgba(245, 166, 35, 0.14);
+    --color-error-soft: rgba(229, 72, 77, 0.14);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -63,12 +89,14 @@ body {
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* 主题切换时平滑过渡背景与文字色 */
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 a {
   color: var(--color-primary);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color var(--transition-fast);
 }
 
 a:hover {
@@ -85,6 +113,12 @@ button {
   cursor: pointer;
 }
 
+/* 选中文本高亮色 */
+::selection {
+  background: var(--color-primary-ring);
+  color: inherit;
+}
+
 /* 通用容器 */
 .container {
   width: 100%;
@@ -96,27 +130,29 @@ button {
 /* 顶部导航 */
 .site-header {
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg);
+  background: color-mix(in srgb, var(--color-bg) 85%, transparent);
   position: sticky;
   top: 0;
-  z-index: 50;
-  backdrop-filter: saturate(180%) blur(8px);
+  z-index: var(--z-header);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
 
 .site-header__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
+  height: 60px;
 }
 
 .site-header__brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 600;
   font-size: 17px;
   color: var(--color-text);
+  transition: color var(--transition-fast);
 }
 
 .site-header__brand:hover {
@@ -127,27 +163,34 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--color-primary), #7a4cff);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: #fff;
   font-size: 14px;
   font-weight: 700;
+  box-shadow: 0 2px 8px var(--color-primary-ring);
+  transition: transform var(--transition-base);
+}
+
+.site-header__brand:hover .site-header__brand-mark {
+  transform: scale(1.08) rotate(-3deg);
 }
 
 .site-header__nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .site-header__nav a {
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: var(--radius-sm);
   color: var(--color-text-soft);
   font-size: 14px;
-  transition: all 0.15s ease;
+  font-weight: 500;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
 .site-header__nav a:hover {
@@ -155,12 +198,17 @@ button {
   background: var(--color-bg-soft);
 }
 
+.site-header__nav a[aria-current="page"] {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
 /* 底部 */
 .site-footer {
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-soft);
-  padding: 32px 0;
-  margin-top: 64px;
+  padding: 36px 0;
+  margin-top: 72px;
   color: var(--color-text-soft);
   font-size: 14px;
 }
@@ -175,6 +223,7 @@ button {
 
 .site-footer a {
   color: var(--color-text-soft);
+  transition: color var(--transition-fast);
 }
 
 .site-footer a:hover {
@@ -183,7 +232,7 @@ button {
 
 /* 标题区 */
 .page-hero {
-  padding: 48px 0 24px;
+  padding: 52px 0 28px;
   text-align: center;
 }
 
@@ -199,6 +248,7 @@ button {
   max-width: 640px;
   color: var(--color-text-soft);
   font-size: 16px;
+  line-height: 1.7;
 }
 
 @media (max-width: 768px) {
@@ -223,7 +273,8 @@ button {
   color: var(--color-text);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: border-color var(--transition-fast), color var(--transition-fast),
+    background-color var(--transition-fast), box-shadow var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -232,16 +283,22 @@ button {
   color: var(--color-primary);
 }
 
+.btn:active {
+  transform: scale(0.97);
+}
+
 .btn--primary {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+  box-shadow: 0 2px 8px var(--color-primary-ring);
 }
 
 .btn--primary:hover {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
   color: #fff;
+  box-shadow: 0 4px 14px var(--color-primary-ring);
 }
 
 .btn--sm {
@@ -315,7 +372,7 @@ button {
   position: absolute;
   top: -40px;
   left: 8px;
-  z-index: 100;
+  z-index: var(--z-overlay);
   padding: 8px 12px;
   background: var(--color-primary);
   color: #fff;
@@ -326,4 +383,158 @@ button {
 .skip-link:focus {
   top: 8px;
   color: #fff;
+}
+
+/* ============ 通用工具页样式 ============ */
+/* 各工具页面共享的 FAQ 折叠面板、复制成功反馈、滚动条美化等通用样式 */
+
+/* FAQ 折叠面板：所有工具页面复用 .json-faq 类名 */
+.json-faq {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 0 0 24px;
+}
+
+.json-faq h2 {
+  font-size: 22px;
+  margin: 0 0 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.json-faq details {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.json-faq details:hover {
+  border-color: var(--color-border-strong);
+}
+
+.json-faq details[open] {
+  border-color: var(--color-primary-ring);
+  box-shadow: var(--shadow-sm);
+}
+
+.json-faq summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14.5px;
+  list-style: none;
+  user-select: none;
+  transition: background-color var(--transition-fast);
+}
+
+.json-faq summary:hover {
+  background: var(--color-bg-soft);
+}
+
+.json-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 折叠面板的 +/− 指示器 */
+.json-faq summary::after {
+  content: '+';
+  float: right;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform var(--transition-base), color var(--transition-fast);
+}
+
+.json-faq details[open] summary::after {
+  content: '−';
+  color: var(--color-primary);
+}
+
+.json-faq details p {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: var(--color-text-soft);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.json-faq details p code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-bg-code);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--color-primary);
+}
+
+/* ============ 复制成功反馈动画 ============ */
+/* 复制按钮成功后短暂变绿，给用户明确的操作反馈 */
+@keyframes copy-flash {
+  0% { background: var(--color-primary); }
+  100% { background: var(--color-bg); }
+}
+
+.is-copied {
+  animation: copy-flash 0.6s var(--ease-out);
+  border-color: var(--color-success) !important;
+  color: var(--color-success) !important;
+}
+
+/* ============ 自定义滚动条 ============ */
+/* 仅在支持 webkit 滚动条的浏览器生效，Firefox 用 scrollbar-color */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 4px;
+  border: 2px solid var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ============ 页面内容淡入 ============ */
+/* 页面加载时 main 区域淡入上滑，提升首屏感知速度 */
+main#main {
+  animation: fade-in-up 0.32s var(--ease-out);
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 尊重用户的减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
