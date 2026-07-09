@@ -98,13 +98,14 @@ function escapeText(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
-/** 转义 XML 属性值中的特殊字符 */
+/** 转义 XML 属性值中的特殊字符（与文本节点一致，& < > " ' 全部转义） */
 function escapeAttribute(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 /** CDATA 包裹，处理 ]]> 分隔符冲突（拆分为多段 CDATA） */

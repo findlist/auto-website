@@ -130,7 +130,7 @@ export default function CronTool() {
   }, [expr, description, parsed.error, executions, flashNotice]);
 
   const hasError = !!parsed.error;
-  const fieldLabels = ['分钟 (0-59)', '小时 (0-23)', '日 (1-31)', '月 (1-12)', '周 (0-6)'];
+  const fieldLabels = ['分钟 (0-59)', '小时 (0-23)', '日 (1-31)', '月 (1-12)', '周 (0-7)'];
   const fieldValues = expr.trim().split(/\s+/);
 
   return (
@@ -266,8 +266,8 @@ export default function CronTool() {
               </tr>
               <tr>
                 <td>周</td>
-                <td>0-6</td>
-                <td>每周的第几天执行（0=周日，支持 SUN-SAT）</td>
+                <td>0-7</td>
+                <td>每周的第几天执行（0 与 7 均为周日，支持 SUN-SAT）</td>
               </tr>
             </tbody>
           </table>

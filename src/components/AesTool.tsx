@@ -120,7 +120,7 @@ export default function AesTool() {
     });
     setDecResult(result);
     setLoading(false);
-  }, [plaintext, mode, keyLength, keySource, keyInput, ciphertextInput, ivInput, outputFormat, iterations, saltInput]);
+  }, [mode, keyLength, keySource, keyInput, ciphertextInput, ivInput, outputFormat, iterations, saltInput]);
 
   /** 生成随机密钥并填入输入框 */
   const handleGenerateKey = useCallback(() => {
@@ -347,6 +347,11 @@ export default function AesTool() {
             rows={5}
             spellCheck={false}
           />
+          {mode === 'CTR' && (
+            <p className="aes__source-hint">
+              CTR 模式计数器为 32 位，单次加密明文上限约 64GB（2³²×16 字节），超限会因计数器回绕导致 IV 重用。浏览器场景下通常不会触及。
+            </p>
+          )}
         </div>
       ) : (
         <>

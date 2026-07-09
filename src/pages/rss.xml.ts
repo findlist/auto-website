@@ -35,6 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
         `      <link>${url}</link>`,
         `      <guid isPermaLink="true">${url}</guid>`,
         `      <description>${escapeXml(post.data.description)}</description>`,
+        `      <dc:creator>工具盒子</dc:creator>`,
         `      <pubDate>${post.data.pubDate.toUTCString()}</pubDate>`,
         tags,
         '    </item>',
@@ -44,14 +45,15 @@ export const GET: APIRoute = async ({ site }) => {
     })
     .join('\n');
 
-  // 拼装完整 RSS 2.0 文档
+  // 拼装完整 RSS 2.0 文档（声明 dc 命名空间以支持 <dc:creator> 作者元素）
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>工具盒子技术博客</title>
     <link>${SITE_URL}/blog</link>
     <description>开发者工具背后的技术原理与最佳实践深度解析</description>
     <language>zh-CN</language>
+    <generator>工具盒子 RSS Generator</generator>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml" />
 ${items}

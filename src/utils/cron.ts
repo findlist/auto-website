@@ -43,7 +43,7 @@ const FIELD_META: Record<
   },
   dayOfWeek: {
     min: 0,
-    max: 6,
+    max: 7, // 7 也表示周日（POSIX cron 0 与 7 等价），解析后归一化为 0
     aliases: { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 },
   },
 };
@@ -201,6 +201,11 @@ function parseField(type: CronFieldType, raw: string): CronFieldParsed {
   }
   // 普通语法
   const values = parseBasicTokens(trimmed, meta);
+  // dayOfWeek 的 7 归一化为 0（周日），与 nL/n#k 语法一致（POSIX cron 0 与 7 均表示周日）
+  if (type === 'dayOfWeek') {
+    const normalized = new Set(values.map((v) => v % 7));
+    return { values: Array.from(normalized).sort((a, b) => a - b), any: false };
+  }
   return { values, any: false };
 }
 

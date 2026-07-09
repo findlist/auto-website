@@ -151,10 +151,19 @@ const URL_PATHS = ['/about', '/posts/1', '/api/users', '/docs/guide', '/products
  */
 export function randomInt(max: number): number {
   if (max <= 0) return 0;
-  // 优先 CSPRNG，保证密码学安全与均匀分布
+  // 优先 CSPRNG，使用拒绝采样消除取模偏差，保证均匀分布
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    // 拒绝采样上限：2^32 中 max 的最大整数倍，超出则重新采样
+    const limit = Math.floor(0x100000000 / max) * max;
     const arr = new Uint32Array(1);
-    crypto.getRandomValues(arr);
+    // 最多重试 10 次避免极端情况下的无限循环（偏差概率极低，通常 1 次即可）
+    for (let i = 0; i < 10; i++) {
+      crypto.getRandomValues(arr);
+      if (arr[0] < limit) {
+        return arr[0] % max;
+      }
+    }
+    // 重试上限后降级直接取模（偏差可忽略）
     return arr[0] % max;
   }
   return Math.floor(Math.random() * max);

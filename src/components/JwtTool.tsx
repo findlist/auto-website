@@ -195,18 +195,20 @@ function decodeJwt(input: string): JwtDecoded {
   // 去除首尾空白与可能的 Bearer 前缀
   const trimmed = input.trim().replace(/^Bearer\s+/i, '');
   const parts = trimmed.split('.');
-  if (parts.length !== 3) {
+  // 接受 2 段（header.payload，无签名）或 3 段（header.payload.signature），与验签工具一致
+  if (parts.length < 2) {
     return {
       ok: false,
       header: empty,
       payload: empty,
       signature: empty,
-      error: `JWT 应包含 3 段（用 . 分隔），当前 ${parts.length} 段`,
+      error: `JWT 应包含 2 或 3 段（用 . 分隔），当前 ${parts.length} 段`,
     };
   }
   const header = decodePart(parts[0], 'header');
   const payload = decodePart(parts[1], 'payload');
-  const signature = decodePart(parts[2], 'signature');
+  // 两段 JWT 无签名段，用空字符串占位（decodePart 返回 ok:false 并提示「段为空」）
+  const signature = decodePart(parts[2] ?? '', 'signature');
   const ok = header.ok && payload.ok;
   return {
     ok,
@@ -317,7 +319,8 @@ export default function JwtTool() {
   const [copiedSeg, setCopiedSeg] = useState<Segment | null>(null);
 
   // 实时解析：输入即解码，无需点击按钮
-  const decoded = useMemo<JwtDecoded>(() => decodeJwt(input), [input]);
+  // 超长输入真正截断后再解码，与「仅解析前 N 字符」提示一致（防止超长 token 解码卡顿）
+  const decoded = useMemo<JwtDecoded>(() => decodeJwt(input.slice(0, MAX_INPUT_LENGTH)), [input]);
 
   // 过期状态（基于 payload）
   const expiry = useMemo(() => getExpiryStatus(decoded.payload.obj), [decoded.payload.obj]);

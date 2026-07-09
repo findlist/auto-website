@@ -113,11 +113,11 @@ async function generateTestJwe(): Promise<{ jwe: string; key: string }> {
  * 流程：生成 CEK → 生成 salt → PBKDF2 派生 KW 密钥 → AES-KW 包装 CEK
  *      → 构造含 p2s/p2c 的 Protected Header → AES-GCM 加密明文 → 拼接 Compact
  *
- * 密码固定为 "toolbox-pbes2-demo"，迭代次数 1000（演示用，生产应 ≥ 10000）
+ * 密码固定为 "toolbox-pbes2-demo"，迭代次数 10000（演示用，生产应 ≥ 600000）
  */
 async function generateTestPbes2Jwe(): Promise<{ jwe: string; password: string }> {
   const password = 'toolbox-pbes2-demo';
-  const iterations = 1000;
+  const iterations = 10000;
 
   // base64url 编码辅助
   const encodeB64url = (bytes: Uint8Array): string => {
