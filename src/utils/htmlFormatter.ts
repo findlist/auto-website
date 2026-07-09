@@ -194,14 +194,27 @@ function lintHtml(input: string, doc: Document): LintIssue[] {
       message: `检测到 ${rawAmp.length} 处可能未编码的 & 字符（应写为 &amp;）`,
     });
   }
-  // 3. 检测重复属性（同元素同名属性多次出现）
-  const dupAttrRe = /<(\w+)([^>]*?)\s(\w+)\s*=\s*["'][^"']*["']([^>]*?)\s\3\s*=/g;
-  let dup;
-  while ((dup = dupAttrRe.exec(input)) !== null) {
-    issues.push({
-      level: 'warning',
-      message: `元素 <${dup[1]}> 出现重复属性 "${dup[3]}"，浏览器将只保留第一个`,
-    });
+  // 3. 检测重复属性（逐标签提取属性名，用 Set 检测，避免回溯型正则 ReDoS）
+  const tagRe = /<(\w+)([^>]*)>/g;
+  let tagMatch: RegExpExecArray | null;
+  while ((tagMatch = tagRe.exec(input)) !== null) {
+    const tagName = tagMatch[1];
+    const attrSection = tagMatch[2];
+    // 从标签属性段提取所有属性名（属性名后跟 = 号）
+    const attrNameRe = /\s(\w+)\s*=/g;
+    const seen = new Set<string>();
+    let attrMatch: RegExpExecArray | null;
+    while ((attrMatch = attrNameRe.exec(attrSection)) !== null) {
+      const attrName = attrMatch[1].toLowerCase();
+      if (seen.has(attrName)) {
+        issues.push({
+          level: 'warning',
+          message: `元素 <${tagName}> 出现重复属性 "${attrName}"，浏览器将只保留第一个`,
+        });
+        break; // 每个标签只报告一次重复
+      }
+      seen.add(attrName);
+    }
   }
   // 4. 检测 parsererror（text/html 模式一般不会产生，但保险检查）
   const parserError = doc.querySelector('parsererror');

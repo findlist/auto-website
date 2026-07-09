@@ -289,10 +289,10 @@ export default function AesTool() {
               type="number"
               className="aes__input aes__input--num"
               value={iterations}
-              min={1000}
+              min={10000}
               max={10000000}
               step={10000}
-              onChange={(e) => setIterations(Math.max(1000, Number(e.target.value) || DEFAULT_ITERATIONS))}
+              onChange={(e) => setIterations(Math.max(10000, Number(e.target.value) || DEFAULT_ITERATIONS))}
             />
             <p className="aes__source-hint">
               OWASP 2023 建议至少 600000 次（SHA-256）。次数越高越抗暴力破解，但加密耗时也越长。

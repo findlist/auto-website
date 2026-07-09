@@ -62,7 +62,7 @@ export interface EncryptOptions {
   keyInput: string;
   /** 输出编码格式 */
   outputFormat: OutputFormat;
-  /** PBKDF2 迭代次数（仅 password 模式生效，默认 100000） */
+  /** PBKDF2 迭代次数（仅 password 模式生效，默认 600000） */
   iterations: number;
   /** 自定义 IV（Hex，可选；不填则随机生成） */
   ivHex?: string;
@@ -92,8 +92,8 @@ const IV_LENGTH: Record<AesMode, number> = {
   CTR: 16, // CTR 通常 16 字节（前 12 字节 nonce + 后 4 字节计数器）
 };
 
-/** PBKDF2 默认迭代次数（OWASP 2023 建议 ≥ 600000 次 SHA-256，本工具默认 100000 兼顾安全与性能） */
-export const DEFAULT_ITERATIONS = 100000;
+/** PBKDF2 默认迭代次数（OWASP 2023 建议 ≥ 600000 次 SHA-256） */
+export const DEFAULT_ITERATIONS = 600000;
 
 /** PBKDF2 盐长度（字节） */
 const SALT_LENGTH = 16;
@@ -254,7 +254,7 @@ export async function deriveKey(
   mode: AesMode,
 ): Promise<{ key: CryptoKey; saltHex: string; keyHex: string }> {
   if (!password) throw new Error('密码不能为空');
-  if (iterations < 1000) throw new Error('迭代次数过低，建议至少 100000 次');
+  if (iterations < 10000) throw new Error('迭代次数过低，建议至少 600000 次');
 
   const salt = saltHex ? hexToBytes(saltHex) : randomBytes(SALT_LENGTH);
   const passwordBytes = new TextEncoder().encode(password);

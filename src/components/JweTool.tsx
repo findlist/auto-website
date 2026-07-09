@@ -733,7 +733,7 @@ export default function JweTool() {
           <p className="jwetool__hint">
             当前 JWE 使用的 alg 或 enc 暂不支持解密，仅做格式解析展示。
             <br />
-            支持解密的 alg：dir、A128KW、A192KW、A256KW、RSA-OAEP、RSA-OAEP-256/384/512、RSA1_5、PBES2-HS256+A128KW、PBES2-HS384+A192KW、PBES2-HS512+A256KW、ECDH-ES、ECDH-ES+A128KW、ECDH-ES+A192KW、ECDH-ES+A256KW
+            支持解密的 alg：dir、A128KW、A192KW、A256KW、RSA-OAEP、RSA-OAEP-256/384/512、PBES2-HS256+A128KW、PBES2-HS384+A192KW、PBES2-HS512+A256KW、ECDH-ES、ECDH-ES+A128KW、ECDH-ES+A192KW、ECDH-ES+A256KW（RSA1_5 已因安全风险移除）
             <br />
             支持解密的 enc：A128GCM、A192GCM、A256GCM
           </p>

@@ -110,7 +110,8 @@ export const ALG_CATEGORY: Record<string, AlgCategory> = {
   'ECDH-ES+A256KW': 'ecdh-es',
 };
 
-/** 支持解密的 alg 列表（其他 alg 仅解析不解密） */
+/** 支持解密的 alg 列表（其他 alg 仅解析不解密）
+ * 注意：RSA1_5 已从默认支持列表移除，存在 Bleichenbacher 攻击风险，建议使用 RSA-OAEP 替代 */
 export const SUPPORTED_DECRYPT_ALGS = [
   'dir',
   'A128KW',
@@ -120,7 +121,6 @@ export const SUPPORTED_DECRYPT_ALGS = [
   'RSA-OAEP-256',
   'RSA-OAEP-384',
   'RSA-OAEP-512',
-  'RSA1_5',
   // PBES2 系列：密码 + PBKDF2 派生 KW 密钥 + AES-KW 解包 CEK
   'PBES2-HS256+A128KW',
   'PBES2-HS384+A192KW',
@@ -522,6 +522,15 @@ export async function decryptJwe(
     return { ok: false, error: '缺少 alg 或 enc 字段' };
   }
 
+  // RSA1_5 存在 Bleichenbacher 攻击风险，已从默认支持列表移除，拒绝解密并提示替代方案
+  if (alg === 'RSA1_5') {
+    return {
+      ok: false,
+      error:
+        'RSA1_5（PKCS#1 v1.5）存在 Bleichenbacher 攻击风险，已不再支持解密。请使用 RSA-OAEP 系列算法替代（如 RSA-OAEP-256）。',
+    };
+  }
+
   // 检查算法是否支持
   if (!SUPPORTED_DECRYPT_ALGS.includes(alg)) {
     return {
@@ -612,8 +621,9 @@ export async function decryptJwe(
         false,
         ['decrypt'],
       );
-    } else if (alg.startsWith('RSA-OAEP') || alg === 'RSA1_5') {
-      // RSA 系：用户提供 PEM 格式 RSA 私钥，用 decrypt 解出 CEK
+    } else if (alg.startsWith('RSA-OAEP')) {
+      // RSA-OAEP 系：用户提供 PEM 格式 RSA 私钥，用 decrypt 解出 CEK
+      // 注意：RSA1_5 已在前置校验中拦截，此处仅处理 RSA-OAEP 系列
       if (!keyInput) {
         return { ok: false, error: `${alg} 算法需要提供 PEM 格式的 RSA 私钥` };
       }
@@ -623,11 +633,11 @@ export async function decryptJwe(
       } catch (e) {
         return { ok: false, error: `PEM 解析失败：${e instanceof Error ? e.message : ''}` };
       }
-      const rsaHash = alg === 'RSA1_5' ? undefined : rsaOaepHash(alg);
+      const rsaHash = rsaOaepHash(alg);
       const rsaKey = await crypto.subtle.importKey(
         'pkcs8',
         pkcs8Bytes,
-        alg === 'RSA1_5' ? { name: 'RSAES-PKCS1-v1_5' } : { name: 'RSA-OAEP', hash: rsaHash },
+        { name: 'RSA-OAEP', hash: rsaHash },
         false,
         ['decrypt'],
       );
@@ -636,7 +646,7 @@ export async function decryptJwe(
         return { ok: false, error: 'encrypted_key 段为空，无法解出 CEK' };
       }
       const cekBytes = await crypto.subtle.decrypt(
-        alg === 'RSA1_5' ? { name: 'RSAES-PKCS1-v1_5' } : { name: 'RSA-OAEP' },
+        { name: 'RSA-OAEP' },
         rsaKey,
         wrappedKeyBytes,
       );
