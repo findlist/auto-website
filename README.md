@@ -282,6 +282,39 @@ auto-website/
 
 ---
 
+## 🕐 质量保障定时任务
+
+本项目除自驱迭代任务外，还配置了两个每日质量保障定时任务，**每天 00:00（北京时间）** 执行，与自动开发并行运行，形成「开发—检查—优化」闭环。
+
+### 1. Bug 检查任务
+
+- **任务名称**：`auto-website Bug 检查`
+- **执行时间**：每天 00:00（Asia/Shanghai）
+- **检查范围**：
+  - 项目根目录：运行 `npm run check`（即 `astro check`）检查类型，运行 `npm run build` 检查构建是否通过（本项目为 Astro 项目，无 lint / test 脚本）
+  - 审查 `src/components/` 工具组件（JsonTool / JwtTool / RegexTool / HashTool 等全部 47 个工具组件）
+  - 审查 `src/pages/` 页面（.astro 文件）、`src/utils/` 工具函数（aes / jsonPath / jsonSchema / jwe 等加密解析逻辑）、`src/layouts/BaseLayout.astro`、`src/styles/global.css`、`astro.config.mjs`
+  - 分析最近一次提交变更（`git diff HEAD~1`），重点关注工具组件逻辑错误（加密解密 / 格式转换 / 编码解码）、类型错误、Astro 客户端/服务端边界问题（`client:` 指令使用）、安全问题（XSS / eval / CSP）、SEO 问题（meta / sitemap / robots）、性能问题
+- **输出位置**：`docs/bug-check/bug-check-YYYYMMDD.md`
+- **原则**：只读不写，仅生成检查报告，不修改任何代码
+
+### 2. 前端样式优化任务
+
+- **任务名称**：`auto-website 前端样式优化`
+- **执行时间**：每天 00:00（Asia/Shanghai）
+- **优化范围**：
+  - 审查 `src/layouts/BaseLayout.astro`、`src/styles/global.css`、`src/pages/index.astro`、`src/pages/about.astro`
+  - 重点工具页面：json / jwt / regex / hash / qr / password / color / diff 等 `.astro` 页面
+  - 博客页面：`src/pages/blog/index.astro`、`src/pages/blog/[...slug].astro`
+  - 抽查 `src/components/` 下工具组件样式
+  - 使用 `frontend-design` 技能审查页面设计质量，统一工具组件视觉风格（输入框 / 按钮 / 结果展示区），改善配色、间距、字体，优化响应式布局与交互体验（hover / focus / 复制成功反馈等）
+- **验证**：修改后运行 `npm run build` 确保构建通过，不破坏现有功能
+- **输出位置**：`docs/style-optimization/style-opt-YYYYMMDD.md`
+
+> 两个任务均设置了「当天已有同名报告则跳过」的防重复规则，避免覆盖既有成果。
+
+---
+
 ## 许可证
 
 本项目基于 [Apache License 2.0](./LICENSE) 协议开源。
