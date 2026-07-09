@@ -604,3 +604,193 @@
 - 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
+
+---
+
+# 第 8 轮 · 低危功能一致性 Bug 批量修复（9 项）
+
+## 上下文恢复
+- 承接第 7 轮（预存在 TS 类型错误清零，commit 2b6a96a）
+- 触发点：bug-check 报告剩余 14 个低危 Bug，本轮选取 9 个功能一致性/正确性 Bug
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做功能质量打磨
+
+## 本轮聚焦方向
+**低危功能一致性 Bug 批量修复**（按规范任务优先级「功能可用性 > 性能体验 > SEO」）
+选取 9 个 Bug（BUG-21/22/25/26/27/28/30/32/38），涉及 8 个文件，正好不超 8 文件红线。
+跳过：BUG-35（8+ 文件超红线）、BUG-36（30+ 文件超红线）、BUG-37（示例数据低优先级延后）、BUG-39（已有防护，引入 DOMPurify 违反轻量化）、BUG-40（第 2 轮已顺带修复）。
+
+## 完成任务（9 个 Bug，8 个文件）
+
+1. ✅ BUG-21（低·一致性）JwtTool 超长输入未截断但提示已截断
+   - 文件：src/components/JwtTool.tsx
+   - 问题：overLimit 标记提示「仅解析前 20000 字符」但 decodeJwt(input) 接收完整 input，与提示不符
+   - 修复：decodeJwt(input.slice(0, MAX_INPUT_LENGTH)) 真正截断后再解码，提示与行为一致
+2. ✅ BUG-22（低·一致性）JwtTool 与 JwtVerifyTool 段数要求不一致
+   - 文件：src/components/JwtTool.tsx
+   - 问题：JwtTool 要求 parts.length === 3，JwtVerify 接受 >= 2，两段 JWT 表现不一致
+   - 修复：parts.length !== 3 改为 < 2，接受两段 JWT（header.payload 无签名），signature 用空字符串占位
+3. ✅ BUG-25（低·安全示例）JWE 示例 PBES2 迭代次数过低
+   - 文件：src/components/JweTool.tsx
+   - 问题：示例 iterations = 1000，注释自承「生产应 ≥ 10000」
+   - 修复：1000 → 10000，注释同步更新为「生产应 ≥ 600000」（对齐 OWASP/第 4 轮 BUG-12）
+4. ✅ BUG-26（低·代码质量）AesTool handleDecrypt 依赖数组含未使用变量
+   - 文件：src/components/AesTool.tsx
+   - 问题：依赖数组含 plaintext，但 handleDecrypt 不使用它（解密用 ciphertextInput），导致不必要重建
+   - 修复：从依赖数组移除 plaintext
+5. ✅ BUG-27（低·安全提示）AES CTR 模式 counter 32 位无长度警告
+   - 文件：src/components/AesTool.tsx
+   - 问题：CTR_COUNTER_BITS = 32，超过 2³² 块（64GB）计数器溢出回绕导致 IV 重用，无明文长度提示
+   - 修复：CTR 模式明文输入区下方增加动态提示「计数器为 32 位，单次加密明文上限约 64GB，超限会因计数器回绕导致 IV 重用」
+6. ✅ BUG-28（低·一致性）jsonToXml escapeAttribute 未转义单引号
+   - 文件：src/utils/jsonToXml.ts
+   - 问题：escapeAttribute 转义了 & < > " 但未转义 '，与文件头注释声称「文本节点强制转义 < > & " '」不符
+   - 修复：补充 .replace(/'/g, '&apos;')
+7. ✅ BUG-30（低·一致性）cron dayOfWeek 值 7 处理不一致
+   - 文件：src/utils/cron.ts、src/components/CronTool.tsx
+   - 问题：FIELD_META.dayOfWeek.max = 6，普通值 7 被拒绝，但 nL/n#k 语法用 % 7 归一化允许 7
+   - 修复：max 6 → 7（接受 0-7 输入），普通语法分支对 dayOfWeek 做 % 7 归一化（7→0），与 nL/n#k 一致；CronTool UI 文案「0-6」同步为「0-7」+「0 与 7 均为周日」
+8. ✅ BUG-32（低·随机质量）lorem randomInt 存在 modulo bias
+   - 文件：src/utils/lorem.ts
+   - 问题：arr[0] % max 当 max 不整除 2³² 时引入取模偏差，注释声称「保证均匀分布」但不满足
+   - 修复：使用拒绝采样——计算 limit = floor(2³²/max)*max，随机值 >= limit 时重新采样（最多 10 次重试避免无限循环）
+9. ✅ BUG-38（低·RSS 规范）RSS 缺少可选但推荐的元素
+   - 文件：src/pages/rss.xml.ts
+   - 问题：缺少 <dc:creator>、<content:encoded>、<generator> 等推荐元素
+   - 修复：声明 xmlns:dc 命名空间，每个 item 补充 <dc:creator>工具盒子</dc:creator>，channel 补充 <generator>；<content:encoded> 需 Markdown 渲染基础设施延后
+
+## 修改文件（8 个，未超 8 文件红线）
+- src/components/JwtTool.tsx（BUG-21 截断 + BUG-22 段数）
+- src/components/JweTool.tsx（BUG-25 迭代次数）
+- src/components/AesTool.tsx（BUG-26 依赖数组 + BUG-27 CTR 提示）
+- src/utils/jsonToXml.ts（BUG-28 单引号转义）
+- src/utils/cron.ts（BUG-30 dayOfWeek 7 归一化）
+- src/components/CronTool.tsx（BUG-30 UI 文案同步）
+- src/utils/lorem.ts（BUG-32 拒绝采样）
+- src/pages/rss.xml.ts（BUG-38 dc:creator + generator）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 20 hints（零回归）
+- 构建：✅ 258 页面，20.18s，无报错无警告
+- 产物抽检：
+  - JwtTool 产物含 `s.length<2`（BUG-22）+ `a.slice(0,S)` 截断（BUG-21）✅
+  - CronTool 产物含 `0-7` + `0 与 7 均为周日` ✅
+  - rss.xml 第 16 行含 `<dc:creator>工具盒子</dc:creator>` ✅
+  - AesTool 产物含 `CTR 模式计数器为 32 位` 提示 ✅
+- Git 提交：commit cef494a，已 push origin HEAD（858b487..cef494a）
+
+## 数据洞察
+- **BUG-21 修复策略选择**：选择「真正截断传入 decodeJwt」而非「与 JwtVerifyTool 一致硬拒绝超长输入」。理由：JwtTool 是解码展示工具（不验签），截断解析即可安全展示；JwtVerifyTool 是验签工具，超长 token 验签会卡顿所以硬限制合理。保留 overLimit 提示机制让用户感知截断，体验优于静默拒绝
+- **BUG-22 两段 JWT 接受策略**：两段 JWT（header.payload）是无签名 JWT，实际中较少见但合法。JwtTool 定位是「仅解码不验签」，接受两段可展示 header+payload，signature 段为空（ok:false 提示「段为空」）。这与「仅解码展示」定位一致，且与 JwtVerifyTool 的 `parts.length >= 2` 统一
+- **BUG-30 cron dayOfWeek 7 统一策略**：POSIX cron 和 Vixie cron 中 0 和 7 都表示周日。选择「max 设为 7 + 普通语法也 % 7 归一化」而非「nL/n#k 中也拒绝 7」，因为接受 7 更符合用户直觉（许多文档示例用 7 表示周日）。归一化后 values 中不含 7（7→0），下游计算无需改动。UI 文案同步更新避免用户误以为 7 不被接受
+- **BUG-32 拒绝采样实现**：limit = floor(2³²/max)*max 是 2³² 中 max 的最大整数倍。随机值 < limit 时取模无偏差（完整周期）；>= limit 时拒绝并重采。最多 10 次重试避免极端情况无限循环（偏差概率极低，2³² 的余数通常很小，1 次即可）。降级分支保留直接取模（偏差可忽略）
+- **BUG-38 content:encoded 延后决策**：<content:encoded> 语义为文章全文 HTML，需将 Markdown 渲染为 HTML。Astro 5 Content Layer API 的 render() 返回组件而非 HTML 字符串，在 API 端点中渲染组件为字符串需 SSR 渲染器，复杂度高。选择延后——先补 <dc:creator> 和 <generator>（轻量），<content:encoded> 待 Markdown 渲染基础设施就绪后再补
+- **PowerShell heredoc 限制**：git commit 多行 message 在 PowerShell 中不支持 bash heredoc 语法（`<<'EOF'`），改用 PowerShell 变量赋值 + `n 换行符。这是 Windows 环境的 Git 操作注意事项
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告剩余未修复项（5 个低危）：
+  - BUG-35（SITE_URL 回退占位域名，8+ 文件超红线，需集中化方案）
+  - BUG-36（工具页 url 硬编码，30+ 文件超红线，需脚本批量处理或源头动态化）
+  - BUG-37（jwe.ts/jwtSign.ts 示例域名，2 文件，低优先级）
+  - BUG-39（MarkdownTool XSS，已有防护，引入 DOMPurify 违反轻量化）
+  - BUG-40（option key，第 2 轮已顺带修复，无需再改）
+
+## 下一轮建议
+按优先级排序：
+1. **BUG-37 示例域名修复**：jwe.ts/jwtSign.ts 示例 JWT/JWE 的 iss/aud 占位域名改为 RFC 2606 保留域名 example.com 或线上域名，2 文件轻量修复
+2. **BUG-35/36 占位域名源头清理**：BUG-35 多处 SITE_URL 回退可用构建启动校验替代（astro.config.mjs 校验 site 必须存在）；BUG-36 工具页 url 硬编码可用脚本批量替换为动态构造或删除（BaseLayout 已兜底）
+3. **Lighthouse 性能基线测量**：连续十轮遗留，TRAE Sandbox 拦截 configstore 写入。需用户配置白名单或换环境执行
+4. **移动端 375px 三档适配实测**：连续十轮遗留，Playwright 受 Python 3.6 限制
+5. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+6. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源
+7. **npm run check 剩余 hints 清理**：20 个 hints（未使用变量等），低优先级代码整洁度提升
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+
+---
+
+# 第 9 轮 · BUG-37 示例域名修复 + npm run check hints 清零
+
+## 上下文恢复
+- 承接第 8 轮（低危功能一致性 Bug 批量修复，commit cef494a）
+- 触发点：第 8 轮遗留建议优先级 1「BUG-37 示例域名修复」+ 优先级 7「npm run check hints 清理」
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做代码质量打磨
+
+## 本轮聚焦方向
+**BUG-37 示例占位域名修复 + npm run check hints 全面清理**（代码质量与品牌一致性）
+分 3 个最小单元提交：BUG-37（2 文件）→ hints 第一批（8 文件）→ hints 第二批（8 文件）
+
+## 完成任务
+
+### 单元 1：BUG-37 示例占位域名修复（2 个文件，commit 22c385c）
+1. ✅ jwe.ts / jwtSign.ts 示例 Payload 占位域名修复
+   - jwe.ts:922-924 SAMPLE_PLAINTEXT 的 iss/aud：`toolbox.example.com` → `website.niuzi.asia`
+   - jwtSign.ts:787-789 SAMPLE_PAYLOAD 的 iss/aud：同上
+   - 策略：与第 1 轮 QrTool 品牌一致性策略对齐，示例数据使用线上域名
+
+### 单元 2：hints 第一批清理（8 个文件，commit 35024ba）
+2. ✅ 未使用导入清理（7 个组件文件，消 11 个 hints）
+   - JwtVerifyTool.tsx：移除 useEffect、CLAIM_DESC、SAMPLE_HS256_TOKEN、ClaimCheck（4 个 hints）
+   - HttpStatusTool.tsx：移除 HttpStatus（1 个）
+   - JwtSignTool.tsx：移除 SAMPLE_HEADER（1 个）
+   - SqlTool.tsx：移除 useEffect（1 个）
+   - ColorTool.tsx：删除 palettes useMemo 内未使用的 `const hsl = rgbToHsl(currentRgb)`（1 个）
+   - MarkdownTool.tsx：replace 回调未使用参数 quotes → _quotes（1 个）
+   - YamlTool.tsx：forEach 回调移除未使用参数 idx（1 个）
+   - HexTool.tsx：substr(from, len) → substring(from, from+len)（1 个废弃 API）
+
+### 单元 3：hints 第二批清理（8 个文件，commit 7f2aacb）
+3. ✅ 未使用变量/废弃 API/Astro 提示清理（消 8 个 hints）
+   - BaseLayout.astro:105：JSON-LD script 添加 is:inline 显式声明（astro 4000）
+   - blog/tag/[tag].astro:9：移除 collectTags 前多余的 await（ts 80007，collectTags 是同步函数）
+   - aes.ts:126：substr → substring 语义等价转换（ts 6387）
+   - htmlFormatter.ts:143：删除未使用的 hasOnlyWhitespaceChildren 函数（ts 6133）
+   - jsonToTs.ts:120：toUnion 的 opts 参数 → _opts（ts 6133，保留参数位置避免修改调用方）
+   - jwe.ts:515：decryptJwe 的 keyFormat 参数 → _keyFormat（ts 6133，公共 API 保留签名）
+   - sql.ts:483：删除未使用的 peekUpper 局部变量（ts 6133）
+   - xmlToJson.ts:126：collectText 的 cdataNodeName 参数 → _cdataNodeName（ts 6133）
+
+## 修改文件（共 18 个，分 3 次提交，每次 ≤8 文件红线）
+- commit 22c385c: src/utils/jwe.ts、src/utils/jwtSign.ts（BUG-37）
+- commit 35024ba: JwtVerifyTool/HttpStatusTool/JwtSignTool/SqlTool/ColorTool/MarkdownTool/YamlTool/HexTool（hints 第一批）
+- commit 7f2aacb: BaseLayout/blog/tag/[tag]/aes/htmlFormatter/jsonToTs/jwe/sql/xmlToJson（hints 第二批）
+
+## 验证结果
+- 类型检查：✅ npm run check：0 errors, 0 warnings, 1 hint（仅剩 clipboard.ts execCommand 降级方案）
+- 构建：✅ 258 页面，无报错无警告
+- 线上验证：curl.exe 返回 HTTP 468（SafeLine WAF 机器人挑战，sl-session cookie），站点在线，真实浏览器可通过 JS 挑战正常访问
+- Git 推送：3 次 commit 全部 push origin HEAD 成功
+
+## 数据洞察
+- **BUG-37 品牌一致性策略**：示例数据中的 iss/aud 声明使用线上域名 website.niuzi.asia，与第 1 轮 QrTool 示例 URL 修复策略一致。其他组件中的 toolbox.example.com（UrlTool/RegexTool/JwtVerifyTool 示例输入）保留——这些是用户测试用示例数据，非域名所有权声明，且 UrlTool 示例含 :8443 端口用于演示 URL 解析，改为线上域名反而不合逻辑
+- **hints 清理策略**：20 个 hints 分三类处理——① 未使用导入直接从 import 移除（最干净）② 未使用函数参数用 `_` 前缀（TypeScript 约定，避免修改调用方）③ 未使用局部变量/函数直接删除。废弃 API substr→substring 需注意语义转换：substr(from, length) → substring(from, from+length)
+- **SafeLine WAF 验证**：线上站点返回 HTTP 468 + sl-session cookie，这是 SafeLine WAF 的机器人挑战机制。curl 无法通过 JS 挑战，但真实浏览器可以。说明站点在线且安全防护生效。后续线上验证需用浏览器或模拟 JS 挑战的工具
+- **_前缀策略 vs 删除参数**：对于公共 API 函数（如 decryptJwe 的 keyFormat），用 `_keyFormat` 前缀而非删除参数——因为调用方（JweTool.tsx）仍传递该值，删除参数会破坏调用签名。`_` 前缀是 TypeScript 官方约定的"已知未使用"标记
+- **Astro is:inline**：Astro 对含属性的 `<script>` 自动视为 is:inline（不处理 TypeScript/import）。显式添加 is:inline 指令仅消除 hint，不影响行为——JSON-LD script 本就是纯 HTML 输出，无需 Astro 处理
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- npm run check 仅剩 1 个 hint：clipboard.ts:39 document.execCommand 废弃（这是剪贴板降级方案，navigator.clipboard API 不可用时的回退，合理保留）
+- bug-check 报告剩余未修复项：
+  - BUG-35（SITE_URL 回退占位域名，8+ 文件超红线，需集中化方案）
+  - BUG-36（47 工具页 url 硬编码，BaseLayout 已兜底，产物正确）
+  - BUG-39（MarkdownTool XSS，已有防护，引入 DOMPurify 违反轻量化）
+  - BUG-40（option key，第 2 轮已顺带修复）
+
+## 下一轮建议
+按优先级排序：
+1. **BUG-35 SITE_URL 回退占位域名集中化**：8+ 文件中的 `?? 'https://toolbox.example.com'` 回退，可用 astro.config.mjs 构建启动校验（site 必须存在，否则构建失败）替代。或在 tsconfig/astro.config 中定义全局常量。需设计不超 8 文件红线的方案
+2. **BUG-36 工具页 url 硬编码源头清理（可选）**：47 个工具页的 `url: 'https://toolbox.example.com/xxx'` 已被 BaseLayout 运行时覆盖，产物正确。源码清理仅为代码整洁度，可用脚本批量处理
+3. **Lighthouse 性能基线测量**：连续十一轮遗留，TRAE Sandbox 拦截 configstore 写入。需用户配置白名单或换环境执行
+4. **移动端 375px 三档适配实测**：连续十一轮遗留，Playwright 受 Python 3.6 限制
+5. **线上页面浏览器验证**：curl 受 SafeLine WAF 挑战拦截，需用户用浏览器访问 https://website.niuzi.asia 验证渲染/canonical/JSON-LD 实际生效
+6. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源
+7. **clipboard.ts execCommand 降级方案优化（可选）**：可加 try-catch 包裹 navigator.clipboard.writeText，仅在失败时降级到 execCommand，或加 // @ts-expect-error 抑制 hint
+
+## 需用户操作
+- 部署本轮修复后的代码（3 次 git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 用浏览器访问 https://website.niuzi.asia 验证站点正常（curl 受 SafeLine WAF 挑战拦截无法验证）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
