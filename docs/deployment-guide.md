@@ -14,18 +14,12 @@
 
 ## 二、构建前必做：替换占位域名
 
-项目内所有 `https://toolbox.example.com` 为占位符，**部署前需替换为你的真实域名**。涉及文件：
+项目内大部分 `https://toolbox.example.com` 已动态取自 `astro.config.mjs` 的 `site` 字段，**部署前只需替换以下少数硬编码处**：
 
-1. `astro.config.mjs` 的 `site` 字段
+1. `astro.config.mjs` 的 `site` 字段（核心配置，改后全站 WebSite / Blog / BlogPosting / CollectionPage / AboutPage JSON-LD、canonical、OG、sitemap 自动同步）
 2. `public/robots.txt` 的 `Sitemap` 行
 3. `src/pages/about.astro` 与 `src/pages/privacy.astro` 中的邮箱占位（也可替换为你的真实邮箱）
-4. `src/layouts/BaseLayout.astro` 中 `SITE_URL` 常量（影响站点级 JSON-LD）
-5. `src/pages/blog/[...slug].astro` 中 `SITE_URL` 常量（影响 BlogPosting JSON-LD 与 canonical）
-6. `src/pages/blog/index.astro` 中 Blog JSON-LD 的 `url` 字段
-7. 47 个工具页（json/base64/base32/hex/punycode/ascii-art/html-formatter/css-formatter/js-formatter/json-to-ts/url/html-entities/uuid/hash/aes/timestamp/timezone/time-unit/regex/jwt/jwt-sign/jwt-verify/jwe/color/color-contrast/color-palette/csv-json/json-to-xml/xml-to-json/yaml/toml/markdown/mime/qr/password/diff/cron/ip/base64-image/lorem/sql/http-status/jsonpath/json-schema/yaml-schema/toml-schema/regex-benchmark）中 WebApplication JSON-LD 的 `url` 字段
-8. `src/pages/rss.xml.ts` 中回退域名（实际取 `astro.config.mjs` 的 `site` 字段，已含在第 1 项）
-9. `src/pages/blog/tag/[tag].astro` 中 `SITE_URL` 常量（影响标签筛选页 canonical 与 BreadcrumbList JSON-LD）
-10. `src/pages/blog/tag/index.astro` 中 `SITE_URL` 常量（影响标签索引页 canonical 与 CollectionPage JSON-LD）
+4. 47 个工具页（json/base64/base32/hex/punycode/ascii-art/html-formatter/css-formatter/js-formatter/json-to-ts/url/html-entities/uuid/hash/aes/timestamp/timezone/time-unit/regex/jwt/jwt-sign/jwt-verify/jwe/color/color-contrast/color-palette/csv-json/json-to-xml/xml-to-json/yaml/toml/markdown/mime/qr/password/diff/cron/ip/base64-image/lorem/sql/http-status/jsonpath/json-schema/yaml-schema/toml-schema/regex-benchmark）中 WebApplication JSON-LD 的 `url` 字段（仍为硬编码，待后续动态化）
 
 替换示例（PowerShell）：
 

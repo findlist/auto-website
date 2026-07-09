@@ -29,7 +29,8 @@ const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
 // 文章 URL（用于 JSON-LD 与 canonical）
-const SITE_URL = 'https://toolbox.example.com';
+// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
+const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
 const articleUrl = `${SITE_URL}/blog/${post.id}`;
 
 // 文章字数：中文按字符数近似（行业惯例），取 markdown 原始正文字符长度

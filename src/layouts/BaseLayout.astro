@@ -17,7 +17,9 @@ export interface SiteMeta {
 }
 
 const SITE_NAME = '工具盒子';
-const SITE_URL = 'https://toolbox.example.com';
+// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
+// 部署后用户只需改 astro.config.mjs 的 site，全站 JSON-LD / canonical / OG 自动同步
+const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
 
 interface Props {
   meta: SiteMeta;
@@ -27,8 +29,8 @@ const { meta } = Astro.props;
 const fullTitle = meta.title.includes(SITE_NAME)
   ? meta.title
   : `${meta.title} - ${SITE_NAME}`;
-const canonical = meta.canonical ?? new URL(Astro.url.pathname, Astro.site ?? SITE_URL).toString();
-const ogImage = meta.ogImage ?? new URL('/og-image.svg', Astro.site ?? SITE_URL).toString();
+const canonical = meta.canonical ?? new URL(Astro.url.pathname, SITE_URL).toString();
+const ogImage = meta.ogImage ?? new URL('/og-image.svg', SITE_URL).toString();
 const indexable = meta.indexable ?? true;
 
 // 站点级 WebSite 结构化数据：所有页面共享，帮助搜索引擎理解站点

@@ -26,7 +26,8 @@ const tags = Array.from(tagStats.values()).sort((a, b) => {
   return a.name.localeCompare(b.name, 'zh-CN');
 });
 
-const SITE_URL = 'https://toolbox.example.com';
+// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
+const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
 
 const meta: SiteMeta = {
   title: '全部标签 - 技术博客',

@@ -41,7 +41,8 @@ const { tagName, tagSlug, posts, allTags } = Astro.props;
 const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-const SITE_URL = 'https://toolbox.example.com';
+// 站点绝对 URL：优先取 astro.config.mjs 的 site 配置，回退到占位域名
+const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
 const tagUrl = `${SITE_URL}/blog/tag/${tagSlug}`;
 
 const meta: SiteMeta = {
