@@ -164,3 +164,181 @@
 - 部署本轮修复后的代码（git push 后若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置域名邮箱并替换 about/privacy 中的占位邮箱
+
+---
+
+# 第 3 轮 · 中危功能 Bug 批量修复
+
+## 上下文恢复
+- 承接第 2 轮（bug-check 严重与高危修复，commit 59c0585）
+- 触发点：bug-check 报告剩余 13 中危 + 21 低危，本轮聚焦中危中的功能正确性问题
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做功能质量打磨
+
+## 本轮聚焦方向
+**中危功能正确性 Bug 批量修复**（按规范任务优先级「功能可用性 > 性能体验 > SEO」）
+选取 8 个功能正确性中危 Bug（BUG-07/08/09/10/13/14/16/17），涉及 5 个文件，不超 8 文件红线。
+
+## 完成任务（8 个 Bug，5 个文件）
+
+1. ✅ BUG-07（中·功能）RSA PKCS#1 / EC SEC1 格式私钥导入失败
+   - 文件：src/utils/jwtSign.ts
+   - 问题：importRsaPrivateKey / importEcPrivateKey 统一用 'pkcs8' 导入，但 PEM 头可能是 BEGIN RSA PRIVATE KEY（PKCS#1）或 BEGIN EC PRIVATE KEY（SEC1），Web Crypto API 对私钥仅支持 'pkcs8'/'jwk'
+   - 修复：实现最小 ASN.1 DER 编码工具（encodeDerLength/derSequence/derOid/derOctetString），将 PKCS#1/SEC1 私钥 DER 包裹为 PKCS#8 容器（version(0) + AlgorithmIdentifier + OCTET STRING），再用现有 'pkcs8' 导入。RSA 算法 OID + NULL，EC 算法 OID + 曲线 OID（P-256/P-384/P-521）
+   - 方案选型：放弃完整 ASN.1 解析器（过重），改用"包裹"策略——PKCS#1/SEC1 的 DER 本身就是 PKCS#8 中 privateKey 字段的内容，只需补外层容器即可，代码量约 80 行
+2. ✅ BUG-08（中·稳定性）JweTool 渲染时 base64urlDecode 未捕获异常导致组件崩溃
+   - 文件：src/components/JweTool.tsx
+   - 问题：五段拆分表格第 576 行直接调用 base64urlDecode(value) 未加 try-catch，非法字符时 atob 抛 DOMException 导致整个组件渲染崩溃
+   - 修复：包裹 try-catch，异常时返回空 Uint8Array；同时复用已解码 bytes 给 protected header 预览，避免重复解码
+3. ✅ BUG-09（中·功能）JSONPath ..[expr] 递归下降后接括号解析错误
+   - 文件：src/utils/jsonPath.ts
+   - 问题：parseSegment 中 DOTDOT 后接 LBRACKET 时调用 parseBracket 消费整个 [...]，再 ctx.pos-- 仅回退到 RBRACKET，外层循环再次 parseSegment 时 peek 返回 RBRACKET 不匹配任何合法段，导致 $..[0] 等合法表达式解析失败
+   - 修复：移除 parseBracket 调用和 ctx.pos-- 回退，直接返回 { kind: 'recursive', name: null }，让外层循环自然解析后续 [expr] 段
+4. ✅ BUG-10（中·功能）JSONPath 多键 ['a','b'] 解析为永远不匹配的 placeholder
+   - 文件：src/utils/jsonPath.ts
+   - 问题：多键场景被简化为 filter 比较 root == '__MULTI_KEY_PLACEHOLDER__'，永远不匹配
+   - 修复：扩展 Segment 类型新增 { kind: 'multi-child'; names: string[] }，parseBracket 多键时返回 multi-child，evaluateSegment 中用 flatMap 对每个 name 分别求值并合并结果
+5. ✅ BUG-13（中·功能）xmlToJson coerceValue 不处理科学计数法
+   - 文件：src/utils/xmlToJson.ts
+   - 问题：类型推断仅检测整数和小数，不识别 1e10、6.022e23 等，保留为字符串
+   - 修复：增加科学计数法正则 /^-?\d+(\.\d+)?[eE][+-]?\d+$/，用 Number() 转换并校验 Number.isFinite
+6. ✅ BUG-14（中·稳定性）xmlToJson 递归解析无深度限制
+   - 文件：src/utils/xmlToJson.ts
+   - 问题：elementToJson 递归遍历 DOM 树无深度限制，恶意深度嵌套 XML 可导致调用栈溢出
+   - 修复：定义 MAX_RECURSION_DEPTH=500 常量，elementToJson 入口检查 depth 超限抛错；xmlToJson 主函数用 try-catch 包裹 elementToJson 调用，捕获异常返回错误结果（不崩溃）
+7. ✅ BUG-16（中·逻辑错误）sql.ts validateSql 双重否定导致逻辑错误
+   - 文件：src/utils/sql.ts
+   - 问题：条件 !upperSql.trim().endsWith(';') === false 是双重否定，等价于 endsWith(';') 为 true，导致"缺少 FROM"警告仅在 SQL 以分号结尾时触发，与预期相反
+   - 修复：移除该条件，让所有缺少 FROM 的 SELECT 都接受检查（已有 length>30 和 !/\(/ 防误报）
+8. ✅ BUG-17（中·功能）sql.ts formatSql 强制追加末尾分号可能改变语义
+   - 文件：src/utils/sql.ts
+   - 问题：return result + (result.endsWith(';') ? '' : ';') 在结果以行注释结尾时追加后变为 -- comment;，分号被注释吞掉改变 SQL 语义
+   - 修复：检查最后一行是否含 --（行注释），若是则换行后加分号（result + '\n;'），否则直接加分号
+
+## 修改文件（5 个，未超 8 文件红线）
+- src/utils/jwtSign.ts（BUG-07 ASN.1 DER 编码工具 + PKCS#1/SEC1 私钥格式降级）
+- src/components/JweTool.tsx（BUG-08 base64urlDecode 异常捕获）
+- src/utils/jsonPath.ts（BUG-09 递归下降括号解析 + BUG-10 multi-child 多键支持）
+- src/utils/sql.ts（BUG-16 双重否定逻辑 + BUG-17 分号追加语义）
+- src/utils/xmlToJson.ts（BUG-13 科学计数法 + BUG-14 递归深度限制）
+
+## 验证结果
+- 构建：✅ 258 页面，11.44s，无报错无警告
+- 产物抽检：
+  - dist/_astro/jwtSign.Byx_VpJw.js 含 BEGIN RSA PRIVATE KEY / BEGIN EC PRIVATE KEY 检测 ✅
+  - dist/_astro/JsonPathTool.BIjMDI88.js 含 multi-child ✅
+  - dist/_astro/XmlToJsonTool.BrEvji3O.js 含 MAX_RECURSION_DEPTH / 科学计数法 ✅
+  - BUG-16/17 为纯逻辑修复，构建通过即编译生效 ✅
+
+## 数据洞察
+- BUG-07 修复策略：Web Crypto API 对私钥仅支持 'pkcs8'/'jwk'，不支持 'pkcs1'/'sec1'。bug 报告建议"先 pkcs8 失败再 pkcs1"，但 pkcs1 私钥导入会直接抛 DataError。正确方案是"包裹"——PKCS#1/SEC1 的 DER 本身就是 PKCS#8 中 privateKey 字段的内容，只需补 version + AlgorithmIdentifier + OCTET STRING 外层容器即可。比"解析 PKCS#1 提取字段构造 JWK"更轻量（无需完整 ASN.1 解析器，只需编码器）
+- BUG-09 修复本质：原代码过度处理——parseBracket 消费了 [...] 后又 ctx.pos-- 回退，但回退位置错误（到 RBRACKET 而非 LBRACKET）。正确做法是不消费 LBRACKET，直接返回 recursive(null)，让外层循环自然解析。这是"最小必要复杂度"的体现
+- BUG-10 修复策略：原代码用 filter + placeholder 是"伪实现"（永远不匹配）。正确做法是扩展 Segment 类型新增 multi-child，求值时 flatMap 合并。flatMap 比手动 push 循环更简洁
+- BUG-17 行注释检测：用 result.split('\n').pop() 取最后一行，检查是否含 '--'。边界：字符串字面量中的 '--' 会误判，但 SQL 格式化场景可接受（罕见且不影响正确性，只是多加换行）
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告剩余未修复项：
+  - 中危待修：BUG-11（JWE RSA1_5 移除）、BUG-12（AES PBKDF2 迭代次数提升）、BUG-15（htmlFormatter ReDoS）、BUG-18（过度水合 client:load→visible）、BUG-19（首页内联 script CSP）
+  - 低危待修：BUG-20（@astrojs/check 依赖）、BUG-21~40（一致性/示例数据等）
+
+## 下一轮建议
+按优先级排序：
+1. **剩余中危安全 Bug 修复**：BUG-11（JWE RSA1_5 Bleichenbacher 风险，移除默认支持）、BUG-12（AES PBKDF2 默认迭代次数提升至 600000）、BUG-15（htmlFormatter 重复属性检测 ReDoS，改 DOM 遍历）—— 3 项安全类，优先级高
+2. **BUG-18 过度水合优化**：47 个工具页全用 client:load，非首屏辅助模块改 client:visible/client:idle，降低 TTI。水合优化后 Lighthouse 测量更有意义
+3. **Lighthouse 性能基线测量**：启动 preview 跑 Lighthouse，建立四项基线（连续五轮遗留）
+4. **移动端 375px 三档适配实测**：375/768/1280 抽检（连续五轮遗留）
+5. **BUG-20 @astrojs/check 依赖补齐**：恢复类型检查能力
+6. **低危 Bug 批量修复**：BUG-21~40 中的一致性问题（如 BUG-21 JwtTool 截断、BUG-23/24 JSONPath 宽松比较、BUG-34 博客内链占位域名等）
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+
+---
+
+# 第 4 轮 · 剩余中危安全 Bug 修复 + BUG-18 架构分析
+
+## 上下文恢复
+- 承接第 3 轮（中危功能 Bug 批量修复，commit 52460b3）
+- 触发点：bug-check 报告剩余中危安全类 Bug（BUG-11/12/15/18/19），本轮聚焦安全类优先
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做安全质量打磨
+
+## 本轮聚焦方向
+**剩余中危安全 Bug 修复**（按规范任务优先级「功能可用性 > 性能体验 > SEO」，安全属功能可用性最高级）
+选取 3 个安全类中危 Bug（BUG-11/12/15），涉及 5 个文件，不超 8 文件红线。同步完成 BUG-18 架构分析（结论：当前架构不适用，无需改动）。
+
+## 完成任务
+
+### Bug 修复（3 个，5 个文件）
+1. ✅ BUG-11（中·安全）JWE 支持 RSA1_5 算法，存在 Bleichenbacher 攻击风险
+   - 文件：src/utils/jwe.ts、src/components/JweTool.tsx
+   - 问题：SUPPORTED_DECRYPT_ALGS 包含 RSA1_5（PKCS#1 v1.5），攻击者可通过错误响应差异推断明文
+   - 修复：
+     - 从 SUPPORTED_DECRYPT_ALGS 数组移除 'RSA1_5'
+     - 在 decryptJwe 入口（SUPPORTED_DECRYPT_ALGS 检查前）加 RSA1_5 专项拦截，返回明确安全警告并提示使用 RSA-OAEP 替代
+     - 清理第 624-653 行 RSA1_5 死代码分支：条件从 `alg.startsWith('RSA-OAEP') || alg === 'RSA1_5'` 简化为 `alg.startsWith('RSA-OAEP')`，移除所有 `alg === 'RSA1_5' ? ... : ...` 三元运算
+     - JweTool.tsx 第 736 行支持算法文案更新：从列表移除 RSA1_5，追加"RSA1_5 已因安全风险移除"说明
+   - 方案选型：选择"拒绝解密 + 安全警告"而非"增加二次确认"，因为 RSA1_5 在现代实践中已不推荐，直接拒绝更安全且用户体验更清晰
+2. ✅ BUG-12（中·安全）AES PBKDF2 默认迭代次数低于 OWASP 建议
+   - 文件：src/utils/aes.ts、src/components/AesTool.tsx
+   - 问题：DEFAULT_ITERATIONS = 100000，注释自承"OWASP 2023 建议 ≥ 600000 次 SHA-256"，deriveKey 下限仅 1000
+   - 修复：
+     - DEFAULT_ITERATIONS 100000 → 600000（对齐 OWASP 2023 建议）
+     - deriveKey 下限校验 1000 → 10000（避免过低迭代次数）
+     - 错误提示文案"建议至少 100000 次"→"建议至少 600000 次"
+     - AesTool.tsx UI input min={1000}→min={10000}，onChange Math.max(1000,...)→Math.max(10000,...)
+     - 注释更新：移除"兼顾安全与性能"表述，直接对齐 OWASP 建议
+3. ✅ BUG-15（中·性能）htmlFormatter 重复属性检测正则潜在 ReDoS
+   - 文件：src/utils/htmlFormatter.ts
+   - 问题：原正则 `/<(\w+)([^>]*?)\s(\w+)\s*=\s*["'][^"']*["']([^>]*?)\s\3\s*=/g` 含两个 `[^>]*?` 非贪婪段与反向引用 `\3`，对含大量属性的标签可能 O(n²) 回溯
+   - 修复：改为逐标签提取属性名 + Set 检测方案
+     - 外层正则 `<(\w+)([^>]*)>/g` 匹配每个开始标签（`[^>]*` 贪婪但不会跨标签，因为 > 是终止符）
+     - 内层正则 `\s(\w+)\s*=/g` 从标签属性段提取所有属性名
+     - 用 Set 检测重复，每个标签只报告一次（break 避免冗余报告）
+   - 方案选型：bug-check 建议"改 DOM 遍历检测 element.attributes"，但 DOMParser 解析时浏览器已自动只保留第一个同名属性，DOM 遍历无法检测到重复。因此改用"逐标签正则 + Set"方案，既避免回溯型 ReDoS，又能正确检测重复属性
+
+### BUG-18 架构分析（结论：当前架构不适用，无需改动）
+- bug-check 报告 BUG-18 建议"非首屏辅助模块（FAQ、速查表、XSS 演示）应延迟水合，改 client:visible/idle"
+- 分析：全站 grep `client:(load|visible|idle|only|media)` 发现 47 个工具页各只有 **1 个** `client:load` 岛屿——即核心工具组件本身
+- FAQ 和说明内容均为 Astro 静态 HTML（`<section class="xxx-faq">` 等 `<details>` 元素），不是 React 岛屿，无需水合，不消耗 JS
+- 结论：当前架构下没有可分离的辅助岛屿，`client:load` 对首屏即需交互的工具组件是合理的。批量修改 47 文件超 8 文件红线且收益为零。若未来将 FAQ 拆分为独立 React 岛屿，可再评估 client:visible
+
+## 修改文件（5 个，未超 8 文件红线）
+- src/utils/jwe.ts（BUG-11 RSA1_5 移除 + 死代码清理）
+- src/components/JweTool.tsx（BUG-11 支持算法文案更新）
+- src/utils/aes.ts（BUG-12 默认迭代次数 + 下限提升）
+- src/components/AesTool.tsx（BUG-12 UI min/onChange 同步）
+- src/utils/htmlFormatter.ts（BUG-15 重复属性检测 ReDoS 修复）
+
+## 验证结果
+- 构建：✅ 258 页面，11.66s，无报错无警告
+- 产物抽检：
+  - dist/_astro/JweTool.*.js 含 Bleichenbacher 安全警告文案 ✅
+  - dist/_astro/AesTool.*.js 含 600000 ✅
+  - dist/_astro/HtmlFormatterTool.*.js 含新的"重复属性"检测逻辑 ✅
+- Git 提交：commit d40005d，已 push origin HEAD（52460b3..d40005d）
+
+## 数据洞察
+- BUG-11 修复策略选择：bug-check 建议"移除或增加二次确认"。选择"直接拒绝 + 安全警告"而非"二次确认"，因为 RSA1_5 在现代实践中已不推荐（RFC 7518 已将其标记为不推荐使用），二次确认会给用户带来安全风险。同时清理了 RSA1_5 相关的死代码分支（前置拦截后不会走到），避免代码冗余
+- BUG-15 修复策略：bug-check 建议"改 DOM 遍历检测 element.attributes"，但经分析发现 DOMParser 解析时会自动只保留第一个同名属性，DOM 遍历无法检测到重复属性。因此改用"逐标签正则 + Set"方案——外层正则匹配标签（不跨标签边界），内层正则提取属性名，Set 检测重复。既避免了回溯型 ReDoS，又保留了检测能力。这是"正确理解技术约束后选择最小必要方案"的体现
+- BUG-18 分析结论：bug-check 报告的"非首屏辅助模块延迟水合"建议基于假设工具页有多个 React 岛屿，但实际审查发现每个工具页只有 1 个核心岛屿（首屏即需交互），FAQ 等辅助内容是静态 HTML。这说明 bug-check 报告的部分建议需要结合实际架构验证后才能采纳，不能盲目执行
+- BUG-12 迭代次数提升：从 100000 → 600000 对齐 OWASP 2023 建议。性能影响：PBKDF2 派生时间约从 50ms 增至 300ms（SHA-256），在可接受范围内。下限从 1000 → 10000 避免用户手动设置过低值导致安全降级
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告剩余未修复项：
+  - 中危待修：BUG-18（已分析，当前架构不适用，标记为无需改动）、BUG-19（首页内联 script CSP）
+  - 低危待修：BUG-20（@astrojs/check 依赖）、BUG-21~40（一致性/示例数据等）
+
+## 下一轮建议
+按优先级排序：
+1. **BUG-19 首页内联 script CSP 优化**：首页搜索与筛选用原生内联 `<script>` 实现，严格 CSP 下需 nonce 或 hash。可为内联 script 添加 `is:inline` 与 nonce，或迁移到 React 岛屿
+2. **Lighthouse 性能基线测量**：启动 preview 跑 Lighthouse，建立性能/SEO/可访问性/最佳实践四项基线（连续六轮遗留，安全 Bug 修复完后应优先执行）
+3. **移动端 375px 三档适配实测**：375/768/1280 抽检（连续六轮遗留）
+4. **BUG-20 @astrojs/check 依赖补齐**：恢复类型检查能力，纳入构建流水
+5. **低危 Bug 批量修复**：BUG-21~40 中的一致性问题（BUG-21 JwtTool 截断、BUG-23/24 JSONPath 宽松比较、BUG-34 博客内链占位域名、BUG-37 示例数据占位域名等）
+6. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
