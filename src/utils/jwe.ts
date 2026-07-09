@@ -142,7 +142,7 @@ export const MAX_INPUT_LENGTH = 50000;
  * base64url 解码为 Uint8Array
  * base64url 用 - 替换 +，用 _ 替换 /，且通常省略 padding
  */
-export function base64urlDecode(input: string): Uint8Array {
+export function base64urlDecode(input: string): Uint8Array<ArrayBuffer> {
   if (!input) return new Uint8Array(0);
   let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const pad = base64.length % 4;
@@ -186,7 +186,7 @@ export function decodeUtf8(bytes: Uint8Array): string {
 }
 
 /** 字符串转 UTF-8 Uint8Array */
-export function encodeUtf8(str: string): Uint8Array {
+export function encodeUtf8(str: string): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(str);
 }
 
@@ -424,7 +424,7 @@ export async function concatKdf(
   z: Uint8Array,
   algorithmId: string,
   keyDataLen: number,
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const algorithmIdBytes = encodeUtf8(algorithmId);
   // PartyUInfo、PartyVInfo、SuppPrivInfo 本工具暂不支持（RFC 7518 可选字段）
   const partyUInfo = new Uint8Array(0);
@@ -486,7 +486,7 @@ export async function concatKdf(
 }
 
 /** 解析 PEM 格式的 RSA 私钥（PKCS#1 或 PKCS#8） */
-function parsePemRsaPrivateKey(pem: string): Uint8Array {
+function parsePemRsaPrivateKey(pem: string): Uint8Array<ArrayBuffer> {
   const cleaned = pem
     .replace(/-----BEGIN[^-]*PRIVATE KEY-----/g, '')
     .replace(/-----END[^-]*PRIVATE KEY-----/g, '')
@@ -575,7 +575,7 @@ export async function decryptJwe(
       if (!keyInput) {
         return { ok: false, error: 'dir 算法需要提供 base64url 编码的对称密钥' };
       }
-      let keyBytes: Uint8Array;
+      let keyBytes: Uint8Array<ArrayBuffer>;
       try {
         keyBytes = base64urlDecode(keyInput);
       } catch (e) {
@@ -593,7 +593,7 @@ export async function decryptJwe(
       if (!keyInput) {
         return { ok: false, error: `${alg} 算法需要提供 base64url 编码的 KW 密钥` };
       }
-      let kwKeyBytes: Uint8Array;
+      let kwKeyBytes: Uint8Array<ArrayBuffer>;
       try {
         kwKeyBytes = base64urlDecode(keyInput);
       } catch (e) {
@@ -627,7 +627,7 @@ export async function decryptJwe(
       if (!keyInput) {
         return { ok: false, error: `${alg} 算法需要提供 PEM 格式的 RSA 私钥` };
       }
-      let pkcs8Bytes: Uint8Array;
+      let pkcs8Bytes: Uint8Array<ArrayBuffer>;
       try {
         pkcs8Bytes = parsePemRsaPrivateKey(keyInput);
       } catch (e) {
@@ -676,7 +676,7 @@ export async function decryptJwe(
           error: `PBES2 迭代次数 p2c=${p2c} 超过上限 ${PBES2_MAX_ITERATIONS}，拒绝执行以防 DoS`,
         };
       }
-      let saltBytes: Uint8Array;
+      let saltBytes: Uint8Array<ArrayBuffer>;
       try {
         saltBytes = base64urlDecode(p2s);
       } catch (e) {

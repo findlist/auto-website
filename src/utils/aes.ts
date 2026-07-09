@@ -116,7 +116,7 @@ export function bytesToHex(bytes: ArrayBuffer | Uint8Array): string {
  * 十六进制字符串转字节数组
  * 容忍空格、0x 前缀、冒号分隔（MAC 风格）
  */
-export function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   const cleaned = hex.replace(/0x/gi, '').replace(/[\s:]/g, '');
   if (!/^[0-9a-fA-F]*$/.test(cleaned) || cleaned.length % 2 !== 0) {
     throw new Error('Hex 格式无效：仅允许 0-9/a-f/A-F，且长度为偶数');
@@ -148,7 +148,7 @@ export function bytesToBase64(bytes: ArrayBuffer | Uint8Array): string {
  * Base64 字符串转字节数组
  * 容忍换行、空格，自动补齐 padding
  */
-export function base64ToBytes(b64: string): Uint8Array {
+export function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const cleaned = b64.replace(/\s/g, '');
   // 自动补齐 padding
   const padded = cleaned + '='.repeat((4 - (cleaned.length % 4)) % 4);
@@ -166,14 +166,14 @@ export function encodeBytes(bytes: Uint8Array, format: OutputFormat): string {
 }
 
 /** 按输入格式解码字符串为字节数组 */
-export function decodeInput(input: string, format: OutputFormat): Uint8Array {
+export function decodeInput(input: string, format: OutputFormat): Uint8Array<ArrayBuffer> {
   return format === 'hex' ? hexToBytes(input) : base64ToBytes(input);
 }
 
 /**
  * 生成密码学安全的随机字节
  */
-function randomBytes(length: number): Uint8Array {
+function randomBytes(length: number): Uint8Array<ArrayBuffer> {
   const arr = new Uint8Array(length);
   crypto.getRandomValues(arr);
   return arr;
@@ -201,9 +201,9 @@ export function generateIvHex(mode: AesMode): string {
  * - base64: Base64 字符串（解码后长度匹配）
  * - utf8: UTF-8 字符串（编码后长度匹配，不推荐用于生产）
  */
-function parseKeyBytes(keyInput: string, keySource: KeySource, keyLength: KeyLength): Uint8Array {
+function parseKeyBytes(keyInput: string, keySource: KeySource, keyLength: KeyLength): Uint8Array<ArrayBuffer> {
   const expectedLen = keyLength / 8;
-  let bytes: Uint8Array;
+  let bytes: Uint8Array<ArrayBuffer>;
   switch (keySource) {
     case 'hex':
       bytes = hexToBytes(keyInput);
@@ -229,7 +229,7 @@ function parseKeyBytes(keyInput: string, keySource: KeySource, keyLength: KeyLen
  * 导入 AES 密钥（CryptoKey）
  */
 async function importAesKey(
-  keyBytes: Uint8Array,
+  keyBytes: Uint8Array<ArrayBuffer>,
   mode: AesMode,
   extractable: boolean = false,
 ): Promise<CryptoKey> {

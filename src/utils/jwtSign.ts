@@ -226,7 +226,7 @@ export function base64urlEncode(bytes: Uint8Array): string {
  * base64url 解码为 Uint8Array
  * 还原 - 为 +，_ 为 /，并补齐 padding
  */
-export function base64urlDecode(input: string): Uint8Array {
+export function base64urlDecode(input: string): Uint8Array<ArrayBuffer> {
   if (!input) return new Uint8Array(0);
   let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const pad = base64.length % 4;
@@ -242,7 +242,7 @@ export function base64urlDecode(input: string): Uint8Array {
 }
 
 /** 字符串转 UTF-8 Uint8Array */
-export function encodeUtf8(str: string): Uint8Array {
+export function encodeUtf8(str: string): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(str);
 }
 
@@ -264,7 +264,7 @@ export function bytesToHex(bytes: Uint8Array): string {
  *
  * 导出供 jwtVerify.ts 复用（验签需用公钥 PEM 解析）
  */
-export function pemToDer(pem: string, label: RegExp): Uint8Array {
+export function pemToDer(pem: string, label: RegExp): Uint8Array<ArrayBuffer> {
   const cleaned = pem
     .replace(label, '')
     .replace(/-----END[^-]*-----/g, '')
@@ -280,11 +280,11 @@ export function pemToDer(pem: string, label: RegExp): Uint8Array {
   return bytes;
 }
 
-// ===== 最小 ASN.1 DER 编码工具（仅用于私钥格式转换，不引入第三方依赖）=====
-// 背景：Web Crypto API 的 importKey 对 RSA/EC 私钥仅支持 'pkcs8' 与 'jwk'，
-// 不支持 PKCS#1（BEGIN RSA PRIVATE KEY）与 SEC1（BEGIN EC PRIVATE KEY）。
-// 此处实现最小 DER 编码，将 PKCS#1/SEC1 私钥 DER 包裹为 PKCS#8 容器，
-// 再用现有 'pkcs8' 逻辑导入，避免实现完整的 ASN.1 解析器。
+// ===== 最小 ASN.1 DER 编码工具（用于密钥格式转换，不引入第三方依赖）=====
+// 背景：Web Crypto API 的 importKey 对 RSA/EC 密钥仅支持 'spki'/'pkcs8'/'raw'/'jwk'，
+// 不支持 PKCS#1（BEGIN RSA PRIVATE/PUBLIC KEY）与 SEC1（BEGIN EC PRIVATE KEY）。
+// 此处实现最小 DER 编码，将 PKCS#1/SEC1 密钥 DER 包裹为标准 SPKI/PKCS#8 容器，
+// 再用现有格式逻辑导入，避免实现完整的 ASN.1 解析器。
 
 /** DER 长度编码：短格式（<128）单字节，长格式带前缀 */
 function encodeDerLength(len: number): number[] {
@@ -299,7 +299,7 @@ function encodeDerLength(len: number): number[] {
 }
 
 /** 构造 DER SEQUENCE：tag(0x30) + 长度 + 子元素拼接 */
-function derSequence(...elements: Uint8Array[]): Uint8Array {
+function derSequence(...elements: Uint8Array[]): Uint8Array<ArrayBuffer> {
   const totalLen = elements.reduce((sum, el) => sum + el.length, 0);
   const header = [0x30, ...encodeDerLength(totalLen)];
   const result = new Uint8Array(header.length + totalLen);
@@ -313,13 +313,13 @@ function derSequence(...elements: Uint8Array[]): Uint8Array {
 }
 
 /** 构造 DER OID：tag(0x06) + 长度 + OID 字节内容 */
-function derOid(oidBytes: number[]): Uint8Array {
+function derOid(oidBytes: number[]): Uint8Array<ArrayBuffer> {
   const header = [0x06, ...encodeDerLength(oidBytes.length)];
   return new Uint8Array([...header, ...oidBytes]);
 }
 
 /** 构造 DER OCTET STRING：tag(0x04) + 长度 + 内容 */
-function derOctetString(content: Uint8Array): Uint8Array {
+function derOctetString(content: Uint8Array): Uint8Array<ArrayBuffer> {
   const header = [0x04, ...encodeDerLength(content.length)];
   const result = new Uint8Array(header.length + content.length);
   result.set(header, 0);
@@ -343,20 +343,40 @@ const CURVE_OID_BYTES: Record<EcCurve, number[]> = {
  * 结构：SEQUENCE { version(0), AlgorithmIdentifier, OCTET STRING privateKey }
  * 这样即可用 importKey('pkcs8') 导入，无需完整 ASN.1 解析
  */
-function wrapPrivateKeyToPkcs8(privateKeyDer: Uint8Array, algId: Uint8Array): Uint8Array {
+function wrapPrivateKeyToPkcs8(privateKeyDer: Uint8Array, algId: Uint8Array): Uint8Array<ArrayBuffer> {
   const version = new Uint8Array([0x02, 0x01, 0x00]); // INTEGER 0
   const keyOctetString = derOctetString(privateKeyDer);
   return derSequence(version, algId, keyOctetString);
 }
 
 /** 构造 RSA AlgorithmIdentifier：SEQUENCE { OID rsaEncryption, NULL } */
-function rsaAlgorithmIdentifier(): Uint8Array {
+function rsaAlgorithmIdentifier(): Uint8Array<ArrayBuffer> {
   return derSequence(derOid(RSA_OID_BYTES), new Uint8Array([0x05, 0x00]));
 }
 
 /** 构造 EC AlgorithmIdentifier：SEQUENCE { OID id-ecPublicKey, OID 曲线 } */
-function ecAlgorithmIdentifier(curve: EcCurve): Uint8Array {
+function ecAlgorithmIdentifier(curve: EcCurve): Uint8Array<ArrayBuffer> {
   return derSequence(derOid(EC_OID_BYTES), derOid(CURVE_OID_BYTES[curve]));
+}
+
+/** 构造 DER BIT STRING：tag(0x03) + 长度 + 0x00(未使用位数) + 内容 */
+function derBitString(content: Uint8Array): Uint8Array<ArrayBuffer> {
+  const header = [0x03, ...encodeDerLength(content.length + 1)];
+  const result = new Uint8Array(header.length + 1 + content.length);
+  result.set(header, 0);
+  result.set([0x00], header.length); // 未使用位数 = 0
+  result.set(content, header.length + 1);
+  return result;
+}
+
+/**
+ * 将 PKCS#1 RSA 公钥 DER 包裹为 SPKI(SubjectPublicKeyInfo) 容器
+ * 结构：SEQUENCE { AlgorithmIdentifier(RSA), BIT STRING subjectPublicKey }
+ * subjectPublicKey 即 PKCS#1 的 RSAPublicKey DER（SEQUENCE { modulus, exponent }）
+ * 包裹后可用 importKey('spki') 导入，绕过 Web Crypto 不支持 'pkcs1' 格式的限制
+ */
+export function wrapRsaPublicKeyToSpki(pkcs1PubDer: Uint8Array): Uint8Array<ArrayBuffer> {
+  return derSequence(rsaAlgorithmIdentifier(), derBitString(pkcs1PubDer));
 }
 
 /**
@@ -453,7 +473,7 @@ async function importRsaPrivateKey(
   // PEM 格式（PKCS#1 或 PKCS#8）
   // 检测标签：BEGIN RSA PRIVATE KEY 为 PKCS#1，需包装为 PKCS#8
   const isPkcs1 = /-----BEGIN RSA PRIVATE KEY-----/.test(trimmed);
-  let derBytes: Uint8Array;
+  let derBytes: Uint8Array<ArrayBuffer>;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PRIVATE KEY-----/g);
   } catch (e) {
@@ -553,7 +573,7 @@ async function importEcPrivateKey(
   // PEM 格式（SEC1 或 PKCS#8）
   // 检测标签：BEGIN EC PRIVATE KEY 为 SEC1，需包装为 PKCS#8
   const isSec1 = /-----BEGIN EC PRIVATE KEY-----/.test(trimmed);
-  let derBytes: Uint8Array;
+  let derBytes: Uint8Array<ArrayBuffer>;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PRIVATE KEY-----/g);
   } catch (e) {
@@ -624,7 +644,7 @@ export async function signJwt(
       }
       const hashName = alg === 'HS256' ? 'SHA-256' : alg === 'HS384' ? 'SHA-384' : 'SHA-512';
       // 将用户输入密钥转为字节
-      let keyBytes: Uint8Array;
+      let keyBytes: Uint8Array<ArrayBuffer>;
       try {
         keyBytes = keyFormat === 'base64url' ? base64urlDecode(keyInput) : encodeUtf8(keyInput);
       } catch (e) {

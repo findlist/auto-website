@@ -30,6 +30,7 @@ import {
   decodeUtf8,
   encodeUtf8,
   pemToDer,
+  wrapRsaPublicKeyToSpki,
   type EcCurve,
   type JwtAlg,
 } from './jwtSign';
@@ -140,7 +141,7 @@ function parseJwtSegments(token: string): {
  * 失败时抛出带具体原因的中文错误
  */
 function parseSegmentJson(b64: string, segmentName: string): Record<string, unknown> {
-  let bytes: Uint8Array;
+  let bytes: Uint8Array<ArrayBuffer>;
   try {
     bytes = base64urlDecode(b64);
   } catch (e) {
@@ -176,7 +177,7 @@ async function importHmacVerifyKey(
   keyFormat: 'utf8' | 'base64url',
   hashName: string,
 ): Promise<CryptoKey> {
-  let keyBytes: Uint8Array;
+  let keyBytes: Uint8Array<ArrayBuffer>;
   try {
     keyBytes = keyFormat === 'base64url' ? base64urlDecode(keyInput) : encodeUtf8(keyInput);
   } catch (e) {
@@ -218,32 +219,23 @@ async function importRsaPublicKey(keyInput: string, hashName: string): Promise<C
       ['verify'],
     );
   }
-  // PEM 格式（SPKI 或 PKCS#1）
-  let derBytes: Uint8Array;
+  // PEM 格式：通过标签区分 PKCS#1（BEGIN RSA PUBLIC KEY）与 SPKI（BEGIN PUBLIC KEY）
+  // Web Crypto 的 importKey 不支持 'pkcs1' 格式，PKCS#1 公钥需先包裹为 SPKI 容器再导入
+  const isPkcs1 = /-----BEGIN RSA PUBLIC KEY-----/.test(trimmed);
+  let derBytes: Uint8Array<ArrayBuffer>;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PUBLIC KEY-----/g);
   } catch (e) {
     throw new Error(`PEM 解析失败：${e instanceof Error ? e.message : ''}`);
   }
-  // 优先尝试 SPKI 格式，失败再尝试 PKCS#1
-  try {
-    return await crypto.subtle.importKey(
-      'spki',
-      derBytes,
-      { name: 'RSASSA-PKCS1-v1_5', hash: hashName },
-      false,
-      ['verify'],
-    );
-  } catch {
-    // 降级尝试 PKCS#1（仅 RSA 公钥）
-    return crypto.subtle.importKey(
-      'pkcs1',
-      derBytes,
-      { name: 'RSASSA-PKCS1-v1_5', hash: hashName },
-      false,
-      ['verify'],
-    );
-  }
+  const spkiDer = isPkcs1 ? wrapRsaPublicKeyToSpki(derBytes) : derBytes;
+  return crypto.subtle.importKey(
+    'spki',
+    spkiDer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: hashName },
+    false,
+    ['verify'],
+  );
 }
 
 /**
@@ -279,7 +271,7 @@ async function importEcPublicKey(
     );
   }
   // PEM 格式（SPKI）
-  let derBytes: Uint8Array;
+  let derBytes: Uint8Array<ArrayBuffer>;
   try {
     derBytes = pemToDer(trimmed, /-----BEGIN[^-]*PUBLIC KEY-----/g);
   } catch (e) {
@@ -596,7 +588,7 @@ export async function verifyJwt(
   }
 
   // 8. 解码 Signature 为字节
-  let signatureBytes: Uint8Array;
+  let signatureBytes: Uint8Array<ArrayBuffer>;
   try {
     signatureBytes = base64urlDecode(signatureB64);
   } catch (e) {
