@@ -24,6 +24,12 @@
 
 ---
 
+## 🌐 在线访问
+
+**生产环境**：[https://website.niuzi.asia](https://website.niuzi.asia)
+
+---
+
 ## 🤖 Agent 自动维护
 
 本项目由 **TRAE AI Agent 自驱迭代** 自动维护，遵循专属定时任务规范进行无人值守的调研、决策、开发、迭代与运营闭环。
