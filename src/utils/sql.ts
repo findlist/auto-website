@@ -480,7 +480,6 @@ export function formatSql(sql: string, options: FormatOptions = DEFAULT_FORMAT_O
            (prevNonWs.type === 'keyword' && FUNCTIONS.has(prevNonWs.upper)));
         push('(', { noSpace: true, spaceBefore: !noSpaceBefore });
         // IN ( / NOT IN ( 后不缩进，但子查询（SELECT ...）需要缩进
-        const peekUpper = next?.upper || '';
         if (next && next.type === 'keyword' && next.upper === 'SELECT') {
           depth++;
           newline();

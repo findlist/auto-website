@@ -6,7 +6,7 @@ import { tagToSlug, collectTags } from '../../../utils/tags';
 // 为每个标签 slug 生成一个静态筛选页，对齐 tagToSlug 体系，避免链接 404
 export async function getStaticPaths() {
   const allPosts = await getCollection('blog');
-  const tags = await collectTags(allPosts); // [{ slug, name }]
+  const tags = collectTags(allPosts); // [{ slug, name }]
   // 按 slug 归档文章，避免每个标签重复遍历全部文章
   const postsBySlug = new Map<string, typeof allPosts>();
   for (const post of allPosts) {

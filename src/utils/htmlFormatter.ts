@@ -139,20 +139,6 @@ function isBooleanAttribute(name: string): boolean {
   return BOOLEAN_ATTRS.has(name.toLowerCase());
 }
 
-/** 判断元素子节点是否全为空白文本（用于压缩模式移除空白间节点） */
-function hasOnlyWhitespaceChildren(el: Element): boolean {
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const node = el.childNodes[i];
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent || '';
-      if (text.trim() !== '') return false;
-    } else {
-      return false;
-    }
-  }
-  return el.childNodes.length > 0;
-}
-
 /** 收集统计信息：递归统计元素/文本/注释/属性数量与最大深度 */
 function collectStats(doc: Document, stats: FormatStats): void {
   const walk = (node: Node, depth: number): void => {

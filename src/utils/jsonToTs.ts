@@ -117,7 +117,7 @@ function mergeTypeInfo(a: TypeInfo, b: TypeInfo, opts: Required<JsonToTsOptions>
 }
 
 /** 构造联合类型（去重 + 排序保证稳定输出） */
-function toUnion(a: TypeInfo, b: TypeInfo, opts: Required<JsonToTsOptions>): TypeInfo {
+function toUnion(a: TypeInfo, b: TypeInfo, _opts: Required<JsonToTsOptions>): TypeInfo {
   const candidates = collectUnion([a, b]);
   if (candidates.length === 1) return candidates[0];
   // 按类型签名去重

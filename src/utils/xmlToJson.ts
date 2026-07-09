@@ -123,7 +123,7 @@ function coerceValue(text: string, coerceTypes: boolean): unknown {
 function collectText(
   element: Element,
   mergeCdata: boolean,
-  cdataNodeName: string,
+  _cdataNodeName: string,
   ignoreWhitespace: boolean,
 ): { text: string; cdataParts: string[] } {
   let text = '';

@@ -507,12 +507,12 @@ function parsePemRsaPrivateKey(pem: string): Uint8Array<ArrayBuffer> {
  *
  * @param parsed 已解析的 JWE 结构（来自 parseJwe）
  * @param keyInput 用户输入的密钥材料
- * @param keyFormat 密钥格式：base64url（对称密钥）/ pem（RSA 私钥）/ utf8（PBES2 密码）
+ * @param _keyFormat 密钥格式：base64url（对称密钥）/ pem（RSA 私钥）/ utf8（PBES2 密码）
  */
 export async function decryptJwe(
   parsed: ParsedJwe,
   keyInput: string,
-  keyFormat: 'base64url' | 'pem' | 'utf8',
+  _keyFormat: 'base64url' | 'pem' | 'utf8',
 ): Promise<DecryptResult> {
   if (!parsed.ok || !parsed.parts || !parsed.header) {
     return { ok: false, error: parsed.error || 'JWE 解析失败' };

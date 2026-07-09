@@ -123,7 +123,7 @@ export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   }
   const arr = new Uint8Array(cleaned.length / 2);
   for (let i = 0; i < arr.length; i++) {
-    arr[i] = parseInt(cleaned.substr(i * 2, 2), 16);
+    arr[i] = parseInt(cleaned.substring(i * 2, i * 2 + 2), 16);
   }
   return arr;
 }
