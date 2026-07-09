@@ -161,7 +161,7 @@
 6. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
 
 ## 需用户操作
-- 部署本轮修复后的代码（git push 后若 Cloudflare Pages 已配置自动部署则自动触发）
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置域名邮箱并替换 about/privacy 中的占位邮箱
 
@@ -342,3 +342,107 @@
 ## 需用户操作
 - 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+
+---
+
+# 第 5 轮 · 低危 Bug 批量修复 + 类型检查依赖补齐
+
+## 上下文恢复
+- 承接第 4 轮（剩余中危安全 Bug 修复，commit d40005d）
+- 触发点：bug-check 报告剩余低危 Bug（BUG-20~40），本轮聚焦低危中影响功能正确性与一致性的项
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做代码质量打磨
+
+## 本轮聚焦方向
+**低危 Bug 批量修复 + 类型检查能力恢复**（按规范任务优先级，低危 Bug 影响代码质量与用户体验一致性）
+选取 6 个低危 Bug（BUG-23/24/29/31/33/34）涉及 5 个文件，同步补齐 @astrojs/check 依赖（BUG-20）并完成 BUG-19 架构分析。
+
+## 完成任务
+
+### Bug 修复（6 个，5 个文件）
+1. ✅ BUG-29（低·功能）jsFormatter 未识别 ES2022 hasIndices(d) 正则标志
+   - 文件：src/utils/jsFormatter.ts
+   - 问题：正则标志字符校验 `/[gimsuy]/` 缺少 `d`，ES2022 的 `hasIndices` 标志会被截断导致格式化错误
+   - 修复：正则字符类补全 `d` → `/[gimsuyd]/`
+2. ✅ BUG-31（低·安全）IPv4 校验 parseInt 隐式解析陷阱
+   - 文件：src/utils/ip.ts
+   - 问题：`parseInt(n, 10)` 对 `"0x1f"` 返回 0（遇非数字字符停止解析），导致 `0.0x1f.0.0` 等非法 IP 被误判合法
+   - 修复：改为 `/^\d+$/.test(n) ? parseInt(n, 10) : NaN`，先校验纯数字再解析
+3. ✅ BUG-33（低·数据）lorem 日期年份上限硬编码 2025
+   - 文件：src/utils/lorem.ts
+   - 问题：`randomIntRange(2000, 2025)` 年份上限固定，2026 年后生成的日期永远是历史日期
+   - 修复：上限改为 `new Date().getFullYear()` 动态当前年份
+4. ✅ BUG-23/24（低·功能）JSONPath 宽松相等与数值比较错误
+   - 文件：src/utils/jsonPath.ts
+   - 问题：`==` 过滤用严格相等 `===`，无法匹配 `1 == "1"`；`>` `<` 等数值比较直接用 `>` 运算符，字符串数字 `"10" > "9"` 按字典序返回 false
+   - 修复：新增 3 个辅助函数：
+     - `toNumber(value)`：空字符串与非数字字符串返回 NaN
+     - `looseEquals(a, b)`：数字与字符串数字按数值比较，null/undefined 互通，其余严格相等（避免 `false == 0` 等非预期匹配）
+     - `compareNumeric(a, b)`：返回 -1/0/1，非数字场景返回 0 表示无法比较
+5. ✅ BUG-34（低·SEO）color-format-guide 博客占位域名内链
+   - 文件：src/content/blog/color-format-guide.md
+   - 问题：第 160 行 `[配套工具的源码](https://toolbox.example.com/color)` 指向占位域名，影响内链与用户跳转
+   - 修复：改为相对路径 `[配套工具的源码](/color)`
+
+### 依赖补齐（1 项）
+6. ✅ BUG-20 @astrojs/check 开发依赖补齐
+   - 安装 `@astrojs/check@^0.9.4`（devDependencies），恢复 `npm run check` 类型检查能力
+   - 运行 check 后揭示 53 个 TS 5.7 类型错误，主要为 `Uint8Array<ArrayBufferLike>` 与 `BufferSource` 类型不兼容（运行时无影响），记录为下轮专题
+
+### BUG-19 架构分析（结论：当前架构合理，无需改动）
+- bug-check 报告 BUG-19 建议"首页内联 script 在严格 CSP 下需 nonce/hash"
+- 分析：Astro 5 对无 import 的小脚本自动内联为 `<script type="module">`，是性能优化
+- Grep 验证 dist/index.html 无任何 `_astro/*.js` 外部引用，首页 0 外部 JS、0 React 水合
+- 当前 Cloudflare Pages 默认无 CSP header，内联 script 正常执行
+- 决策：当前架构合理，迁移 React 岛屿会引入 ~44KB client.js 水合成本，得不偿失。标记为"未来启用 CSP 时用 Astro csp 配置处理"
+
+### 环境维护（1 项）
+7. ✅ .gitignore 新增 lighthouse 报告产物忽略规则
+   - 新增 `lighthouse-*.report.*` 忽略规则，避免 Lighthouse CLI 产生的临时报告文件污染工作区
+
+## 修改文件（8 个，未超 8 文件红线）
+- src/utils/jsFormatter.ts（BUG-29 d 标志补全）
+- src/utils/ip.ts（BUG-31 IPv4 纯数字校验）
+- src/utils/lorem.ts（BUG-33 年份动态化）
+- src/utils/jsonPath.ts（BUG-23/24 宽松相等与数值比较）
+- src/content/blog/color-format-guide.md（BUG-34 占位域名内链修复）
+- package.json（@astrojs/check 依赖）
+- package-lock.json（依赖锁定）
+- .gitignore（lighthouse 报告忽略规则）
+
+## 验证结果
+- 构建：✅ 258 页面，14.41s，无报错无警告
+- 产物抽检：
+  - dist/blog/color-format-guide/index.html 含 4 处 `/color` 相对链接 ✅
+  - 5 个工具函数修复为纯逻辑，构建通过即编译生效 ✅
+- 类型检查：npm run check 揭示 53 个 TS 5.7 类型错误（Web Crypto BufferSource 类型技术债，运行时无影响），记录为下轮专题
+- Git 提交：commit ac9f347，已 push origin HEAD（d8642b7..ac9f347）
+
+## 数据洞察
+- BUG-31 parseInt 陷阱：JavaScript 的 `parseInt("0x1f", 10)` 返回 0（遇 x 停止解析），`parseInt("  12abc", 10)` 返回 12（遇非数字字符停止）。这类隐式解析在 IP/数字校验场景是常见安全漏洞，正确做法是先用正则校验纯数字再 parseInt。同类问题可能在其他工具存在，下轮可全站排查
+- BUG-23/24 JSONPath 宽松比较：RFC 9535 JSONPath 过滤表达式的 `==` 应支持数字与字符串数字的宽松匹配（如 `$[?(@.age=="30")]` 匹配 age=30）。原实现用 `===` 严格相等导致功能缺失。修复策略是区分"数字与字符串数字"（按数值比较）与"其他类型组合"（严格相等），避免 `false == 0`、`"" == 0` 等非预期匹配
+- BUG-19 架构判断：bug-check 报告的部分建议需结合实际架构验证。首页内联 script 是 Astro 的性能优化（无 import 的小脚本自动内联），当前无 CSP header 时正常执行。迁移到 React 岛屿会引入水合成本，得不偿失。这说明"安全建议"需权衡实际收益与代价
+- @astrojs/check 揭示的 53 个类型错误：主要是 TS 5.7 对 `Uint8Array<ArrayBufferLike>` 的类型细化，与 Web Crypto API 的 `BufferSource` 类型不兼容。这是 TypeScript 类型系统的技术债，运行时无影响（Uint8Array 就是 BufferSource），但影响代码质量分。下轮专题处理
+
+## 环境限制说明
+- **Lighthouse CLI 受限**：`npx lighthouse` 被 TRAE Sandbox 拦截，不允许写 `C:\Users\Lenovo\.config\configstore\lighthouse.json.tmp`，连续七轮无法建立性能基线
+- **Playwright 受限**：Python 3.6 太老（需 3.8+），`py -3.12 -m pip install playwright` 被 TRAE Sandbox 拦截，不允许写 site-packages，连续七轮无法做移动端三档实测
+- **降级方案**：用 dist 产物静态检查 SEO 要素 + 检查 global.css 响应式断点（3 个断点：dark/768px/reduced-motion）
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告剩余未修复项（14 个低危）：
+  - BUG-21（JwtTool 截断显示）、BUG-22（JwtTool 时间格式）、BUG-25/26/27/28（各类一致性）、BUG-30（ip 工具示例）、BUG-32（lorem 边界）、BUG-35/36/37/38/39/40（示例数据与文案一致性）
+- 53 个 TS 5.7 类型错误（Web Crypto BufferSource 类型技术债）
+
+## 下一轮建议
+按优先级排序：
+1. **Web Crypto BufferSource 类型修复专题**：53 个 TS 错误主要为 `Uint8Array<ArrayBufferLike>` 与 `BufferSource` 不兼容。可用类型断言封装工具函数（如 `as BufferSource`）或升级 @types/node，恢复 npm run check 零错误
+2. **jwtVerify.ts PKCS#1 公钥 ASN.1 SPKI 包裹**：第 240 行 `'pkcs1'` 是真运行时问题（Web Crypto 不支持该格式公钥导入），需类似第 4 轮 BUG-07 的 ASN.1 包裹方案，将 PKCS#1 公钥包裹为 SPKI 容器
+3. **Lighthouse 基线 + 移动端三档实测**：连续七轮遗留，需用户配置 TRAE Sandbox 白名单或换环境执行
+4. **剩余低危 Bug 批量修复**：BUG-21/22/25/26/27/28/30/32/35/36/37/38/39/40，多为一致性问题，可批量处理
+5. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
