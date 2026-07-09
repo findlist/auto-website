@@ -48,15 +48,41 @@ const meta: SiteMeta = {
   title: `标签「${tagName}」的文章 - 技术博客`,
   description: `浏览技术博客中所有标签为「${tagName}」的文章，共 ${posts.length} 篇。涵盖开发者工具背后的技术原理与最佳实践。`,
   canonical: tagUrl,
-  jsonLd: {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
-      { '@type': 'ListItem', position: 3, name: `标签：${tagName}`, item: tagUrl },
-    ],
-  },
+  // 同时声明集合页（含文章列表）与面包屑结构化数据，帮助搜索引擎理解标签筛选页内容
+  jsonLd: [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: `标签「${tagName}」的文章 - 工具盒子技术博客`,
+      description: `浏览技术博客中所有标签为「${tagName}」的文章，共 ${posts.length} 篇。`,
+      url: tagUrl,
+      isPartOf: {
+        '@type': 'Blog',
+        name: '工具盒子技术博客',
+        url: `${SITE_URL}/blog`,
+      },
+      // 以 ItemList 形式列出该标签下的全部文章，便于搜索引擎抓取文章集合
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: posts.length,
+        itemListElement: posts.map((post, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: post.data.title,
+          url: `${SITE_URL}/blog/${post.id}`,
+        })),
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 3, name: `标签：${tagName}`, item: tagUrl },
+      ],
+    },
+  ],
 };
 ---
 <BaseLayout meta={meta}>

@@ -32,18 +32,30 @@ const meta: SiteMeta = {
   title: '全部标签 - 技术博客',
   description: `浏览工具盒子技术博客的全部 ${tags.length} 个标签，按文章数量排序。通过标签快速找到感兴趣的技术主题：JSON、UUID、Base64、Hash、时间戳、URL 等开发者工具相关内容。`,
   canonical: `${SITE_URL}/blog/tag`,
-  jsonLd: {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: '全部标签 - 工具盒子技术博客',
-    description: '技术博客全部标签索引，按文章数量排序',
-    url: `${SITE_URL}/blog/tag`,
-    isPartOf: {
-      '@type': 'Blog',
-      name: '工具盒子技术博客',
-      url: `${SITE_URL}/blog`,
+  // 同时声明集合页类型与面包屑结构化数据，帮助搜索引擎理解页面层级
+  jsonLd: [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: '全部标签 - 工具盒子技术博客',
+      description: '技术博客全部标签索引，按文章数量排序',
+      url: `${SITE_URL}/blog/tag`,
+      isPartOf: {
+        '@type': 'Blog',
+        name: '工具盒子技术博客',
+        url: `${SITE_URL}/blog`,
+      },
     },
-  },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
+        { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 3, name: '全部标签', item: `${SITE_URL}/blog/tag` },
+      ],
+    },
+  ],
 };
 ---
 <BaseLayout meta={meta}>
