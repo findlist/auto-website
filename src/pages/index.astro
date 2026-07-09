@@ -5,8 +5,9 @@ import { tagToSlug } from '../utils/tags';
 
 const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
+  // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '工具盒子是一套面向中文开发者的现代化在线工具集：JSON 格式化 / 压缩 / 校验、Base64 编解码、URL 编解码、HTML 实体编解码、CSV 与 JSON 互转、JSON 转 XML 转换工具、XML 转 JSON 转换工具、YAML 与 JSON 互转、TOML 与 JSON 互转、UUID 生成、SHA 哈希计算、AES 加解密、Unix 时间戳转换、时区转换器、时间单位换算器、正则表达式测试、JWT 解码、JWT 签名生成器、JWT 签名验证工具、JWE 解码、颜色格式转换、WCAG 颜色对比度检查、调色板生成器、Markdown 在线预览器、MIME 类型查询、二维码生成、密码生成器、文本对比工具、CRON 表达式解析器、IP 子网计算器、Base64 图片互转、占位文本与 Mock 数据生成器、SQL 格式化与压缩、HTTP 状态码查询、JSONPath 查询工具、JSON Schema 校验工具、YAML Schema 校验工具、TOML Schema 校验工具、正则表达式性能基准测试工具、Base32 编解码工具、Hex 十六进制编解码工具、Punycode 编解码工具、ASCII Art 文本横幅生成器、HTML 格式化与压缩工具、CSS 格式化与压缩工具、JavaScript 格式化与压缩工具、JSON 转 TypeScript 接口生成器。配套技术博客深度解析原理，所有数据在浏览器本地处理，零上传、零追踪、零广告。',
+    '47 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -448,6 +449,37 @@ const tools = [
 // 工具分类列表（去重），用于分类筛选按钮
 const categories = ['全部', ...Array.from(new Set(tools.map((t) => t.category)))];
 
+// 站点绝对 URL：用于结构化数据中的 url 字段（取 astro.config.mjs 的 site 配置）
+const SITE_URL = (Astro.site?.toString().replace(/\/$/, '') ?? 'https://toolbox.example.com');
+
+// Organization 结构化数据：站点运营方实体，帮助搜索引擎建立品牌识别
+const organizationLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: '工具盒子',
+  url: SITE_URL,
+  logo: `${SITE_URL}/favicon.svg`,
+  description: '面向中文开发者的现代化在线工具集，全本地处理，零广告零追踪。',
+};
+
+// ItemList 结构化数据：工具集合矩阵，帮助搜索引擎识别站点为工具聚合站
+const itemListLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: '工具盒子在线工具集合',
+  description: `${tools.length} 个面向中文开发者的在线工具：编码转换、加密哈希、时间日期、代码调试、网络计算、设计、文档处理等场景。`,
+  numberOfItems: tools.length,
+  itemListElement: tools.map((t, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: t.title,
+    url: `${SITE_URL}${t.href}`,
+    description: t.desc,
+  })),
+};
+
+// 注入首页结构化数据，BaseLayout 会与站点级 WebSite JSON-LD 合并输出
+meta.jsonLd = [organizationLd, itemListLd];
 
 // 特色卖点
 const features = [
