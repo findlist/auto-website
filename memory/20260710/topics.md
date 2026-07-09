@@ -794,3 +794,89 @@
 - 用浏览器访问 https://website.niuzi.asia 验证站点正常（curl 受 SafeLine WAF 挑战拦截无法验证）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
+
+---
+
+# 第 10 轮 · BUG-35 + BUG-36 占位域名彻底清理
+
+## 上下文恢复
+- 承接第 9 轮（BUG-37 示例域名修复 + hints 清零，commit 54d2c52）
+- 触发点：第 9 轮遗留建议优先级 1「BUG-35 SITE_URL 回退占位域名集中化」+ 优先级 2「BUG-36 工具页 url 硬编码源头清理」
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做代码质量与 SEO 基础设施打磨
+
+## 本轮聚焦方向
+**全站占位域名 toolbox.example.com 彻底清理**（BUG-35 + BUG-36，消灭所有 SEO 隐患）
+分 9 次提交完成：BUG-35 工具函数+4 文件替换（2 次）→ BUG-36 47 文件批量清理（6 次）→ 注释更新（1 次）
+
+## 完成任务
+
+### 单元 1：BUG-35 SITE_URL 集中化（commit 89c3ec4 + 00dfd48）
+1. ✅ 新增 src/utils/site.ts 集中化工具函数
+   - `getSiteUrl(site: URL | undefined)`：未配置 site 时抛出明确错误（fail-fast）
+   - 错误信息引导开发者修改 astro.config.mjs 的 site 字段
+   - 策略选型：放弃"回退到占位域名"（掩盖配置遗漏），改为"构建直接报错"（fail-fast，问题前置暴露）
+2. ✅ 替换 8 个文件的 `?? 'https://toolbox.example.com'` 回退
+   - BaseLayout.astro、about.astro、index.astro、rss.xml.ts（第 1 批，4 文件）
+   - blog/index.astro、blog/[...slug].astro、blog/tag/[tag].astro、blog/tag/index.astro（第 2 批，4 文件）
+   - 统一改为 `getSiteUrl(Astro.site)` 或 `getSiteUrl(site)`（rss.xml.ts 用 API 上下文的 site 参数）
+
+### 单元 2：BUG-36 工具页 url 硬编码源头清理（6 次提交，47 文件）
+3. ✅ 批量删除 47 个工具页的 `url: 'https://toolbox.example.com/xxx'` 硬编码行
+   - 方案选型：BaseLayout 已在第 1 轮实现运行时覆盖（url 缺失时用 canonical 自动注入），源码清理只需删除硬编码行
+   - 实现：临时 Node.js 脚本 `_batch-clean-url.mjs` 正则匹配整行删除，验证后删除脚本
+   - 分 6 批提交（8+8+8+8+8+7），每批 ≤8 文件红线
+   - 产物验证：dist/aes/index.html 与 dist/uuid/index.html 的 WebApplication.url 均正确注入为线上域名 ✅
+
+### 单元 3：注释更新与质量审计（commit 8f5c96c）
+4. ✅ BaseLayout.astro 注释更新
+   - 旧注释「历史工具页硬编码了占位域名」→ 新注释「工具页 JSON-LD 不再硬编码 url（BUG-36 已清理），此处为安全网」
+   - PLACEHOLDER_ORIGIN 常量保留，作为未来新增工具页误用占位域名的检测安全网
+5. ✅ 全站质量审计
+   - 残留 toolbox.example.com 检查：8 处，全部合理（BaseLayout 安全网 + site.ts 注释 + 6 处示例数据）
+   - Bundle 体积：最重工具页 QrTool = client.js(133.3KB) + QrTool(34.5KB) = 167.8KB < 200KB ✅
+   - SEO 基础设施：robots.txt Sitemap 指向 website.niuzi.asia ✅，sitemap-index.xml 正确 ✅
+
+## 修改文件（共 57 个，分 9 次提交，每次 ≤8 文件红线）
+- commit 89c3ec4: src/utils/site.ts（新增）、BaseLayout.astro、about.astro、index.astro、rss.xml.ts（BUG-35 第 1 批）
+- commit 00dfd48: blog/index.astro、blog/[...slug].astro、blog/tag/[tag].astro、blog/tag/index.astro（BUG-35 第 2 批）
+- commit 85d6d5b~e53dacf: 47 个工具页 .astro 文件（BUG-36 分 6 批，每批 8/8/8/8/8/7 文件）
+- commit 8f5c96c: BaseLayout.astro（注释更新）
+
+## 验证结果
+- 构建：✅ 258 页面，11.00s，无报错无警告
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（零回归，仅剩 clipboard.ts execCommand 废弃提示）
+- 产物抽检：
+  - dist/aes/index.html WebApplication.url = https://website.niuzi.asia/aes/ ✅
+  - dist/uuid/index.html WebApplication.url = https://website.niuzi.asia/uuid/ ✅
+  - 源码 grep `?? 'https://toolbox.example.com'`：0 匹配 ✅
+  - 源码 grep `url: 'https://toolbox.example.com/`：0 匹配 ✅
+- Bundle 审计：所有工具页 JS < 200KB ✅
+- SEO 审计：robots.txt + sitemap 域名正确 ✅
+- Git 推送：9 次 commit 全部 push origin HEAD 成功
+
+## 数据洞察
+- **fail-fast vs 静默回退**：原设计 `?? 'https://toolbox.example.com'` 是静默回退——部署时遗漏 site 配置不会报错，但全站 canonical/JSON-LD/OG 会指向错误域名，SEO 影响隐蔽且严重。改为 `getSiteUrl()` 后，未配置 site 时构建直接失败并给出明确修复指引，问题前置暴露。这是"快速失败"原则在构建配置中的应用
+- **BUG-36 清理策略**：BaseLayout 第 1 轮已实现运行时覆盖（url 缺失 → canonical 自动注入），源码清理只需删除硬编码行。选择"删除 url 字段"而非"改为动态构造"——因为 BaseLayout 已集中处理，工具页无需重复 SITE_URL 获取逻辑，符合 DRY 原则。代价是工具页源码 JSON-LD 不显式包含 url 字段，但 BaseLayout 产物已正确注入，SEO 价值已实现
+- **安全网保留决策**：BaseLayout 的 PLACEHOLDER_ORIGIN 检测逻辑保留，即使源码已无占位域名。理由：未来新增工具页可能误用占位域名，安全网能自动捕获并覆盖。这是"防御性编程"的体现——当前不触发，但未来防误用
+- **批量脚本 + 分批提交**：47 文件批量清理用临时 Node.js 脚本（正则匹配整行删除），脚本验证后删除。分 6 次提交遵守 8 文件红线。这是"机械性批量改动"的标准处理模式：脚本保证一致性，分批提交保证可回滚
+- **bug-check 报告全部清零**：截至本轮，bug-check 报告的 40 项 Bug（1 严重 + 5 高危 + 13 中危 + 21 低危）已全部处理完毕（修复或分析后标记无需改动）。剩余 toolbox.example.com 均为示例数据（JwtTool/JwtVerifyTool/RegexTool/UrlTool 的测试输入），非 SEO 问题
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- bug-check 报告 40 项全部处理完毕 ✅
+- npm run check 仅剩 1 个 hint：clipboard.ts execCommand 废弃（剪贴板降级方案，合理保留）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续十二轮遗留，TRAE Sandbox 拦截 configstore 写入。需用户配置白名单或换环境执行。bug-check 全部清零后，性能基线是阶段二最核心的待办
+2. **移动端 375px 三档适配实测**：连续十二轮遗留，Playwright 受 Python 3.6 限制。可尝试用 agent-browser skill 做浏览器自动化测试
+3. **线上页面浏览器验证**：curl 受 SafeLine WAF 挑战拦截，需用户用浏览器访问 https://website.niuzi.asia 验证渲染/canonical/JSON-LD 实际生效
+4. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认部署方式）
+5. **clipboard.ts execCommand 降级方案优化（可选）**：加 try-catch 包裹 navigator.clipboard.writeText，失败时降级到 execCommand
+6. **新增工具/内容拓展**：bug-check 全部清零、代码质量达标后，可考虑扩展新工具或补充博客内容，覆盖长尾搜索流量
+
+## 需用户操作
+- 部署本轮修复后的代码（9 次 git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
+- （可选）用浏览器访问 https://website.niuzi.asia 验证站点正常
