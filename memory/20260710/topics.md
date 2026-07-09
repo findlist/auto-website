@@ -521,3 +521,86 @@
 - 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
+
+---
+
+# 第 7 轮 · 预存在 TypeScript 类型错误清零 + 临时诊断文件清理
+
+## 上下文恢复
+- 承接第 6 轮（jwtVerify PKCS#1 公钥导入 Bug 修复 + BufferSource 类型债务消除，commit e2167cf）
+- 触发点：第 6 轮 @astrojs/check 揭示 53 个 TS 错误，其中 30 个 BufferSource 已消除，剩余 22 个预存在类型错误待处理
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做代码质量打磨
+
+## 本轮聚焦方向
+**剩余 22 个预存在 TypeScript 类型错误批量修复**（第 6 轮建议优先级 1，代码质量影响 npm run check 通过率）
+22 个错误分布在 6 个文件，互不耦合，可批量修复后统一验证。同步清理 _diag_* 临时诊断文件（check 中产生 warnings）。
+
+## 完成任务
+
+### 类型错误修复（22 个 → 0，6 个文件）
+1. ✅ JweTool.tsx（5 个 never 错误）
+   - 问题：`keyof ParsedJwe['parts']` 中 parts 是可选字段（`parts?: JweParts`），TS 对可选属性做 keyof 推断为 `never`，导致 PART_LABELS 数组的 key 字段赋值时 string 不可赋给 never
+   - 修复：`keyof ParsedJwe['parts']` → `keyof NonNullable<ParsedJwe['parts']>`，用 NonNullable 工具类型去除 undefined 分量，keyof 正确展开为 JweParts 的键
+2. ✅ MarkdownTool.tsx（1 个八进制转义错误）
+   - 问题：正则 `/^\s*([-*_])\s*\1\s*\1[\s\1]*$/` 中字符类 `[\s\1]` 的 `\1` 被解析为八进制转义（SOH 字符）而非反向引用，TS 报 ts(1536)
+   - 修复：改为 `/^\s*([-*_])(?:\s*\1){2,}\s*$/`——捕获首个字符后用非捕获组 `(?:\s*\1){2,}` 重复 2 次以上（共 3+），语义等价且无需字符类内反向引用
+3. ✅ TomlSchemaTool.tsx（6 个错误：TomlError 未导入 + catch e 为 unknown）
+   - 问题：行 179 `e instanceof TomlError` 中 TomlError 未导入（ts(2304) Cannot find name），导致 instanceof 不生效，e 始终为 unknown，`e.line`/`e.column`/`e.message` 均报 ts(18046)
+   - 修复：`import { parse as tomlParse, TomlDate } from 'smol-toml'` → 补 `TomlError` 导入。smol-toml 的 index.ts 已 `export { TomlError }`，且 TomlError 类有 `line`/`column`/`codeblock` 属性。导入后 instanceof 类型守卫自动将 e 从 unknown 收窄为 TomlError，6 个错误全部消除
+4. ✅ hex.astro（7 个 JSX 逗号运算符错误）
+   - 问题：FAQ 文案中 C 数组示例 `<code>{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }</code>` 的 `{...}` 被 JSX 解析为表达式容器，逗号被当作逗号运算符，报 ts(18007) + ts(2695)
+   - 修复：改为 `<code>{'{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }'}</code>` 字符串字面量，JSX 正确渲染花括号文本。共 2 处（行 51 的 5 元素数组 + 行 59 的 2 元素数组）
+5. ✅ index.astro（2 个 DOM 类型错误）
+   - 问题：`searchInput.value` 中 searchInput 为 HTMLElement（无 value 属性）；`card.style.display` 中 card 为 Element（无 style 属性）
+   - 修复：`getElementById('tools-search') as HTMLInputElement | null` 断言为输入元素；`grid.querySelectorAll<HTMLElement>('.tool-card')` 用泛型收窄为 HTMLElement，forEach 参数自动推断为 HTMLElement
+6. ✅ colorPalette.ts（1 个 rgb 属性不存在错误）
+   - 问题：行 396 `hexMap = scale.map(({ level, rgb }) => ({ level, hex: rgbToHex(rgb) }))` 丢弃了 rgb，hexMap 类型为 `{ level; hex }[]`，但行 420 ios 格式解构 `{ level, rgb }` 时 rgb 不存在
+   - 修复：map 时保留 rgb：`({ level, hex: rgbToHex(rgb), rgb })`，hexMap 类型变为 `{ level; hex; rgb }[]`，其他格式解构 `{ level, hex }` 不受影响（多余属性自动忽略）
+
+### 临时文件清理（10 个文件）
+7. ✅ 清理 _diag_* 临时诊断文件
+   - 文件：_diag_table2.cjs / _diag_table.cjs / _diag_regex.cjs / _diag_parser.mjs / _diag_parser.cjs / _diag_markdown.py / _diag_log.txt / _diag_output.txt / _diag_md_no_astro_js.png / _diag_md_nojs.png
+   - 这些是前几轮调试 Markdown 渲染、表格解析等问题时的临时脚本与截图，已在 .gitignore 中忽略（未被 git 跟踪），但 .cjs/.mjs 文件会被 @astrojs/check 扫描产生 warnings
+   - 清理后 check 文件数从 136 → 131，warnings 减少 5 个
+
+## 修改文件（6 个源文件 + 1 个进度文件，未超 8 文件红线）
+- src/components/JweTool.tsx（NonNullable 修复 keyof never）
+- src/components/MarkdownTool.tsx（正则字符类反向引用改 (?:\s*\1){2,}）
+- src/components/TomlSchemaTool.tsx（导入 TomlError）
+- src/pages/hex.astro（JSX 花括号改字符串字面量，2 处）
+- src/pages/index.astro（querySelectorAll 泛型 + as HTMLInputElement）
+- src/utils/colorPalette.ts（hexMap 保留 rgb）
+- memory/20260710/topics.md（本文件，进度沉淀）
+
+## 验证结果
+- 类型检查：✅ 22 errors → 0 errors（131 files，零回归）
+- 构建：✅ 258 页面，11.66s，无报错无警告
+- 产物抽检：✅ dist/hex/index.html 中 C 数组示例 `{ 0x48, 0x65, 0x6c, 0x6c, 0x6f }` 与 `{ 0x48, 0x65 }` 正确渲染为花括号文本
+- Git 提交：commit 2b6a96a，已 push origin HEAD（e2167cf..2b6a96a）
+
+## 数据洞察
+- **keyof 可选属性的 never 陷阱**：TS 对 `keyof T` 其中 T 含 undefined 时，会将 keyof 交叉为 `keyof undefined`（即 never 的近似），导致结果为 never。正确做法是用 `NonNullable<T>` 先去除 undefined 再 keyof。这与第 6 轮 BufferSource 类型收窄类似——都是 TS 类型细化后暴露的预存问题
+- **正则字符类中的反向引用限制**：JS 正则规范中，字符类 `[...]` 内的 `\1` 是八进制转义而非反向引用。Markdown 水平线匹配原用 `[\s\1]` 意图"空白或相同字符"，但实际匹配的是 SOH 控制字符。改用 `(?:\s*\1){2,}` 非捕获组重复更简洁且语义正确。这是正则语法理解的细节盲区
+- **JSX 花括号转义**：JSX 中 `{` 是表达式容器起始符，要渲染字面花括号需用 `{'{'}` 字符串或 `&#123;` 实体。hex.astro 的 C 数组示例文案是典型场景——技术文档中花括号常见，易被误解析
+- **catch unknown 类型策略**：TS 4.4+ 默认 `useUnknownInCatchVariables`，catch 的 e 为 unknown。正确的处理链是：先 `e instanceof Error` 收窄为 Error 取 message，再 `e instanceof 具体子类` 收窄取子类特有属性。TomlSchemaTool 原代码逻辑正确，仅缺 TomlError 导入导致 instanceof 不生效
+- **colorPalette rgb 保留决策**：原代码 map 时丢弃 rgb 是"过度精简"——ios 格式需要 rgb 值，丢弃后无法使用。保留 rgb 后其他格式解构 `{ level, hex }` 不受影响（TS 允许解构子集）。这是"最小必要复杂度"的反面案例：为了减少一个字段而引入了功能缺陷
+- **@astrojs/check 文件扫描范围**：check 会扫描项目根目录的 .cjs/.mjs/.ts 文件（不只是 src/），_diag_* 临时脚本虽被 gitignore 忽略但仍在磁盘上，产生 warnings。清理临时文件是维护 check 信噪比的好习惯
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- npm run check 现已 0 errors，仅剩少量 warnings（substr 已废弃、execCommand 已废弃、未使用变量等），均为低优先级
+- bug-check 报告剩余未修复项：14 个低危（BUG-21/22/25/26/27/28/30/32/35/36/37/38/39/40），多为一致性问题
+
+## 下一轮建议
+按优先级排序：
+1. **剩余低危 Bug 批量修复**：BUG-21（JwtTool 截断显示）、BUG-22（JwtTool 时间格式）、BUG-25/26/27/28（各类一致性）、BUG-30（ip 工具示例）、BUG-32（lorem 边界）、BUG-35/36/37/38/39/40（示例数据与文案一致性）—— 14 项低危 Bug，可按文件分批处理
+2. **Lighthouse 性能基线测量**：连续九轮遗留，TRAE Sandbox 拦截 configstore 写入。需用户配置白名单或换环境执行
+3. **移动端 375px 三档适配实测**：连续九轮遗留，Playwright 受 Python 3.6 限制
+4. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+5. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源
+6. **npm run check 剩余 warnings 清理**：substr→substring、execCommand→clipboard API、未使用变量删除等，均为低优先级代码整洁度提升
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
