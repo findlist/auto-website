@@ -446,3 +446,78 @@
 - 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
 - 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
 - （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
+
+---
+
+# 第 6 轮 · jwtVerify PKCS#1 公钥导入 Bug 修复 + Web Crypto BufferSource 类型债务消除
+
+## 上下文恢复
+- 承接第 5 轮（低危 Bug 批量修复 + 类型检查依赖补齐，commit ac9f347）
+- 触发点：第 5 轮 @astrojs/check 补齐后揭示 53 个 TS 5.7 类型错误，其中 30 个为 BufferSource 类型不兼容；第 5 轮遗留建议优先级 2「jwtVerify.ts PKCS#1 公钥 ASN.1 SPKI 包裹」为真实运行时 Bug
+- 阶段：阶段二（数据驱动迭代），站点已上线但无访问数据，本轮做功能正确性与代码质量打磨
+
+## 本轮聚焦方向
+**两个独立但文件交叉的最小单元合并提交**（文件交叉无法干净分拆）：
+1. jwtVerify.ts PKCS#1 公钥导入真实运行时 Bug 修复（功能正确性最高级）
+2. Web Crypto BufferSource 类型债务消除（代码质量，影响 npm run check 通过率）
+
+## 完成任务
+
+### 单元 1：jwtVerify PKCS#1 公钥导入 Bug 修复（2 个文件）
+1. ✅ BUG（真运行时）jwtVerify.ts 第 240 行 `importRsaPublicKey` 的 `'pkcs1'` 回退分支恒抛 NotSupportedError
+   - 问题根因：Web Crypto API 的 `crypto.subtle.importKey` 仅支持 `'spki'/'pkcs8'/'raw'/'jwk'` 四种格式，**不支持 `'pkcs1'/'sec1'`**。原代码 catch SPKI 失败后回退 `'pkcs1'` 必然抛 NotSupportedError，导致 PEM 标签为 `BEGIN RSA PUBLIC KEY`（PKCS#1 格式）的 RSA 公钥永远无法用于 JWT 验签
+   - 修复：在 [jwtSign.ts](file:///e:/work/auto-website/src/utils/jwtSign.ts) 新增两个 ASN.1 DER 编码函数：
+     - `derBitString(content)`：构造 DER BIT STRING（tag 0x03 + 长度 + 0x00 未使用位数 + 内容）
+     - `wrapRsaPublicKeyToSpki(pkcs1PubDer)`：将 PKCS#1 RSA 公钥 DER 包裹为 SPKI(SubjectPublicKeyInfo) 容器，结构 `SEQUENCE { AlgorithmIdentifier(RSA), BIT STRING subjectPublicKey }`，subjectPublicKey 即 PKCS#1 的 RSAPublicKey DER
+   - 在 [jwtVerify.ts](file:///e:/work/auto-website/src/utils/jwtVerify.ts) 重写 `importRsaPublicKey`：通过正则 `/-----BEGIN RSA PUBLIC KEY-----/` 区分 PKCS#1 与 SPKI 标签，PKCS#1 公钥先 `wrapRsaPublicKeyToSpki` 包裹再以 `'spki'` 格式导入
+   - 复用第 3 轮 BUG-07 私钥包裹的 ASN.1 编码工具（`encodeDerLength`/`derSequence`/`derOid`），SPKI 用 BIT STRING，PKCS#8 用 OCTET STRING，差异在包裹函数中各自处理
+   - 运行时验证：临时脚本 `tmp-pkcs1-test.mjs` 端到端验证 4/4 通过（生成密钥对→签名→PKCS#1 PEM 导出→SPKI 包裹→'spki' 导入成功→验签成功；对照组直接 `'pkcs1'` 导入确认失败），验证后删除临时文件
+
+### 单元 2：Web Crypto BufferSource 类型债务消除（4 个文件）
+2. ✅ TypeScript 5.7 `Uint8Array<ArrayBufferLike>` 与 `BufferSource` 类型不兼容
+   - 问题根因：TS 5.7 将 `Uint8Array` 类型注解细化为 `Uint8Array<ArrayBufferLike>`，其中 `ArrayBufferLike` 联合类型包含 `SharedArrayBuffer`，而 Web Crypto API 的 `BufferSource` 仅接受 `ArrayBuffer` 后端的 `TypedArray`。导致所有 `importKey('raw', bytes, ...)`、`encrypt(algo, key, data)` 等 Web Crypto 调用点的 `Uint8Array` 实参类型不匹配
+   - 修复策略：根因修复（生产者收窄）而非调用点断言。在 [jwtSign.ts](file:///e:/work/auto-website/src/utils/jwtSign.ts)、[jwtVerify.ts](file:///e:/work/auto-website/src/utils/jwtVerify.ts)、[jwe.ts](file:///e:/work/auto-website/src/utils/jwe.ts)、[aes.ts](file:///e:/work/auto-website/src/utils/aes.ts) 四个文件中，用 `replace_all` 将源端函数返回类型 `): Uint8Array {` → `): Uint8Array<ArrayBuffer> {`、局部变量注解 `: Uint8Array;` → `: Uint8Array<ArrayBuffer>;`。从生产者根因处传播修正，自动惠及所有下游调用点
+   - 结果：30 个 BufferSource 类型错误全部消除（52→22），剩余 22 项均为预存在非 BufferSource 问题（JweTool `never`、MarkdownTool 八进制转义、TomlSchemaTool `unknown`、hex.astro JSX 逗号运算符、index.astro HTMLElement.value、colorPalette rgb 属性），与本轮改动无关
+   - 运行时无影响：`Uint8Array` 实例本身就是合法 `BufferSource`，类型收窄只是让 TypeScript 理解这一点
+
+## 修改文件（4 个，未超 8 文件红线）
+- [src/utils/jwtSign.ts](file:///e:/work/auto-website/src/utils/jwtSign.ts)（新增 `derBitString` + 导出 `wrapRsaPublicKeyToSpki`，更新 ASN.1 章节注释「用于密钥格式转换」，4 处 `Uint8Array` → `Uint8Array<ArrayBuffer>` 收窄）
+- [src/utils/jwtVerify.ts](file:///e:/work/auto-website/src/utils/jwtVerify.ts)（重写 `importRsaPublicKey` PEM 处理：标签正则区分 + PKCS#1 包裹为 SPKI 导入，移除必失败的 `'pkcs1'` 回退；类型收窄）
+- [src/utils/jwe.ts](file:///e:/work/auto-website/src/utils/jwe.ts)（`Uint8Array` 返回类型与局部变量收窄，含 `concatKdf` 的 `Promise<Uint8Array<ArrayBuffer>>`）
+- [src/utils/aes.ts](file:///e:/work/auto-website/src/utils/aes.ts)（`Uint8Array` 返回类型与局部变量收窄，含 `parseKeyBytes`、`importAesKey` 签名）
+
+## 验证结果
+- 构建：✅ 258 页面，无报错无警告
+- 类型检查：✅ 53 → 22（30 个 BufferSource 错误全消除，零回归）
+- 产物抽检：✅ `Select-String -Path dist/_astro/JwtVerifyTool*.js -Pattern "'pkcs1'" -SimpleMatch` 返回 0（原必失败的 `'pkcs1'` 回退已从产物中移除）
+- 运行时验证：✅ 临时脚本 4/4 检查通过（生成密钥→签名→PKCS#1 导出→SPKI 包裹→'spki' 导入→验签成功；对照组 `'pkcs1'` 直接导入确认失败）
+- Git 提交：commit 61b356a，已 push origin HEAD（21d270b..61b356a）
+
+## 数据洞察
+- **PKCS#1 公钥导入 Bug 根因**：Web Crypto API 设计上只支持标准容器格式（SPKI/PKCS#8/JWK/raw），不支持裸算法格式（PKCS#1/SEC1）。这是因为浏览器倾向于"标准格式优先"以减少解析歧义。修复策略是"包裹"而非"解析"——PKCS#1 的 RSAPublicKey DER 本身就是 SPKI 中 subjectPublicKey 字段的内容，只需补 AlgorithmIdentifier + BIT STRING 外层容器即可。这与第 3 轮 BUG-07 私钥包裹思路一致，差异仅在容器字段：SPKI 用 BIT STRING（公钥），PKCS#8 用 OCTET STRING（私钥）
+- **类型债务根因修复 vs 调用点断言**：TS 5.7 的 `Uint8Array<ArrayBufferLike>` 细化是类型系统的进步（区分 ArrayBuffer 与 SharedArrayBuffer 后端），但与既有 Web API 类型定义不兼容。若在 52 个调用点逐一 `as BufferSource` 断言，会掩盖真实类型关系且代码冗余。选择在生产者根因处收窄为 `Uint8Array<ArrayBuffer>`，让类型沿调用链自然传播——这是"最小必要复杂度"的体现：1 处改动惠及所有下游，且语义正确（这些工具函数确实只产出 ArrayBuffer 后端的 Uint8Array）
+- **文件交叉合并提交决策**：两单元虽逻辑独立，但 jwtSign.ts 与 jwtVerify.ts 同时承载两单元改动（jwtSign 新增 `wrapRsaPublicKeyToSpki` 用于 Bug 修复 + 类型收窄用于债务消除）。强行分拆会引入"中间态类型错误"或"中间态未使用导入"，违反"每次提交保持可工作"原则。合并为一次 fix: 提交更合适（主价值是 Bug 修复，类型债务是同源同文件的代码质量提升）
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+- 剩余 22 个预存在 TS 类型错误（独立单元，与本轮改动无关）：
+  - [JweTool.tsx](file:///e:/work/auto-website/src/components/JweTool.tsx#L46-L50)：5 处 `never` 错误（`keyof ParsedJwe['parts']` 中 `parts?` 可选导致）
+  - [MarkdownTool.tsx](file:///e:/work/auto-website/src/components/MarkdownTool.tsx#L177)：八进制转义错误
+  - [TomlSchemaTool.tsx](file:///e:/work/auto-website/src/components/TomlSchemaTool.tsx#L179-L180)：`unknown` 类型错误
+  - [hex.astro](file:///e:/work/auto-website/src/pages/hex.astro#L51)：JSX 逗号运算符错误
+  - [index.astro](file:///e:/work/auto-website/src/pages/index.astro#L597)：HTMLElement.value/Element.style 错误
+  - [colorPalette.ts](file:///e:/work/auto-website/src/utils/colorPalette.ts#L420)：`rgb` 属性错误
+
+## 下一轮建议
+按优先级排序：
+1. **剩余 22 个预存在 TS 类型错误批量修复**：按文件分批处理，每批 ≤8 文件红线。JweTool.tsx 的 `never` 错误需修复 `ParsedJwe['parts']` 可选类型问题（加非空断言或类型守卫）；hex.astro/index.astro 的 JSX 与 DOM 类型错误需调整类型注解或加类型守卫；TomlSchemaTool/MarkdownTool/colorPalette 为局部修复
+2. **Lighthouse 性能基线测量**：连续八轮遗留，TRAE Sandbox 拦截 configstore 写入。需用户配置白名单或换环境执行
+3. **移动端 375px 三档适配实测**：连续八轮遗留，Playwright 受 Python 3.6 限制
+4. **剩余低危 Bug 批量修复**：BUG-21/22/25/26/27/28/30/32/35/36/37/38/39/40，多为一致性问题
+5. **线上页面抓取校验**：WebFetch 超时，改 curl 或重试抓取线上页面校验渲染/canonical/JSON-LD 实际生效
+6. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源
+
+## 需用户操作
+- 部署本轮修复后的代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/Playwright 写入临时目录，以建立性能基线
