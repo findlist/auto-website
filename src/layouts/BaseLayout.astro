@@ -45,9 +45,9 @@ const siteLd = {
 // 合并站点级与页面级 JSON-LD，统一以数组形式输出
 const pageLd = meta.jsonLd ? (Array.isArray(meta.jsonLd) ? meta.jsonLd : [meta.jsonLd]) : [];
 
-// 集中修正 WebApplication 的 url：历史工具页硬编码了占位域名 toolbox.example.com，
-// 线上 URL 确定后（astro.config.mjs 的 site 已改为 website.niuzi.asia），在此统一覆盖。
-// 仅当 url 缺失或仍指向占位域名时用 canonical 覆盖，已正确配置的页面（如 blog 已动态化）不受影响。
+// WebApplication url 自动注入：工具页的 JSON-LD 不再硬编码 url（BUG-36 已清理），
+// 此处作为安全网——当 url 缺失时自动用 canonical 补充，仍指向占位域名时自动覆盖。
+// 保留 PLACEHOLDER_ORIGIN 检测以防未来新增工具页误用占位域名。
 const PLACEHOLDER_ORIGIN = 'https://toolbox.example.com';
 const normalizedPageLd = pageLd.map((ld) => {
   if (
