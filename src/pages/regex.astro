@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>正则表达式在线测试工具</h1>
       <p>
         实时高亮全部匹配片段，逐项展示数字捕获组与命名捕获组、位置，支持单条复制；支持 g/i/m/s/u/y 标志位切换，内置邮箱、URL、IPv4、手机号等常用模式速查；提供基于 $1/$2 与 $<name> 引用的替换功能。所有数据仅在浏览器本地处理。
@@ -142,7 +142,7 @@ const meta: SiteMeta = {
     font-weight: 500;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
     font-family: inherit;
   }
 
@@ -167,7 +167,7 @@ const meta: SiteMeta = {
   }
 
   .regextool__regex-label {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 16px;
     color: var(--color-text-muted);
     flex-shrink: 0;
@@ -181,15 +181,15 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 14px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .regextool__pattern-input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+    box-shadow: var(--focus-ring);
   }
 
   /* 标志位复选框组 */
@@ -211,7 +211,7 @@ const meta: SiteMeta = {
     background: var(--color-bg);
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .regextool__flag:hover {
@@ -224,7 +224,7 @@ const meta: SiteMeta = {
   }
 
   .regextool__flag-label {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-weight: 600;
     color: var(--color-primary);
   }
@@ -260,7 +260,7 @@ const meta: SiteMeta = {
     font-size: 12px;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .regextool__preset:hover {
@@ -290,7 +290,7 @@ const meta: SiteMeta = {
 
   .regextool__preview-pre {
     margin: 0;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.7;
     color: var(--color-text);
@@ -365,7 +365,7 @@ const meta: SiteMeta = {
   .regextool__match-text {
     flex: 1;
     min-width: 0;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text);
     word-break: break-all;
     background: rgba(245, 166, 35, 0.16);
@@ -377,7 +377,7 @@ const meta: SiteMeta = {
     flex-shrink: 0;
     color: var(--color-text-muted);
     font-size: 11px;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   .regextool__match-groups {
@@ -402,7 +402,7 @@ const meta: SiteMeta = {
   .regextool__group-key {
     color: var(--color-primary);
     font-weight: 600;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   /* 命名捕获组键样式：用紫色与数字组蓝色区分 */
@@ -424,7 +424,7 @@ const meta: SiteMeta = {
   }
 
   .regextool__group-val {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text);
     word-break: break-all;
   }
@@ -446,7 +446,7 @@ const meta: SiteMeta = {
     border-bottom: 1px solid var(--color-border);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     outline: none;
   }

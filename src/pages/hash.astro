@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>Hash 计算工具</h1>
       <p>
         计算 SHA-1 / SHA-256 / SHA-384 / SHA-512 哈希摘要，支持文本与文件两种输入模式，HEX 与 Base64 两种输出格式。基于浏览器原生 SubtleCrypto，所有数据本地处理。
@@ -111,7 +111,7 @@ const meta: SiteMeta = {
 
   /* 哈希结果使用等宽字体便于识别 */
   .hashtool__output {
-    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     word-break: break-all;
   }
@@ -134,7 +134,7 @@ const meta: SiteMeta = {
     font-weight: 500;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .hashtool__mode-tab:hover {
@@ -168,7 +168,7 @@ const meta: SiteMeta = {
     color: var(--color-text-soft);
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-base);
     min-height: 220px;
   }
 
@@ -181,7 +181,7 @@ const meta: SiteMeta = {
 
   .hashtool__dropzone.is-dragover {
     border-color: var(--color-primary);
-    background: rgba(43, 108, 255, 0.06);
+    background: var(--color-primary-soft);
     color: var(--color-primary);
     transform: scale(1.005);
   }
@@ -270,9 +270,9 @@ const meta: SiteMeta = {
 
   .hashtool__progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--color-primary), #7a4cff);
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
     border-radius: 4px;
-    transition: width 0.2s ease;
+    transition: width var(--transition-base);
   }
 
   .hashtool__progress-text {
@@ -287,7 +287,7 @@ const meta: SiteMeta = {
     padding: 10px 14px;
     border: 1px solid var(--color-error);
     border-radius: var(--radius-sm);
-    background: rgba(229, 72, 77, 0.06);
+    background: var(--color-danger-soft);
   }
 
   /* 结果列表 */
@@ -356,7 +356,7 @@ const meta: SiteMeta = {
   .hashtool__file-notice {
     padding: 8px 14px;
     border-radius: var(--radius-sm);
-    background: rgba(26, 170, 85, 0.08);
+    background: var(--color-success-soft);
     color: var(--color-success);
     font-size: 13px;
   }

@@ -22,6 +22,23 @@
   --color-error-soft: rgba(229, 72, 77, 0.08);
   --color-accent: #7a4cff;
 
+  /* 语义色别名：统一工具页中 danger / warn / success 的背景与边框，
+     避免各页面反复硬编码 rgba 值，暗色模式同步覆盖 */
+  --color-danger: var(--color-error);
+  --color-danger-soft: var(--color-error-soft);
+  --color-danger-border: rgba(229, 72, 77, 0.3);
+  --color-warn: #d97706;
+  --color-warn-soft: rgba(245, 166, 35, 0.1);
+  --color-warn-border: rgba(245, 166, 35, 0.35);
+  --color-insert: #16a34a;
+  --color-insert-soft: rgba(22, 163, 74, 0.12);
+  --color-insert-border: #22c55e;
+  --color-delete: var(--color-error);
+  --color-delete-soft: rgba(229, 72, 77, 0.12);
+
+  /* 焦点环：表单元素统一使用 box-shadow 模拟，替代 outline */
+  --focus-ring: 0 0 0 3px var(--color-primary-ring);
+
   /* 字体 */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -65,6 +82,15 @@
     --color-success-soft: rgba(26, 170, 85, 0.14);
     --color-warning-soft: rgba(245, 166, 35, 0.14);
     --color-error-soft: rgba(229, 72, 77, 0.14);
+    /* 语义色别名暗色模式覆盖 */
+    --color-warn: #fbbf24;
+    --color-warn-soft: rgba(245, 166, 35, 0.16);
+    --color-warn-border: rgba(245, 166, 35, 0.4);
+    --color-danger-border: rgba(229, 72, 77, 0.4);
+    --color-insert: #4ade80;
+    --color-insert-soft: rgba(22, 163, 74, 0.2);
+    --color-insert-border: #4ade80;
+    --color-delete-soft: rgba(229, 72, 77, 0.18);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
@@ -257,6 +283,52 @@ button {
   }
   .page-hero h1 {
     font-size: 26px;
+  }
+}
+
+/* 工具页 hero 变体：与下方工具容器视觉衔接更紧密 */
+.page-hero--tool {
+  padding: 40px 0 20px;
+  text-align: center;
+}
+
+.page-hero--tool h1 {
+  font-size: 28px;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  /* 标题下方主色渐变细线，增强视觉层次 */
+  position: relative;
+  display: inline-block;
+}
+
+.page-hero--tool h1::after {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 3px;
+  margin: 10px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+}
+
+.page-hero--tool p {
+  margin: 0 auto;
+  max-width: 680px;
+  color: var(--color-text-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .page-hero--tool {
+    padding: 28px 0 16px;
+  }
+  .page-hero--tool h1 {
+    font-size: 23px;
+  }
+  .page-hero--tool p {
+    font-size: 14px;
   }
 }
 
@@ -472,16 +544,51 @@ button {
 }
 
 /* ============ 复制成功反馈动画 ============ */
-/* 复制按钮成功后短暂变绿，给用户明确的操作反馈 */
+/* 复制按钮成功后短暂变绿 + 缩放弹跳，给用户明确的操作反馈 */
 @keyframes copy-flash {
-  0% { background: var(--color-primary); }
-  100% { background: var(--color-bg); }
+  0% { background: var(--color-primary); border-color: var(--color-primary); }
+  30% { background: var(--color-success); border-color: var(--color-success); }
+  100% { background: var(--color-bg); border-color: var(--color-border); }
+}
+
+@keyframes copy-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
 }
 
 .is-copied {
-  animation: copy-flash 0.6s var(--ease-out);
+  animation: copy-flash 0.7s var(--ease-out), copy-pop 0.4s var(--ease-out);
   border-color: var(--color-success) !important;
   color: var(--color-success) !important;
+}
+
+/* ============ 工具页表单焦点统一 ============ */
+/* 工具容器内的 input / textarea / select 统一使用 box-shadow 焦点环，
+   替代各页面重复的 outline:none + box-shadow 写法，保证视觉一致 */
+.jsontool input:focus-visible,
+.jsontool textarea:focus-visible,
+.jsontool select:focus-visible,
+.jwttool input:focus-visible,
+.jwttool textarea:focus-visible,
+.regextool input:focus-visible,
+.regextool textarea:focus-visible,
+.hashtool input:focus-visible,
+.hashtool textarea:focus-visible,
+.hashtool select:focus-visible,
+.qrtool input:focus-visible,
+.qrtool textarea:focus-visible,
+.qrtool select:focus-visible,
+.pwtool input:focus-visible,
+.pwtool textarea:focus-visible,
+.pwtool select:focus-visible,
+.colortool input:focus-visible,
+.colortool textarea:focus-visible,
+.difftool input:focus-visible,
+.difftool textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
 }
 
 /* ============ 自定义滚动条 ============ */

@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>文本对比工具</h1>
       <p>
         粘贴两段文本即可实时查看差异。基于 LCS（最长公共子序列）算法计算行级差异，
@@ -177,7 +177,7 @@ const meta: SiteMeta = {
     width: 100%;
     min-height: 180px;
     padding: 10px 12px;
-    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.5;
     border: 1px solid var(--color-border);
@@ -187,12 +187,13 @@ const meta: SiteMeta = {
     resize: vertical;
     /* 等宽字体下保持制表符对齐 */
     tab-size: 2;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .difftool__textarea:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 1px;
+    outline: none;
     border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
   }
 
   /* 统计栏 */
@@ -220,17 +221,17 @@ const meta: SiteMeta = {
   }
 
   .difftool__stat--insert {
-    color: #15803d;
+    color: var(--color-insert);
     font-weight: 600;
   }
 
   .difftool__stat--delete {
-    color: #b91c1c;
+    color: var(--color-delete);
     font-weight: 600;
   }
 
   .difftool__stat--modify {
-    color: #b45309;
+    color: var(--color-warn);
   }
 
   .difftool__stat--similarity {
@@ -255,7 +256,7 @@ const meta: SiteMeta = {
     color: var(--color-text-soft);
     cursor: pointer;
     border-right: 1px solid var(--color-border);
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .difftool__view-btn:last-child {
@@ -330,7 +331,7 @@ const meta: SiteMeta = {
   .difftool__pre {
     margin: 0;
     padding: 8px 0;
-    font-family: var(--font-mono, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
     background: var(--color-bg);
@@ -366,23 +367,23 @@ const meta: SiteMeta = {
   }
 
   .difftool__line--insert {
-    background: rgba(22, 163, 74, 0.12);
-    border-left: 3px solid #22c55e;
+    background: var(--color-insert-soft);
+    border-left: 3px solid var(--color-insert-border);
     padding-left: 9px;
   }
 
   .difftool__line--insert .difftool__line-marker {
-    color: #15803d;
+    color: var(--color-insert);
   }
 
   .difftool__line--delete {
-    background: rgba(229, 72, 77, 0.12);
-    border-left: 3px solid #e5484d;
+    background: var(--color-delete-soft);
+    border-left: 3px solid var(--color-error);
     padding-left: 9px;
   }
 
   .difftool__line--delete .difftool__line-marker {
-    color: #b91c1c;
+    color: var(--color-delete);
   }
 
   /* 字符级高亮：行内被删除/被新增的字符段加粗背景，与整行底色形成层次 */
@@ -414,7 +415,7 @@ const meta: SiteMeta = {
   /* 暗色模式适配 */
   @media (prefers-color-scheme: dark) {
     .difftool__stat--insert {
-      color: #4ade80;
+      color: var(--color-insert);
     }
 
     .difftool__stat--delete {
@@ -422,19 +423,19 @@ const meta: SiteMeta = {
     }
 
     .difftool__stat--modify {
-      color: #fbbf24;
+      color: var(--color-warn);
     }
 
     .difftool__line--insert {
-      background: rgba(22, 163, 74, 0.18);
+      background: var(--color-insert-soft);
     }
 
     .difftool__line--insert .difftool__line-marker {
-      color: #4ade80;
+      color: var(--color-insert);
     }
 
     .difftool__line--delete {
-      background: rgba(229, 72, 77, 0.18);
+      background: var(--color-delete-soft);
     }
 
     .difftool__line--delete .difftool__line-marker {

@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>JSON 格式化工具</h1>
       <p>
         格式化、压缩、校验、转义 / 去转义一站式完成，配套树形视图与关键词搜索高亮，便于浏览大型 JSON。数据仅在浏览器本地处理，敏感信息不外传。
@@ -226,7 +226,7 @@ const meta: SiteMeta = {
     font-weight: 500;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .jsontool__view-tab:hover:not(:disabled):not(.is-active) {
@@ -282,13 +282,13 @@ const meta: SiteMeta = {
     font-size: 13px;
     color: var(--color-text);
     background: var(--color-bg);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .jsontool__search-input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+    box-shadow: var(--focus-ring);
   }
 
   /* 去掉浏览器原生 search 输入框的清除按钮，避免与本工具的清除逻辑重叠 */

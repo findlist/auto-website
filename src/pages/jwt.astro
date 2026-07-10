@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>JWT 解码工具</h1>
       <p>
         粘贴 JWT 立即解码 Header / Payload / Signature 三段，自动 base64url 解码并 JSON 美化，
@@ -201,17 +201,17 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
     resize: vertical;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .jwttool__input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.12);
+    box-shadow: var(--focus-ring);
   }
 
   .jwttool__hint {
@@ -230,8 +230,8 @@ const meta: SiteMeta = {
     margin: 12px 16px;
     padding: 10px 14px;
     border-radius: var(--radius-sm);
-    background: rgba(220, 38, 38, 0.08);
-    border: 1px solid rgba(220, 38, 38, 0.2);
+    background: var(--color-danger-soft);
+    border: 1px solid var(--color-danger-border);
     color: var(--color-error);
     font-size: 13px;
   }
@@ -267,7 +267,7 @@ const meta: SiteMeta = {
   }
 
   .jwttool__meta-value code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -275,23 +275,23 @@ const meta: SiteMeta = {
   /* 过期状态颜色 */
   .jwttool__meta-item--valid {
     border-color: rgba(26, 170, 85, 0.3);
-    background: rgba(26, 170, 85, 0.08);
+    background: var(--color-success-soft);
   }
   .jwttool__meta-item--valid .jwttool__meta-value {
     color: var(--color-success);
   }
 
   .jwttool__meta-item--expiring {
-    border-color: rgba(245, 166, 35, 0.3);
-    background: rgba(245, 166, 35, 0.08);
+    border-color: var(--color-warn-border);
+    background: var(--color-warn-soft);
   }
   .jwttool__meta-item--expiring .jwttool__meta-value {
-    color: #d97706;
+    color: var(--color-warn);
   }
 
   .jwttool__meta-item--expired {
-    border-color: rgba(220, 38, 38, 0.3);
-    background: rgba(220, 38, 38, 0.08);
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-soft);
   }
   .jwttool__meta-item--expired .jwttool__meta-value {
     color: var(--color-error);
@@ -303,24 +303,24 @@ const meta: SiteMeta = {
 
   .jwttool__meta-item--alg {
     border-color: rgba(43, 108, 255, 0.3);
-    background: rgba(43, 108, 255, 0.06);
+    background: var(--color-primary-soft);
   }
 
   /* 算法安全等级：insecure 红色、warning 黄色、safe 保持 alg 蓝色 */
   .jwttool__meta-item--sec-insecure {
-    border-color: rgba(220, 38, 38, 0.4);
-    background: rgba(220, 38, 38, 0.08);
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-soft);
   }
   .jwttool__meta-item--sec-insecure .jwttool__meta-value code {
     color: var(--color-error);
   }
 
   .jwttool__meta-item--sec-warning {
-    border-color: rgba(245, 166, 35, 0.4);
-    background: rgba(245, 166, 35, 0.08);
+    border-color: var(--color-warn-border);
+    background: var(--color-warn-soft);
   }
   .jwttool__meta-item--sec-warning .jwttool__meta-value code {
-    color: #d97706;
+    color: var(--color-warn);
   }
 
   /* none 算法安全警告横幅 */
@@ -328,8 +328,8 @@ const meta: SiteMeta = {
     margin: 12px 16px;
     padding: 12px 16px;
     border-radius: var(--radius-sm);
-    background: rgba(220, 38, 38, 0.08);
-    border: 1px solid rgba(220, 38, 38, 0.3);
+    background: var(--color-danger-soft);
+    border: 1px solid var(--color-danger-border);
     border-left: 4px solid var(--color-error);
     color: var(--color-text);
     font-size: 13px;
@@ -341,8 +341,8 @@ const meta: SiteMeta = {
   }
 
   .jwttool__alert code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-    background: rgba(220, 38, 38, 0.1);
+    font-family: var(--font-mono);
+    background: rgba(229, 72, 77, 0.12);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--color-error);
@@ -360,14 +360,14 @@ const meta: SiteMeta = {
 
   /* 不安全示例按钮：橙色边框提示风险 */
   .jwttool__btn-insecure {
-    border-color: rgba(220, 38, 38, 0.3);
-    color: #b91c1c;
+    border-color: var(--color-danger-border);
+    color: var(--color-error);
   }
 
   .jwttool__btn-insecure:hover {
     border-color: var(--color-error);
     color: var(--color-error);
-    background: rgba(220, 38, 38, 0.04);
+    background: var(--color-danger-soft);
   }
 
   /* 签名长度参考提示 */
@@ -382,13 +382,13 @@ const meta: SiteMeta = {
   }
 
   .jwttool__sig-hint code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
 
   .jwttool__sig-warn {
-    color: #d97706;
+    color: var(--color-warn);
     font-weight: 500;
   }
 
@@ -435,7 +435,7 @@ const meta: SiteMeta = {
     font-size: 12px;
     font-weight: 600;
     color: #fff;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   .jwttool__seg-tag--header {
@@ -464,7 +464,7 @@ const meta: SiteMeta = {
     font-size: 12px;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
 
   .jwttool__copy-btn:hover {
@@ -478,7 +478,7 @@ const meta: SiteMeta = {
     padding: 12px 14px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
     overflow: auto;
@@ -490,7 +490,7 @@ const meta: SiteMeta = {
     padding: 12px 14px;
     color: var(--color-error);
     font-size: 13px;
-    background: rgba(220, 38, 38, 0.04);
+    background: var(--color-danger-soft);
   }
 
   /* Payload 字段说明列表 */
@@ -524,7 +524,7 @@ const meta: SiteMeta = {
   .jwttool__claim-key {
     flex-shrink: 0;
     min-width: 56px;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text-soft);
     font-size: 12px;
   }
@@ -534,7 +534,7 @@ const meta: SiteMeta = {
     min-width: 0;
     color: var(--color-text);
     word-break: break-all;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12.5px;
     display: flex;
     flex-direction: column;
@@ -548,7 +548,7 @@ const meta: SiteMeta = {
     background: var(--color-bg-code);
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.5;
     overflow: auto;
@@ -579,7 +579,7 @@ const meta: SiteMeta = {
     flex-shrink: 0;
     color: var(--color-primary);
     font-size: 11.5px;
-    background: rgba(43, 108, 255, 0.08);
+    background: var(--color-primary-soft);
     padding: 1px 8px;
     border-radius: 999px;
   }
@@ -589,7 +589,7 @@ const meta: SiteMeta = {
     padding: 12px 14px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12.5px;
     word-break: break-all;
     line-height: 1.6;
@@ -601,14 +601,14 @@ const meta: SiteMeta = {
     margin: 0;
     padding: 10px 14px;
     border-top: 1px solid var(--color-border);
-    background: rgba(245, 166, 35, 0.06);
+    background: var(--color-warn-soft);
     color: var(--color-text-soft);
     font-size: 12px;
     line-height: 1.6;
   }
 
   .jwttool__sig-note strong {
-    color: #d97706;
+    color: var(--color-warn);
   }
 
   /* 状态提示 */
@@ -616,7 +616,7 @@ const meta: SiteMeta = {
     margin: 12px 16px;
     padding: 8px 14px;
     border-radius: var(--radius-sm);
-    background: rgba(26, 170, 85, 0.08);
+    background: var(--color-success-soft);
     color: var(--color-success);
     font-size: 13px;
     text-align: center;

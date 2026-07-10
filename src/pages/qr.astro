@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>二维码生成器</h1>
       <p>
         在线生成 QR Code 二维码：支持文本 / URL / WiFi 配置 / 邮件四类预设，
@@ -257,7 +257,7 @@ END:VCARD</code></pre>
     width: 80px;
     padding: 4px 8px;
     font-size: 13px;
-    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    font-family: var(--font-mono);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     background: var(--color-bg);
@@ -269,9 +269,9 @@ END:VCARD</code></pre>
     margin-top: 8px;
     padding: 8px 12px;
     font-size: 13px;
-    color: #92400e;
-    background: rgba(245, 158, 11, 0.12);
-    border-left: 3px solid #f59e0b;
+    color: var(--color-warn);
+    background: var(--color-warn-soft);
+    border-left: 3px solid var(--color-warning);
     border-radius: var(--radius-sm);
   }
 
@@ -347,7 +347,7 @@ END:VCARD</code></pre>
     font-size: 13px;
     font-weight: 600;
     color: var(--color-text);
-    font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+    font-family: var(--font-mono);
   }
 
   /* 错误提示 */
@@ -355,22 +355,22 @@ END:VCARD</code></pre>
     margin-top: 10px;
     padding: 8px 12px;
     font-size: 13px;
-    color: #991b1b;
-    background: rgba(239, 68, 68, 0.12);
-    border-left: 3px solid #ef4444;
+    color: var(--color-error);
+    background: var(--color-danger-soft);
+    border-left: 3px solid var(--color-error);
     border-radius: var(--radius-sm);
   }
 
   /* 暗色模式适配：站点使用 prefers-color-scheme */
   @media (prefers-color-scheme: dark) {
     .qrtool__warn {
-      color: #fcd34d;
-      background: rgba(245, 158, 11, 0.18);
+      color: var(--color-warn);
+      background: var(--color-warn-soft);
     }
 
     .qrtool__error {
       color: #fca5a5;
-      background: rgba(239, 68, 68, 0.18);
+      background: var(--color-danger-soft);
     }
   }
 
