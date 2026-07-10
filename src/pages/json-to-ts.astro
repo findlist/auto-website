@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>JSON 转 TypeScript 接口生成器</h1>
       <p>
         粘贴 JSON 数据自动推断 TypeScript 类型，生成 export interface 声明。支持联合类型合并（数组元素类型不同或同名字段类型不同时自动合并为联合）、可选字段检测（数组中对象字段不一致时标记 ?:）、嵌套对象提取为独立 interface、相同结构去重复用。递归遍历 JSON 树，纯原生 TypeScript 零依赖实现，所有数据在浏览器本地处理。

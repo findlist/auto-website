@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>TOML Schema 校验工具</h1>
       <p>
         用 JSON Schema（draft-07）校验 TOML 数据：左栏粘贴 Schema，右栏粘贴 TOML，实时校验并精确定位错误路径。复用 JSON Schema 校验引擎，覆盖 type、required、properties、items、enum、数值范围、字符串约束、数组唯一性、$ref 内部引用等核心关键字。额外检测 TOML 类型陷阱（日期时间值转 JSON 时丢失原始类型与时区信息、64 位整数超过 Number.MAX_SAFE_INTEGER 时精度丢失），适用于 pyproject.toml（PEP 621）、Cargo.toml、rust-toolchain.toml、renovate.json 等场景。数据仅在浏览器本地处理，敏感配置不外传。

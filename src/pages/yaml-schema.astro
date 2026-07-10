@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>YAML Schema 校验工具</h1>
       <p>
         用 JSON Schema（draft-07）校验 YAML 数据：左栏粘贴 Schema，右栏粘贴 YAML，实时校验并精确定位错误路径。复用 JSON Schema 校验引擎，覆盖 type、required、properties、items、enum、数值范围、字符串约束、数组唯一性、$ref 内部引用等核心关键字。额外检测 YAML 类型推断陷阱（on/yes/no/off 布尔化、版本号被解析为数字），适用于 Kubernetes 清单、CI/CD 配置、Helm values、docker-compose 等场景。数据仅在浏览器本地处理，敏感配置不外传。

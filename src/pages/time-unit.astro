@@ -24,7 +24,7 @@ const meta: SiteMeta = {
 ---
 <BaseLayout meta={meta}>
   <section class="container">
-    <div class="page-hero">
+    <div class="page-hero page-hero--tool">
       <h1>时间单位换算器</h1>
       <p>
         在毫秒、秒、分钟、小时、天、周、月、年之间双向换算，支持复合时长字符串解析与毫秒转人类可读表示。适用于缓存 TTL、超时配置、调度间隔、日志时间差等开发场景。月年采用 Gregorian 历法平均值（1 年 = 365.2425 天）精确换算，所有计算在浏览器本地完成。
