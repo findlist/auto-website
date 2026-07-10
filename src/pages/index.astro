@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '53 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重、文本排序、随机选择器等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '55 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -435,6 +435,24 @@ const tools = [
     available: true,
     category: '文档处理',
     keywords: '随机选择 随机抽取 抽奖 随机分组 随机点名 random picker 随机数 抽取 fisher-yates 拒绝采样',
+  },
+  {
+    href: '/slug',
+    title: 'URL Slug 生成器',
+    desc: '在线 URL Slug 生成器：将文章标题、商品名称或任意文本转为 URL 友好的 slug。支持连字符、下划线、句点三种分隔符，可选转小写、保留中文、移除英文停用词、最大长度限制。适用于博客文章 URL 生成、商品页面 URL 规范化、文件名安全转换、锚点 ID 生成等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'slug url 友好链接 文章标题 seo url 生成器 停用词 连字符 下划线',
+  },
+  {
+    href: '/reverse',
+    title: '文本反转工具',
+    desc: '在线文本反转工具：支持字符反转（整段文本字符顺序反转）、行反转（行顺序反转）、单词反转（每行内单词顺序反转）三种模式，可选反转大小写、去除空行。使用 Unicode 安全的 Array.from 处理，正确支持 Emoji 和代理对。适用于文本加密混淆、回文检测辅助、数据顺序调整、创意文案生成等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: '文本反转 字符反转 行反转 单词反转 reverse unicode emoji 代理对 回文 倒序',
   },
   {
     href: '/sql',

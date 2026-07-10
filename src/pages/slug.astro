@@ -1,0 +1,338 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import SlugTool from '../components/SlugTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'URL Slug 生成器 - 文章标题转 URL 友好链接',
+  description:
+    '免费的在线 URL Slug 生成器：将文章标题、商品名称或任意文本转为 URL 友好的 slug。支持连字符、下划线、句点三种分隔符，可选转小写、保留中文、移除英文停用词、最大长度限制。适用于博客文章 URL 生成、商品页面 URL 规范化、文件名安全转换、锚点 ID 生成等场景。所有处理在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'URL Slug 生成器',
+    description: '在线 URL Slug 生成器，将文本转为 URL 友好的 slug，支持中英文混合、多种分隔符、停用词过滤。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>URL Slug 生成器</h1>
+      <p>
+        将文章标题、商品名称或任意文本转为 URL 友好的 slug。支持连字符、下划线、句点三种分隔符，
+        可选转小写、保留中文、移除英文停用词、最大长度限制。适用于博客 URL 生成、页面 URL 规范化、
+        文件名安全转换等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <SlugTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 slug？为什么 URL 中需要使用 slug？</summary>
+        <p>
+          <strong>slug</strong> 是 URL 中标识特定页面的可读部分，通常由小写字母、数字和连字符组成。
+          例如 <code>https://example.com/blog/how-to-use-slug</code> 中的 <code>how-to-use-slug</code> 就是 slug。
+          使用 slug 的好处：① 对用户可读，提升点击意愿；② 对搜索引擎友好，包含关键词有助于 SEO；
+          ③ 比 ID 数字更易于记忆和分享。
+        </p>
+      </details>
+      <details>
+        <summary>中文 slug 和英文 slug 有什么区别？</summary>
+        <p>
+          <strong>英文 slug</strong>：直接将空格和标点替换为分隔符，如 "Hello World" → "hello-world"。
+          <br />
+          <strong>中文 slug</strong>：有两种策略——① 保留中文字符（如 "这是一个标题" → "这是一个标题"），
+          现代浏览器和搜索引擎都能正确处理；② 移除中文仅保留英文部分（适用于纯英文场景）。
+          本工具默认保留中文，可在选项中切换为移除模式。注意：中文 slug 在部分老旧系统或分享平台可能被编码为 %XX 形式。
+        </p>
+      </details>
+      <details>
+        <summary>停用词过滤有什么作用？</summary>
+        <p>
+          停用词（stopwords）是语言中高频但语义弱的词，如英文的 a、the、of、in、to 等。
+          移除停用词可以让 slug 更简洁、更聚焦核心关键词。例如
+          "How to Use the Slug Generator" → 移除停用词后 → "use-slug-generator"。
+          注意：停用词过滤仅对英文生效，中文无停用词概念。
+        </p>
+      </details>
+      <details>
+        <summary>三种分隔符分别适合什么场景？</summary>
+        <p>
+          <strong>连字符（-）</strong>：最主流的 slug 分隔符，Google 推荐使用，WordPress、Ghost 等博客系统默认使用。
+          <br />
+          <strong>下划线（_）</strong>：部分框架（如 Django）使用，但 Google 将下划线视为单词连接符而非分隔符，SEO 效果略差。
+          <br />
+          <strong>句点（.）</strong>：较少见，适用于文件名或特定命名约定场景。
+        </p>
+      </details>
+      <details>
+        <summary>最大长度限制有什么作用？</summary>
+        <p>
+          过长的 URL 在搜索结果中会被截断，在社交媒体分享时也可能被截断。通常建议 slug 控制在
+          60-80 字符以内。本工具在截断时会自动去除末尾残留的分隔符，确保截断后的 slug 依然规范。
+          设为 0 表示不限制长度。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>博客文章 URL 生成</strong>：将标题自动转为 slug；② <strong>商品/分类页面 URL 规范化</strong>：
+          统一电商平台的 URL 格式；③ <strong>文件名安全转换</strong>：将含空格和特殊字符的标题转为安全文件名；
+          ④ <strong>锚点 ID 生成</strong>：为页面内锚点链接生成规范 ID；⑤ <strong>API 路由命名</strong>：
+          为 RESTful API 路径生成规范命名。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有 slug 生成由 JavaScript 在你本地执行，
+          不会发送任何输入文本或生成结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* Slug 生成器专属样式 */
+  .slugtool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .slugtool__input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .slugtool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .slugtool__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .slugtool__stat {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .slugtool__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .slugtool__textarea {
+    width: 100%;
+    min-height: 100px;
+    max-height: 300px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .slugtool__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 选项区：2 列网格，移动端 1 列 */
+  .slugtool__options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 20px;
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .slugtool__option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .slugtool__option-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 分段选择按钮 */
+  .slugtool__seg {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .slugtool__seg-btn {
+    padding: 6px 12px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .slugtool__seg-btn:not(:last-child) {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .slugtool__seg-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 复选框 */
+  .slugtool__check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .slugtool__check input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 滑块 */
+  .slugtool__range {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 结果区 */
+  .slugtool__result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .slugtool__result-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .slugtool__result-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .slugtool__copy {
+    margin-left: auto;
+  }
+
+  .slugtool__result-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--color-text);
+    word-break: break-all;
+    line-height: 1.5;
+    min-height: 24px;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+  }
+
+  .slugtool__result-empty {
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 状态条 */
+  .slugtool__status {
+    min-height: 24px;
+    font-size: 14px;
+  }
+
+  .slugtool__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft, rgba(26, 170, 85, 0.08));
+    border-radius: var(--radius-sm);
+    color: var(--color-success, #1aaa55);
+  }
+
+  .slugtool__hint {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .slugtool__options,
+    .slugtool__result,
+    .slugtool__textarea {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .slugtool__result-value {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .slugtool__seg-btn {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .slugtool__options {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .slugtool__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .slugtool__actions {
+      justify-content: flex-end;
+    }
+  }
+</style>
