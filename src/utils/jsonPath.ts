@@ -282,7 +282,8 @@ type FilterNode =
 
 /** 过滤表达式操作数：路径引用 或 字面量 */
 type FilterOperand =
-  | { kind: 'path'; segments: Segment[] } // @.foo.bar 形式
+  // base 标记路径起点：'current' 对应 @（当前候选元素），'root' 对应 $（原始根节点）
+  | { kind: 'path'; segments: Segment[]; base: 'current' | 'root' }
   | { kind: 'literal'; value: string | number | boolean | null };
 
 /** 解析器上下文，封装 token 流与位置游标 */
@@ -513,7 +514,7 @@ function parseOperand(ctx: ParserContext): FilterOperand {
         segments.push(parseBracket(ctx));
       }
     }
-    return { kind: 'path', segments };
+    return { kind: 'path', segments, base: 'current' };
   }
 
   // $ 根路径（过滤表达式中也可引用根）
@@ -523,7 +524,7 @@ function parseOperand(ctx: ParserContext): FilterOperand {
     while (peek(ctx).type === 'DOT' || peek(ctx).type === 'LBRACKET') {
       segments.push(parseSegment(ctx));
     }
-    return { kind: 'path', segments };
+    return { kind: 'path', segments, base: 'root' };
   }
 
   // 字符串字面量
@@ -571,12 +572,12 @@ function parseOperand(ctx: ParserContext): FilterOperand {
 function evaluate(data: unknown, segments: Segment[]): unknown[] {
   let current: unknown[] = [data];
 
-  // 第一段是 root，从第二段开始求值
+  // 第一段是 root，从第二段开始求值；data 始终作为根节点传递给过滤表达式
   for (let i = 1; i < segments.length; i++) {
     const seg = segments[i];
     const next: unknown[] = [];
     for (const node of current) {
-      const matched = evaluateSegment(node, seg);
+      const matched = evaluateSegment(node, data, seg);
       next.push(...matched);
     }
     current = next;
@@ -586,8 +587,8 @@ function evaluate(data: unknown, segments: Segment[]): unknown[] {
   return current;
 }
 
-/** 对单个节点求值单个段 */
-function evaluateSegment(node: unknown, seg: Segment): unknown[] {
+/** 对单个节点求值单个段；rootData 为原始根节点，供过滤表达式中的 $ 引用 */
+function evaluateSegment(node: unknown, rootData: unknown, seg: Segment): unknown[] {
   switch (seg.kind) {
     case 'child':
       return evaluateChild(node, seg.name);
@@ -606,7 +607,7 @@ function evaluateSegment(node: unknown, seg: Segment): unknown[] {
       return evaluateRecursive(node, seg.name);
 
     case 'filter':
-      return evaluateFilter(node, seg.expr);
+      return evaluateFilter(node, rootData, seg.expr);
 
     case 'root':
       // root 只应出现在路径开头，中间出现视为不匹配
@@ -677,7 +678,7 @@ function evaluateRecursive(node: unknown, name: string | null): unknown[] {
 }
 
 /** 过滤表达式求值：对数组/对象的每个元素求值过滤表达式，保留为真的 */
-function evaluateFilter(node: unknown, expr: FilterNode): unknown[] {
+function evaluateFilter(node: unknown, rootData: unknown, expr: FilterNode): unknown[] {
   if (node === null || node === undefined) return [];
   // 过滤表达式仅对数组或对象生效
   const candidates: unknown[] = Array.isArray(node)
@@ -686,33 +687,33 @@ function evaluateFilter(node: unknown, expr: FilterNode): unknown[] {
       ? Object.values(node)
       : [];
 
-  return candidates.filter((item) => evaluateFilterNode(item, expr));
+  return candidates.filter((item) => evaluateFilterNode(item, rootData, expr));
 }
 
 /** 递归求值过滤表达式节点，返回布尔结果 */
-function evaluateFilterNode(node: unknown, expr: FilterNode): boolean {
+function evaluateFilterNode(node: unknown, rootData: unknown, expr: FilterNode): boolean {
   switch (expr.kind) {
     case 'binary': {
-      const left = evaluateFilterNode(node, expr.left);
-      const right = evaluateFilterNode(node, expr.right);
+      const left = evaluateFilterNode(node, rootData, expr.left);
+      const right = evaluateFilterNode(node, rootData, expr.right);
       return expr.op === '&&' ? left && right : left || right;
     }
     case 'not':
-      return !evaluateFilterNode(node, expr.expr);
+      return !evaluateFilterNode(node, rootData, expr.expr);
     case 'compare':
-      return evaluateCompare(node, expr);
+      return evaluateCompare(node, rootData, expr);
     case 'exists': {
       // 存在性判断：路径求值后取第一个值，非 null/undefined 即为真
-      const val = evaluateOperand(node, expr.path);
+      const val = evaluateOperand(node, rootData, expr.path);
       return val !== undefined && val !== null;
     }
   }
 }
 
 /** 比较表达式求值 */
-function evaluateCompare(node: unknown, expr: { op: string; left: FilterOperand; right: FilterOperand }): boolean {
-  const leftVal = evaluateOperand(node, expr.left);
-  const rightVal = evaluateOperand(node, expr.right);
+function evaluateCompare(node: unknown, rootData: unknown, expr: { op: string; left: FilterOperand; right: FilterOperand }): boolean {
+  const leftVal = evaluateOperand(node, rootData, expr.left);
+  const rightVal = evaluateOperand(node, rootData, expr.right);
 
   switch (expr.op) {
     case '==':
@@ -746,12 +747,12 @@ function evaluateCompare(node: unknown, expr: { op: string; left: FilterOperand;
   }
 }
 
-/** 求值操作数：路径引用或字面量 */
-function evaluateOperand(node: unknown, operand: FilterOperand): unknown {
+/** 求值操作数：路径引用或字面量；base 为 'root' 时从原始根节点求值，'current' 时从当前候选元素求值 */
+function evaluateOperand(node: unknown, rootData: unknown, operand: FilterOperand): unknown {
   if (operand.kind === 'literal') return operand.value;
-  // 路径引用：以 node 为根求值
-  // 第一个段是 root（占位），实际求值从 node 开始
-  const result = evaluate(node, operand.segments);
+  // 路径引用：$ 引用根节点，@ 引用当前候选元素
+  const base = operand.base === 'root' ? rootData : node;
+  const result = evaluate(base, operand.segments);
   // 路径求值返回列表，取第一个元素作为操作数值（标准 JSONPath 行为）
   return result.length > 0 ? result[0] : undefined;
 }
