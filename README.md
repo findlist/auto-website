@@ -154,7 +154,8 @@ npm run check        # Astro 类型检查
 auto-website/
 ├── public/                        # 静态资产
 │   ├── favicon.svg
-│   ├── og-image.svg               # 社交分享图
+│   ├── og-image.png               # 社交分享图（PNG，主流平台兼容）
+│   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
 │   ├── components/                # 48 个 React 工具组件（AesTool / Base64Tool / …）

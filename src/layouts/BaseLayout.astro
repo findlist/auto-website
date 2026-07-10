@@ -7,7 +7,7 @@ import { getSiteUrl } from '../utils/site';
 export interface SiteMeta {
   title: string;
   description: string;
-  // ogImage 默认使用 /og-image.svg
+  // ogImage 默认使用 /og-image.png（PNG 格式，主流社交平台兼容渲染）
   ogImage?: string;
   // canonical 默认自动拼接 Astro.url
   canonical?: string;
@@ -30,7 +30,7 @@ const fullTitle = meta.title.includes(SITE_NAME)
   ? meta.title
   : `${meta.title} - ${SITE_NAME}`;
 const canonical = meta.canonical ?? new URL(Astro.url.pathname, SITE_URL).toString();
-const ogImage = meta.ogImage ?? new URL('/og-image.svg', SITE_URL).toString();
+const ogImage = meta.ogImage ?? new URL('/og-image.png', SITE_URL).toString();
 const indexable = meta.indexable ?? true;
 
 // 站点级 WebSite 结构化数据：所有页面共享，帮助搜索引擎理解站点
@@ -82,6 +82,9 @@ const allLd = [siteLd, ...normalizedPageLd];
     <meta property="og:description" content={meta.description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:locale" content="zh_CN" />
 
     <!-- Twitter Card -->
