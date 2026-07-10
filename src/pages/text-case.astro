@@ -1,0 +1,265 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import CaseTool from '../components/CaseTool.tsx';
+
+const meta: SiteMeta = {
+  title: '文本大小写转换工具 - 驼峰 / 下划线 / 短横线命名互转',
+  description:
+    '免费的在线文本大小写转换工具：支持全大写、全小写、首字母大写、句子首字母大写、驼峰命名、帕斯卡命名、下划线命名、短横线命名、句点分隔、反转大小写 10 种格式互转。智能识别驼峰、下划线、短横线等命名边界，一键复制。适用于编程命名风格转换、文本格式化、数据清洗等场景。所有处理在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '文本大小写转换工具',
+    description: '在线文本大小写转换工具，支持驼峰、帕斯卡、下划线、短横线等 10 种命名格式互转，智能分词，一键复制。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>文本大小写转换工具</h1>
+      <p>
+        支持 10 种大小写格式互转：全大写、全小写、首字母大写、句子首字母大写、
+        驼峰命名、帕斯卡命名、下划线命名、短横线命名、句点分隔、反转大小写。
+        智能识别驼峰、下划线、短横线等命名边界，实时预览所有格式结果，一键复制。
+        适用于编程命名风格转换、文本格式化、数据清洗等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <CaseTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>驼峰命名和帕斯卡命名有什么区别？</summary>
+        <p>
+          <strong>驼峰命名（camelCase）</strong>：第一个单词首字母小写，后续单词首字母大写，如 myUserName。
+          常用于 JavaScript 变量名、函数名、Java 方法名。<br />
+          <strong>帕斯卡命名（PascalCase）</strong>：每个单词首字母都大写，如 MyUserName。
+          常用于类名、构造函数、React 组件名、TypeScript 接口名。两者仅首字母大小写不同。
+        </p>
+      </details>
+      <details>
+        <summary>下划线命名和短横线命名分别用在什么场景？</summary>
+        <p>
+          <strong>下划线命名（snake_case）</strong>：单词间用下划线连接，如 user_name。
+          常用于 Python 变量名/函数名、Ruby、Rust、数据库字段名、JSON 键名。<br />
+          <strong>短横线命名（kebab-case）</strong>：单词间用短横线连接，如 user-name。
+          常用于 CSS 类名、HTML id、URL 路径、文件名（如 my-component.tsx）。
+        </p>
+      </details>
+      <details>
+        <summary>智能分词是怎么工作的？</summary>
+        <p>
+          工具会自动识别输入文本中的单词边界，分三步处理：
+          ① 按非字母数字字符（空格、标点、下划线、短横线等）分割为片段；
+          ② 对每个片段按大小写转换边界进一步分割（如 camelCase → camel + Case）；
+          ③ 连续大写字母作为一个整体（如 HTTPRequest → HTTP + Request）。
+          这样无论输入是驼峰、下划线还是短横线格式，都能正确拆分并重组为目标格式。
+        </p>
+      </details>
+      <details>
+        <summary>首字母大写和句子首字母大写有什么区别？</summary>
+        <p>
+          <strong>首字母大写（Title Case）</strong>：每个单词的首字母都大写，如 Hello World Example。
+          常用于标题、书名、歌曲名。<br />
+          <strong>句子首字母大写（Sentence case）</strong>：仅每个句子的首字母大写，其余小写，
+          如 Hello world example。常用于正文段落、文章描述。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>编程命名转换</strong>：在驼峰、下划线、短横线等命名风格间快速转换，
+          适配不同语言的命名规范；② <strong>文本格式化</strong>：将文本转为标题格式、句子格式或全大写；
+          ③ <strong>数据清洗</strong>：规范化用户输入的大小写格式；④ <strong>SEO 优化</strong>：
+          转换页面标题、Meta Description 的大小写格式。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有大小写转换由 JavaScript 在你本地执行，
+          不会发送任何输入文本或转换结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 文本大小写转换工具专属样式 */
+  .casetool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .casetool__input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .casetool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .casetool__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .casetool__stat {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .casetool__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .casetool__textarea {
+    width: 100%;
+    min-height: 120px;
+    max-height: 300px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .casetool__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 结果网格：2 列布局，移动端降为 1 列 */
+  .casetool__results {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .casetool__result-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .casetool__result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .casetool__result-info {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .casetool__result-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .casetool__result-desc {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .casetool__result-value {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-text);
+    word-break: break-all;
+    line-height: 1.5;
+    min-height: 22px;
+  }
+
+  .casetool__result-empty {
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 状态条 */
+  .casetool__status {
+    min-height: 24px;
+    font-size: 14px;
+  }
+
+  .casetool__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft, rgba(26, 170, 85, 0.08));
+    border-radius: var(--radius-sm);
+    color: var(--color-success, #1aaa55);
+  }
+
+  .casetool__hint {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .casetool__result-item,
+    .casetool__textarea {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .casetool__results {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .casetool__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .casetool__actions {
+      justify-content: flex-end;
+    }
+  }
+</style>

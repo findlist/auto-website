@@ -1,0 +1,276 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import NumberBaseTool from '../components/NumberBaseTool.tsx';
+
+const meta: SiteMeta = {
+  title: '进制转换工具 - 二进制 / 八进制 / 十进制 / 十六进制互转',
+  description:
+    '免费的在线进制转换工具：二进制、八进制、十进制、十六进制实时互转，支持 BigInt 超大整数，自动识别 0b / 0o / 0x 前缀，二进制按 4 位分组显示。适用于编程开发、颜色值换算、权限位计算、寄存器调试等场景。所有计算在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '进制转换工具',
+    description: '在线进制转换工具，支持二进制、八进制、十进制、十六进制互转，BigInt 超大整数，前缀识别，二进制分组显示。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>进制转换工具</h1>
+      <p>
+        二进制、八进制、十进制、十六进制实时互转，支持 BigInt 超大整数（突破 2^53 限制），
+        自动识别 0b / 0o / 0x 编程语言字面量前缀，二进制结果按 4 位分组便于位运算阅读。
+        适用于颜色值换算、权限位掩码、寄存器调试、地址偏移计算等场景。所有计算在浏览器本地完成。
+      </p>
+    </div>
+
+    <NumberBaseTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么需要 BigInt？JavaScript 的 Number 不够用吗？</summary>
+        <p>
+          JavaScript 的 Number 类型是 64 位浮点数（IEEE 754），能精确表示的最大整数是 2^53 - 1（即 9007199254740991）。
+          超过这个值就会出现精度丢失。例如十六进制颜色值、IPv6 地址、哈希值、大整数 ID 等场景经常超出此范围。
+          BigInt 是 JavaScript 的原生大整数类型，可以表示任意精度的整数，本工具使用 BigInt 确保转换结果精确无误。
+        </p>
+      </details>
+      <details>
+        <summary>支持负数转换吗？</summary>
+        <p>
+          支持。在任意进制输入框中输入负号（-）开头的数据，工具会正确解析并在其他进制结果中保留负号。
+          注意：计算机中的负数通常用补码表示，本工具做的是数学意义上的进制转换，不涉及补码编码。
+          如需补码转换，请结合固定位数（如 8 位、16 位、32 位）手动计算。
+        </p>
+      </details>
+      <details>
+        <summary>0b / 0o / 0x 前缀是什么意思？</summary>
+        <p>
+          这些是编程语言中表示进制的前缀：
+          <strong>0b</strong> 表示二进制（如 0b1010），<strong>0o</strong> 表示八进制（如 0o17），
+          <strong>0x</strong> 表示十六进制（如 0xFF）。JavaScript、Python、Rust 等语言都支持这些前缀。
+          本工具在任意进制输入框中粘贴带前缀的值时，会自动识别并剥离前缀进行解析。
+        </p>
+      </details>
+      <details>
+        <summary>二进制 4 位分组有什么用？</summary>
+        <p>
+          二进制 4 位分组（nibble）是计算机中常用的阅读方式，每 4 位二进制恰好对应 1 位十六进制。
+          分组显示便于快速识别位掩码、理解位运算结果、对照十六进制值。例如 1010 1100 对应十六进制 AC，
+          比连续的 10101100 更易读。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>颜色值换算</strong>：CSS 颜色 #FF5733 与 RGB 数值互转；
+          ② <strong>权限位掩码</strong>：Linux 文件权限 755 与二进制 111 101 101 对照；
+          ③ <strong>寄存器调试</strong>：嵌入式开发中硬件寄存器值的进制换算；
+          ④ <strong>地址偏移</strong>：内存地址、文件偏移量的十六进制与十进制互转；
+          ⑤ <strong>编程学习</strong>：理解不同进制的对应关系，学习位运算。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有进制转换由 JavaScript 在你本地执行，
+          不会发送任何输入数据或转换结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 进制转换工具专属样式 */
+  .numberbase-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .numberbase-tool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .numberbase-tool__options {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .numberbase-tool__toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .numberbase-tool__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 进制输入网格：4 列等宽，移动端降为 2 列 / 1 列 */
+  .numberbase-tool__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  .numberbase-tool__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .numberbase-tool__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .numberbase-tool__label-base {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .numberbase-tool__input-row {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    transition: border-color var(--transition-fast, 0.15s);
+    overflow: hidden;
+  }
+
+  .numberbase-tool__input-row:focus-within {
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  .numberbase-tool__prefix {
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text-soft);
+    user-select: none;
+  }
+
+  .numberbase-tool__input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    border: none;
+    background: transparent;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    outline: none;
+  }
+
+  .numberbase-tool__copy {
+    flex-shrink: 0;
+    margin: 4px;
+  }
+
+  /* 二进制分组显示区 */
+  .numberbase-tool__binary-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+  }
+
+  .numberbase-tool__binary-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  .numberbase-tool__binary-value {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-primary, #2b6cff);
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  /* 状态条 */
+  .numberbase-tool__status {
+    min-height: 24px;
+    font-size: 14px;
+  }
+
+  .numberbase-tool__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-danger-soft, rgba(229, 72, 77, 0.08));
+    border: 1px solid var(--color-danger-border, rgba(229, 72, 77, 0.3));
+    border-radius: var(--radius-sm);
+    color: var(--color-error, #e5484d);
+  }
+
+  .numberbase-tool__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft, rgba(26, 170, 85, 0.08));
+    border-radius: var(--radius-sm);
+    color: var(--color-success, #1aaa55);
+  }
+
+  .numberbase-tool__hint {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .numberbase-tool__input-row {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .numberbase-tool__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 414px) {
+    .numberbase-tool__grid {
+      grid-template-columns: 1fr;
+    }
+    .numberbase-tool__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
