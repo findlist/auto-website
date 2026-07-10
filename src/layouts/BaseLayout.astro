@@ -13,6 +13,9 @@ export interface SiteMeta {
   canonical?: string;
   // 是否禁止索引（如隐私政策页可设为 false）
   indexable?: boolean;
+  // 分页 SEO 信号：指向上一页/下一页，帮助搜索引擎理解分页关系
+  prevUrl?: string;
+  nextUrl?: string;
   // 页面级 JSON-LD 结构化数据（如 WebApplication），与站点级 WebSite 合并输出
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -73,6 +76,8 @@ const allLd = [siteLd, ...normalizedPageLd];
     <title>{fullTitle}</title>
     <meta name="description" content={meta.description} />
     <link rel="canonical" href={canonical} />
+    {meta.prevUrl && <link rel="prev" href={meta.prevUrl} />}
+    {meta.nextUrl && <link rel="next" href={meta.nextUrl} />}
     {!indexable && <meta name="robots" content="noindex, nofollow" />}
 
     <!-- Open Graph -->

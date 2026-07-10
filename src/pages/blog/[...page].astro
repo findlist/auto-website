@@ -1,20 +1,42 @@
 ---
+import type { GetStaticPaths } from 'astro';
 import BaseLayout, { type SiteMeta } from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../../utils/tags';
 import { getSiteUrl } from '../../utils/site';
 
-// 获取所有博客文章，按发布日期倒序排列
-const posts = (await getCollection('blog')).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
+// 每页显示的文章数量：12 篇平衡浏览体验与页面数量
 
-// 格式化日期为中文
+// 静态分页：getStaticPaths + paginate 生成 /blog（第 1 页）、/blog/2、/blog/3 …
+export const getStaticPaths = (async ({ paginate }) => {
+  const PAGE_SIZE = 12;
+  const posts = (await getCollection('blog')).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  );
+  return paginate(posts, { pageSize: PAGE_SIZE });
+}) satisfies GetStaticPaths;
+
+// 日期格式化：中文长格式
 const formatDate = (date: Date) =>
   date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-// 站点绝对 URL：集中化获取，未配置时构建报错
 const SITE_URL = getSiteUrl(Astro.site);
+const { page } = Astro.props;
+
+// 当前页文章列表
+const posts = page.data;
+
+// canonical 绝对 URL：第 1 页为 /blog，后续页为 /blog/N
+const canonical = new URL(page.url.current, SITE_URL).toString();
+// 分页 SEO 信号：转为绝对 URL 供 <link rel="prev/next"> 使用
+const prevUrl = page.url.prev ? new URL(page.url.prev, SITE_URL).toString() : undefined;
+const nextUrl = page.url.next ? new URL(page.url.next, SITE_URL).toString() : undefined;
+
+// 分页标题：第 1 页保持原标题，后续页追加页码后缀
+const title =
+  page.currentPage > 1
+    ? `技术博客（第 ${page.currentPage} 页）- 开发者工具实践指南`
+    : '技术博客 - 开发者工具实践指南';
 
 // 博客发布者实体：与首页 Organization 保持一致，形成站点级实体呼应
 const orgEntity = {
@@ -24,20 +46,27 @@ const orgEntity = {
   description: '面向中文开发者的现代化在线工具集，全本地处理，零广告零追踪。',
 };
 
+// Blog JSON-LD：blogPost 列出全部文章（Blog 实体代表博客整体，非单页）
+const allPosts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
 const meta: SiteMeta = {
-  title: '技术博客 - 开发者工具实践指南',
+  title,
   description:
     '深入探讨 JSON、UUID、Base64、Hash 等开发者工具背后的技术原理与最佳实践。涵盖 JavaScript Web API、数据格式、性能优化等实战内容。',
+  canonical,
+  prevUrl,
+  nextUrl,
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     name: '工具盒子技术博客',
     url: `${SITE_URL}/blog`,
     description: '开发者工具的技术原理与最佳实践深度解析',
-    // 关联发布者与作者实体，帮助搜索引擎建立内容归属关系
     publisher: orgEntity,
     author: orgEntity,
-    blogPost: posts.map((post) => ({
+    blogPost: allPosts.map((post) => ({
       '@type': 'BlogPosting',
       headline: post.data.title,
       description: post.data.description,
@@ -47,7 +76,11 @@ const meta: SiteMeta = {
     })),
   },
 };
+
+// 分页页码数组：[1, 2, 3, ..., lastPage]
+const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
 ---
+
 <BaseLayout meta={meta}>
   <section class="container">
     <div class="page-hero">
@@ -77,6 +110,37 @@ const meta: SiteMeta = {
         </li>
       ))}
     </ul>
+
+    {/* 分页导航：仅多页时显示 */}
+    {page.lastPage > 1 && (
+      <nav class="pagination" aria-label="博客分页导航">
+        {page.url.prev ? (
+          <a href={page.url.prev} class="pagination__btn" aria-label="上一页">← 上一页</a>
+        ) : (
+          <span class="pagination__btn pagination__btn--disabled" aria-hidden="true">← 上一页</span>
+        )}
+
+        <ul class="pagination__pages" role="list">
+          {pageNumbers.map((num) => (
+            <li>
+              <a
+                href={num === 1 ? '/blog' : `/blog/${num}`}
+                class="pagination__page"
+                aria-current={num === page.currentPage ? 'page' : undefined}
+              >
+                {num}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        {page.url.next ? (
+          <a href={page.url.next} class="pagination__btn" aria-label="下一页">下一页 →</a>
+        ) : (
+          <span class="pagination__btn pagination__btn--disabled" aria-hidden="true">下一页 →</span>
+        )}
+      </nav>
+    )}
 
     <!-- 标签入口：引导用户进入标签索引页 -->
     <div class="blog-tags-entry">
@@ -188,6 +252,63 @@ const meta: SiteMeta = {
     background: var(--color-primary-ring);
   }
 
+  /* 分页导航：居中布局，按钮与页码统一样式 */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 40px 0 24px;
+    flex-wrap: wrap;
+  }
+
+  .pagination__pages {
+    display: flex;
+    list-style: none;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pagination__page,
+  .pagination__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .pagination__page:hover,
+  .pagination__btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+
+  /* 当前页高亮：主色背景 + 白色文字 */
+  .pagination__page[aria-current='page'] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 禁用状态：不可点击的上一页/下一页按钮 */
+  .pagination__btn--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   /* 标签入口 */
   .blog-tags-entry {
     margin: 32px 0 64px;
@@ -200,6 +321,17 @@ const meta: SiteMeta = {
     }
     .blog-card__title {
       font-size: 17px;
+    }
+    /* 移动端分页：缩小尺寸、减少间距 */
+    .pagination {
+      gap: 8px;
+    }
+    .pagination__page,
+    .pagination__btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 8px;
+      font-size: 13px;
     }
   }
 </style>
