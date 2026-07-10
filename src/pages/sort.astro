@@ -1,0 +1,310 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import SortTool from '../components/SortTool.tsx';
+
+const meta: SiteMeta = {
+  title: '文本排序工具 - 在线按行排序 / 自然排序 / 随机打乱',
+  description:
+    '免费的在线文本排序工具：支持字母升序降序、数值升序降序、按长度排序、自然排序（识别嵌入数字）、随机打乱 8 种排序模式。可选大小写敏感、去除空行、排序后去重。使用 crypto.getRandomValues 实现无偏差随机打乱。适用于名单排序、版本号排列、数据整理、随机抽取顺序等场景。所有处理在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '文本排序工具',
+    description: '在线文本排序工具，支持字母、数值、长度、自然排序与随机打乱，可选去重去空行。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>文本排序工具</h1>
+      <p>
+        支持 8 种排序模式：字母升序/降序、数值升序/降序、长度升序/降序、自然排序（识别嵌入数字）、
+        随机打乱。可选大小写敏感、去除空行、排序前 trim、排序后去重。
+        随机打乱使用 crypto.getRandomValues 实现无偏差洗牌。
+        适用于名单排序、版本号排列、数据整理、随机抽取顺序等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <SortTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>自然排序和字母排序有什么区别？</summary>
+        <p>
+          <strong>字母排序</strong>按字符的 Unicode 码点逐字符比较，"item10" 排在 "item2" 前面
+          （因为 "1" &lt; "2"）。<strong>自然排序</strong>会将字符串拆分为文本段与数字段交替比较，
+          数字段按数值大小比较，因此 "item1" &lt; "item2" &lt; "item3" &lt; "item10" &lt; "item20"。
+          自然排序更符合人类阅读直觉，适合排序文件名、版本号、章节号等包含数字的文本。
+        </p>
+      </details>
+      <details>
+        <summary>随机打乱是如何实现的？公平吗？</summary>
+        <p>
+          随机打乱采用 <strong>Fisher-Yates 洗牌算法</strong>，配合浏览器的
+          <code>crypto.getRandomValues</code> 加密级随机数生成器。
+          在生成随机索引时使用<strong>拒绝采样</strong>消除取模偏差——
+          当随机值超出最大整数倍范围时重新采样，确保每个位置被选中的概率完全相等。
+          相比 <code>Math.random()</code> 的伪随机，crypto API 提供更高的随机性质量，
+          适合抽奖、随机分组等公平性要求高的场景。
+        </p>
+      </details>
+      <details>
+        <summary>数值排序如何处理非数字行？</summary>
+        <p>
+          数值排序模式下，每行通过 <code>parseFloat</code> 尝试解析为数字。
+          无法解析为数字的行（如纯文本行）会被统一排到结果末尾，保持原始相对顺序。
+          例如输入 "banana, 42, apple, 7, 123"，数值升序结果为 "7, 42, 123, banana, apple"。
+          注意：parseFloat 会解析行首的数字部分，如 "3.14abc" 被解析为 3.14。
+        </p>
+      </details>
+      <details>
+        <summary>大小写敏感选项有什么作用？</summary>
+        <p>
+          开启大小写敏感时，"Apple" 和 "apple" 被视为不同的值，排序时大写字母
+          （ASCII 65-90）排在小写字母（ASCII 97-122）前面。关闭时，比较时统一转为小写，
+          "Apple" 和 "apple" 被视为相同值。关闭大小写敏感适合排序人名、地名等
+          不需要区分大小写的场景，结果更符合阅读习惯。
+        </p>
+      </details>
+      <details>
+        <summary>排序后去重和去除空行有什么区别？</summary>
+        <p>
+          <strong>去除空行</strong>：排序前过滤掉所有空行（包括纯空格行，如果同时开启了 trim），
+          减少干扰。<strong>排序后去重</strong>：排序完成后去除重复行，只保留每条唯一值。
+          去重时是否区分大小写取决于"大小写敏感"选项。两个选项可独立或组合使用。
+          注意：排序后去重使用 Set 去重，保留首次出现的位置（已排序后的位置）。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>名单排序</strong>：按字母排列人名、地名、商品名；
+          ② <strong>版本号排列</strong>：用自然排序正确排列 v1、v2、v10、v20 等版本号；
+          ③ <strong>数据整理</strong>：CSV/TSV 数据按某列排序后重新组织；
+          ④ <strong>随机抽取</strong>：用随机打乱模式打乱名单后取前 N 行作为随机抽取结果；
+          ⑤ <strong>日志排序</strong>：按时间戳或 ID 数值排序日志行；
+          ⑥ <strong>SEO 关键词整理</strong>：按字母排列关键词列表便于审查。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有排序处理由 JavaScript 在你本地执行，
+          不会发送任何输入文本或排序结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 文本排序工具专属样式 */
+  .sort {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sort__input-section,
+  .sort__result-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sort__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .sort__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sort__stat {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .sort__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .sort__textarea {
+    width: 100%;
+    min-height: 160px;
+    max-height: 400px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .sort__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 选项区：两列布局 */
+  .sort__options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .sort__fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    margin: 0;
+  }
+
+  .sort__legend {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    padding: 0 4px;
+  }
+
+  .sort__radio,
+  .sort__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .sort__radio input,
+  .sort__check input {
+    cursor: pointer;
+  }
+
+  /* 统计区：2 列网格 */
+  .sort__stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .sort__stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .sort__stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .sort__stat-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 结果展示区 */
+  .sort__result {
+    width: 100%;
+    min-height: 120px;
+    max-height: 400px;
+    overflow: auto;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .sort__result-empty {
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 状态条 */
+  .sort__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft, rgba(26, 170, 85, 0.08));
+    border-radius: var(--radius-sm);
+    color: var(--color-success, #1aaa55);
+  }
+
+  .sort__hint {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .sort__textarea,
+    .sort__result,
+    .sort__fieldset,
+    .sort__stat-item {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .sort__options {
+      grid-template-columns: 1fr;
+    }
+    .sort__stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 414px) {
+    .sort__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .sort__actions {
+      justify-content: flex-end;
+    }
+  }
+</style>

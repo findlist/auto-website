@@ -1,0 +1,351 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import RandomPickerTool from '../components/RandomPickerTool.tsx';
+
+const meta: SiteMeta = {
+  title: '随机选择器 - 在线随机抽取 / 随机点名 / 抽奖工具',
+  description:
+    '免费的在线随机选择器：从输入列表中随机抽取 N 项，支持允许重复抽取、候选项去重、去除空行等选项。使用 crypto.getRandomValues 加密级随机数生成器配合拒绝采样实现无偏差抽取。适用于抽奖、随机分组、随机点名、A/B 测试分配、菜品随机选择等场景。所有处理在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '随机选择器',
+    description: '在线随机选择器，从列表中抽取 N 项，支持允许重复、去重等选项，crypto 随机数生成器保证公平。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>随机选择器</h1>
+      <p>
+        从输入列表中随机抽取指定数量的项。支持允许重复抽取、候选项去重、去除空行等选项。
+        使用 crypto.getRandomValues 加密级随机数生成器配合拒绝采样实现无偏差抽取，
+        确保每个候选项被选中的概率完全相等。适用于抽奖、随机分组、随机点名、
+        A/B 测试分配、菜品随机选择等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <RandomPickerTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>随机抽取是如何实现的？公平吗？</summary>
+        <p>
+          本工具使用两种算法：<strong>允许重复</strong>时采用独立随机选择，
+          每次从候选池中用 <code>crypto.getRandomValues</code> 独立抽取一项；
+          <strong>不允许重复</strong>时采用 <strong>Fisher-Yates 部分洗牌算法</strong>，
+          只洗牌前 N 个位置避免全量洗牌。两种方式都使用<strong>拒绝采样</strong>消除取模偏差——
+          当随机值超出最大整数倍范围时重新采样，确保每个候选项被选中的概率完全相等。
+          相比 <code>Math.random()</code> 的伪随机，crypto API 提供加密级随机性质量。
+        </p>
+      </details>
+      <details>
+        <summary>允许重复和不允许重复有什么区别？</summary>
+        <p>
+          <strong>允许重复</strong>：每次抽取独立进行，同一个候选项可能被多次选中。
+          例如从 10 个选项中抽取 5 项（允许重复），结果可能有重复项。适合模拟独立重复试验、
+          随机生成器等场景。<strong>不允许重复</strong>：每个候选项最多被选中一次，
+          抽取数量不能超过候选项数量。适合抽奖、随机分组、随机点名等"不可重复"的场景。
+        </p>
+      </details>
+      <details>
+        <summary>候选项去重和去除空行有什么作用？</summary>
+        <p>
+          <strong>去除空行</strong>：抽取前过滤掉所有空行（包括纯空格行，如果同时开启了 trim），
+          避免空行被抽取。<strong>候选项去重</strong>：抽取前去除重复的候选项，
+          确保每个候选项只出现一次。这对于不允许重复抽取的场景尤其重要——
+          如果候选项本身有重复（如名单中有两个"张三"），去重后才能保证真正的公平抽取。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>抽奖</strong>：从参与名单中随机抽取获奖者，公平透明；
+          ② <strong>随机分组</strong>：将人员随机分配到不同组别，适合团建、课堂活动；
+          ③ <strong>随机点名</strong>：课堂随机抽取学生回答问题；
+          ④ <strong>A/B 测试分配</strong>：将用户随机分配到对照组与实验组；
+          ⑤ <strong>菜品选择</strong>：从候选菜品中随机选一家，解决"吃什么"难题；
+          ⑥ <strong>任务分配</strong>：随机将任务分配给团队成员。
+        </p>
+      </details>
+      <details>
+        <summary>抽取结果可以复制吗？</summary>
+        <p>
+          可以。点击结果区的「复制结果」按钮即可将抽取结果复制到剪贴板，
+          每项占一行，方便粘贴到其他应用中使用。复制使用 navigator.clipboard API，
+          在不支持的环境下会自动降级到 document.execCommand。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有随机抽取处理由 JavaScript 在你本地执行，
+          不会发送任何输入文本或抽取结果到服务器。全程零网络请求，可离线使用。
+          这对于抽奖等需要保密的场景尤其重要——参与名单不会泄露。
+        </p>
+      </details>
+      <details>
+        <summary>Fisher-Yates 部分洗牌是什么意思？</summary>
+        <p>
+          Fisher-Yates 洗牌算法是经典的随机排列算法，时间复杂度 O(n)。
+          标准 Fisher-Yates 会洗牌整个数组，但当只需要抽取前 N 项时，
+          可以只洗牌前 N 个位置（部分洗牌），时间复杂度降为 O(k)（k 为抽取数量）。
+          这在候选项很多但只需抽取少量时显著提升性能。本工具在"不允许重复"模式下
+          使用部分洗牌，确保抽取效率和公平性兼顾。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 随机选择器专属样式 */
+  .picker {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .picker__input-section,
+  .picker__result-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .picker__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .picker__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .picker__stat {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .picker__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .picker__textarea {
+    width: 100%;
+    min-height: 160px;
+    max-height: 400px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .picker__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 抽取设置区 */
+  .picker__options {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 12px;
+  }
+
+  .picker__count-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .picker__count-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .picker__count-input:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  .picker__fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    margin: 0;
+    align-content: center;
+  }
+
+  .picker__legend {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    padding: 0 4px;
+  }
+
+  .picker__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .picker__check input {
+    cursor: pointer;
+  }
+
+  /* 抽取按钮区 */
+  .picker__draw-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .picker__draw-btn {
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 32px;
+  }
+
+  .picker__draw-count {
+    font-size: 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 结果列表 */
+  .picker__result-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .picker__result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .picker__result-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .picker__result-text {
+    font-size: 15px;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  /* 状态提示 */
+  .picker__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft, rgba(26, 170, 85, 0.08));
+    border-radius: var(--radius-sm);
+    color: var(--color-success, #1aaa55);
+  }
+
+  .picker__hint-text {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .picker__textarea,
+    .picker__result-item,
+    .picker__fieldset,
+    .picker__count-row {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .picker__count-input {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .picker__options {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .picker__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .picker__actions {
+      justify-content: flex-end;
+    }
+    .picker__draw-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .picker__draw-btn {
+      width: 100%;
+    }
+  }
+</style>

@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '51 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '53 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重、文本排序、随机选择器等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -417,6 +417,24 @@ const tools = [
     available: true,
     category: '文档处理',
     keywords: '文本去重 去重复行 列表去重 行去重 去重 重复行 日志去重 邮件去重 数据去重 unique distinct',
+  },
+  {
+    href: '/sort',
+    title: '文本排序工具',
+    desc: '在线文本排序工具：支持字母升序/降序、数值升序/降序、长度升序/降序、自然排序（识别嵌入数字）、随机打乱 8 种排序模式。可选大小写敏感、去除空行、排序后去重。随机打乱使用 crypto.getRandomValues 实现无偏差 Fisher-Yates 洗牌。适用于名单排序、版本号排列、数据整理、随机抽取顺序等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: '文本排序 行排序 字母排序 数值排序 自然排序 随机打乱 洗牌 shuffle sort 版本号排序 名单排序',
+  },
+  {
+    href: '/random-picker',
+    title: '随机选择器',
+    desc: '在线随机选择器：从输入列表中随机抽取 N 项，支持允许重复抽取、候选项去重、去除空行等选项。使用 crypto.getRandomValues 加密级随机数生成器配合拒绝采样实现无偏差抽取。适用于抽奖、随机分组、随机点名、A/B 测试分配、菜品随机选择等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: '随机选择 随机抽取 抽奖 随机分组 随机点名 random picker 随机数 抽取 fisher-yates 拒绝采样',
   },
   {
     href: '/sql',
