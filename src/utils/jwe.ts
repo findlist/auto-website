@@ -676,12 +676,18 @@ export async function decryptJwe(
           error: `PBES2 迭代次数 p2c=${p2c} 超过上限 ${PBES2_MAX_ITERATIONS}，拒绝执行以防 DoS`,
         };
       }
-      let saltBytes: Uint8Array<ArrayBuffer>;
+      let saltInput: Uint8Array<ArrayBuffer>;
       try {
-        saltBytes = base64urlDecode(p2s);
+        saltInput = base64urlDecode(p2s);
       } catch (e) {
         return { ok: false, error: `p2s base64url 解码失败：${e instanceof Error ? e.message : ''}` };
       }
+      // RFC 7518 4.8.1.1：PBKDF2 的 salt = alg(UTF-8) || salt_input
+      // 缺少 alg 前缀会导致与标准 JWE 库（jose 等）生成的 PBES2 token 无法互通
+      const algBytes = encodeUtf8(alg);
+      const fullSalt = new Uint8Array(algBytes.length + saltInput.length);
+      fullSalt.set(algBytes, 0);
+      fullSalt.set(saltInput, algBytes.length);
       const hashName = pbes2Hash(alg);
       const kwLen = pbes2KwLength(alg);
       // 密码 utf8 编码
@@ -697,7 +703,7 @@ export async function decryptJwe(
       const derivedBitsBuffer = await crypto.subtle.deriveBits(
         {
           name: 'PBKDF2',
-          salt: saltBytes,
+          salt: fullSalt,
           iterations: p2c,
           hash: { name: hashName },
         },

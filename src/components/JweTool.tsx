@@ -134,8 +134,15 @@ async function generateTestPbes2Jwe(): Promise<{ jwe: string; password: string }
     'decrypt',
   ]);
 
-  // 生成 16 字节 salt
-  const salt = crypto.getRandomValues(new Uint8Array(16));
+  // 生成 16 字节 salt_input（放入 p2s header 的原始随机盐）
+  const saltInput = crypto.getRandomValues(new Uint8Array(16));
+
+  // RFC 7518 4.8.1.1：PBKDF2 的 salt = alg(UTF-8) || salt_input
+  const algStr = 'PBES2-HS256+A128KW';
+  const algBytes = new TextEncoder().encode(algStr);
+  const fullSalt = new Uint8Array(algBytes.length + saltInput.length);
+  fullSalt.set(algBytes, 0);
+  fullSalt.set(saltInput, algBytes.length);
 
   // PBKDF2 派生 128 位 KW 密钥（HS256 → SHA-256，A128KW → 128 位）
   const passwordBytes = new TextEncoder().encode(password);
@@ -147,7 +154,7 @@ async function generateTestPbes2Jwe(): Promise<{ jwe: string; password: string }
     ['deriveKey'],
   );
   const kwKey = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: { name: 'SHA-256' } },
+    { name: 'PBKDF2', salt: fullSalt, iterations, hash: { name: 'SHA-256' } },
     baseKey,
     { name: 'AES-KW', length: 128 },
     false,
@@ -157,7 +164,8 @@ async function generateTestPbes2Jwe(): Promise<{ jwe: string; password: string }
   // AES-KW 包装 CEK → encrypted_key
   const wrappedKeyBuffer = await crypto.subtle.wrapKey('raw', cek, kwKey, { name: 'AES-KW' });
   const encryptedKey = encodeB64url(new Uint8Array(wrappedKeyBuffer));
-  const saltB64 = encodeB64url(salt);
+  // p2s 存储原始 salt_input（非 fullSalt），解密方按 RFC 7518 重新拼接
+  const saltB64 = encodeB64url(saltInput);
 
   // 构造 Protected Header: {"alg":"PBES2-HS256+A128KW","enc":"A128GCM","p2s":"...","p2c":1000}
   const headerObj = {
