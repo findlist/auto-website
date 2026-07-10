@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **48 个在线开发工具** + **43 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **50 个在线开发工具** + **45 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -57,7 +57,7 @@
 - 🚀 **零广告、零追踪** — 靠爱发电 / 捐赠驱动，不含任何广告联盟代码
 - 🔒 **全本地处理** — 所有工具纯前端计算，数据不离开您的浏览器，打开浏览器开发者工具即可审计
 - 📱 **移动端友好** — 375px / 768px / 1280px 三档响应式 + 暗色模式 + 复制即用
-- 📝 **配套博客** — 43 篇深度技术博客（91 个标签），覆盖工具原理、最佳实践、安全指南
+- 📝 **配套博客** — 45 篇深度技术博客（179 个标签），覆盖工具原理、最佳实践、安全指南
 - 🎨 **色彩设计** — 调色板 / 色值转换 / 对比度检测 / 配色灵感
 - 🔧 **编码转换** — Base64/32、URL、Hex、Punycode、HTML 实体、CSV/JSON/YAML/TOML/XML 互转
 - 🔐 **加密哈希** — AES / JWT 签名与验证 / JWE / 各类 Hash（SHA 系列）/ 强密码生成
@@ -70,10 +70,10 @@
 
 ---
 
-## 工具一览（48 个）
+## 工具一览（50 个）
 
 ### 编码转换
-`Base64` · `Base64 图片` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型`
+`Base64` · `Base64 图片` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换`
 
 ### 加密与安全
 `AES 加解密` · `Hash 计算` · `JWT 解码 / 签名 / 验证` · `JWE` · `强密码生成` · `UUID 生成`
@@ -82,7 +82,7 @@
 `JSON 格式化` · `JSON Schema` · `JSON → TypeScript` · `JSON → XML` · `XML → JSON` · `JSONPath` · `CSV ⇄ JSON` · `YAML` · `YAML Schema` · `TOML` · `TOML Schema`
 
 ### 代码调试
-`JavaScript 格式化` · `CSS 格式化` · `HTML 格式化` · `SQL 格式化` · `Markdown 预览` · `正则测试` · `正则性能基准` · `Diff 文本对比` · `Lorem 占位文本` · `ASCII 艺术` · `文本统计分析`
+`JavaScript 格式化` · `CSS 格式化` · `HTML 格式化` · `SQL 格式化` · `Markdown 预览` · `正则测试` · `正则性能基准` · `Diff 文本对比` · `Lorem 占位文本` · `ASCII 艺术` · `文本统计分析` · `文本大小写转换`
 
 ### 时间与日期
 `Unix 时间戳` · `时间单位转换` · `时区转换` · `Cron 表达式`
@@ -103,8 +103,8 @@
 | 层级 | 技术方案 | 说明 |
 | --- | --- | --- |
 | 静态站点生成 | **Astro 5** | SSG `output: static`，仅输出可部署的 HTML/CSS/JS |
-| 交互层 | React 18 + TypeScript 5.7 | 48 个 React 工具组件（`@astrojs/react`） |
-| 内容 | Astro Content Collections | MD 博客 + 91 个标签合集 |
+| 交互层 | React 18 + TypeScript 5.7 | 50 个 React 工具组件（`@astrojs/react`） |
+| 内容 | Astro Content Collections | MD 博客 + 179 个标签合集 |
 | SEO | `@astrojs/sitemap` | 自动生成 sitemap |
 | 部署 | Vercel / Cloudflare Pages / Netlify | 纯静态，零服务器 |
 
@@ -158,8 +158,8 @@ auto-website/
 │   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
-│   ├── components/                # 48 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 43 篇技术博客（.md）
+│   ├── components/                # 50 个 React 工具组件（AesTool / Base64Tool / …）
+│   ├── content/blog/              # 45 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -168,7 +168,7 @@ auto-website/
 │   │   ├── privacy.astro          # 隐私政策
 │   │   ├── rss.xml.ts             # RSS 订阅源
 │   │   ├── blog/                  # 博客列表/详情/标签 页（Astro Content Collections）
-│   │   └── [48 个工具页].astro    # 独立工具页（每页独立 SEO）
+│   │   └── [50 个工具页].astro    # 独立工具页（每页独立 SEO）
 │   ├── styles/
 │   │   └── global.css             # 全局样式
 │   └── utils/                     # 26 个纯逻辑工具模块（前端独立运算）
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 266 页（含 43 篇博客 + 91 个标签筛选页 + 48 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 279 页（含 45 篇博客 + 179 个标签筛选页 + 50 个工具页及其它）。
 
 ---
 
-## 博客主题速览（43 篇）
+## 博客主题速览（45 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -192,7 +192,7 @@ auto-website/
 - `base64-encoding-guide` Base64 原理与编解码
 - `jwt-security-best-practices` JWT 安全最佳实践
 - `json-schema-validation-practice` JSON Schema 校验实践
-- `color-contrast-accessibility` 色彩对比度与可访问性（WCAG）
+- `color-contrast-accessibility` 色彩对比度与无障碍（WCAG）
 - `ipv4-ipv6-cidr-subnetting` IPv4/IPv6 子网划分
 - `diff-algorithms-lcs-myers` 文本差异算法（LCS / Myers）
 - `password-strength-entropy` 密码强度与信息熵
@@ -201,7 +201,9 @@ auto-website/
 - `qr-code-design-guide` 二维码设计
 - `http-status-codes-overview` HTTP 状态码速查
 - `text-analysis-word-count-guide` 文本统计分析与字数统计
-- ……（共 43 篇，91 个标签）
+- `number-base-conversion-guide` 进制转换与 BigInt 精度
+- `text-case-conversion-guide` 文本大小写与命名风格转换
+- ……（共 45 篇，179 个标签）
 
 ---
 
@@ -295,7 +297,7 @@ auto-website/
 - **执行时间**：每天 00:00（Asia/Shanghai）
 - **检查范围**：
   - 项目根目录：运行 `npm run check`（即 `astro check`）检查类型，运行 `npm run build` 检查构建是否通过（本项目为 Astro 项目，无 lint / test 脚本）
-  - 审查 `src/components/` 工具组件（JsonTool / JwtTool / RegexTool / HashTool 等全部 48 个工具组件）
+  - 审查 `src/components/` 工具组件（JsonTool / JwtTool / RegexTool / HashTool 等全部 50 个工具组件）
   - 审查 `src/pages/` 页面（.astro 文件）、`src/utils/` 工具函数（aes / jsonPath / jsonSchema / jwe 等加密解析逻辑）、`src/layouts/BaseLayout.astro`、`src/styles/global.css`、`astro.config.mjs`
   - 分析最近一次提交变更（`git diff HEAD~1`），重点关注工具组件逻辑错误（加密解密 / 格式转换 / 编码解码）、类型错误、Astro 客户端/服务端边界问题（`client:` 指令使用）、安全问题（XSS / eval / CSP）、SEO 问题（meta / sitemap / robots）、性能问题
 - **输出位置**：`docs/bug-check/bug-check-YYYYMMDD.md`
