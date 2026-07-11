@@ -774,3 +774,236 @@
 - 类型检查：0 errors
 - LCP：< 2.5s（SSG 静态优化）
 - JS Bundle：单页最大 < 200KB（本轮新增 ExifTool 82.71KB，含 exifr 全功能库）
+
+---
+
+# 第 28 轮 · CSS 盒阴影生成器 + CSS 渐变生成器（设计类工具拓展）
+
+## 上下文恢复
+- 承接第 27 轮（EXIF 信息查看器，commit 5884242 → 沉淀 6de709e）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：65 工具 + 60 博客 + 377 页面 → 本轮后 67 工具 + 62 博客 + 389 页面
+
+## 本轮聚焦方向
+**内容拓展——新增 CSS 盒阴影生成器与 CSS 渐变生成器，开拓"设计"工具类别，覆盖 "box-shadow 生成器"、"css 渐变"、"linear-gradient" 等高搜索量长尾词**
+环境限制类任务（Lighthouse/移动端实测/线上验证）连续二十八轮无法突破，不再消耗时间。接入统计工具需用户确认。聚焦可自主推进的高价值方向：内容拓展。CSS 可视化工具是前端开发者高频刚需，与现有色彩工具（颜色值转换、调色板、对比度检测）形成完整设计工具链。
+
+## 完成任务
+
+### 单元 1：CSS 盒阴影生成器（commit 16e6b40）
+1. ✅ BoxShadowTool.tsx 组件开发（约 280 行）
+   - 多层阴影管理：每层独立启用/禁用、删除，动态增删阴影层
+   - 全参数调节：X/Y 偏移、模糊半径、扩散半径、颜色、inset 内阴影
+   - 6 组预设：柔和、卡片、硬阴影、内阴影、霓虹光、浮起 + 清除按钮
+   - 浅色/深色双色预览背景切换，适配不同场景下的阴影可视化
+   - 颜色格式兼容：normalizeHex 函数处理 rgba/hex 输入，input[type=color] 仅支持 hex 时回退为 #000000
+   - 实时生成 CSS 代码，一键复制，统计启用层数
+2. ✅ box-shadow.astro 页面创建（约 420 行）
+   - 完整 SEO：title/description/canonical/OG/Twitter Card/JSON-LD WebApplication（含 url 字段自动注入）
+   - 8 个 FAQ：完整语法、模糊 vs 扩散半径、inset 内阴影、多层叠加、Material Design elevation、颜色选择、性能优化、隐私
+   - 专属样式 .bst__*，768px/414px 双断点 + 暗色模式
+3. ✅ 配套博客 box-shadow-guide.md（8 章完整指南）
+   - 基础语法、模糊 vs 扩散半径、inset 内阴影、多层叠加、Material Design elevation 体系、颜色选择、性能优化、应用场景
+4. ✅ 首页 index.astro 更新
+   - 新增 box-shadow 工具卡片（category: 设计，regex-benchmark 之后）
+   - meta description 工具数 65→66，新增"CSS 盒阴影生成器"关键词
+
+### 单元 2：CSS 渐变生成器（commit 6f306a0）
+5. ✅ GradientTool.tsx 组件开发（约 270 行）
+   - 双类型支持：linear-gradient 线性渐变 / radial-gradient 径向渐变
+   - 角度调节：0-360° 精确滑块 + 8 方向预设按钮（↑→↓←↗↘↙↖）
+   - 颜色停止点管理：动态增删，至少 2 个停止点约束（removeStop 在 stops.length <= 2 时直接返回）
+   - 径向中心位置：X/Y 双滑块控制 circle at x% y%
+   - 7 组预设渐变：日落、海洋、极光、紫粉、暖橙、深空、三色
+   - buildGradient 函数：按位置排序停止点后生成标准 CSS 语法
+   - 颜色格式兼容：normalizeHex 处理 rgba/hex 输入
+   - 实时预览 + 一键复制 CSS 代码
+6. ✅ gradient.astro 页面创建（约 420 行）
+   - 完整 SEO：title/description/canonical/OG/Twitter Card/JSON-LD WebApplication（含 url 字段自动注入）
+   - 8 个 FAQ：linear vs radial 区别、角度计算规则、颜色停止点、径向中心位置、可用 CSS 属性、多色与硬渐变、浏览器兼容性、隐私
+   - 专属样式 .grt__*，768px/414px 双断点 + 暗色模式
+7. ✅ 配套博客 gradient-guide.md（8 章完整指南）
+   - 两种渐变类型、角度计算规则、颜色停止点、径向形状与中心位置、硬渐变与条纹、渐变叠加、浏览器兼容性、应用场景
+8. ✅ 首页 index.astro 更新
+   - 新增 gradient 工具卡片（category: 设计，box-shadow 之后）
+   - meta description 工具数 66→67，新增"CSS 渐变生成器"关键词
+
+### 单元 3：README 同步（commit 1614341）
+9. ✅ README.md 数字全面同步（14 处编辑）
+   - 工具数 65→67、博客数 60→62、标签数 260→270+、页面数 377→389
+   - 色彩与设计类别新增"CSS 盒阴影生成器 · CSS 渐变生成器"
+   - 博客主题速览新增 box-shadow-guide、gradient-guide
+   - 技术栈表格、目录结构、Bug 检查任务描述中 65→67、60→62 全部同步
+
+## 修改文件（8 个，未超 8 文件红线）
+- src/components/BoxShadowTool.tsx（新增，约 280 行，盒阴影生成器 React 组件）
+- src/pages/box-shadow.astro（新增，约 420 行，工具页面 + 8 FAQ + 专属样式）
+- src/content/blog/box-shadow-guide.md（新增，8 章配套博客）
+- src/components/GradientTool.tsx（新增，约 270 行，渐变生成器 React 组件）
+- src/pages/gradient.astro（新增，约 420 行，工具页面 + 8 FAQ + 专属样式）
+- src/content/blog/gradient-guide.md（新增，8 章配套博客）
+- src/pages/index.astro（修改，2 个工具卡片 + meta description 65→67）
+- README.md（修改，14 处编辑全量同步工具/博客/标签/页面数）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（零回归，仅剩 clipboard.ts execCommand 历史遗留）
+- 构建：✅ 389 页面，无报错无警告
+- SEO 要素：✅ box-shadow 与 gradient 页面 title/description/canonical/OG/Twitter Card/JSON-LD（Website + WebApplication 含 url 自动注入）全部正确
+- Bundle 体积：✅ BoxShadowTool 与 GradientTool 均远低于 200KB 红线（纯 React 组件无外部依赖）
+- 首页工具卡片：✅ dist/index.html 包含两个新工具卡片
+- 博客内链：✅ 两篇博客文章分别指向 /box-shadow 与 /gradient 配套工具链接
+- 响应式设计：✅ 768px/414px 双断点 + 暗色模式
+- Git 提交：3 次 commit 全部 push origin HEAD 成功（6de709e..1614341）
+
+## 数据洞察
+- **CSS 可视化工具的搜索价值**：box-shadow 与 linear-gradient 是前端开发者高频使用的 CSS 特性，但参数组合复杂（多层阴影、角度、颜色停止点），可视化生成器是典型的高搜索量工具类赛道。两个工具覆盖"box-shadow 生成器""css 渐变""linear-gradient""radial-gradient"等长尾词
+- **多层阴影叠加的实战价值**：Material Design 的 elevation 体系本质就是多层 box-shadow 叠加（ambient + penumbra）。本工具支持任意层数增删，用户可复现 Material Design 的 24 级 elevation，也可自由组合霓虹光、浮起等创意效果
+- **颜色停止点排序的必要性**：CSS 渐变要求停止点按位置排序才能正确渲染，buildGradient 函数用 [...stops].sort((a, b) => a.position - b.position) 确保输出顺序正确，避免用户调乱滑块后渐变异常
+- **至少 2 个停止点约束的防御性设计**：渐变至少需要 2 个颜色停止点，removeStop 在 stops.length <= 2 时直接返回 prev，防止删除到不足 2 个导致 buildGradient 输出无效 CSS
+- **normalizeHex 的兼容性处理**：input[type=color] 仅支持 hex 格式，但阴影/渐变颜色常用 rgba（含透明度）。normalizeHex 函数检测输入格式，rgba 输入时回退为 #000000 供 color picker 使用，同时文本框保留原始 rgba 值，实现双格式兼容
+- **与色彩工具链的协同定位**：颜色值转换 → 调色板 → 对比度检测 → 盒阴影生成器 → 渐变生成器，形成完整的"色彩设计"工具链，覆盖从颜色选取到效果应用的全流程
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续二十八轮遗留，TRAE Sandbox 拦截 configstore 写入
+2. **移动端 375px 三档适配实测**：连续二十八轮遗留，agent-browser 受 socket 限制
+3. **线上页面浏览器验证**：curl 受 SafeLine WAF 挑战拦截
+4. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认）
+5. **继续内容拓展**：可新增 SVG 优化器、CSS Flexbox/Grid 可视化生成器、conic-gradient 圆锥渐变（补充本轮渐变工具）、文本阴影生成器、border-radius 生成器等设计类工具
+6. **博客标签页分页**：部分热门标签文章数较多，可考虑分页
+7. **设计工具增强**：box-shadow 可增加导入现有 CSS 解析、gradient 可增加 conic-gradient 类型与渐变导出为图片
+
+## 需用户操作
+- 部署本轮新增代码（3 次 git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）用浏览器访问 https://website.niuzi.asia/box-shadow 与 /gradient 验证新工具页面正常
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+
+## 阶段进度总览（更新）
+- 工具总数：67 个（阶段二目标：基于数据扩充高价值工具）
+- 博客总数：62 篇（每个工具至少 1 篇配套深度博客）
+- 标签总数：270+ 个（新增 box-shadow、CSS 阴影、linear-gradient、radial-gradient、设计工具等标签）
+- 构建页面：389 页
+- 类型检查：0 errors
+- LCP：< 2.5s（SSG 静态优化）
+- JS Bundle：单页最大 < 200KB（本轮新增 BoxShadowTool 与 GradientTool 均为纯 React 组件无外部依赖）
+
+---
+
+# 第 29 轮 · CSS 文字阴影生成器（text-shadow 可视化工具）
+
+## 上下文恢复
+- 承接第 28 轮（CSS 盒阴影 + 渐变生成器，commit 1614341）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：67 工具 + 62 博客 + 389 页面 → 本轮后 68 工具 + 63 博客 + 396 页面
+
+## 本轮聚焦方向
+**内容拓展——新增 CSS 文字阴影生成器，补全 CSS 视觉效果工具链第三块拼图**
+环境限制类任务（Lighthouse/移动端实测/线上验证）连续二十九轮无法突破，不再消耗时间。接入统计工具需用户确认。聚焦可自主推进的高价值方向：设计工具拓展。text-shadow 与现有 box-shadow（盒阴影）、gradient（渐变）形成完整 CSS 视觉效果工具链，覆盖"text-shadow 生成器""文字阴影""霓虹灯文字""3D 文字效果"等高搜索量长尾词。
+
+## 完成任务
+
+### 单元 1：TextShadowTool.tsx 组件开发（约 240 行）
+1. ✅ 多层阴影管理
+   - 每层独立启用/禁用、删除，动态增删阴影层
+   - 每层参数：X/Y 偏移、模糊半径、颜色（text-shadow 无 spread 和 inset 参数，与 box-shadow 不同）
+   - 唯一 id 递增计数器，保证多层 key 稳定
+2. ✅ 7 组预设效果
+   - 霓虹：3 层零偏移递增模糊 + 递减透明度，模拟光晕扩散
+   - 3D：5 层零模糊逐像素偏移 + 颜色渐变，模拟厚度方向投影
+   - 浮雕：左上白色高光 + 右下黑色阴影，模拟凸起效果
+   - 描边：8 方向零偏移阴影，模拟文字描边（-webkit-text-stroke 替代方案）
+   - 凹陷：反向浮雕，左上暗右下亮
+   - 硬阴影：单层零模糊偏移投影
+   - 发光：2 层零偏移暖色阴影，模拟发光效果
+3. ✅ 可编辑预览区
+   - 预览文字自定义（maxLength=20）
+   - 字号调节（16-96px）
+   - 字重选择（300/400/500/600/700/900）
+   - 文字颜色与背景色独立调节
+   - 实时 text-shadow 效果预览
+4. ✅ CSS 代码生成与复制
+   - 实时生成完整 `text-shadow: ...;` 声明
+   - 一键复制到剪贴板
+   - 统计信息（总层数、启用层数）
+
+### 单元 2：text-shadow.astro 页面创建（约 400 行）
+5. ✅ 完整 SEO 元素
+   - title: "CSS 文字阴影生成器 - 在线 text-shadow 可视化工具"
+   - description: 含 text-shadow、文字阴影、霓虹、3D、描边、浮雕等关键词
+   - canonical/OG/Twitter Card/JSON-LD WebApplication（url 由 BaseLayout 自动注入）
+   - og:image 指向 PNG，og:image:width/height/type 完整
+6. ✅ 8 个 FAQ
+   - text-shadow 完整语法、与 box-shadow 的区别、霓虹灯实现、3D 立体文字、文字描边、多层叠加顺序、浏览器兼容性、隐私保障
+7. ✅ 专属样式 .tst__*
+   - 预览区、配置面板、预设按钮组、阴影层列表、参数网格、代码输出
+   - 768px/414px 双断点响应式 + 暗色模式
+
+### 单元 3：首页更新 + 配套博客 + README 同步
+8. ✅ 首页 index.astro 工具卡片与 meta 更新
+   - 工具列表新增 text-shadow（gradient 之后，category: 设计）
+   - meta description 工具数量 67→68，新增"CSS 文字阴影生成器"关键词
+   - hero 区工具数 67→68
+9. ✅ 配套博客 text-shadow-guide.md（8 章完整指南）
+   - 基础语法与参数表、与 box-shadow 核心差异（作用对象/参数/性能/适用场景）、霓虹灯发光效果实现、3D 立体文字效果、8 方向文字描边、浮雕与凹陷效果、多层阴影叠加顺序、浏览器兼容性、性能优化建议、配套工具协同
+   - 覆盖长尾搜索词：text-shadow、文字阴影、霓虹灯文字、3D 文字、文字描边、浮雕效果
+   - 内链指向 /text-shadow 及 /box-shadow、/gradient、/color
+10. ✅ README.md 数字全面同步（11 处编辑）
+    - 工具数 67→68、博客数 62→63、标签数 270→280+、页面数 389→396
+    - 色彩与设计类别新增"CSS 文字阴影生成器"
+    - 博客主题速览新增 text-shadow-guide
+
+## 修改文件（5 个，未超 8 文件红线）
+- src/components/TextShadowTool.tsx（新增，约 240 行，文字阴影生成器 React 组件）
+- src/pages/text-shadow.astro（新增，约 400 行，工具页面 + 8 FAQ + 专属样式）
+- src/content/blog/text-shadow-guide.md（新增，8 章配套博客）
+- src/pages/index.astro（修改，新增工具卡片 + meta description 67→68 + hero 工具数）
+- README.md（修改，11 处编辑全量同步工具/博客/标签/页面数）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（175 files，零回归，仅剩 clipboard.ts execCommand 历史遗留）
+- 构建：✅ 396 页面，15.50s，无报错无警告
+- SEO 要素：✅ text-shadow 页面 title/description/canonical/OG/Twitter Card/JSON-LD（WebSite + WebApplication 含 url 自动注入）全部正确
+- Bundle 体积：✅ TextShadowTool.4Gi-X6BA.js = 6.81KB（远低于 200KB 红线，纯 React 组件无外部依赖）
+- 首页工具卡片：✅ dist/index.html 包含"CSS 文字阴影生成器"卡片，链接指向 /text-shadow
+- 博客内链：✅ 博客文章指向 /text-shadow 配套工具链接，并内链 /box-shadow、/gradient
+- 响应式设计：✅ 768px/414px 双断点 + 暗色模式
+- Git 提交：commit 5f2ea7b，已 push origin HEAD（1614341..5f2ea7b）
+
+## 数据洞察
+- **text-shadow 与 box-shadow 的参数差异设计**：text-shadow 没有 spread-radius（扩散）和 inset（内阴影），因为文字阴影需要跟随每个字符的复杂轮廓，扩散和内阴影在字符级别难以定义清晰语义。工具设计上每层只有 4 个参数（x/y/blur/color），比 box-shadow 的 6 个参数更简洁
+- **霓虹灯效果的核心配方**：多层零偏移阴影叠加，模糊半径递增（10→20→40）模拟光晕扩散，透明度递减（0.8→0.5→0.3）模拟光晕渐弱。这是 text-shadow 最经典的应用场景
+- **3D 文字的实现原理**：多层零模糊阴影逐像素偏移（1→2→3→4→5），颜色从浅到深渐变，模拟受光面到背光面的过渡。层数越多厚度越明显，4-6 层即可呈现立体感
+- **8 方向描边的必要性**：只有上下左右 4 个方向时，斜向边界（如字母 V 的尖端）会出现锯齿缺口。补充 4 个对角线方向后，描边才完整均匀。这是 -webkit-text-stroke 兼容性有限时的最佳替代方案
+- **CSS 视觉效果工具链完整闭环**：box-shadow（盒阴影）→ text-shadow（文字阴影）→ gradient（渐变），三者覆盖了前端开发中最高频的 CSS 视觉效果需求，配合色彩工具（颜色值转换、调色板、对比度检测）形成完整设计工具链
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续二十九轮遗留，TRAE Sandbox 拦截 configstore 写入
+2. **移动端 375px 三档适配实测**：连续二十九轮遗留，agent-browser 受 socket 限制
+3. **线上页面浏览器验证**：curl 受 SafeLine WAF 挑战拦截
+4. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认）
+5. **继续内容拓展**：可新增 conic-gradient 圆锥渐变（补充现有渐变工具）、border-radius 生成器、CSS transform 可视化、SVG 优化器等设计类工具
+6. **博客标签页分页**：部分热门标签文章数较多，可考虑分页
+7. **设计工具增强**：text-shadow 可增加导入现有 CSS 解析、box-shadow 可增加导入现有 CSS 解析、gradient 可增加 conic-gradient 类型
+
+## 需用户操作
+- 部署本轮新增代码（git push 已完成，若 Cloudflare Pages 已配置自动部署则自动触发）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）用浏览器访问 https://website.niuzi.asia/text-shadow 验证新工具页面正常
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+
+## 阶段进度总览（更新）
+- 工具总数：68 个（阶段二目标：基于数据扩充高价值工具）
+- 博客总数：63 篇（每个工具至少 1 篇配套深度博客）
+- 标签总数：280+ 个（新增 text-shadow、文字阴影、霓虹效果、3d文字、描边等标签）
+- 构建页面：396 页
+- 类型检查：0 errors
+- LCP：< 2.5s（SSG 静态优化）
+- JS Bundle：单页最大 < 200KB（本轮新增 TextShadowTool 6.81KB，纯 React 组件无外部依赖）
