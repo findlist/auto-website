@@ -1,0 +1,463 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import GradientTool from '../components/GradientTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 渐变生成器 - 在线 linear-gradient / radial-gradient 可视化工具',
+  description:
+    '免费的在线 CSS 渐变生成器：支持线性渐变（linear-gradient）与径向渐变（radial-gradient），角度调节、方向预设、颜色停止点管理、中心位置控制，实时预览效果，一键复制 CSS 代码。内置日落、海洋、极光、紫粉、暖橙、深空、三色 7 组预设渐变。适用于网页背景、按钮设计、卡片渐变、Banner 海报等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 渐变生成器',
+    description: '在线 CSS 渐变可视化生成器，支持 linear-gradient 与 radial-gradient，颜色停止点管理，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 渐变生成器</h1>
+      <p>
+        可视化生成 CSS <code>linear-gradient</code> 线性渐变与 <code>radial-gradient</code> 径向渐变：
+        支持角度调节、方向预设、颜色停止点增删与位置调节、径向中心位置控制。实时预览效果，
+        一键复制 CSS 代码。内置日落、海洋、极光等 7 组预设渐变。适用于网页背景、按钮设计、
+        Banner 海报等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <GradientTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>linear-gradient 和 radial-gradient 有什么区别？</summary>
+        <p>
+          <strong>线性渐变（linear-gradient）</strong>：颜色沿一条直线方向过渡，适合表现方向性的光照、
+          天空、条纹等效果。语法：<code>linear-gradient(&lt;angle&gt;deg, color1 pos%, color2 pos%)</code>。
+          <br />
+          <strong>径向渐变（radial-gradient）</strong>：颜色从中心点向外辐射扩散，适合表现光源、光晕、
+          聚光灯等效果。语法：<code>radial-gradient(circle at x% y%, color1 pos%, color2 pos%)</code>。
+          两者可单独使用，也可用逗号分隔叠加（前层覆盖后层）。
+        </p>
+      </details>
+      <details>
+        <summary>渐变角度是怎么计算的？</summary>
+        <p>
+          <code>linear-gradient</code> 的角度以正上方为 0°，顺时针递增：0° 向上、90° 向右、
+          180° 向下、270° 向左。角度表示渐变线的方向——0° 时颜色从下到上过渡，90° 时从左到右过渡。
+          也可用关键字 <code>to top / to right / to bottom / to left</code> 或组合
+          <code>to top right</code> 表示对角方向。本工具同时提供 8 方向预设按钮与 0-360° 精确滑块。
+        </p>
+      </details>
+      <details>
+        <summary>颜色停止点（color stop）是什么？</summary>
+        <p>
+          颜色停止点定义渐变中某个位置的颜色，由颜色值与位置百分比组成，如 <code>#ff0000 0%</code> 表示
+          起点为红色、<code>#0000ff 100%</code> 表示终点为蓝色。两个停止点之间浏览器自动插值过渡。
+          位置百分比范围为 0%-100%，多个停止点按位置排序后生成渐变。本工具支持任意数量的停止点，
+          可自由增删与调节位置，实现三色、四色甚至更复杂的多色渐变。
+        </p>
+      </details>
+      <details>
+        <summary>径向渐变的中心位置怎么调节？</summary>
+        <p>
+          径向渐变用 <code>at &lt;x&gt;% &lt;y&gt;%</code> 指定中心点位置。x、y 均为 0-100 的百分比，
+          0% 0% 为左上角、50% 50% 为正中心、100% 100% 为右下角。例如
+          <code>radial-gradient(circle at 30% 70%, ...)</code> 表示中心点在左侧偏下位置。
+          本工具提供 X/Y 双滑块实时调节中心位置，配合预览区可直观看到辐射效果的变化。
+        </p>
+      </details>
+      <details>
+        <summary>渐变能用于哪些 CSS 属性？</summary>
+        <p>
+          渐变最常见的用途是 <code>background</code> 或 <code>background-image</code> 属性，
+          但它本质上是一个图像值，可用于任何接受图像的属性：
+          <br />① <code>background</code>：元素背景渐变（最常用）
+          <br />② <code>border-image</code>：渐变边框
+          <br />③ <code>list-style-image</code>：渐变列表标记
+          <br />④ <code>mask-image</code>：渐变遮罩（淡入淡出效果）
+          <br />⑤ <code>content</code>（伪元素）：渐变生成的内容
+          <br />注意：渐变不能用于 <code>color</code>、<code>box-shadow</code> 等只接受颜色的属性。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现多色渐变与硬渐变？</summary>
+        <p>
+          <strong>多色渐变</strong>：添加 3 个以上颜色停止点即可，如
+          <code>linear-gradient(90deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%)</code>。
+          <br />
+          <strong>硬渐变（条纹）</strong>：让相邻停止点位置相同，颜色无过渡区域，产生硬边界条纹效果，
+          如 <code>linear-gradient(90deg, #ff0000 50%, #00ff00 50%)</code> 生成红绿各半的硬边界。
+          硬渐变是 CSS 绘制条纹背景、棋盘格、进度条等图案的核心技巧。
+        </p>
+      </details>
+      <details>
+        <summary>CSS 渐变的浏览器兼容性如何？</summary>
+        <p>
+          <code>linear-gradient</code> 与 <code>radial-gradient</code> 是 CSS3 的成熟特性，
+          所有现代浏览器（Chrome、Firefox、Safari、Edge）全面支持，IE10+ 也已支持。
+          角度值（如 <code>45deg</code>）、多色停止点、径向中心位置等特性在 IE10+ 均可用。
+          旧版浏览器需加 <code>-webkit-</code> 前缀（IE9-），现代项目无需前缀可直接用于生产环境。
+          圆锥渐变 <code>conic-gradient</code> 兼容性稍差（IE 不支持），本工具暂未包含。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有渐变参数调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS 渐变生成器专属样式 */
+  .grt {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区 */
+  .grt__preview {
+    width: 100%;
+    height: 200px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: background 0.15s ease;
+  }
+
+  /* 按钮 */
+  .grt__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .grt__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .grt__btn--preset {
+    font-size: 13px;
+  }
+
+  .grt__btn--add {
+    padding: 6px 14px;
+    border-style: dashed;
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .grt__btn--copy {
+    font-size: 13px;
+  }
+
+  .grt__btn--danger {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--color-danger, #e53e3e);
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  .grt__btn--danger:hover {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+  }
+
+  /* 预设按钮组 */
+  .grt__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .grt__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 控制区 */
+  .grt__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .grt__control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .grt__control-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 分段选择 */
+  .grt__seg {
+    display: inline-flex;
+    width: fit-content;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .grt__seg-btn {
+    padding: 6px 16px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .grt__seg-btn:not(:last-child) {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .grt__seg-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 方向预设按钮 */
+  .grt__directions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .grt__dir-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .grt__dir-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 角度 / 位置滑块 */
+  .grt__angle,
+  .grt__pos-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .grt__angle input,
+  .grt__pos-field input {
+    flex: 1;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .grt__angle output,
+  .grt__pos-field output {
+    min-width: 44px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: right;
+  }
+
+  /* 停止点列表 */
+  .grt__stops {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .grt__stops-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .grt__stops-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .grt__stop {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .grt__stop-color {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .grt__stop-color input[type='color'] {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  .grt__stop-hex {
+    width: 100px;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .grt__stop-pos {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .grt__stop-pos input {
+    flex: 1;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .grt__stop-pos output {
+    min-width: 40px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: right;
+  }
+
+  .grt__hint {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* CSS 代码输出 */
+  .grt__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .grt__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .grt__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .grt__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .grt__stop,
+    .grt__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .grt__stop-hex {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .grt__seg-btn,
+    .grt__dir-btn {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .grt__preview {
+      height: 150px;
+    }
+    .grt__stop {
+      flex-wrap: wrap;
+    }
+    .grt__stop-pos {
+      flex-basis: 100%;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .grt__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .grt__presets-label {
+      text-align: center;
+    }
+    .grt__stop-color input[type='color'] {
+      width: 32px;
+      height: 32px;
+    }
+    .grt__stop-hex {
+      width: 80px;
+    }
+  }
+</style>
