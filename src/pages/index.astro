@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '64 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '65 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -408,6 +408,15 @@ const tools = [
     available: true,
     category: '编码转换',
     keywords: '图片压缩 在线压缩 图片压缩工具 png 压缩 jpeg 压缩 webp 转换 图片优化 图片缩小 批量压缩 质量调节',
+  },
+  {
+    href: '/exif',
+    title: 'EXIF 信息查看器',
+    desc: '在线 EXIF 元数据查看器：支持 JPEG / PNG / WebP / TIFF / HEIC 图片的 EXIF、IPTC、XMP、ICC 元数据解析。查看相机型号、拍摄参数（光圈、快门、ISO、焦距）、GPS 定位、拍摄时间等信息，提供分类视图与 JSON 原始数据视图，一键复制。基于 exifr 全本地解析，零上传零追踪，适用于照片信息查看、隐私元数据检查等场景。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'exif 查看 exif 信息 图片元数据 照片信息 拍摄参数 相机型号 gps 定位 光圈 快门 iso 焦距 iptc xmp 图片信息 元数据解析',
   },
   {
     href: '/lorem',
