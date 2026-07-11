@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '57 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '59 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -471,6 +471,24 @@ const tools = [
     available: true,
     category: '文档处理',
     keywords: '文本截断 字符截断 字节截断 行数截断 truncate unicode utf-8 emoji 省略号 单词边界 摘要 字数限制',
+  },
+  {
+    href: '/text-similarity',
+    title: '文本相似度对比工具',
+    desc: '在线文本相似度计算工具：实时计算 Levenshtein 编辑距离、相似度比率、Jaccard 相似度、最长公共子序列（LCS）四种指标，提供字符级差异高亮。支持大小写敏感、去除空白、忽略空行等选项。适用于查重检测、文本去重、模糊匹配、版本对比、抄袭检测辅助等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: '文本相似度 相似度计算 levenshtein 编辑距离 jaccard lcs 查重 模糊匹配 文本对比 抄袭检测',
+  },
+  {
+    href: '/morse',
+    title: '摩斯密码编解码工具',
+    desc: '在线摩斯密码编解码工具：支持文本与摩斯码双向转换，覆盖字母、数字、常用标点。内置 Web Audio API 音频播放器，可调节速度（WPM 5-40）与音高（300-1000Hz），附带完整摩斯码速查表。适用于业余无线电学习、密码学教育、SOS 求救信号练习等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: '摩斯密码 morse code 编码 解码 翻译 音频 sos 求救 业余无线电 ham 电报 速查表 wpm',
   },
   {
     href: '/sql',

@@ -1,0 +1,404 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import MorseTool from '../components/MorseTool.tsx';
+
+const meta: SiteMeta = {
+  title: '摩斯密码编解码工具 - 在线摩斯码翻译器与音频播放',
+  description:
+    '免费的在线摩斯密码编解码工具：支持文本与摩斯码双向转换，覆盖字母、数字、常用标点。内置 Web Audio API 摩斯码音频播放器，可调节速度（WPM）与音高，附带完整摩斯码速查表。适用于业余无线电学习、密码学教育、信号灯通信练习、紧急求救信号（SOS）学习等场景。所有处理在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '摩斯密码编解码工具',
+    description:
+      '在线摩斯密码翻译器，支持文本与摩斯码双向转换、音频播放、速度调节，附带完整速查表。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>摩斯密码编解码工具</h1>
+      <p>
+        文本与摩斯密码双向转换，支持字母、数字、标点符号。内置音频播放器，
+        可调节速度（WPM 5-40）与音高（300-1000Hz），附带完整摩斯码速查表。
+        适用于业余无线电学习、密码学教育、SOS 求救信号练习等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <MorseTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是摩斯密码？</summary>
+        <p>
+          <strong>摩斯密码</strong>（Morse Code）是一种用短信号（点/dit，用 <code>.</code> 表示）
+          和长信号（划/dah，用 <code>-</code> 表示）组合编码文字的通信方式。
+          由美国发明家萨缪尔·摩斯等人于 1836 年发明，最初用于电报通信。
+          每个字母和数字对应一组唯一的点划序列，如 <code>S</code> = <code>...</code>，
+          <code>O</code> = <code>---</code>，因此 SOS 求救信号为 <code>... --- ...</code>。
+          摩斯密码至今仍在业余无线电、航空信标、海上通信等领域使用。
+        </p>
+      </details>
+      <details>
+        <summary>摩斯码的点和划之间如何分隔？</summary>
+        <p>
+          摩斯密码有严格的时序规则：
+          ① <strong>点与划之间</strong>：间隔 1 个点的时长；
+          ② <strong>字符内</strong>：点和划紧密组合，如 <code>.-</code>（A）是一个完整字符；
+          ③ <strong>字符之间</strong>：间隔 3 个点的时长（本工具用空格分隔）；
+          ④ <strong>单词之间</strong>：间隔 7 个点的时长（本工具用 <code>/</code> 分隔）。
+          在文本表示中，字符内的点划连续书写，字符间用空格分隔，单词间用 <code>/</code> 分隔。
+        </p>
+      </details>
+      <details>
+        <summary>WPM 速度是什么意思？</summary>
+        <p>
+          <strong>WPM</strong>（Words Per Minute，每分钟单词数）是摩斯密码的标准速度单位。
+          基于 PARIS 标准——单词 "PARIS" 正好包含 50 个点单位（含间隔），
+          因此 1 WPM = 每分钟 50 个点单位，每个点的时长 = 1200 / WPM 毫秒。
+          例如 15 WPM 时，每个点持续约 80ms；20 WPM 时，每个点持续 60ms。
+          初学者建议从 5-10 WPM 开始练习，熟练后可提升至 20-30 WPM。
+          专业业余无线电操作员可达 40+ WPM。
+        </p>
+      </details>
+      <details>
+        <summary>支持中文摩斯密码吗？</summary>
+        <p>
+          本工具目前仅支持 ASCII 字符集（英文字母 A-Z、数字 0-9、常用标点）。
+          摩斯密码标准本身不包含中文字符。中文摩斯密码通常需要先将中文转换为电码
+         （如中文电码表，每个汉字对应一个 4 位数字），再将数字编码为摩斯码。
+          这需要一个完整的中文电码表（约 9000 个汉字），且现代使用场景极少。
+          如需中文编码，可先用本工具的"文本 → 摩斯码"模式输入拼音或数字。
+        </p>
+      </details>
+      <details>
+        <summary>音频播放是如何实现的？</summary>
+        <p>
+          音频使用浏览器原生的 <strong>Web Audio API</strong> 生成，无需任何音频文件。
+          工具创建 <code>OscillatorNode</code>（正弦波振荡器）和 <code>GainNode</code>（音量控制），
+          按摩斯码时序精确调度每个点和划的发声与静默。音频包络采用快速淡入淡出（5ms）避免爆音。
+          音高默认 600Hz（接近标准摩斯码侧音频率），可在 300-1000Hz 间调节。
+          所有音频在你的设备上实时合成，不下载任何音频文件。
+        </p>
+      </details>
+      <details>
+        <summary>摩斯密码的现代应用场景有哪些？</summary>
+        <p>
+          ① <strong>业余无线电（HAM）</strong>：CW（连续波）通信模式，全球爱好者仍在使用；
+          ② <strong>航空导航</strong>：无方向性信标（NDB）发射台识别码；
+          ③ <strong>海上通信</strong>：部分灯塔和信标仍使用摩斯码；
+          ④ <strong>紧急求救</strong>：SOS 信号（<code>... --- ...</code>）是国际通用求救信号；
+          ⑤ <strong>密码学教育</strong>：学习编码原理的经典案例；
+          ⑥ <strong>无障碍通信</strong>：视障人士通过触觉传递摩斯码；
+          ⑦ <strong>嵌入式开发</strong>：LED/蜂鸣器信号调试。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有编解码和音频生成由 JavaScript 在你本地执行，
+          不会发送任何输入文本或音频数据到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 摩斯密码工具专属样式 */
+  .morsetool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 模式切换按钮组 */
+  .morsetool__mode-switch {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .morsetool__mode-switch .btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    padding: 10px 16px;
+    border-radius: calc(var(--radius-md) - 4px);
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .morsetool__mode-switch .btn--active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .morsetool__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .morsetool__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .morsetool__input-section,
+  .morsetool__result-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .morsetool__label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .morsetool__stat {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .morsetool__textarea {
+    width: 100%;
+    min-height: 120px;
+    max-height: 300px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .morsetool__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 结果展示区 */
+  .morsetool__result {
+    min-height: 80px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    font-family: var(--font-mono);
+    font-size: 15px;
+    line-height: 1.7;
+    word-break: break-all;
+    color: var(--color-text);
+  }
+
+  .morsetool__result-empty {
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 警告区 */
+  .morsetool__warnings {
+    padding: 10px 14px;
+    background: rgba(217, 119, 6, 0.1);
+    border: 1px solid rgba(217, 119, 6, 0.3);
+    border-radius: var(--radius-md);
+    color: #92400e;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  :global([data-theme='dark']) .morsetool__warnings {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+  }
+
+  /* 音频控制区 */
+  .morsetool__audio {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .morsetool__audio-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .morsetool__slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .morsetool__slider-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .morsetool__slider-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-primary, #2b6cff);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .morsetool__slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--color-border);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .morsetool__slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary, #2b6cff);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .morsetool__slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  .morsetool__slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-primary, #2b6cff);
+    cursor: pointer;
+  }
+
+  .morsetool__play-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .morsetool__duration {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 速查表 */
+  .morsetool__cheatsheet {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .morsetool__cheatsheet summary {
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--color-text);
+    padding: 4px 0;
+  }
+
+  .morsetool__cheatsheet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .morsetool__cheatsheet-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .morsetool__cheatsheet-char {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .morsetool__cheatsheet-code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    letter-spacing: 1px;
+  }
+
+  /* 移动端响应式：768px 以下 */
+  @media (max-width: 768px) {
+    .morsetool__audio-controls {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 窄屏移动端：414px 以下 */
+  @media (max-width: 414px) {
+    .morsetool__mode-switch {
+      flex-direction: column;
+    }
+
+    .morsetool__actions {
+      width: 100%;
+    }
+
+    .morsetool__actions .btn {
+      flex: 1;
+    }
+
+    .morsetool__cheatsheet-grid {
+      grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    }
+  }
+</style>
