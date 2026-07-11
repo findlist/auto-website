@@ -13,8 +13,10 @@
   "dependencies": {
     "@astrojs/react": "^4.2.1",
     "@astrojs/sitemap": "^3.3.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/qrcode": "^1.5.6",
     "astro": "^5.6.1",
+    "bcryptjs": "^3.0.3",
     "js-yaml": "^4.3.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
