@@ -1,0 +1,414 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HtmlToMarkdownTool from '../components/HtmlToMarkdownTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'HTML 转 Markdown 转换器 - 网页内容提取与博客迁移工具',
+  description:
+    '免费的在线 HTML 转 Markdown 工具：基于浏览器原生 DOMParser 解析，支持标题、列表、代码块、表格、引用、链接、图片、任务列表等 GFM 扩展语法。可配置 ATX/Setext 标题风格、围栏/缩进代码块、列表标记符，自动忽略 script/style 等非内容标签。适用于网页内容提取、博客平台迁移、笔记整理、AI 训练数据准备等场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'HTML 转 Markdown 转换器',
+    description: '在线 HTML 转 Markdown 工具，基于 DOMParser 解析，支持 GFM 扩展语法，可配置标题风格、代码块风格、列表标记。全本地处理，零依赖。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>HTML 转 Markdown 转换器</h1>
+      <p>
+        将 HTML 文档或网页片段一键转换为 Markdown 格式。基于浏览器原生 DOMParser 解析，
+        支持标题、列表、代码块、表格、引用、链接、图片、GFM 任务列表等完整语法。
+        可配置 ATX/Setext 标题风格、围栏/缩进代码块、列表标记符，
+        自动忽略 script/style 等非内容标签。与 Markdown 预览器形成双向转换闭环。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证交互即时可用 -->
+    <HtmlToMarkdownTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>为什么需要 HTML 转 Markdown？</summary>
+        <p>
+          Markdown 以纯文本形式存储，具有以下优势：
+        </p>
+        <ul>
+          <li><strong>可读性强</strong>：源码即排版，无需渲染即可阅读</li>
+          <li><strong>平台兼容</strong>：GitHub、GitLab、Notion、Obsidian、VS Code 等均原生支持</li>
+          <li><strong>版本控制友好</strong>：纯文本 diff 清晰，便于团队协作</li>
+          <li><strong>体积小</strong>：无 HTML 标签开销，传输与存储成本低</li>
+        </ul>
+        <p>
+          常见场景包括：将网页内容保存为笔记、从 WordPress/博客平台迁移到 Markdown 博客（如 Hugo/Astro）、
+          为 AI 训练数据准备纯文本、将富文本编辑器输出转为可版本控制的格式。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些 HTML 标签的转换？</summary>
+        <p>本工具覆盖了 Markdown 语法能表达的所有 HTML 标签：</p>
+        <ul>
+          <li><strong>标题</strong>：h1 ~ h6 → <code>#</code> ~ <code>######</code>（或 setext <code>===</code>/<code>---</code>）</li>
+          <li><strong>文本格式</strong>：strong/b → <code>**粗体**</code>、em/i → <code>*斜体*</code>、del/s → <code>~~删除线~~</code></li>
+          <li><strong>代码</strong>：code → <code>`行内代码`</code>、pre &gt; code → 围栏代码块（自动提取语言标识）</li>
+          <li><strong>链接图片</strong>：a → <code>[text](url)</code>、img → <code>![alt](src)</code></li>
+          <li><strong>列表</strong>：ul → <code>-</code> 无序列表、ol → <code>1.</code> 有序列表、支持任意层级嵌套</li>
+          <li><strong>GFM 任务列表</strong>：<code>&lt;input type="checkbox"&gt;</code> → <code>- [x]</code> / <code>- [ ]</code></li>
+          <li><strong>表格</strong>：table → GFM 管道表格（含表头分隔行）</li>
+          <li><strong>引用</strong>：blockquote → <code>&gt; 引用</code>（支持嵌套）</li>
+          <li><strong>其他</strong>：hr → <code>---</code>、br → 硬换行、details/summary → 加粗标题 + 正文</li>
+        </ul>
+        <p>script、style、template、noscript、iframe 等非内容标签会被自动忽略。</p>
+      </details>
+      <details>
+        <summary>ATX 和 Setext 标题风格有什么区别？</summary>
+        <p>
+          <strong>ATX 风格</strong>（默认）：用 <code>#</code> 号表示标题层级，支持 h1 ~ h6：
+        </p>
+        <pre><code># 一级标题
+## 二级标题
+### 三级标题</code></pre>
+        <p>
+          <strong>Setext 风格</strong>：仅支持 h1 和 h2，用下划线表示：
+        </p>
+        <pre><code>一级标题
+=======
+
+二级标题
+-------</code></pre>
+        <p>ATX 更通用（支持 6 级），Setext 更简洁（仅 2 级）。建议保持默认的 ATX 风格。</p>
+      </details>
+      <details>
+        <summary>围栏代码块和缩进代码块有什么区别？</summary>
+        <p>
+          <strong>围栏代码块</strong>（默认）：用三个反引号包裹，可指定语言标识：
+        </p>
+        <pre><code>```javascript
+const x = 1;
+```</code></pre>
+        <p>
+          <strong>缩进代码块</strong>：每行缩进 4 个空格，无法指定语言：
+        </p>
+        <pre><code>    const x = 1;</code></pre>
+        <p>围栏代码块是 GFM 扩展，支持语法高亮，现代平台均支持。缩进代码块是原始 Markdown 规范，兼容性更老。</p>
+      </details>
+      <details>
+        <summary>如何处理嵌套列表？</summary>
+        <p>
+          本工具完整支持任意层级的列表嵌套。子列表会自动缩进对齐：
+        </p>
+        <pre><code>- 一级项
+  - 二级项
+    - 三级项
+  - 二级项
+- 一级项</code></pre>
+        <p>
+          缩进空格数可通过"缩进空格数"选项调整（默认 2 空格，CommonMark 规范要求至少 2 空格）。
+          有序列表和无序列表可混合嵌套。
+        </p>
+      </details>
+      <details>
+        <summary>转换后表格格式不正确怎么办？</summary>
+        <p>
+          GFM 管道表格要求：第一行必须是表头，第二行是分隔行（<code>| --- | --- |</code>）。
+          如果原始 HTML 表格没有 <code>&lt;th&gt;</code> 表头单元格，本工具会将第一行作为表头处理。
+          注意：GFM 表格不支持单元格内换行，多行内容会被合并为单行（用空格分隔）。
+          如需保留复杂表格结构，建议保留原始 HTML。
+        </p>
+      </details>
+      <details>
+        <summary>数据安全吗？会上传到服务器吗？</summary>
+        <p>
+          <strong>完全安全，数据不离开浏览器。</strong>本工具基于浏览器原生 DOMParser API 在本地解析 HTML，
+          所有转换逻辑在客户端 JavaScript 中执行，不发起任何网络请求。
+          打开浏览器开发者工具的 Network 面板即可验证无任何外发请求。适用于处理含敏感信息的 HTML 内容。
+        </p>
+      </details>
+      <details>
+        <summary>为什么不引入 Turndown 等成熟库？</summary>
+        <p>
+          三个核心考虑：
+        </p>
+        <ol>
+          <li>
+            <strong>bundle 体积可控</strong>：Turndown 约 40KB（gzip 13KB），而手写引擎约 12KB（gzip 4KB），
+            节省 28KB。本工具页单页加载远低于 200KB 红线。
+          </li>
+          <li>
+            <strong>安全可控</strong>：成熟库功能丰富但攻击面也大。本工具<strong>默认忽略 script/style 等标签</strong>，
+            从根本上避免 XSS 风险，无需引入额外净化库。
+          </li>
+          <li>
+            <strong>无外部依赖</strong>：项目坚持"纯原生零依赖"原则，便于维护与审计。
+          </li>
+        </ol>
+      </details>
+    </section>
+
+    <style>
+      /* HTML 转 Markdown 工具专属样式 */
+      .htm__container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* 选项面板 */
+      .htm__options {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px 16px;
+        padding: 16px;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+      }
+
+      .htm__option-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .htm__option-group--checkbox {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .htm__label {
+        font-size: 12px;
+        color: var(--color-text-soft);
+      }
+
+      .htm__select {
+        padding: 6px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .htm__checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .htm__checkbox-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+      }
+
+      /* 双栏布局 */
+      .htm__panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .htm__panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .htm__panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .htm__panel-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text);
+      }
+
+      .htm__panel-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .htm__textarea {
+        width: 100%;
+        min-height: 360px;
+        padding: 12px 14px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.6;
+        resize: vertical;
+        tab-size: 2;
+      }
+
+      .htm__textarea--output {
+        background: var(--color-bg-soft);
+      }
+
+      .htm__textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-ring);
+      }
+
+      /* 按钮 */
+      .htm__btn {
+        padding: 6px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .htm__btn--ghost {
+        background: transparent;
+      }
+
+      .htm__btn--ghost:hover:not(:disabled) {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      .htm__btn--ghost:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* 统计信息 */
+      .htm__stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        padding: 12px 14px;
+        background: var(--color-bg-soft);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        color: var(--color-text-soft);
+      }
+
+      .htm__stat strong {
+        color: var(--color-text);
+        font-weight: 600;
+      }
+
+      /* 错误提示 */
+      .htm__error {
+        padding: 12px 14px;
+        background: var(--color-danger-soft);
+        border: 1px solid var(--color-danger-border);
+        border-radius: var(--radius-sm);
+        color: var(--color-error);
+        min-height: 360px;
+      }
+
+      .htm__error strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* 警告列表 */
+      .htm__warnings {
+        padding: 12px 14px;
+        background: var(--color-accent-soft, rgba(245, 158, 11, 0.08));
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+      }
+
+      .htm__warnings summary {
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--color-text);
+      }
+
+      .htm__warnings ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        color: var(--color-text-soft);
+      }
+
+      .htm__warnings li {
+        margin: 4px 0;
+      }
+
+      /* 操作反馈 */
+      .htm__notice {
+        padding: 10px 14px;
+        background: var(--color-success-soft);
+        border-radius: var(--radius-sm);
+        color: var(--color-success);
+        font-size: 13px;
+      }
+
+      /* 暗色模式适配 */
+      @media (prefers-color-scheme: dark) {
+        .htm__textarea {
+          background: rgba(255, 255, 255, 0.04);
+        }
+        .htm__textarea--output {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .htm__select {
+          background: rgba(255, 255, 255, 0.04);
+        }
+      }
+
+      /* 移动端响应式 */
+      @media (max-width: 768px) {
+        .htm__panels {
+          grid-template-columns: 1fr;
+        }
+        .htm__textarea {
+          min-height: 240px;
+        }
+        .htm__error {
+          min-height: 240px;
+        }
+      }
+
+      @media (max-width: 414px) {
+        .htm__options {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .htm__option-group {
+          width: 100%;
+        }
+        .htm__select {
+          width: 100%;
+        }
+        .htm__stats {
+          gap: 6px 12px;
+          font-size: 12px;
+        }
+      }
+    </style>
+  </section>
+</BaseLayout>

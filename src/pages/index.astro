@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '60 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、IEEE 754 浮点数可视化、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '61 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -291,6 +291,15 @@ const tools = [
     available: true,
     category: '文档处理',
     keywords: 'markdown 预览 渲染 编辑器 gfm 实时 分屏 html 导出 文档 写作',
+  },
+  {
+    href: '/html-to-markdown',
+    title: 'HTML 转 Markdown',
+    desc: '将 HTML 文档或网页片段一键转换为 Markdown 格式。基于浏览器原生 DOMParser 解析，支持标题、列表、代码块、表格、引用、链接、图片、GFM 任务列表等完整语法。可配置 ATX/Setext 标题风格、围栏/缩进代码块、列表标记符，自动忽略 script/style 等非内容标签。与 Markdown 预览器形成双向转换闭环，适用于网页内容提取、博客平台迁移、笔记整理、AI 训练数据准备等场景。',
+    badge: '可用',
+    available: true,
+    category: '文档处理',
+    keywords: 'html markdown 转换 网页 提取 迁移 domparser gfm 任务列表 表格 代码块 atx setext turndown',
   },
   {
     href: '/mime',
