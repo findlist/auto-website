@@ -1,0 +1,400 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import Ieee754Tool from '../components/Ieee754Tool.tsx';
+
+const meta: SiteMeta = {
+  title: 'IEEE 754 浮点数可视化工具 - 单精度/双精度二进制位级分解',
+  description:
+    '免费的在线 IEEE 754 浮点数可视化工具：十进制浮点数与二进制位串双向转换，支持单精度（32 位）与双精度（64 位），符号位/指数位/尾数位三色可视化分解，自动识别零、非规格化数、无穷大、NaN。适用于理解浮点数精度问题、计算机组成原理学习、0.1+0.2≠0.3 原因分析等场景。所有计算在浏览器本地完成，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'IEEE 754 浮点数可视化工具',
+    description: '在线 IEEE 754 浮点数可视化工具，支持单精度/双精度，二进制位串双向转换，符号位/指数位/尾数位三色分解，特殊值识别。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>IEEE 754 浮点数可视化工具</h1>
+      <p>
+        十进制浮点数与 IEEE 754 二进制位串双向转换，支持单精度（32 位）与双精度（64 位）。
+        符号位、指数位、尾数位三色可视化分解，自动识别零、非规格化数、无穷大、NaN。
+        基于 DataView 实现位级精确 reinterpret，适用于理解浮点数精度问题与计算机组成原理学习。
+      </p>
+    </div>
+
+    <Ieee754Tool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 IEEE 754？为什么浮点数会有精度问题？</summary>
+        <p>
+          IEEE 754 是计算机浮点数表示的国际标准，定义了单精度（32 位）和双精度（64 位）格式。
+          浮点数用<strong>符号位 + 指数位 + 尾数位</strong>三段表示，其中尾数位位数有限（单精度 23 位、双精度 52 位），
+          无法精确表示所有十进制小数。例如 0.1 在二进制中是无限循环小数，存储时被截断，导致 0.1 + 0.2 ≠ 0.3
+          这样的精度误差。本工具可视化每一位的含义，帮助理解精度问题的根源。
+        </p>
+      </details>
+      <details>
+        <summary>单精度和双精度有什么区别？</summary>
+        <p>
+          <strong>单精度（float32）</strong>：共 32 位 = 1 符号位 + 8 指数位 + 23 尾数位，偏移量 127，
+          精度约 7 位有效十进制数字，范围约 ±3.4×10³⁸。 <br />
+          <strong>双精度（float64）</strong>：共 64 位 = 1 符号位 + 11 指数位 + 52 尾数位，偏移量 1023，
+          精度约 15-17 位有效十进制数字，范围约 ±1.8×10³⁰⁸。 <br />
+          JavaScript 的 Number 类型就是双精度（float64）。双精度尾数位更多，精度更高，但占用空间是单精度的两倍。
+          GPU 计算和图形渲染常用单精度以节省带宽和显存。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 0.1 + 0.2 ≠ 0.3？</summary>
+        <p>
+          十进制 0.1 转为二进制是无限循环小数 0.0001100110011...，存储时被截断为有限位数。
+          单精度下 0.1 ≈ 0.10000000149，双精度下 0.1 ≈ 0.10000000000000000555。
+          两个有误差的数相加，误差累积，结果不等于 0.3 的二进制表示。
+          用本工具输入 0.1，可以看到尾数位的最后几位不为零——这就是精度丢失的直观体现。
+          这是所有使用 IEEE 754 的编程语言（JavaScript、Python、Java、C 等）的共性，不是 bug。
+        </p>
+      </details>
+      <details>
+        <summary>什么是非规格化数（Denormalized Number）？</summary>
+        <p>
+          当指数位全为 0 时，该浮点数是非规格化数（也叫次正规数/Subnormal）。
+          与规格化数不同，非规格化数<strong>没有隐含的 1</strong>，尾数直接表示 0.xxxx。
+          这使得非规格化数能表示比最小规格化数更小的值（代价是精度降低），实现"渐进下溢"——
+          当计算结果趋近于零时，精度逐步降低而非突然变为零。非规格化数的实际指数为 1 - bias
+          而非 0 - bias（这是 IEEE 754 的特殊设计，保证从非规格化到规格化的平滑过渡）。
+        </p>
+      </details>
+      <details>
+        <summary>符号位、指数位、尾数位分别是什么？</summary>
+        <p>
+          <strong>符号位（Sign）</strong>：最高 1 位，0 表示正数，1 表示负数。<br />
+          <strong>指数位（Exponent）</strong>：用偏移量表示实际指数。单精度 8 位偏移 127，双精度 11 位偏移 1023。
+          指数值 = 存储值 - 偏移量。例如单精度指数存储 128，实际指数 = 128 - 127 = 1。<br />
+          <strong>尾数位（Mantissa/Significand）</strong>：存储小数部分。规格化数有一个隐含的 1，
+          实际有效数字为 1.尾数。例如尾数 100...0 表示 1.1₂ = 1.5。
+          浮点数的值为：(-1)^符号 × 1.尾数 × 2^实际指数。
+        </p>
+      </details>
+      <details>
+        <summary>为什么指数需要偏移量（Bias）？</summary>
+        <p>
+          指数可以是正数或负数，IEEE 754 不使用补码表示指数，而是用偏移量（Bias）将所有指数映射为无符号整数。
+          单精度偏移 127：实际指数 -126 ~ +127 映射为存储值 1 ~ 254（0 和 255 保留给特殊值）。
+          这样设计有两个好处：① 可以直接用整数比较大小判断两个浮点数的大小关系（符号位相同的情况下）；
+          ② 简化硬件比较电路。偏移量的选择使得正负指数的表示范围大致对称。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>计算机组成原理学习</strong>：理解浮点数的二进制表示，符号位/指数位/尾数位的含义；<br />
+          ② <strong>浮点数精度分析</strong>：查看 0.1、0.2 等值的实际存储，理解精度丢失根源；<br />
+          ③ <strong>跨语言数据交互</strong>：验证 Python/Java/C 等语言的浮点数表示是否一致；<br />
+          ④ <strong>嵌入式/GPU 开发</strong>：单精度与双精度的精度差异评估；<br />
+          ⑤ <strong>特殊值调试</strong>：识别 NaN、Infinity、-0、非规格化数等特殊浮点值。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有浮点数与二进制的转换由 JavaScript 的 DataView API 在你本地执行，
+          不会发送任何输入数据或转换结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* IEEE 754 浮点数可视化工具专属样式 */
+  .ieee754-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 精度切换 */
+  .ieee754-tool__precision {
+    display: flex;
+    gap: 16px;
+  }
+
+  .ieee754-tool__radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-text);
+    cursor: pointer;
+    padding: 8px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .ieee754-tool__radio:hover {
+    border-color: var(--color-primary);
+  }
+
+  .ieee754-tool__radio input {
+    accent-color: var(--color-primary);
+  }
+
+  /* 输入区 */
+  .ieee754-tool__inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .ieee754-tool__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ieee754-tool__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .ieee754-tool__input {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .ieee754-tool__input:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
+  .ieee754-tool__input--mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+
+  /* 工具栏 */
+  .ieee754-tool__toolbar {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 位段可视化 */
+  .ieee754-tool__bits {
+    padding: 16px;
+    background: var(--color-primary-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+  }
+
+  .ieee754-tool__bits-row {
+    display: flex;
+    gap: 2px;
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    min-width: fit-content;
+  }
+
+  .ieee754-tool__bit-seg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    border-radius: var(--radius-sm);
+    letter-spacing: 2px;
+    white-space: pre;
+  }
+
+  /* 三色位段：符号位红、指数位蓝、尾数位绿 */
+  .ieee754-tool__bit-seg--sign {
+    background: var(--color-danger-soft);
+    color: var(--color-error);
+    border: 1px solid var(--color-danger-border);
+  }
+
+  .ieee754-tool__bit-seg--exp {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary-border);
+  }
+
+  .ieee754-tool__bit-seg--mant {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+    border: 1px solid var(--color-success-border);
+  }
+
+  .ieee754-tool__bits-labels {
+    display: flex;
+    gap: 2px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    min-width: fit-content;
+  }
+
+  .ieee754-tool__bit-label {
+    display: inline-flex;
+    justify-content: center;
+    padding: 2px 4px;
+  }
+
+  .ieee754-tool__bit-label--sign { flex: 0 0 auto; min-width: 20px; }
+  .ieee754-tool__bit-label--exp { flex: 1; }
+  .ieee754-tool__bit-label--mant { flex: 2; }
+
+  /* 分解信息网格 */
+  .ieee754-tool__fields {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .ieee754-tool__field-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .ieee754-tool__field-name {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 600;
+  }
+
+  .ieee754-tool__field-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  .ieee754-tool__field-value--special {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--color-accent);
+  }
+
+  .ieee754-tool__field-desc {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 十进制结果 */
+  .ieee754-tool__result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .ieee754-tool__result-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    white-space: nowrap;
+  }
+
+  .ieee754-tool__result-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-accent);
+    word-break: break-all;
+  }
+
+  /* 状态条 */
+  .ieee754-tool__status {
+    min-height: 24px;
+    font-size: 14px;
+  }
+
+  .ieee754-tool__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-danger-soft);
+    border: 1px solid var(--color-danger-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-error);
+  }
+
+  .ieee754-tool__notice {
+    padding: 10px 14px;
+    background: var(--color-success-soft);
+    border-radius: var(--radius-sm);
+    color: var(--color-success);
+  }
+
+  .ieee754-tool__hint {
+    padding: 10px 14px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .ieee754-tool__input {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .ieee754-tool__field-info {
+      background: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .ieee754-tool__inputs {
+      grid-template-columns: 1fr;
+    }
+    .ieee754-tool__fields {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .ieee754-tool__bits-row {
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .ieee754-tool__fields {
+      grid-template-columns: 1fr;
+    }
+    .ieee754-tool__precision {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ieee754-tool__bits-row {
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  }
+</style>
