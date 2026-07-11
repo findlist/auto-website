@@ -1,0 +1,546 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ImageCompressTool from '../components/ImageCompressTool.tsx';
+
+const meta: SiteMeta = {
+  title: '图片压缩工具 - 在线 PNG/JPEG/WebP 图片压缩',
+  description:
+    '免费的在线图片压缩工具：支持 PNG、JPEG、WebP 格式互转与压缩，质量调节（1-100）、等比缩放尺寸，实时预览压缩前后效果与压缩比。基于 Canvas API 全本地处理，零上传、零追踪、零广告。适用于博客图片优化、网页性能提升、邮件附件压缩、存储空间节省等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '图片压缩工具',
+    description: '在线图片压缩工具，支持 PNG/JPEG/WebP 格式转换与质量压缩，全本地 Canvas API 处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>图片压缩工具</h1>
+      <p>
+        支持 PNG / JPEG / WebP 格式互转与压缩，质量调节（1-100）、等比缩放尺寸。
+        使用 Canvas API 在浏览器本地完成压缩，实时预览压缩前后效果与压缩比。
+        适用于博客图片优化、网页性能提升、邮件附件压缩、存储空间节省等场景。所有处理在浏览器本地完成，零上传、零追踪。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证拖拽与粘贴交互即时可用 -->
+    <ImageCompressTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>图片压缩的原理是什么？</summary>
+        <p>
+          本工具使用浏览器原生的 <strong>Canvas API</strong> 进行压缩：① 将图片绘制到 Canvas 画布；
+          ② 调用 <code>canvas.toBlob()</code> 以目标格式（JPEG/WebP/PNG）和指定质量参数重新编码。
+          有损格式（JPEG/WebP）通过丢弃人眼不敏感的高频信息减小体积；无损格式（PNG）通过更高效的熵编码减小体积。
+          全程不依赖任何服务器，图片数据不会离开浏览器。
+        </p>
+      </details>
+      <details>
+        <summary>WebP、JPEG、PNG 三种格式应该怎么选？</summary>
+        <p>
+          <strong>WebP</strong>：体积最小，现代浏览器（Chrome/Edge/Firefox/Safari 14+）全支持，推荐用于网页图片。
+          <strong>JPEG</strong>：兼容性最好（含老旧设备），但不支持透明通道，适合照片类图片。
+          <strong>PNG</strong>：无损压缩，支持透明通道，适合图标、截图、需要透明背景的图片。
+          一般建议：照片类用 WebP 或 JPEG，图标/截图类用 PNG，追求极致体积用 WebP。
+        </p>
+      </details>
+      <details>
+        <summary>压缩质量参数（1-100）代表什么？</summary>
+        <p>
+          质量参数仅对有损格式（JPEG/WebP）生效，PNG 为无损格式不受影响。
+          数值越高质量越好、体积越大；数值越低体积越小、画质损失越明显。
+          推荐范围：<strong>80-90</strong> 适合网页展示（肉眼几乎无差异），<strong>60-80</strong> 适合追求极致体积，
+          <strong>90-100</strong> 适合需要较高保真度的场景。低于 50 可能出现明显的块状伪影。
+        </p>
+      </details>
+      <details>
+        <summary>为什么压缩后体积反而变大了？</summary>
+        <p>
+          两种常见情况：① <strong>原图已是高压缩率格式</strong>（如已是 WebP），再次编码时编码开销可能超过压缩收益；
+          ② <strong>原图尺寸较小</strong>（如小于 10KB），文件头与元数据占比高，重新编码的固定开销可能超过压缩收益。
+          此时建议保持原格式，或尝试更低的压缩质量参数。
+        </p>
+      </details>
+      <details>
+        <summary>尺寸缩放（最大宽度/高度）如何工作？</summary>
+        <p>
+          设置最大宽度或最大高度后，图片会<strong>等比缩放</strong>到不超过该尺寸（不放大）。
+          两个限制同时存在时，取更严格的限制（即缩放后宽高均不超过对应上限）。
+          例如原图 4000×3000，设置最大宽度 1920、最大高度 1080，会先按宽度缩放到 1920×1440，
+          再按高度缩放到 1440×1080。留空表示不限制该维度。
+        </p>
+      </details>
+      <details>
+        <summary>JPEG 转换时透明区域会怎样处理？</summary>
+        <p>
+          JPEG 格式不支持透明通道（Alpha 通道）。当 PNG/WebP 等含透明区域的图片转换为 JPEG 时，
+          本工具会自动将透明区域填充为<strong>白色背景</strong>，避免出现黑色或乱码区域。
+          如果需要保留透明效果，请选择 WebP 或 PNG 输出格式。
+        </p>
+      </details>
+      <details>
+        <summary>支持 GIF 动图压缩吗？</summary>
+        <p>
+          支持 GIF 输入，但<strong>仅压缩首帧</strong>（Canvas API 的限制：drawImage 只绘制第一帧），
+          压缩后输出为静态图片（WebP/JPEG/PNG）。如需保留 GIF 动画效果，请使用专门的 GIF 处理工具。
+          本工具定位是静态图片压缩，动画 GIF 压缩不在支持范围内。
+        </p>
+      </details>
+      <details>
+        <summary>图片会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有压缩处理由 Canvas API 在本地执行，
+          不会发送任何图片数据到服务器。使用 <code>URL.createObjectURL()</code> 创建本地预览 URL，
+          压缩结果也直接在内存中生成并下载。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 图片压缩工具专属样式 */
+  .imgcomp {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 拖拽上传区 */
+  .imgcomp__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+    text-align: center;
+  }
+
+  .imgcomp__dropzone:hover,
+  .imgcomp__dropzone--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imgcomp__dropzone-icon {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  .imgcomp__dropzone-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcomp__dropzone-hint {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 配置面板 */
+  .imgcomp__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imgcomp__field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .imgcomp__field-group--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .imgcomp__field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .imgcomp__field-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .imgcomp__field-value {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--color-primary, #2b6cff);
+    font-family: var(--font-mono);
+  }
+
+  .imgcomp__field-hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .imgcomp__field-unit {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 格式选择卡片 */
+  .imgcomp__format-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .imgcomp__format-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+  }
+
+  .imgcomp__format-item--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imgcomp__format-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .imgcomp__format-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .imgcomp__format-desc {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 滑块样式 */
+  .imgcomp__slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-border);
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .imgcomp__slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .imgcomp__slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary, #2b6cff);
+    cursor: pointer;
+    border: 2px solid var(--color-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .imgcomp__slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary, #2b6cff);
+    cursor: pointer;
+    border: 2px solid var(--color-bg);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 数字输入框 */
+  .imgcomp__number-input {
+    width: 100px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .imgcomp__number-input:focus {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(43, 108, 255, 0.15));
+  }
+
+  /* 预览区：左右双栏 */
+  .imgcomp__preview-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .imgcomp__preview-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .imgcomp__preview-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .imgcomp__preview-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .imgcomp__preview-meta {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+  }
+
+  .imgcomp__badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.1));
+    color: var(--color-primary, #2b6cff);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .imgcomp__preview-img-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    max-height: 400px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background:
+      linear-gradient(45deg, var(--color-border) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--color-border) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--color-border) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--color-border) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: var(--color-bg-soft, #f8f8f8);
+  }
+
+  .imgcomp__preview-img-wrap img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+  }
+
+  .imgcomp__preview-placeholder {
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  /* 统计与操作条 */
+  .imgcomp__stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imgcomp__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .imgcomp__stat-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgcomp__stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  .imgcomp__stat-value--good {
+    color: var(--color-success, #1aaa55);
+  }
+
+  .imgcomp__stat-value--bad {
+    color: var(--color-warning, #d97706);
+  }
+
+  /* 按钮组 */
+  .imgcomp__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .imgcomp__btn {
+    padding: 10px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+  }
+
+  .imgcomp__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imgcomp__btn--primary {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+    margin-left: auto;
+  }
+
+  .imgcomp__btn--primary:hover {
+    background: var(--color-primary-dark, #1e54d9);
+    border-color: var(--color-primary-dark, #1e54d9);
+  }
+
+  .imgcomp__btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-soft);
+  }
+
+  .imgcomp__btn--ghost:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border-color: var(--color-border);
+  }
+
+  /* 错误与提示 */
+  .imgcomp__error {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-danger-soft, rgba(220, 53, 69, 0.08));
+    border: 1px solid var(--color-danger-border, rgba(220, 53, 69, 0.2));
+    color: var(--color-danger, #dc3545);
+    font-size: 14px;
+  }
+
+  .imgcomp__notice {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-soft, rgba(217, 119, 6, 0.08));
+    color: var(--color-warning, #d97706);
+    font-size: 13px;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .imgcomp__dropzone,
+    .imgcomp__panel,
+    .imgcomp__preview-card,
+    .imgcomp__stats-bar,
+    .imgcomp__format-item {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .imgcomp__preview-img-wrap {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .imgcomp__preview-area {
+      grid-template-columns: 1fr;
+    }
+
+    .imgcomp__format-options {
+      grid-template-columns: 1fr;
+    }
+
+    .imgcomp__stats-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .imgcomp__btn--primary {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .imgcomp__field-group--row {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .imgcomp__field-inline {
+      width: 100%;
+    }
+
+    .imgcomp__number-input {
+      flex: 1;
+    }
+  }
+</style>
