@@ -1,0 +1,427 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import BoxShadowTool from '../components/BoxShadowTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 盒阴影生成器 - 在线 box-shadow 可视化工具',
+  description:
+    '免费的在线 CSS box-shadow 盒阴影可视化生成器：支持多层阴影叠加、X/Y 偏移、模糊半径、扩散半径、颜色、inset 内阴影全参数调节，实时预览效果，一键复制 CSS 代码。内置柔和、卡片、硬阴影、内阴影、霓虹光、浮起 6 组预设阴影效果。适用于卡片设计、按钮交互、Material Design、毛玻璃效果等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 盒阴影生成器',
+    description: '在线 box-shadow 盒阴影可视化生成器，支持多层阴影叠加与全参数调节，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 盒阴影生成器</h1>
+      <p>
+        可视化生成 CSS <code>box-shadow</code> 盒阴影：支持多层阴影叠加，每层可调节 X/Y 偏移、模糊半径、
+        扩散半径、颜色与 inset 内阴影。实时预览效果，一键复制 CSS 代码。内置柔和、卡片、硬阴影、
+        内阴影、霓虹光、浮起 6 组预设。适用于卡片设计、按钮交互、Material Design 等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <BoxShadowTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>box-shadow 的完整语法是什么？</summary>
+        <p>
+          完整语法为 <code>box-shadow: inset? &lt;offset-x&gt; &lt;offset-y&gt; &lt;blur-radius&gt;? &lt;spread-radius&gt;? &lt;color&gt;</code>。
+          其中 <code>inset</code> 为可选关键字（置于最前），表示内阴影；<code>offset-x</code> 与 <code>offset-y</code> 必填，
+          控制阴影的水平和垂直位移；<code>blur-radius</code> 与 <code>spread-radius</code> 可选，分别控制模糊与扩散程度；
+          <code>color</code> 为阴影颜色。多层阴影用逗号分隔，从前到后依次叠加。
+        </p>
+      </details>
+      <details>
+        <summary>模糊半径和扩散半径有什么区别？</summary>
+        <p>
+          <strong>模糊半径（blur-radius）</strong>：控制阴影边缘的模糊程度，值越大阴影越柔和、扩散范围越广。值为 0 时阴影边缘锐利。
+          <br />
+          <strong>扩散半径（spread-radius）</strong>：控制阴影的整体尺寸缩放，正值让阴影放大、负值让阴影缩小。
+          与模糊半径不同，扩散半径不改变模糊程度，只改变阴影的"大小"。例如 <code>0 4px 6px -1px</code> 中的
+          <code>-1px</code> 就是负扩散半径，让阴影略小于元素本身，避免阴影在两侧溢出。
+        </p>
+      </details>
+      <details>
+        <summary>inset 内阴影是什么效果？</summary>
+        <p>
+          默认的 <code>box-shadow</code> 是外阴影（outset），阴影投射到元素外部。<code>inset</code> 关键字将阴影改为内阴影，
+          阴影出现在元素内部，从边框向内扩散。内阴影常用于营造"凹陷"效果，如输入框聚焦凹陷、按钮按下的立体感、
+          卡片内嵌的层次感。语法示例：<code>box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);</code>。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现多层阴影叠加？</summary>
+        <p>
+          多层阴影用逗号分隔，浏览器从前到后依次绘制，第一层在最上层。多层阴影常用于营造更真实的深度感——
+          单层阴影往往显得生硬，而"近处小模糊 + 远处大模糊"的双层组合更接近现实物理光照。
+          例如 Material Design 的卡片阴影：<code>box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);</code>。
+          本工具支持任意层数的阴影叠加，每层可独立启用/禁用。
+        </p>
+      </details>
+      <details>
+        <summary>阴影颜色用 rgba 还是 hex？</summary>
+        <p>
+          推荐使用 <code>rgba()</code> 或 <code>hsl()</code> 等带透明度的颜色格式，而非纯 <code>hex</code>。
+          阴影通常是半透明的（黑色 10% 透明度比纯黑更自然），<code>rgba(0,0,0,0.1)</code> 可以让背景色透过来，
+          营造柔和的层次感。纯黑 <code>#000000</code> 的阴影过于生硬，仅适合"硬阴影"等特殊设计风格。
+          注意：本工具的颜色输入框同时支持 hex 与 rgba 格式，但颜色拾取器仅支持 hex，rgba 需手动输入。
+        </p>
+      </details>
+      <details>
+        <summary>如何做出 Material Design 风格的阴影？</summary>
+        <p>
+          Material Design 的阴影分多个高度等级（elevation），每个等级有对应的阴影配方：
+          <br />① <strong>dp1</strong>：<code>0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)</code>
+          <br />② <strong>dp2</strong>：<code>0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23)</code>
+          <br />③ <strong>dp4</strong>：<code>0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)</code>
+          <br />④ <strong>dp8</strong>：<code>0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22)</code>
+          <br />本工具的"卡片"与"浮起"预设接近 dp2 与 dp4 等级，可直接作为起点再微调。
+        </p>
+      </details>
+      <details>
+        <summary>box-shadow 的浏览器兼容性如何？</summary>
+        <p>
+          <code>box-shadow</code> 是 CSS3 的成熟特性，所有现代浏览器（Chrome、Firefox、Safari、Edge）全面支持，
+          IE9+ 也已支持（需注意 IE 不支持 <code>inset</code> 关键字以外的部分新特性）。
+          <code>inset</code>、多层阴影、负扩散半径等特性在 IE9+ 均可用。
+          移动端 iOS Safari 与 Android Chrome 完全支持。无需添加浏览器前缀，可直接用于生产环境。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有阴影参数调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS 盒阴影生成器专属样式 */
+  .bst {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区 */
+  .bst__preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .bst__preview--light {
+    background: #f5f5f7;
+  }
+
+  .bst__preview--dark {
+    background: #1a1a2e;
+  }
+
+  .bst__preview-box {
+    width: 180px;
+    height: 120px;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    transition: box-shadow 0.15s ease;
+  }
+
+  .bst__preview-switch {
+    display: inline-flex;
+    gap: 8px;
+  }
+
+  /* 按钮 */
+  .bst__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .bst__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .bst__btn--toggle.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .bst__btn--preset {
+    font-size: 13px;
+  }
+
+  .bst__btn--add {
+    align-self: flex-start;
+    padding: 8px 18px;
+    border-style: dashed;
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .bst__btn--copy {
+    font-size: 13px;
+  }
+
+  .bst__btn--danger {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--color-danger, #e53e3e);
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  .bst__btn--danger:hover {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+  }
+
+  /* 预设按钮组 */
+  .bst__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .bst__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 阴影层列表 */
+  .bst__layers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bst__empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  .bst__layer {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .bst__layer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .bst__layer-enable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .bst__layer-enable input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 参数网格 */
+  .bst__layer-params {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px 20px;
+  }
+
+  .bst__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .bst__field > span {
+    font-weight: 600;
+  }
+
+  .bst__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .bst__field output {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+  }
+
+  .bst__field--color {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .bst__field--color > span {
+    margin-right: 4px;
+  }
+
+  .bst__field--color input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  .bst__color-text {
+    width: 130px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .bst__field--inset {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bst__field--inset input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* CSS 代码输出 */
+  .bst__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .bst__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .bst__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .bst__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .bst__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .bst__preview--light {
+      background: #2a2a3e;
+    }
+    .bst__preview-box {
+      background: #f0f0f5;
+    }
+    .bst__layer,
+    .bst__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .bst__color-text {
+      background: rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .bst__layer-params {
+      grid-template-columns: 1fr;
+    }
+    .bst__preview-box {
+      width: 140px;
+      height: 100px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .bst__preview {
+      padding: 24px 12px;
+    }
+    .bst__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .bst__presets-label {
+      text-align: center;
+    }
+  }
+</style>
