@@ -22,7 +22,7 @@
   --color-error-soft: rgba(229, 72, 77, 0.08);
   --color-accent: #7a4cff;
 
-  /* 语义色别名：统一工具页中 danger / warn / success 的背景与边框，
+  /* 语义色别名：统一工具页中 danger / warn / success / primary / accent 的背景与边框，
      避免各页面反复硬编码 rgba 值，暗色模式同步覆盖 */
   --color-danger: var(--color-error);
   --color-danger-soft: var(--color-error-soft);
@@ -35,6 +35,11 @@
   --color-insert-border: #22c55e;
   --color-delete: var(--color-error);
   --color-delete-soft: rgba(229, 72, 77, 0.12);
+  /* 主色边框与辅色柔和背景：补充语义中间层，消除各页面 rgba 硬编码 */
+  --color-primary-border: rgba(43, 108, 255, 0.2);
+  --color-accent-soft: rgba(122, 76, 255, 0.08);
+  --color-success-border: rgba(26, 170, 85, 0.25);
+  --color-success-ring: rgba(26, 170, 85, 0.15);
 
   /* 焦点环：表单元素统一使用 box-shadow 模拟，替代 outline */
   --focus-ring: 0 0 0 3px var(--color-primary-ring);
@@ -91,6 +96,11 @@
     --color-insert-soft: rgba(22, 163, 74, 0.2);
     --color-insert-border: #4ade80;
     --color-delete-soft: rgba(229, 72, 77, 0.18);
+    /* 新增语义变量暗色模式覆盖 */
+    --color-primary-border: rgba(91, 140, 255, 0.3);
+    --color-accent-soft: rgba(122, 76, 255, 0.14);
+    --color-success-border: rgba(26, 170, 85, 0.35);
+    --color-success-ring: rgba(26, 170, 85, 0.22);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);

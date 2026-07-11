@@ -173,16 +173,16 @@ const meta: SiteMeta = {
 
   .blog-article__tag {
     color: var(--color-primary);
-    background: rgba(43, 108, 255, 0.08);
+    background: var(--color-primary-soft);
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 12px;
     text-decoration: none;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast);
   }
 
   .blog-article__tag:hover {
-    background: rgba(43, 108, 255, 0.18);
+    background: var(--color-primary-ring);
   }
 
   /* markdown 内容渲染样式 */
@@ -324,7 +324,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-md);
     background: var(--color-bg);
     color: inherit;
-    transition: all 0.18s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
   }
 
   .post-nav__link:hover:not(.post-nav__link--placeholder) {

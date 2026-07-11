@@ -274,7 +274,7 @@ const meta: SiteMeta = {
 
   /* 过期状态颜色 */
   .jwttool__meta-item--valid {
-    border-color: rgba(26, 170, 85, 0.3);
+    border-color: var(--color-success-border);
     background: var(--color-success-soft);
   }
   .jwttool__meta-item--valid .jwttool__meta-value {
@@ -302,7 +302,7 @@ const meta: SiteMeta = {
   }
 
   .jwttool__meta-item--alg {
-    border-color: rgba(43, 108, 255, 0.3);
+    border-color: var(--color-primary-border);
     background: var(--color-primary-soft);
   }
 
@@ -342,7 +342,7 @@ const meta: SiteMeta = {
 
   .jwttool__alert code {
     font-family: var(--font-mono);
-    background: rgba(229, 72, 77, 0.12);
+    background: var(--color-delete-soft);
     padding: 1px 6px;
     border-radius: 3px;
     color: var(--color-error);
@@ -409,13 +409,13 @@ const meta: SiteMeta = {
 
   /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
   .jwttool__seg--header {
-    border-left: 3px solid #dc2626;
+    border-left: 3px solid var(--color-error);
   }
   .jwttool__seg--payload {
-    border-left: 3px solid #7c3aed;
+    border-left: 3px solid var(--color-accent);
   }
   .jwttool__seg--signature {
-    border-left: 3px solid #2563eb;
+    border-left: 3px solid var(--color-primary);
   }
 
   .jwttool__seg-head {
@@ -439,13 +439,13 @@ const meta: SiteMeta = {
   }
 
   .jwttool__seg-tag--header {
-    background: #dc2626;
+    background: var(--color-error);
   }
   .jwttool__seg-tag--payload {
-    background: #7c3aed;
+    background: var(--color-accent);
   }
   .jwttool__seg-tag--signature {
-    background: #2563eb;
+    background: var(--color-primary);
   }
 
   .jwttool__seg-desc {

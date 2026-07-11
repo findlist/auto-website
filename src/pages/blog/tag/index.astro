@@ -151,7 +151,8 @@ const meta: SiteMeta = {
     border-radius: var(--radius-md);
     background: var(--color-bg);
     color: inherit;
-    transition: all 0.18s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
   }
 
   .tag-item__link:hover {

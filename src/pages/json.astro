@@ -311,7 +311,7 @@ const meta: SiteMeta = {
 
   /* 高亮匹配文本：<mark> 包裹的关键词片段 */
   .jsontool__tree-mark {
-    background: rgba(245, 166, 35, 0.4);
+    background: var(--color-warn-border);
     color: inherit;
     padding: 0 2px;
     border-radius: 2px;
@@ -413,7 +413,7 @@ const meta: SiteMeta = {
   }
 
   .jsontool__tree-bracket--array {
-    color: #2b6cff;
+    color: var(--color-primary);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -449,15 +449,15 @@ const meta: SiteMeta = {
   }
 
   .jsontool__tree-value--string {
-    color: #1aaa55;
+    color: var(--color-success);
   }
 
   .jsontool__tree-value--number {
-    color: #2b6cff;
+    color: var(--color-primary);
   }
 
   .jsontool__tree-value--boolean {
-    color: #f5a623;
+    color: var(--color-warning);
   }
 
   .jsontool__tree-value--null {

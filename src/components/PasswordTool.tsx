@@ -118,11 +118,11 @@ interface StrengthLevel {
 function getStrengthLevel(entropy: number): StrengthLevel {
   if (entropy < 28) {
     // 极弱：可被秒级破解
-    return { label: '极弱', color: '#e5484d', percent: 15 };
+    return { label: '极弱', color: 'var(--color-error)', percent: 15 };
   }
   if (entropy < 36) {
     // 弱：分钟级破解
-    return { label: '弱', color: '#f59e0b', percent: 30 };
+    return { label: '弱', color: 'var(--color-warning)', percent: 30 };
   }
   if (entropy < 60) {
     // 一般：本地暴力需数小时-数天
