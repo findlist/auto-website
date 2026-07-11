@@ -1,0 +1,399 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import CsvMarkdownTool from '../components/CsvMarkdownTool.tsx';
+import { getSiteUrl } from '../utils/site';
+
+const SITE_URL = getSiteUrl(Astro.site);
+
+const meta: SiteMeta = {
+  title: 'CSV 与 Markdown 表格互转工具 - GFM 管道表格双向转换',
+  description:
+    '免费的在线 CSV 与 Markdown 表格互转工具：CSV 转 GFM 管道表格、Markdown 表格转 CSV。支持引号包裹与字段内换行解析、列对齐方式（左/中/右）、自定义分隔符（逗号/分号/Tab/管道符）、管道符转义。适用于技术文档编写、GitHub README 表格、数据库导出转 Markdown、博客内容迁移等场景。所有转换在浏览器本地完成，零上传、零追踪、零广告。',
+  canonical: `${SITE_URL}/csv-markdown`,
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSV 与 Markdown 表格互转工具',
+    description:
+      '在线 CSV 与 GFM Markdown 表格双向转换工具，支持引号包裹解析、列对齐方式、管道符转义、自定义分隔符。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    url: `${SITE_URL}/csv-markdown`,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSV 与 Markdown 表格互转工具</h1>
+      <p>
+        CSV 与 GFM Markdown 管道表格双向转换：手写状态机解析 CSV 引号包裹与字段内换行，
+        支持 4 种列对齐方式（左 / 中 / 右 / 默认）、4 种分隔符（逗号 / 分号 / Tab / 管道符），
+        自动处理管道符转义。适用于技术文档编写、GitHub README、数据库导出转 Markdown 等场景。
+        所有转换在浏览器本地完成。
+      </p>
+    </div>
+
+    <CsvMarkdownTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 GFM Markdown 表格？</summary>
+        <p>
+          <strong>GFM（GitHub Flavored Markdown）表格</strong>是 GitHub 扩展的 Markdown 表格语法，
+          使用管道符 <code>|</code> 分隔单元格，使用 <code>---</code> 分隔表头与数据行。
+          一个最简示例：
+          <br />
+          <code>| 姓名 | 年龄 |</code>
+          <br />
+          <code>| --- | ---: |</code>
+          <br />
+          <code>| 张三 | 28 |</code>
+          <br />
+          分隔行中的冒号 <code>:</code> 用于指定列对齐方式：<code>:---</code> 左对齐、
+          <code>:---:</code> 居中、<code>---:</code> 右对齐、<code>---</code> 默认对齐。
+          GFM 表格被 GitHub、GitLab、Notion、VS Code 等主流工具广泛支持。
+        </p>
+      </details>
+      <details>
+        <summary>CSV 中的引号包裹和转义如何处理？</summary>
+        <p>
+          本工具使用手写状态机解析 CSV，完整支持 RFC 4180 规范：
+          <br />
+          <strong>引号包裹</strong>：字段用双引号 <code>"</code> 包裹时，内部的分隔符、换行符不作为分隔符处理。
+          例如 <code>"北京,上海",28</code> 会被解析为两个字段："<code>北京,上海</code>" 和 "<code>28</code>"。
+          <br />
+          <strong>引号转义</strong>：字段内的双引号用两个连续双引号 <code>""</code> 表示。
+          例如 <code>"他说""你好""",3</code> 会被解析为 "<code>他说"你好"</code>" 和 "<code>3</code>"。
+          <br />
+          <strong>字段内换行</strong>：引号包裹的字段可以包含换行符，不会被当作行结束。
+          这对于多行文本字段（如地址、描述）非常重要。
+        </p>
+      </details>
+      <details>
+        <summary>Markdown 表格中的管道符如何转义？</summary>
+        <p>
+          Markdown 表格使用 <code>|</code> 作为单元格分隔符。如果单元格内容本身包含 <code>|</code>，
+          需要转义为 <code>\|</code>，否则会被误认为单元格边界。
+          <br />
+          <strong>CSV → Markdown</strong> 方向：工具自动将单元格中的 <code>|</code> 转义为 <code>\|</code>。
+          <br />
+          <strong>Markdown → CSV</strong> 方向：工具自动将 <code>\|</code> 还原为 <code>|</code>。
+          <br />
+          例如 CSV 字段 "<code>a|b</code>" 转为 Markdown 后为 "<code>a\|b</code>"，
+          反向转换时正确还原。注意：Markdown 表格不支持单元格内换行，含换行的 CSV 字段会被合并为单行。
+        </p>
+      </details>
+      <details>
+        <summary>列对齐方式有什么影响？</summary>
+        <p>
+          GFM 表格的分隔行可以指定列对齐方式，影响表格在某些渲染器中的显示效果：
+          <br />
+          <strong>左对齐</strong>（<code>:---</code>）：列内容左对齐，适用于文本列
+          <br />
+          <strong>居中</strong>（<code>:---:</code>）：列内容居中对齐，适用于标题或短文本
+          <br />
+          <strong>右对齐</strong>（<code>---:</code>）：列内容右对齐，适用于数字列（金额、数量、百分比）
+          <br />
+          <strong>默认</strong>（<code>---</code>）：由渲染器决定，通常为左对齐
+          <br />
+          注意：对齐方式仅影响显示，不影响数据内容。并非所有 Markdown 渲染器都支持对齐方式
+         （如部分博客平台会忽略冒号），但 GitHub、GitLab、VS Code 等主流平台均支持。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具和 CSV/JSON 互转工具有什么区别？</summary>
+        <p>
+          两个工具专注于不同方向：
+          <br />
+          <strong>CSV / JSON 互转</strong>：专注于数据格式转换（CSV ↔ JSON），支持嵌套对象展平、
+          智能类型推断（数字 / 布尔 / null 自动识别）、Excel 兼容下载。适用于数据导入导出、API 对接场景。
+          <br />
+          <strong>CSV 与 Markdown 互转</strong>：专注于文档格式转换（CSV ↔ Markdown 表格），
+          支持列对齐方式、管道符转义、GFM 表格语法。适用于技术文档编写、README 表格、博客内容迁移场景。
+          <br />
+          两者互补：前者处理数据结构，后者处理文档呈现。例如从数据库导出 CSV 后，
+          可先用 CSV/JSON 互转做数据清洗，再用本工具转为 Markdown 表格写入文档。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具适合哪些使用场景？</summary>
+        <p>
+          ① <strong>GitHub README 编写</strong>：将 Excel / CSV 数据转为 Markdown 表格写入 README；
+          <br />
+          ② <strong>技术博客文档</strong>：将数据库查询结果或 Excel 表格转为 Markdown 表格；
+          <br />
+          ③ <strong>数据库导出转文档</strong>：SQL 客户端导出 CSV 后转为 Markdown 表格；
+          <br />
+          ④ <strong>Markdown 表格数据提取</strong>：从 Markdown 文档中提取表格数据转为 CSV 供程序处理；
+          <br />
+          ⑤ <strong>Wiki / 文档迁移</strong>：将 Confluence、Notion 导出的表格数据在 CSV 与 Markdown 间转换；
+          <br />
+          ⑥ <strong>数据校对</strong>：将 Markdown 表格转为 CSV 后在 Excel 中校对，再转回 Markdown。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有 CSV 解析、Markdown 表格生成与转换由 JavaScript 在你本地执行，
+          不会发送任何输入文本或转换结果到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSV Markdown 互转工具专属样式 */
+  .csvmd {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 模式切换标签 */
+  .csvmd__mode {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .csvmd__mode-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast),
+      box-shadow var(--transition-fast);
+  }
+
+  .csvmd__mode-btn:hover {
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .csvmd__mode-btn--active {
+    background: var(--color-bg);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 选项面板 */
+  .csvmd__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .csvmd__opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--color-text-soft);
+  }
+
+  .csvmd__opt span {
+    white-space: nowrap;
+  }
+
+  .csvmd__opt select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+  }
+
+  .csvmd__opt select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--color-primary-ring);
+  }
+
+  .csvmd__opt--checkbox {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .csvmd__opt--checkbox input {
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+  }
+
+  /* 工具栏 */
+  .csvmd__toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .csvmd__btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), color var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .csvmd__btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .csvmd__btn--primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .csvmd__btn--primary:hover {
+    background: var(--color-primary-hover, var(--color-primary));
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  .csvmd__btn--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 双栏布局 */
+  .csvmd__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .csvmd__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .csvmd__panel-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .csvmd__textarea {
+    width: 100%;
+    min-height: 320px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .csvmd__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--color-primary-ring);
+  }
+
+  .csvmd__textarea--output {
+    background: var(--color-bg-soft);
+  }
+
+  .csvmd__textarea::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* 错误提示 */
+  .csvmd__error {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-danger-soft);
+    border: 1px solid var(--color-danger-border);
+    color: var(--color-danger);
+    font-size: 13.5px;
+  }
+
+  /* 统计信息 */
+  .csvmd__stats {
+    display: flex;
+    gap: 24px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    color: var(--color-text-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .csvmd__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .csvmd__textarea {
+      min-height: 240px;
+    }
+
+    .csvmd__options {
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .csvmd__mode-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .csvmd__toolbar {
+      gap: 6px;
+    }
+
+    .csvmd__btn {
+      padding: 7px 12px;
+      font-size: 13px;
+    }
+
+    .csvmd__stats {
+      gap: 16px;
+    }
+  }
+
+  /* 暗色模式 */
+  :global(.dark) .csvmd__textarea--output {
+    background: var(--color-bg-soft);
+  }
+</style>

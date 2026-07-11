@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '61 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
+    '62 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码等编码转换、加密哈希、时间日期、代码调试工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -264,6 +264,15 @@ const tools = [
     available: true,
     category: '编码转换',
     keywords: 'csv json 转换 表格 数据 互转 tsv excel 导出 导入 分隔符 类型推断 智能类型',
+  },
+  {
+    href: '/csv-markdown',
+    title: 'CSV 与 Markdown 表格互转',
+    desc: 'CSV 与 GFM Markdown 管道表格双向转换：手写状态机解析 CSV 引号包裹与字段内换行，支持 4 种列对齐方式（左/中/右/默认）、4 种分隔符（逗号/分号/Tab/管道符）、管道符自动转义。适用于 GitHub README 表格、技术文档编写、数据库导出转 Markdown、博客内容迁移等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '编码转换',
+    keywords: 'csv markdown 表格 转换 gfm 管道 对齐 readme 文档 博客 迁移',
   },
   {
     href: '/json-to-xml',
