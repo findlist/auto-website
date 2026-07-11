@@ -1,0 +1,441 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TextShadowTool from '../components/TextShadowTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 文字阴影生成器 - 在线 text-shadow 可视化工具',
+  description:
+    '免费的在线 CSS text-shadow 文字阴影可视化生成器：支持多层阴影叠加、X/Y 偏移、模糊半径、颜色全参数调节，可编辑预览文字、字号、字重、文字颜色与背景色，实时预览效果，一键复制 CSS 代码。内置霓虹、3D、浮雕、描边、凹陷、硬阴影、发光 7 组预设效果。适用于标题设计、按钮文字、Logo 效果、海报排版等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 文字阴影生成器',
+    description: '在线 text-shadow 文字阴影可视化生成器，支持多层阴影叠加与全参数调节，可编辑预览文字与背景色，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 文字阴影生成器</h1>
+      <p>
+        可视化生成 CSS <code>text-shadow</code> 文字阴影：支持多层阴影叠加，每层可调节 X/Y 偏移、模糊半径、
+        颜色。可编辑预览文字、字号、字重、文字颜色与背景色，实时预览效果，一键复制 CSS 代码。
+        内置霓虹、3D、浮雕、描边、凹陷、硬阴影、发光 7 组预设。适用于标题设计、按钮文字、Logo 效果、
+        海报排版等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <TextShadowTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>text-shadow 的完整语法是什么？</summary>
+        <p>
+          完整语法为 <code>text-shadow: &lt;offset-x&gt; &lt;offset-y&gt; &lt;blur-radius&gt;? &lt;color&gt;</code>。
+          其中 <code>offset-x</code> 与 <code>offset-y</code> 必填，控制阴影的水平和垂直位移；
+          <code>blur-radius</code> 可选，控制阴影模糊程度（值为 0 时阴影锐利）；<code>color</code> 为阴影颜色。
+          多层阴影用逗号分隔，从前到后依次叠加。与 <code>box-shadow</code> 不同，<code>text-shadow</code>
+          没有 <code>spread-radius</code>（扩散半径）和 <code>inset</code>（内阴影）参数。
+        </p>
+      </details>
+      <details>
+        <summary>text-shadow 和 box-shadow 有什么区别？</summary>
+        <p>
+          <strong>作用对象不同</strong>：<code>text-shadow</code> 只作用于文字本身，阴影跟随文字轮廓；
+          <code>box-shadow</code> 作用于元素的整个盒模型，阴影跟随元素边界框。
+          <br /><strong>参数差异</strong>：<code>text-shadow</code> 只有 x、y、blur、color 四个参数；
+          <code>box-shadow</code> 额外支持 <code>spread-radius</code>（扩散）和 <code>inset</code>（内阴影）。
+          <br /><strong>性能差异</strong>：大量文字使用 <code>text-shadow</code> 时，尤其是大模糊半径，
+          可能比 <code>box-shadow</code> 更消耗 GPU 性能，因为阴影需要跟随每个字符的轮廓渲染。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现霓虹灯发光效果？</summary>
+        <p>
+          霓虹灯效果的核心是多层零偏移阴影叠加：每一层都有较大的模糊半径但不同透明度，模拟光晕由内向外渐弱。
+          典型配方：<code>text-shadow: 0 0 10px rgba(0,200,255,0.8), 0 0 20px rgba(0,200,255,0.5), 0 0 40px rgba(0,150,255,0.3);</code>。
+          关键点：① <code>x/y 偏移为 0</code>，阴影居中；② 模糊半径递增（10→20→40），模拟光晕扩散；
+          ③ 透明度递减（0.8→0.5→0.3），模拟光晕渐弱；④ 文字颜色与阴影色一致或为白色，增强发光感。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现 3D 立体文字效果？</summary>
+        <p>
+          3D 效果通过多层零模糊阴影逐像素偏移实现，模拟文字的"厚度"。
+          典型配方：<code>text-shadow: 1px 1px 0 #c0c0c0, 2px 2px 0 #b0b0b0, 3px 3px 0 #a0a0a0, 4px 4px 0 #909090, 5px 5px 0 #808080;</code>。
+          关键点：① <code>模糊半径为 0</code>，每层都是锐利投影；② <code>x/y 偏移逐层递增</code>（1→2→3→4→5），
+          模拟厚度方向；③ 颜色从浅到深渐变，模拟受光面到背光面的过渡。层数越多，3D 厚度越明显，一般 4-6 层即可。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现文字描边效果？</summary>
+        <p>
+          CSS 没有原生的 <code>text-stroke</code> 属性（<code>-webkit-text-stroke</code> 兼容性有限），
+          常用 <code>text-shadow</code> 的 8 方向零偏移阴影模拟描边。需要 8 层阴影分别向 8 个方向（上、下、左、右、
+          左上、右上、左下、右下）偏移 1px，颜色为描边色。典型配方：
+          <code>text-shadow: -1px 0 #333, 1px 0 #333, 0 -1px #333, 0 1px #333, -1px -1px #333, 1px 1px #333, -1px 1px #333, 1px -1px #333;</code>。
+          本工具的"描边"预设已内置此效果。
+        </p>
+      </details>
+      <details>
+        <summary>多层阴影叠加的顺序有什么影响？</summary>
+        <p>
+          多层阴影用逗号分隔，浏览器<strong>从前到后</strong>依次绘制，第一层在最上层（离文字最近），
+          最后一层在最底层。这意味着：对于 3D 效果，浅色阴影（近处）在前，深色阴影（远处）在后，
+          才能模拟正确的光照层次。对于霓虹效果，小模糊大透明度（内层光晕）在前，大模糊小透明度（外层光晕）
+          在后，才能模拟光晕由内向外渐弱。本工具支持拖动层顺序调整（通过删除后重新添加实现）。
+        </p>
+      </details>
+      <details>
+        <summary>text-shadow 的浏览器兼容性如何？</summary>
+        <p>
+          <code>text-shadow</code> 是 CSS2.1 的成熟特性（CSS3 重新纳入），所有现代浏览器（Chrome、Firefox、
+          Safari、Edge）全面支持，IE10+ 也已支持（IE9 及以下不支持）。多层阴影、负偏移、大模糊半径等特性
+          在所有支持的浏览器中均可用。移动端 iOS Safari 与 Android Chrome 完全支持。
+          无需添加浏览器前缀，可直接用于生产环境。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有阴影参数调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS 文字阴影生成器专属样式 */
+  .tst {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区 */
+  .tst__preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 40px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: background 0.15s ease;
+    overflow: hidden;
+  }
+
+  .tst__preview-text {
+    line-height: 1.4;
+    text-align: center;
+    word-break: break-word;
+    transition: text-shadow 0.15s ease, color 0.15s ease, font-size 0.1s ease;
+  }
+
+  /* 预览配置面板 */
+  .tst__preview-config {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px 20px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tst__cfg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .tst__cfg-field > span {
+    font-weight: 600;
+  }
+
+  .tst__cfg-field input[type='text'],
+  .tst__cfg-field select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  .tst__cfg-field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .tst__cfg-field--color {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tst__cfg-field--color input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  /* 按钮 */
+  .tst__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .tst__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .tst__btn--preset {
+    font-size: 13px;
+  }
+
+  .tst__btn--add {
+    align-self: flex-start;
+    padding: 8px 18px;
+    border-style: dashed;
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .tst__btn--copy {
+    font-size: 13px;
+  }
+
+  .tst__btn--danger {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--color-danger, #e53e3e);
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  .tst__btn--danger:hover {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+  }
+
+  /* 预设按钮组 */
+  .tst__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tst__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 阴影层列表 */
+  .tst__layers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tst__empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  .tst__layer {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .tst__layer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .tst__layer-enable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tst__layer-enable input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 参数网格 */
+  .tst__layer-params {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 20px;
+  }
+
+  .tst__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .tst__field > span {
+    font-weight: 600;
+  }
+
+  .tst__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .tst__field output {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+  }
+
+  .tst__field--color {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tst__field--color > span {
+    margin-right: 4px;
+  }
+
+  .tst__field--color input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  .tst__color-text {
+    width: 130px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* CSS 代码输出 */
+  .tst__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tst__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .tst__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tst__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .tst__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .tst__layer,
+    .tst__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .tst__color-text {
+      background: rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .tst__layer-params {
+      grid-template-columns: 1fr;
+    }
+    .tst__preview-config {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .tst__preview {
+      padding: 24px 12px;
+      min-height: 120px;
+    }
+    .tst__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .tst__presets-label {
+      text-align: center;
+    }
+  }
+</style>
