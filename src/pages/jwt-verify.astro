@@ -260,14 +260,14 @@ const meta: SiteMeta = {
   }
 
   .jwv__label code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
   }
 
   .jwv__char-count {
     font-size: 12px;
     color: var(--color-text-muted);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   /* JWT 输入框 */
@@ -278,7 +278,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
     resize: vertical;
@@ -304,7 +304,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__alg-desc code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -386,7 +386,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
@@ -404,7 +404,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.5;
     resize: vertical;
@@ -424,7 +424,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__key-hint code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -447,7 +447,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__key-area--none code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-error);
     font-weight: 600;
   }
@@ -469,7 +469,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__checkbox code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -556,7 +556,7 @@ const meta: SiteMeta = {
     font-size: 12.5px;
     font-weight: 500;
     color: var(--color-text-soft);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   /* 签名验证详情 */
@@ -618,7 +618,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__claim-field {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-weight: 700;
     color: var(--color-primary);
     font-size: 13px;
@@ -668,7 +668,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__claim-value code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text);
   }
 
@@ -703,17 +703,17 @@ const meta: SiteMeta = {
     overflow: hidden;
   }
 
-  /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
+  /* 三段彩色左边框：header 红、payload 紫、signature 蓝，统一使用语义变量 */
   .jwv__seg--header {
-    border-left: 3px solid #dc2626;
+    border-left: 3px solid var(--color-error);
   }
 
   .jwv__seg--payload {
-    border-left: 3px solid #7c3aed;
+    border-left: 3px solid var(--color-accent);
   }
 
   .jwv__seg--signature {
-    border-left: 3px solid #2563eb;
+    border-left: 3px solid var(--color-primary);
   }
 
   .jwv__seg-head {
@@ -733,19 +733,19 @@ const meta: SiteMeta = {
     font-size: 12px;
     font-weight: 600;
     color: #fff;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   .jwv__seg-tag--header {
-    background: #dc2626;
+    background: var(--color-error);
   }
 
   .jwv__seg-tag--payload {
-    background: #7c3aed;
+    background: var(--color-accent);
   }
 
   .jwv__seg-tag--signature {
-    background: #2563eb;
+    background: var(--color-primary);
   }
 
   .jwv__seg-json {
@@ -753,7 +753,7 @@ const meta: SiteMeta = {
     padding: 10px 12px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12.5px;
     line-height: 1.6;
     overflow: auto;
@@ -772,7 +772,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__seg-b64 code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text-soft);
   }
 
@@ -780,7 +780,7 @@ const meta: SiteMeta = {
     padding: 10px 12px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12px;
     word-break: break-all;
     line-height: 1.6;
@@ -851,7 +851,7 @@ const meta: SiteMeta = {
   }
 
   .jwv__next-hint code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }

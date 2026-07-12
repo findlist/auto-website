@@ -405,14 +405,15 @@ const meta: SiteMeta = {
     font-family: var(--font-mono);
   }
 
-  /* 命名捕获组键样式：用紫色与数字组蓝色区分 */
+  /* 命名捕获组键样式：用紫色与数字组蓝色区分，统一使用辅色语义变量 */
   .regextool__group-key--named {
-    color: #7c3aed;
+    color: var(--color-accent);
   }
 
   @media (prefers-color-scheme: dark) {
     .regextool__group-key--named {
-      color: #c4b5fd;
+      /* 暗色模式下使用更亮的紫色保证可读性，与 JWT 工具族保持一致 */
+      color: #c084fc;
     }
   }
 

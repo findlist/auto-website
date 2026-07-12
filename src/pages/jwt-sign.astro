@@ -276,7 +276,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text-soft);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -325,7 +325,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__alg-desc code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -375,7 +375,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__label code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
   }
 
@@ -387,7 +387,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
     resize: vertical;
@@ -427,7 +427,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__claims-ref code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -472,7 +472,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 13px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
@@ -490,7 +490,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__key-hint code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -519,7 +519,7 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.5;
     resize: vertical;
@@ -566,7 +566,7 @@ const meta: SiteMeta = {
     background: var(--color-bg);
     color: var(--color-text-soft);
     font-size: 12px;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     cursor: pointer;
   }
 
@@ -597,7 +597,7 @@ const meta: SiteMeta = {
     background: var(--color-bg-code);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 11.5px;
     line-height: 1.5;
     overflow: auto;
@@ -618,7 +618,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__key-area--none code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-error);
     font-weight: 600;
   }
@@ -666,7 +666,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__alert code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     background: rgba(220, 38, 38, 0.1);
     padding: 1px 6px;
     border-radius: 3px;
@@ -736,7 +736,7 @@ const meta: SiteMeta = {
     padding: 12px 14px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12.5px;
     line-height: 1.6;
     overflow: auto;
@@ -755,7 +755,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__token-info code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-primary);
     font-weight: 600;
   }
@@ -774,17 +774,17 @@ const meta: SiteMeta = {
     overflow: hidden;
   }
 
-  /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
+  /* 三段彩色左边框：header 红、payload 紫、signature 蓝，统一使用语义变量 */
   .jwts__seg--header {
-    border-left: 3px solid #dc2626;
+    border-left: 3px solid var(--color-error);
   }
 
   .jwts__seg--payload {
-    border-left: 3px solid #7c3aed;
+    border-left: 3px solid var(--color-accent);
   }
 
   .jwts__seg--signature {
-    border-left: 3px solid #2563eb;
+    border-left: 3px solid var(--color-primary);
   }
 
   .jwts__seg-head {
@@ -804,19 +804,19 @@ const meta: SiteMeta = {
     font-size: 12px;
     font-weight: 600;
     color: #fff;
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
   }
 
   .jwts__seg-tag--header {
-    background: #dc2626;
+    background: var(--color-error);
   }
 
   .jwts__seg-tag--payload {
-    background: #7c3aed;
+    background: var(--color-accent);
   }
 
   .jwts__seg-tag--signature {
-    background: #2563eb;
+    background: var(--color-primary);
   }
 
   .jwts__seg-json {
@@ -824,7 +824,7 @@ const meta: SiteMeta = {
     padding: 10px 12px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12.5px;
     line-height: 1.6;
     overflow: auto;
@@ -843,7 +843,7 @@ const meta: SiteMeta = {
   }
 
   .jwts__seg-b64 code {
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     color: var(--color-text-soft);
   }
 
@@ -851,7 +851,7 @@ const meta: SiteMeta = {
     padding: 10px 12px;
     background: var(--color-bg-code);
     color: var(--color-text);
-    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-family: var(--font-mono);
     font-size: 12px;
     word-break: break-all;
     line-height: 1.6;
