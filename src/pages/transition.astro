@@ -1,0 +1,512 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TransitionTool from '../components/TransitionTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS transition 过渡生成器 - 在线 cubic-bezier 曲线可视化编辑工具',
+  description:
+    '免费的在线 CSS transition 过渡生成器：可视化配置 transition-property、duration、timing-function、delay 四大属性。内置 cubic-bezier 曲线编辑器（SVG 可拖拽控制点，支持 y 轴超出 [0,1] 实现回弹效果）与 steps() 阶跃函数支持。鼠标悬停实时预览过渡效果，一键复制 CSS 代码。内置平滑过渡、弹性回弹、慢出、快入、阶跃动画、旋转、缩放回弹、阴影过渡 8 组预设。适用于按钮悬停、状态切换、交互动效等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS transition 过渡生成器',
+    description: '在线 CSS transition 过渡生成器，可视化编辑 cubic-bezier 曲线，实时预览，一键复制 CSS 代码。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS transition 过渡生成器</h1>
+      <p>
+        可视化生成 CSS <code>transition</code> 过渡：配置 property、duration、timing-function、delay
+        四大属性。内置 <code>cubic-bezier</code> 曲线编辑器（SVG 可拖拽控制点，支持 y 轴超出 [0,1]
+        实现回弹）与 <code>steps()</code> 阶跃函数。鼠标悬停实时预览过渡效果，一键复制 CSS 代码。
+        内置平滑、弹性、慢出、快入、阶跃、旋转、缩放、阴影 8 组预设。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <TransitionTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CSS transition 属性包含哪些子属性？</summary>
+        <p>
+          <code>transition</code> 是 4 个子属性简写，顺序为：
+          <br />① <code>transition-property</code>：要过渡的 CSS 属性，如 transform、opacity、all
+          <br />② <code>transition-duration</code>：过渡时长，如 0.3s
+          <br />③ <code>transition-timing-function</code>：缓动函数，如 ease、linear、cubic-bezier()、steps()
+          <br />④ <code>transition-delay</code>：延迟开始时间，如 0.1s
+          <br />简写示例：<code>transition: transform 0.3s ease 0s;</code>
+          <br />多属性过渡用逗号分隔：<code>transition: transform 0.3s, opacity 0.2s;</code>
+        </p>
+      </details>
+      <details>
+        <summary>transition 和 animation 有什么区别？</summary>
+        <p>
+          两者都产生过渡效果，但触发机制与控制粒度不同：
+          <br /><strong>transition（被动）</strong>：仅在属性值变化时（如 :hover、:focus、class 切换）
+          播放一次过渡，无法定义中间关键帧，只能从起始值到结束值插值。适合简单的悬停反馈、状态切换。
+          <br /><strong>animation（主动）</strong>：通过 @keyframes 定义多个关键帧，可循环播放
+          （infinite）、控制方向（alternate）、暂停（paused）、延迟填充（fill-mode）。适合加载动画、
+          入场效果、持续循环动效。
+          <br />简单悬停用 transition，复杂动效用 <a href="/animation">animation</a>，两者经常配合使用。
+        </p>
+      </details>
+      <details>
+        <summary>cubic-bezier 的四个参数代表什么？</summary>
+        <p>
+          <code>cubic-bezier(x1, y1, x2, y2)</code> 定义一条三次贝塞尔曲线，P0=(0,0) 与 P3=(1,1) 固定，
+          P1=(x1,y1) 与 P2=(x2,y2) 是两个可调控制点：
+          <br />① <strong>x 轴</strong>表示时间进度（0 到 1），<strong>y 轴</strong>表示属性值进度（0 到 1）
+          <br />② x1、x2 必须在 [0,1] 范围内（CSS 规范要求）
+          <br />③ y1、y2 可以超出 [0,1]：y &lt; 0 产生"回弹先反向"效果，y &gt; 1 产生"超出后回弹"效果
+          <br />④ 曲线斜率表示瞬时速度：陡峭=快，平缓=慢
+          <br />常见预设的等价 cubic-bezier：
+          <code>ease = cubic-bezier(0.25, 0.1, 0.25, 1)</code>、
+          <code>ease-in = cubic-bezier(0.42, 0, 1, 1)</code>
+          <br />本工具的曲线编辑器支持拖拽 P1/P2 实时调整，y 轴允许超出 [0,1] 实现回弹。
+        </p>
+      </details>
+      <details>
+        <summary>steps() 阶跃函数是什么？jump-start 和 jump-end 有什么区别？</summary>
+        <p>
+          <code>steps(N, jump-term)</code> 将过渡分成 N 个等长的阶跃跳变，而非平滑插值：
+          <br />① <code>steps(4, jump-end)</code>（等价 <code>step-end</code>）：过渡分 4 步，每步在
+          <strong>结束时</strong>跳变。进度曲线为 0%→0%→25%→50%→75%→100% 的阶跃。
+          <br />② <code>steps(4, jump-start)</code>（等价 <code>step-start</code>）：过渡分 4 步，每步在
+          <strong>开始时</strong>跳变。进度曲线为 0%→25%→50%→75%→100%→100% 的阶跃。
+          <br />③ 还支持 <code>jump-none</code>（不分额外跳跃）与 <code>jump-both</code>（首尾都跳），
+          但较少使用。
+          <br />steps() 适合制作"机械感"动画、像素风动效、加载进度条阶跃效果。本工具支持
+          1-20 步可调，jump-start/jump-end 自由切换。
+        </p>
+      </details>
+      <details>
+        <summary>transition-property: all 有什么风险？</summary>
+        <p>
+          <code>transition-property: all</code> 会对元素的所有可过渡属性应用过渡，虽然写法简洁但有两个风险：
+          <br />① <strong>性能风险</strong>：无意中触发了不想过渡的属性（如 padding、margin 变化），
+          可能导致意外重排，影响页面流畅度。
+          <br />② <strong>预期不符</strong>：某些属性变化（如 left/top 在拖拽时）被过渡后会产生滞后感，
+          影响交互响应。
+          <br />最佳实践：<strong>显式声明需要过渡的属性</strong>，如
+          <code>transition: transform 0.3s, opacity 0.2s;</code>，避免使用 all。
+          本工具默认列出常用可过渡属性供选择。
+        </p>
+      </details>
+      <details>
+        <summary>哪些 CSS 属性可以过渡？哪些不能？</summary>
+        <p>
+          可过渡的属性必须是<strong>可插值的</strong>（数值、颜色、长度等可计算中间值的类型）：
+          <br /><strong>可过渡</strong>：transform、opacity、color、background-color、border-color、
+          border-radius、box-shadow、text-shadow、width、height、margin、padding、top/left/right/bottom、
+          font-size、line-height、filter 等。
+          <br /><strong>不可过渡</strong>：display（none↔block 无中间态）、position（static↔absolute
+          无中间态）、float、clear、font-family（离散值无法插值）。
+          <br />注意：<code>transform</code> 与 <code>opacity</code> 是 GPU 加速的合成层属性，过渡性能
+          最好，优先选择。修改 width/height/top/left 会触发重排，性能较差。
+        </p>
+      </details>
+      <details>
+        <summary>如何实现回弹（overshoot）效果？</summary>
+        <p>
+          回弹效果通过 cubic-bezier 的 y 轴超出 [0,1] 实现：
+          <br />① <strong>超出后回弹</strong>（overshoot）：y2 &gt; 1，元素先超过目标值再回弹。
+          如 <code>cubic-bezier(0.34, 1.56, 0.64, 1)</code> 产生弹性放大效果。
+          <br />② <strong>先反向再前进</strong>（anticipation）：y1 &lt; 0，元素先轻微反向再加速前进。
+          如 <code>cubic-bezier(0.68, -0.55, 0.27, 1.55)</code> 同时具有反向预备与超出回弹。
+          <br />本工具的"弹性回弹"与"缩放回弹"预设即利用此特性。在曲线编辑器中拖拽控制点
+          到 [0,1] 矩形外即可看到回弹效果。
+          <br />注意：回弹效果仅对可超出值域的属性有效（如 transform: scale），对 opacity 等限制
+          在 [0,1] 的属性，超出部分会被截断。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有属性配置、曲线编辑、过渡预览与 CSS 生成由
+          JavaScript 在你本地执行，不会发送到任何服务器。cubic-bezier 曲线通过 SVG 实时渲染，
+          全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS transition 过渡生成器专属样式 */
+  .trn {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预设按钮组 */
+  .trn__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trn__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .trn__preset-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .trn__preset-btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  /* 主布局：左右两栏 */
+  .trn__main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* 左侧配置面板 */
+  .trn__config {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trn__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .trn__field label {
+    font-weight: 500;
+  }
+
+  .trn__field strong {
+    color: var(--color-primary, #2b6cff);
+    font-family: var(--font-mono);
+  }
+
+  .trn__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .trn__field select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  /* 按钮组 */
+  .trn__btn-group {
+    display: flex;
+    gap: 6px;
+  }
+
+  .trn__type-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .trn__type-btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .trn__type-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* cubic-bezier 曲线编辑器 */
+  .trn__bezier {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .trn__bezier-svg {
+    display: flex;
+    justify-content: center;
+  }
+
+  .trn__bezier-svg svg {
+    width: 220px;
+    height: 220px;
+    overflow: visible;
+    touch-action: none;
+  }
+
+  .trn__bezier-grid {
+    fill: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    stroke: var(--color-border);
+    stroke-width: 1;
+  }
+
+  .trn__bezier-ref {
+    stroke: var(--color-border);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.6;
+  }
+
+  .trn__bezier-ctrl {
+    stroke: var(--color-text-soft, #999);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+  }
+
+  .trn__bezier-curve {
+    fill: none;
+    stroke: var(--color-primary, #2b6cff);
+    stroke-width: 2.5;
+  }
+
+  .trn__bezier-end {
+    fill: var(--color-text-soft, #999);
+  }
+
+  .trn__bezier-handle {
+    fill: var(--color-primary, #2b6cff);
+    stroke: #fff;
+    stroke-width: 2;
+    cursor: grab;
+  }
+
+  .trn__bezier-handle:active {
+    cursor: grabbing;
+    r: 8;
+  }
+
+  .trn__bezier-vals {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .trn__bezier-vals label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .trn__bezier-vals input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* steps 配置 */
+  .trn__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* 右侧输出区 */
+  .trn__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 预览区 */
+  .trn__preview {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trn__preview-hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  .trn__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 24px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-bg);
+    background-image:
+      linear-gradient(var(--color-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .trn__box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2b6cff 0%, #7a4cff 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(43, 108, 255, 0.3);
+  }
+
+  .trn__timing-display {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  .trn__timing-display code {
+    color: var(--color-primary, #2b6cff);
+    font-family: var(--font-mono);
+    word-break: break-all;
+  }
+
+  /* 代码区 */
+  .trn__code {
+    position: relative;
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trn__copy {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .trn__copy:hover {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .trn__code pre {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+  }
+
+  .trn__code code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-text);
+    white-space: pre;
+    line-height: 1.6;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .trn__bezier-grid {
+      fill: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  /* 平板断点：768px */
+  @media (max-width: 768px) {
+    .trn__main {
+      grid-template-columns: 1fr;
+    }
+
+    .trn__bezier-vals {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* 移动端断点：414px */
+  @media (max-width: 414px) {
+    .trn__config,
+    .trn__preview,
+    .trn__code {
+      padding: 12px;
+    }
+
+    .trn__bezier-svg svg {
+      width: 180px;
+      height: 180px;
+    }
+
+    .trn__stage {
+      min-height: 160px;
+      padding: 16px;
+    }
+
+    .trn__box {
+      width: 80px;
+      height: 80px;
+      font-size: 12px;
+    }
+  }
+</style>
