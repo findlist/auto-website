@@ -1,0 +1,602 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import GridTool from '../components/GridTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS Grid 可视化生成器 - 在线网格布局属性调试工具',
+  description:
+    '免费的在线 CSS Grid 可视化生成器：完整支持 display、grid-template-columns、grid-template-rows、gap、justify-items、align-items、justify-content、align-content、grid-auto-flow 容器属性，以及 grid-column span、grid-row span、justify-self、align-self 单项属性。点击预览中的项即可独立编辑跨列跨行，实时预览二维布局效果，一键复制容器与项的 CSS 代码。内置三列等宽、圣杯布局、侧栏+主内容、卡片网格、Header-Main-Footer、杂志布局、垂直堆叠、水平排列 8 组预设。支持 fr / px / % / auto 四种轨道类型动态增删。适用于页面主布局、卡片墙、仪表盘、杂志式排版、响应式网格等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS Grid 可视化生成器',
+    description: '在线 Grid 网格布局属性可视化生成器，支持容器与单项属性全参数调节，动态增删轨道，点击项即可独立编辑跨列跨行，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS Grid 可视化生成器</h1>
+      <p>
+        可视化生成 CSS <code>grid</code> 二维布局：完整支持容器属性（<code>display</code>、
+        <code>grid-template-columns</code>、<code>grid-template-rows</code>、<code>gap</code>、
+        <code>justify-items</code>、<code>align-items</code>、<code>justify-content</code>、
+        <code>align-content</code>、<code>grid-auto-flow</code>）与单项属性
+        （<code>grid-column</code> 跨列、<code>grid-row</code> 跨行、<code>justify-self</code>、
+        <code>align-self</code>）。支持 <code>fr</code> / <code>px</code> / <code>%</code> /
+        <code>auto</code> 四种轨道类型动态增删，点击预览中的项即可独立编辑跨列跨行，实时预览布局，
+        一键复制 CSS 代码。内置三列等宽、圣杯、侧栏+主内容、卡片网格、Header-Main-Footer、杂志布局、
+        垂直堆叠、水平排列 8 组预设。适用于页面主布局、卡片墙、仪表盘、杂志式排版等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <GridTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CSS Grid 的核心概念是什么？与 Flexbox 有什么区别？</summary>
+        <p>
+          CSS Grid 是 CSS 的<strong>二维布局模型</strong>，可同时控制行与列两个方向上的元素排列。
+          核心概念：<strong>轨道（track）</strong>是 grid 容器中行或列的定义，由
+          <code>grid-template-columns</code>（列轨道）和 <code>grid-template-rows</code>（行轨道）
+          声明；<strong>单元格（cell）</strong>是行轨道与列轨道的交叉区域；<strong>网格线（grid line）</strong>
+          是轨道之间的分隔线，编号从 1 开始，可用 <code>grid-column: 1 / 3</code> 指定起止线。
+          <br /><strong>与 Flexbox 的核心区别</strong>：Flexbox 是<strong>一维布局</strong>，一次只能控制一个方向
+          （横向或纵向），适合组件内排列；Grid 是<strong>二维布局</strong>，可同时控制行列，适合页面主布局、
+          卡片墙、仪表盘等需要行列对齐的场景。两者并非互斥——页面主布局用 Grid，组件内部用 Flexbox，
+          是现代前端布局的黄金组合。
+        </p>
+      </details>
+      <details>
+        <summary>fr 单位是什么？与 px、% 有什么区别？</summary>
+        <p>
+          <code>fr</code>（fractional unit，分数单位）是 Grid 特有的<strong>弹性长度单位</strong>，
+          表示按比例分配容器的<strong>剩余空间</strong>。
+          <br /><strong>与 px 的区别</strong>：<code>200px</code> 是固定宽度，不随容器尺寸变化；
+          <code>1fr</code> 是弹性宽度，容器变大则变宽，容器变小则变窄。
+          <br /><strong>与 % 的区别</strong>：<code>%</code> 基于容器<strong>总尺寸</strong>计算，
+          <code>50%</code> 永远是容器一半；<code>fr</code> 基于容器<strong>剩余空间</strong>计算，
+          <code>1fr 1fr</code> 平分剩余空间，但若同时有 <code>200px 1fr</code>，则先扣除 200px 再平分剩余。
+          <br />常见用法：<code>1fr 1fr 1fr</code> 三等分、<code>1fr 2fr 1fr</code> 中间宽两边窄、
+          <code>200px 1fr</code> 固定侧栏+自适应主内容。本工具的轨道编辑器支持 fr / px / % / auto 四种类型。
+        </p>
+      </details>
+      <details>
+        <summary>grid-template-columns 和 grid-auto-columns 有什么区别？</summary>
+        <p>
+          <strong>grid-template-columns</strong>：显式声明网格的<strong>列轨道</strong>，定义网格的固定结构。
+          例如 <code>grid-template-columns: 1fr 1fr 1fr</code> 明确创建 3 列网格。
+          <br /><strong>grid-auto-columns</strong>：定义<strong>隐式列轨道</strong>的尺寸，即当项的数量超出
+          显式定义的网格时，自动生成的列的尺寸。例如网格只定义了 3 列但有 5 个项，第 4、5 个项会进入隐式列，
+          其尺寸由 <code>grid-auto-columns</code> 决定（默认 <code>auto</code>，按内容撑开）。
+          <br />类似地，<code>grid-template-rows</code> 与 <code>grid-auto-rows</code> 也是显式与隐式的关系。
+          <br />本工具暂未开放 <code>grid-auto-columns</code> / <code>grid-auto-rows</code> 编辑，
+          隐式轨道尺寸默认为 <code>auto</code>，由内容撑开。
+        </p>
+      </details>
+      <details>
+        <summary>grid-auto-flow 的 row、column、dense 分别是什么含义？</summary>
+        <p>
+          <code>grid-auto-flow</code> 控制项在网格中的<strong>自动排列方向与策略</strong>：
+          <br /><strong>row</strong>（默认）：按行优先排列，先填满第一行再换到第二行。
+          <br /><strong>column</strong>：按列优先排列，先填满第一列再换到第二列。
+          <br /><strong>row dense</strong> / <strong>column dense</strong>：在 row/column 基础上启用
+          <strong>密集填充</strong>算法——当某个项因为跨列/跨行占用空间时，后续较小的项会回头填补前面的空隙。
+          <br />dense 策略会让网格更紧凑，但可能打乱 DOM 顺序导致视觉顺序与可访问性顺序不一致，
+          对屏幕阅读器用户体验不友好。本工具在容器属性面板提供 4 种 auto-flow 模式切换。
+        </p>
+      </details>
+      <details>
+        <summary>justify-items / align-items 与 justify-content / align-content 有什么区别？</summary>
+        <p>
+          这是 Grid 中最容易混淆的两组属性，核心区别是<strong>作用对象</strong>：
+          <br /><strong>justify-items / align-items</strong>：控制<strong>项在单元格内</strong>的对齐方式。
+          <code>justify-items: center</code> 让所有项在单元格内水平居中，
+          <code>align-items: center</code> 让所有项在单元格内垂直居中。
+          <br /><strong>justify-content / align-content</strong>：控制<strong>整个网格在容器内</strong>的分布方式，
+          仅当网格总尺寸小于容器尺寸时生效。例如 <code>grid-template-columns: 100px 100px</code> 总宽 200px，
+          而容器宽 400px，<code>justify-content: center</code> 让 200px 网格在 400px 容器内水平居中。
+          <br />记忆口诀：<strong>items 管单元格内项的位置，content 管整个网格在容器内的位置</strong>。
+          本工具同时提供这两组属性的完整选项。
+        </p>
+      </details>
+      <details>
+        <summary>grid-column: span 2 是什么意思？如何让某个项跨多列？</summary>
+        <p>
+          <code>grid-column: span 2</code> 表示该项<strong>跨越 2 个列轨道</strong>。这是 grid 项布局的核心能力之一。
+          <br /><strong>两种语法</strong>：
+          <br />1. <code>span N</code>：跨越 N 个轨道，从自动分配的起始位置开始。最常用，无需关心具体网格线编号。
+          <br />2. <code>start / end</code>：指定起止网格线编号，如 <code>grid-column: 1 / 3</code> 表示从第 1 条线
+          到第 3 条线，跨越 2 个轨道。
+          <br />类似地，<code>grid-row: span 2</code> 表示跨越 2 个行轨道。
+          <br />本工具的项编辑面板提供 colSpan / rowSpan 滑块（1-6），实时生成 <code>span N</code> 语法。
+          常见用法：杂志布局中头图跨 2 列、仪表盘中图表跨 2 行、卡片墙中大卡片跨 2x2。
+        </p>
+      </details>
+      <details>
+        <summary>gap 属性在 Grid 中如何工作？row-gap 和 column-gap 可以不同吗？</summary>
+        <p>
+          <code>gap</code> 在 Grid 中定义<strong>轨道之间的间距</strong>，是 <code>row-gap</code> 和
+          <code>column-gap</code> 的简写。
+          <br /><strong>单值语法</strong>：<code>gap: 16px</code> 等价于 <code>row-gap: 16px; column-gap: 16px</code>，
+          行列间距相同。
+          <br /><strong>双值语法</strong>：<code>gap: 16px 8px</code> 等价于 <code>row-gap: 16px; column-gap: 8px</code>，
+          第一个值是行间距，第二个值是列间距，可以不同。
+          <br />本工具提供行列间距独立调节滑块（0-48px），生成的代码会根据是否相等自动选择单值或双值简写：
+          行列相等时输出 <code>gap: 12px</code>，不等时输出 <code>gap: 16px 8px</code>，保持代码简洁。
+          <br /><code>gap</code> 仅作用于轨道之间，不影响容器边缘——这与 margin 不同，是 Grid 布局推荐用 gap 替代 margin 的原因。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有轨道编辑、属性调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS Grid 可视化生成器专属样式 */
+  .grd {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区 */
+  .grd__preview {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    overflow: hidden;
+  }
+
+  .grd__stage {
+    /* 默认容器属性由 React inline style 控制 */
+    min-height: 280px;
+    padding: 16px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  /* grid 项样式 */
+  .grd__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    min-height: 56px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, outline-color 0.15s ease;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    user-select: none;
+  }
+
+  .grd__item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .grd__item:focus-visible {
+    outline-color: var(--color-primary, #2b6cff);
+  }
+
+  .grd__item--selected {
+    outline-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 4px rgba(43, 108, 255, 0.2);
+  }
+
+  .grd__item-label {
+    pointer-events: none;
+  }
+
+  .grd__item-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 500;
+    pointer-events: none;
+  }
+
+  .grd__item-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .grd__item-remove:hover:not(:disabled) {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  .grd__item-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* 预设按钮组 */
+  .grd__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .grd__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 通用按钮 */
+  .grd__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .grd__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .grd__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .grd__btn--add {
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 8px 18px;
+    border-style: dashed;
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .grd__btn--add-track {
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--color-primary, #2b6cff);
+    border-style: dashed;
+  }
+
+  .grd__btn--remove-track {
+    padding: 0;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .grd__btn--remove-track:hover:not(:disabled) {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  /* 控制面板布局 */
+  .grd__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .grd__panel {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .grd__panel-title {
+    margin: 0 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .grd__panel-sub {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  .grd__empty {
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 字段（按钮组 / 滑块） */
+  .grd__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .grd__field--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .grd__field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .grd__field-label {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .grd__field-label output {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .grd__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 按钮组 */
+  .grd__btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .grd__btn-option {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .grd__btn-option:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .grd__btn-option--active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  .grd__btn-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 轨道编辑器 */
+  .grd__track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .grd__track-index {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+    color: var(--color-text-soft);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .grd__btn-group--track {
+    flex: 0 0 auto;
+  }
+
+  .grd__btn-option--track {
+    padding: 3px 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+
+  .grd__track-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .grd__track-input:focus {
+    outline: 2px solid var(--color-primary, #2b6cff);
+    outline-offset: 1px;
+  }
+
+  .grd__track-auto {
+    flex: 1;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .grd__track-empty {
+    margin: 0;
+    padding: 8px 12px;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-style: italic;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm);
+  }
+
+  /* CSS 代码输出 */
+  .grd__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .grd__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .grd__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .grd__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .grd__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .grd__panel,
+    .grd__code,
+    .grd__stage {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .grd__item-remove,
+    .grd__btn--remove-track {
+      background: rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .grd__panels {
+      grid-template-columns: 1fr;
+    }
+    .grd__stage {
+      min-height: 200px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .grd__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .grd__presets-label {
+      text-align: center;
+    }
+    .grd__btn-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .grd__btn-option {
+      width: 100%;
+    }
+    .grd__btn-group--track {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .grd__btn-option--track {
+      width: auto;
+    }
+    .grd__track {
+      flex-wrap: wrap;
+    }
+  }
+</style>
