@@ -1,0 +1,518 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TransformTool from '../components/TransformTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS transform 可视化工具 - 在线 translate / rotate / scale / skew 生成器',
+  description:
+    '免费的在线 CSS transform 可视化生成器：支持 translate 平移、rotate 旋转、scale 缩放、skew 倾斜四种变换，transform-origin 变换原点 9 预设位置，px 与 % 单位切换，6 组预设效果（旋转、放大、倾斜、平移、翻转、组合），实时预览变换前后对比，一键复制 CSS 代码。适用于动画设计、卡片悬浮、图标旋转、视差效果等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS transform 可视化工具',
+    description: '在线 CSS transform 可视化生成器，支持 translate / rotate / scale / skew 四种变换，transform-origin 9 预设位置，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS transform 可视化工具</h1>
+      <p>
+        可视化生成 CSS <code>transform</code> 变换：支持 <code>translate</code> 平移、
+        <code>rotate</code> 旋转、<code>scale</code> 缩放、<code>skew</code> 倾斜四种变换组合，
+        <code>transform-origin</code> 变换原点 9 预设位置，px 与 % 单位切换。实时预览变换前后对比效果，
+        一键复制 CSS 代码。内置旋转、放大、倾斜、平移、翻转、组合 6 组预设。
+        适用于动画设计、卡片悬浮、图标旋转、视差效果等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <TransformTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>transform 的四种基本变换是什么？</summary>
+        <p>
+          CSS <code>transform</code> 提供四种基本 2D 变换，可组合使用：
+          <br />① <strong>translate(tx, ty)</strong>：平移，沿 X/Y 轴移动元素，正值向右下、负值向左上
+          <br />② <strong>rotate(deg)</strong>：旋转，以原点为中心顺时针（正值）或逆时针（负值）旋转
+          <br />③ <strong>scale(sx, sy)</strong>：缩放，&gt;1 放大、&lt;1 缩小、&lt;0 翻转（负值镜像）
+          <br />④ <strong>skew(xDeg, yDeg)</strong>：倾斜，沿 X/Y 轴倾斜元素，产生平行四边形效果
+          <br />四种变换可用空格分隔组合：<code>transform: translate(20px, 0) rotate(15deg) scale(1.2);</code>，
+          顺序影响最终效果（矩阵乘法不满足交换律）。
+        </p>
+      </details>
+      <details>
+        <summary>transform-origin 变换原点有什么作用？</summary>
+        <p>
+          <code>transform-origin</code> 定义变换的参考点，默认是元素中心（50% 50%）。
+          变换原点决定了 rotate 旋转的中心、scale 缩放的中心、skew 倾斜的基准点。
+          <br />例如 <code>transform: rotate(45deg)</code>：
+          <br />- 原点 <code>center center</code>（默认）：以元素中心旋转 45°
+          <br />- 原点 <code>left top</code>：以元素左上角为轴心旋转，元素会"甩"到右下方
+          <br />- 原点 <code>right bottom</code>：以元素右下角为轴心旋转，元素会"甩"到左上方
+          <br />本工具提供 3x3 共 9 个预设原点位置（左上/上/右上/左/中/右/左下/下/右下），
+          可视化展示不同原点对变换结果的影响。
+        </p>
+      </details>
+      <details>
+        <summary>translate 的 px 和 % 单位有什么区别？</summary>
+        <p>
+          <strong>px（像素）</strong>：固定平移距离，与元素尺寸无关。<code>translate(50px, 0)</code>
+          无论元素多大，都向右平移 50 像素。<br />
+          <strong>%（百分比）</strong>：相对于元素<strong>自身</strong>尺寸计算（注意：不是父元素）。
+          <code>translate(50%, 0)</code> 向右平移元素自身宽度的 50%。这是制作"居中弹窗"的关键技巧：
+          <br /><code>position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);</code>
+          <br />先用 left/top 将元素左上角放到父元素中心，再用 transform: translate(-50%, -50%)
+          向左上平移自身宽高的一半，实现完美居中。这种写法无需知道元素确切尺寸，响应式友好。
+        </p>
+      </details>
+      <details>
+        <summary>scale 的负值是什么效果？</summary>
+        <p>
+          <code>scale</code> 的负值表示镜像翻转：
+          <br />① <code>scaleX(-1)</code>：水平翻转（左右镜像），常见于"镜像图标"
+          <br />② <code>scaleY(-1)</code>：垂直翻转（上下镜像），常用于"倒影效果"
+          <br />③ <code>scale(-1, -1)</code>：旋转 180°（等效于 <code>rotate(180deg)</code>）
+          <br />④ <code>scale(-0.5, -0.5)</code>：旋转 180° + 缩小一半
+          <br />负值缩放是制作镜像效果的最简洁方式，比用 <code>rotate</code> + <code>translate</code>
+          组合更优雅。常见应用：双向箭头图标、对称图案、倒影动画。
+          <br />注意：负值缩放会改变元素的可点击区域位置，需要配合 <code>transform-origin</code> 精确定位。
+        </p>
+      </details>
+      <details>
+        <summary>transform 的应用顺序重要吗？</summary>
+        <p>
+          非常重要！<code>transform</code> 的多个变换按<strong>从右到左</strong>的顺序应用（矩阵乘法），
+          顺序不同结果完全不同：
+          <br /><code>transform: translate(100px, 0) rotate(45deg)</code>
+          <br />- 先旋转 45°，再向右平移 100px（沿原始 X 轴方向）
+          <br /><code>transform: rotate(45deg) translate(100px, 0)</code>
+          <br />- 先向右平移 100px，再以原点为中心旋转 45°（元素会"甩"到右下方向）
+          <br />这是初学者最常犯的错误——以为变换顺序无关紧要。建议：
+          <br />① 先 <code>translate</code>（定位），再 <code>rotate</code>（旋转），最后 <code>scale</code>（缩放）
+          <br />② 或在开发者工具中实时调试顺序，观察效果差异
+          <br />本工具按"平移→旋转→缩放→倾斜"的固定顺序生成代码，符合大多数场景的直觉。
+        </p>
+      </details>
+      <details>
+        <summary>skew 倾斜和 rotate 旋转有什么区别？</summary>
+        <p>
+          两者都会让元素"变形"，但本质完全不同：
+          <br />① <strong>rotate（旋转）</strong>：整体旋转，元素形状不变，仅改变方向。
+          正方形旋转 45° 后是菱形，但仍保持四边等长、四角相等。
+          <br />② <strong>skew（倾斜）</strong>：剪切变形，元素形状改变。
+          正方形倾斜 45° 后变成平行四边形，四边仍等长但四角不再相等。
+          <br /><strong>视觉差异</strong>：
+          <br />- rotate 后元素"看起来还是原来那个"，只是方向变了
+          <br />- skew 后元素"被压扁拉长"，形状发生根本变化
+          <br /><strong>应用差异</strong>：
+          <br />- rotate 用于旋转图标、动画转场、3D 翻转
+          <br />- skew 用于斜切文字、平行四边形按钮、动态变形动画
+          <br />两者可组合：<code>transform: skew(15deg) rotate(10deg)</code> 产生更复杂的变形效果。
+        </p>
+      </details>
+      <details>
+        <summary>transform 会影响布局吗？</summary>
+        <p>
+          <code>transform</code> 不会影响文档流布局，这是它的核心特性：
+          <br />① <strong>不脱离文档流</strong>：与 <code>position: absolute</code> 不同，
+          transform 后的元素仍占据原始位置，不会让相邻元素重新排列
+          <br />② <strong>不影响兄弟元素</strong>：变换后的元素可能视觉上重叠到其他元素，
+          但其他元素不会因此移动
+          <br />③ <strong>性能优化</strong>：transform 是 GPU 加速的合成层属性，
+          不会触发重排（reflow），仅触发重绘（repaint）+ 合成（composite）
+          <br />④ <strong>动画首选</strong>：与 <code>top</code>、<code>left</code>、<code>width</code>、
+          <code>height</code> 等会触发重排的属性相比，<code>transform</code> 动画性能更优
+          <br />这就是为什么动画推荐使用 <code>transform</code> + <code>opacity</code>，
+          而不是改变 <code>top/left</code>。
+        </p>
+      </details>
+      <details>
+        <summary>transform 的浏览器兼容性如何？</summary>
+        <p>
+          <code>transform</code> 是 CSS3 的成熟特性，所有现代浏览器（Chrome、Firefox、Safari、Edge）
+          全面支持 2D 变换。3D 变换（<code>translate3d</code>、<code>rotateX</code>、<code>perspective</code>）
+          兼容性稍差但主流浏览器均已支持。
+          <br />旧版浏览器需要前缀：
+          <br />- <code>-webkit-transform</code>（Safari 早期版本）
+          <br />- <code>-ms-transform</code>（IE9）
+          <br />- <code>-moz-transform</code>（Firefox 早期版本）
+          <br />现代项目无需前缀，IE10+ 完整支持无前缀语法。
+          <code>transform-origin</code> 兼容性与 <code>transform</code> 一致。
+          <br />百分比值在 <code>translate</code> 中所有现代浏览器完整支持，
+          但 <code>transform-origin</code> 的百分比值在 IE9 中略有差异（已无实际影响）。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有变换参数调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS transform 可视化工具专属样式 */
+  .trf {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区容器 */
+  .trf__preview-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 预览舞台：相对定位，原点轮廓与变换后方块叠加 */
+  .trf__preview-stage {
+    position: relative;
+    width: 360px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 原始位置轮廓（虚线参考） */
+  .trf__preview-ghost {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* 变换后的实际方块 */
+  .trf__preview-target {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-sm);
+    transition: transform 0.15s ease, transform-origin 0.15s ease, background 0.15s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* 预览控件 */
+  .trf__preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trf__preview-bg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .trf__preview-bg input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  .trf__preview-tip {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-style: italic;
+  }
+
+  /* 按钮 */
+  .trf__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .trf__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .trf__btn--reset {
+    color: var(--color-danger, #e53e3e);
+    border-color: var(--color-danger, #e53e3e);
+  }
+
+  .trf__btn--reset:hover {
+    background: var(--color-danger, #e53e3e);
+    color: #fff;
+  }
+
+  /* 预设按钮组 */
+  .trf__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trf__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 控制区 */
+  .trf__controls {
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trf__control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .trf__control-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 分段选择 */
+  .trf__seg {
+    display: inline-flex;
+    width: fit-content;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .trf__seg-btn {
+    padding: 6px 16px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .trf__seg-btn:not(:last-child) {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .trf__seg-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 变换分区 */
+  .trf__section {
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trf__section-title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 滑块列表 */
+  .trf__sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .trf__slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .trf__slider-label {
+    min-width: 60px;
+    color: var(--color-text-soft);
+  }
+
+  .trf__slider input {
+    flex: 1;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .trf__slider-value {
+    min-width: 56px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: right;
+  }
+
+  /* 变换原点 3x3 网格 */
+  .trf__origin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-width: 200px;
+  }
+
+  .trf__origin-btn {
+    padding: 12px 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .trf__origin-btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .trf__origin-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .trf__origin-current {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .trf__origin-current code {
+    font-family: var(--font-mono);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  /* CSS 代码输出 */
+  .trf__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .trf__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .trf__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .trf__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .trf__preview-controls,
+    .trf__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .trf__seg-btn {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .trf__preview-ghost {
+      border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .trf__preview-stage {
+      width: 100%;
+      max-width: 360px;
+      height: 220px;
+    }
+    .trf__preview-tip {
+      display: none;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .trf__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .trf__presets-label {
+      text-align: center;
+    }
+    .trf__slider {
+      flex-wrap: wrap;
+    }
+    .trf__slider-label {
+      min-width: 50px;
+      font-size: 12px;
+    }
+    .trf__seg-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .trf__preview-stage {
+      height: 200px;
+    }
+    .trf__preview-ghost,
+    .trf__preview-target {
+      width: 100px;
+      height: 100px;
+    }
+  }
+</style>

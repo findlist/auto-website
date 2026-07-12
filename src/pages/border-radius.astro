@@ -1,0 +1,433 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import BorderRadiusTool from '../components/BorderRadiusTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS border-radius 生成器 - 在线圆角可视化工具',
+  description:
+    '免费的在线 CSS border-radius 可视化生成器：支持单一值、四角独立、椭圆八值三种编辑模式，px 与 % 单位切换，6 组预设效果（圆形、胶囊、卡片、不对称、椭圆、波浪），实时预览效果并一键复制 CSS 代码。适用于按钮设计、卡片圆角、头像裁剪、不规则形状等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS border-radius 生成器',
+    description: '在线 CSS border-radius 可视化生成器，支持单一值、四角独立、椭圆八值三种模式，实时预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS border-radius 生成器</h1>
+      <p>
+        可视化生成 CSS <code>border-radius</code> 圆角：支持单一值、四角独立、椭圆八值三种编辑模式，
+        px 与 % 单位切换。实时预览圆角效果，一键复制 CSS 代码。内置圆形、胶囊、卡片、不对称、
+        椭圆、波浪 6 组预设。适用于按钮设计、卡片圆角、头像裁剪、不规则形状等前端开发场景。
+        所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <BorderRadiusTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>border-radius 的完整语法是什么？</summary>
+        <p>
+          完整语法：<code>border-radius: &lt;左上&gt; &lt;右上&gt; &lt;右下&gt; &lt;左下&gt; / &lt;水平&gt; &lt;垂直&gt;;</code>。
+          斜杠前为水平半径，斜杠后为垂直半径。简写规则遵循 CSS 标准：1 个值表示四角统一，
+          2 个值为（左上右下 / 右上左下），3 个值为（左上 / 右上左下 / 右下），4 个值为（左上 / 右上 / 右下 / 左下）。
+          例如 <code>border-radius: 10px 20px 30px 40px / 20px 10px 40px 30px</code> 表示四角椭圆。
+        </p>
+      </details>
+      <details>
+        <summary>px 和 % 单位有什么区别？</summary>
+        <p>
+          <strong>px（像素）</strong>：固定圆角半径，与元素尺寸无关。例如 <code>border-radius: 12px</code>
+          在小元素和大元素上都呈现 12 像素的圆角。<br />
+          <strong>%（百分比）</strong>：相对于元素自身宽高计算。例如 <code>border-radius: 50%</code>
+          会让正方形元素变成圆形、矩形元素变成椭圆。50% 是制作圆形头像、徽章的关键技巧。
+          混合使用：<code>border-radius: 50% 10px</code> 也合法，但通常选择一种单位保持一致性。
+        </p>
+      </details>
+      <details>
+        <summary>如何用 border-radius 制作圆形？</summary>
+        <p>
+          对于正方形元素（宽高相等），设置 <code>border-radius: 50%</code> 即可变成圆形。
+          也可以使用 <code>border-radius: 999px</code> 或更大的固定值，效果相同（超出元素半径时会被裁剪）。
+          注意：如果元素是矩形（宽高不等），50% 会产生椭圆而非圆形。
+          制作圆形头像的常见做法：固定宽高为相同值（如 48x48），再设置 <code>border-radius: 50%</code>。
+        </p>
+      </details>
+      <details>
+        <summary>胶囊形按钮怎么实现？</summary>
+        <p>
+          胶囊形（pill / capsule）是左右两端为半圆的矩形按钮，常见于标签、按钮、徽章。
+          实现方式：<code>border-radius: 999px</code>（或任意大于元素高度一半的值）。
+          浏览器会自动将圆角半径裁剪到元素高度的一半，从而形成完美的半圆端。
+          这种写法比精确计算 <code>height / 2</code> 更简洁，且响应式布局下无需重新计算。
+        </p>
+      </details>
+      <details>
+        <summary>四角独立模式的应用场景？</summary>
+        <p>
+          四角独立模式允许每个角设置不同的圆角半径，常用于：
+          <br />① <strong>装饰性卡片</strong>：左上右下圆角大、右上左下圆角小，形成动感的斜向构图
+          <br />② <strong>对话气泡</strong>：仅在某一角保留小圆角模拟"尖角"
+          <br />③ <strong>折叠卡片</strong>：顶部圆角、底部直角，模拟撕下的便签效果
+          <br />④ <strong>波浪边</strong>：对角交替圆与直角，形成波浪轮廓（见预设"波浪"）
+          <br />本工具的"四角独立"模式提供 4 个独立滑块，可自由组合任意圆角配置。
+        </p>
+      </details>
+      <details>
+        <summary>椭圆八值模式（/斜杠语法）何时使用？</summary>
+        <p>
+          椭圆八值模式用于制作椭圆形圆角，每个角的水平半径与垂直半径独立控制。
+          语法：<code>border-radius: 100% 100% 100% 100% / 50% 50% 50% 50%</code>，
+          斜杠前为四个角的水平半径，斜杠后为四个角的垂直半径。常见应用：
+          <br />① <strong>椭圆头像</strong>：宽高不等的矩形元素，设置 100% / 50% 形成椭圆
+          <br />② <strong>叶子形状</strong>：左右两端尖锐、上下圆润
+          <br />③ <strong>拱形</strong>：仅顶部圆角，模拟隧道入口
+          <br />本工具的"椭圆八值"模式提供 8 个独立滑块，覆盖最复杂的圆角组合。
+        </p>
+      </details>
+      <details>
+        <summary>border-radius 的浏览器兼容性如何？</summary>
+        <p>
+          <code>border-radius</code> 是 CSS3 的成熟特性，所有现代浏览器（Chrome、Firefox、Safari、Edge）
+          全面支持，IE9+ 也已支持基本语法。百分比单位、四角独立、椭圆八值（斜杠语法）在 IE9+ 均可用。
+          旧版浏览器（IE8 及以下）需要 <code>-webkit-</code>、<code>-moz-</code> 前缀，
+          现代项目无需前缀可直接用于生产环境。百分比值在某些极端情况下（如嵌套元素）可能产生意外渲染，
+          建议关键场景测试主流浏览器。
+        </p>
+      </details>
+      <details>
+        <summary>border-radius 会影响性能吗？</summary>
+        <p>
+          一般情况下 <code>border-radius</code> 性能优秀，不会成为性能瓶颈。但需注意：
+          <br />① <strong>避免超大圆角配合动画</strong>：圆角半径超过元素尺寸时，浏览器需要计算裁剪路径，
+          配合 transition / animation 可能引发重绘开销
+          <br />② <strong>避免与 box-shadow 叠加滥用</strong>：圆角 + 阴影 + 透明度同时使用时，
+          浏览器需要为每帧重新计算阴影路径，可能影响滚动流畅度
+          <br />③ <strong>避免 % 单位与响应式布局过度动画</strong>：百分比随元素尺寸变化，
+          响应式断点切换时圆角会突变
+          <br />正常使用（卡片、按钮、头像）完全无性能问题。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有圆角参数调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS border-radius 生成器专属样式 */
+  .brr {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区容器 */
+  .brr__preview-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 棋盘格背景可视化透明区域 */
+  .brr__preview-wrap {
+    background-image:
+      linear-gradient(45deg, var(--color-border) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--color-border) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--color-border) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--color-border) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: var(--color-bg);
+  }
+
+  /* 预览方块 */
+  .brr__preview {
+    transition: border-radius 0.15s ease, background 0.15s ease, width 0.15s ease, height 0.15s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 预览控件 */
+  .brr__preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .brr__preview-size,
+  .brr__preview-bg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .brr__preview-size input {
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .brr__preview-size output {
+    min-width: 48px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: right;
+  }
+
+  .brr__preview-bg input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: none;
+  }
+
+  /* 按钮 */
+  .brr__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .brr__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .brr__btn--copy {
+    font-size: 13px;
+  }
+
+  /* 预设按钮组 */
+  .brr__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .brr__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 控制区 */
+  .brr__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .brr__control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .brr__control-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 分段选择 */
+  .brr__seg {
+    display: inline-flex;
+    width: fit-content;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .brr__seg-btn {
+    padding: 6px 16px;
+    border: none;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .brr__seg-btn:not(:last-child) {
+    border-right: 1px solid var(--color-border);
+  }
+
+  .brr__seg-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 滑块列表 */
+  .brr__sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 椭圆模式：八值用两列网格 */
+  .brr__sliders--grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+  }
+
+  .brr__slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .brr__slider-label {
+    min-width: 80px;
+    color: var(--color-text-soft);
+  }
+
+  .brr__slider input {
+    flex: 1;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .brr__slider-value {
+    min-width: 48px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: right;
+  }
+
+  /* CSS 代码输出 */
+  .brr__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .brr__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .brr__output-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .brr__code {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .brr__preview-wrap {
+      --color-border: rgba(255, 255, 255, 0.1);
+    }
+    .brr__preview-controls,
+    .brr__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .brr__seg-btn {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .brr__preview-wrap {
+      padding: 16px;
+    }
+    .brr__preview-controls {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brr__controls {
+      flex-direction: column;
+    }
+    .brr__sliders--grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .brr__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .brr__presets-label {
+      text-align: center;
+    }
+    .brr__slider {
+      flex-wrap: wrap;
+    }
+    .brr__slider-label {
+      min-width: 70px;
+      font-size: 12px;
+    }
+    .brr__seg-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  }
+</style>
