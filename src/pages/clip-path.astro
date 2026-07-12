@@ -1,0 +1,481 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ClipPathTool from '../components/ClipPathTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS clip-path 路径裁剪生成器 - 在线多边形/圆形/椭圆裁剪可视化工具',
+  description:
+    '免费的在线 CSS clip-path 路径裁剪可视化生成器：支持 polygon 多边形、circle 圆形、ellipse 椭圆、inset 内嵌矩形四种裁剪类型，多边形可交互式拖拽顶点编辑，点击空白添加顶点，选中删除。内置三角形、菱形、五边形、六边形、星形、心形、箭头、对话气泡 8 组预设。实时预览裁剪效果，一键复制 CSS 代码。适用于创意形状、异形卡片、SVG 蒙版替代等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS clip-path 路径裁剪生成器',
+    description: '在线 CSS clip-path 可视化生成器，支持 polygon 多边形交互式顶点编辑、circle 圆形、ellipse 椭圆、inset 内嵌矩形四种裁剪类型，实时预览，一键复制 CSS 代码。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS clip-path 路径裁剪生成器</h1>
+      <p>
+        可视化生成 CSS <code>clip-path</code> 路径裁剪：支持 polygon 多边形（交互式顶点拖拽编辑）、
+        circle 圆形、ellipse 椭圆、inset 内嵌矩形四种裁剪类型。多边形模式可在编辑器中点击空白添加顶点、
+        拖拽顶点调整位置、选中后删除。内置三角形、菱形、五边形、六边形、星形、心形、箭头、对话气泡 8 组预设。
+        实时预览裁剪效果，一键复制 CSS 代码。适用于创意形状、异形卡片、SVG 蒙版替代等前端开发场景。
+        所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ClipPathTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>clip-path 的完整语法是什么？支持哪些函数？</summary>
+        <p>
+          <code>clip-path</code> 属性裁剪元素的可视区域，支持四类函数：
+          <br />① <code>polygon(x1% y1%, x2% y2%, ...)</code> 多边形，由顶点列表定义形状，至少 3 个顶点
+          <br />② <code>circle(r% at cx% cy%)</code> 圆形，半径 r 与中心坐标（cx, cy）
+          <br />③ <code>ellipse(rx% ry% at cx% cy%)</code> 椭圆，水平半径 rx、垂直半径 ry 与中心坐标
+          <br />④ <code>inset(top% right% bottom% left% round rpx)</code> 内嵌矩形，四边内缩距离与可选圆角
+          <br />此外还支持 <code>path()</code>（SVG 路径语法）和引用 SVG <code>&lt;clipPath&gt;</code> 元素。
+          坐标可使用百分比（相对元素自身宽高）或像素值。本工具覆盖前四种最常用函数。
+        </p>
+      </details>
+      <details>
+        <summary>如何使用多边形顶点编辑器？</summary>
+        <p>
+          切换到"多边形"类型后，预览区下方会出现 SVG 交互式编辑器：
+          <br />① <strong>拖拽顶点</strong>：按住任意白色圆点拖动，实时调整顶点位置
+          <br />② <strong>添加顶点</strong>：点击编辑器空白区域，在选中顶点之后（或末尾）插入新顶点
+          <br />③ <strong>选中顶点</strong>：点击顶点变为红色，表示已选中
+          <br />④ <strong>删除顶点</strong>：选中红色顶点后点击"删除选中点"按钮（至少保留 3 个顶点构成多边形）
+          <br />顶点坐标以百分比表示（0-100%），相对元素自身宽高。配合预设可快速生成三角形、星形等常见形状。
+        </p>
+      </details>
+      <details>
+        <summary>circle 和 ellipse 的参数怎么理解？</summary>
+        <p>
+          <strong>circle(r% at cx% cy%)</strong>：r 是半径（百分比，相对元素对角线长度的一半），
+          cx/cy 是圆心坐标（百分比，相对元素宽高）。例如 <code>circle(50% at 50% 50%)</code>
+          是居中圆形，<code>circle(50% at 0% 0%)</code> 圆心在左上角。
+          <br /><strong>ellipse(rx% ry% at cx% cy%)</strong>：rx 是水平半径、ry 是垂直半径，
+          分别相对元素宽度和高度。例如 <code>ellipse(50% 30% at 50% 50%)</code> 是水平宽、垂直窄的椭圆。
+          <br />百分比单位使裁剪区域随元素尺寸自适应，适合响应式布局。
+        </p>
+      </details>
+      <details>
+        <summary>inset 函数的 round 参数有什么用？</summary>
+        <p>
+          <code>inset(top right bottom left round rpx)</code> 从四边向内缩进指定距离后形成矩形裁剪区域，
+          round 关键字后的值定义矩形四角的圆角半径。例如
+          <code>inset(10% 10% 10% 10% round 20px)</code> 生成四边各缩进 10%、圆角 20px 的圆角矩形。
+          <br />这比 <code>border-radius</code> 更灵活——border-radius 只圆角不裁剪内容，
+          inset round 既裁剪又圆角。round 参数支持与 border-radius 相同的语法（单值、四角独立、椭圆八值斜杠语法）。
+          <br />省略 round 时裁剪为直角矩形。
+        </p>
+      </details>
+      <details>
+        <summary>clip-path 与 overflow:hidden 和 border-radius 有什么区别？</summary>
+        <p>
+          三者都能"裁剪"元素，但原理与适用场景不同：
+          <br />① <strong>overflow: hidden</strong>：裁剪超出元素盒模型的内容（子元素溢出部分），
+          只能矩形裁剪，无法创建异形。常用于防止内容溢出布局。
+          <br />② <strong>border-radius</strong>：圆角化元素的可视区域与背景，但不裁剪子元素内容
+          （子元素仍可溢出到圆角外，除非配合 overflow: hidden）。仅支持圆角形状。
+          <br />③ <strong>clip-path</strong>：按任意路径（多边形、圆形、椭圆、SVG 路径）裁剪元素
+          及其子元素，是最灵活的裁剪方式。可创建三角形、星形等任意形状，且裁剪子元素内容。
+          <br />三者可组合使用：border-radius + overflow:hidden 处理圆角容器溢出，clip-path 处理创意异形。
+        </p>
+      </details>
+      <details>
+        <summary>clip-path 会影响性能吗？</summary>
+        <p>
+          <code>clip-path</code> 是 GPU 合成属性，不触发重排（reflow），仅触发重绘（repaint）+ 合成（composite），
+          性能开销可控。但需注意：
+          <br />① <strong>避免对大元素使用复杂 path()</strong>：SVG 路径裁剪计算量较大，大元素配合动画可能卡顿
+          <br />② <strong>polygon 顶点不宜过多</strong>：顶点数超过 20 个时，每帧重绘计算量增加，
+          建议动画场景控制在 10 个顶点以内
+          <br />③ <strong>配合 transition/animation 使用</strong>：clip-path 的 polygon 顶点动画
+          需顶点数相同才能插值，否则无法平滑过渡
+          <br />④ <strong>静态场景无性能顾虑</strong>：非动画场景下 clip-path 开销极小，可自由使用
+        </p>
+      </details>
+      <details>
+        <summary>clip-path 的浏览器兼容性如何？</summary>
+        <p>
+          <code>clip-path</code> 是 CSS Masking Module Level 1 标准，现代浏览器全面支持：
+          <br />① <strong>polygon/circle/ellipse/inset</strong>：Chrome 55+、Firefox 54+、Safari 13.1+、Edge 79+
+          全面支持，无需前缀
+          <br />② <strong>path()</strong>：Chrome 88+、Firefox 71+、Safari 13.1+ 支持
+          <br />③ 旧版 Safari（13.0 及以下）需要 <code>-webkit-clip-path</code> 前缀
+          <br />④ IE 完全不支持 clip-path，需降级为 overflow:hidden + border-radius 或 SVG 蒙版
+          <br />生产环境建议同时输出 <code>clip-path</code> 和 <code>-webkit-clip-path</code> 以兼容旧版 Safari。
+          本工具生成的代码仅含标准属性，旧版 Safari 需手动添加前缀。
+        </p>
+      </details>
+      <details>
+        <summary>数据安全与隐私如何保障？</summary>
+        <p>
+          本工具是纯前端应用，所有裁剪参数计算与预览渲染均在浏览器本地完成：
+          <br />① 不上传任何图片或数据到服务器，零网络请求
+          <br />② 不使用 Cookie、LocalStorage 存储用户数据
+          <br />③ 不接入任何统计、广告、第三方追踪脚本
+          <br />④ 生成的 CSS 代码仅由参数本地计算得出，不经过任何外部服务
+          <br />可放心用于商业项目调试。配套的博客文章深入讲解 clip-path 原理与应用场景，
+          欢迎结合 <a href="/border-radius">border-radius 生成器</a>、
+          <a href="/transform">transform 可视化</a>、<a href="/filter">filter 滤镜</a> 形成完整 CSS 视觉效果工具链。
+        </p>
+      </details>
+    </section>
+  </section>
+
+  <style is:global>
+    /* clip-path 工具专属样式 */
+    .clp {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 预览区容器 */
+    .clp__preview-wrap {
+      padding: 20px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* 视觉预览方块（带棋盘格背景） */
+    .clp__preview {
+      background-image:
+        linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+        linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-color: #f8fafc;
+    }
+
+    /* 多边形 SVG 编辑器容器 */
+    .clp__editor-wrap {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .clp__editor {
+      width: 100%;
+      height: 240px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .clp__editor-hint {
+      font-size: 12px;
+      color: var(--color-text-soft);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .clp__btn--del {
+      padding: 3px 10px;
+      border: 1px solid var(--color-error, #ef4444);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--color-error, #ef4444);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .clp__btn--del:hover {
+      background: var(--color-error, #ef4444);
+      color: #fff;
+    }
+
+    /* 预览控件 */
+    .clp__preview-controls {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .clp__preview-size,
+    .clp__preview-bg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--color-text-soft);
+    }
+
+    .clp__preview-size input[type='range'] {
+      width: 100px;
+      accent-color: var(--color-primary, #2b6cff);
+    }
+
+    .clp__preview-size output {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* 预设按钮组 */
+    .clp__presets {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .clp__presets-label {
+      font-size: 13px;
+      color: var(--color-text-soft);
+      margin-right: 4px;
+    }
+
+    .clp__btn {
+      padding: 7px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+    }
+
+    .clp__btn:hover {
+      border-color: var(--color-primary, #2b6cff);
+    }
+
+    .clp__btn--copy {
+      background: var(--color-primary, #2b6cff);
+      color: #fff;
+      border-color: var(--color-primary, #2b6cff);
+    }
+
+    .clp__btn--copy:hover {
+      opacity: 0.9;
+    }
+
+    /* 裁剪类型切换 */
+    .clp__controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .clp__control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .clp__control-label {
+      font-size: 12px;
+      color: var(--color-text-soft);
+    }
+
+    .clp__seg {
+      display: inline-flex;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .clp__seg-btn {
+      padding: 7px 14px;
+      border: none;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background var(--transition-fast, 0.15s);
+    }
+
+    .clp__seg-btn + .clp__seg-btn {
+      border-left: 1px solid var(--color-border);
+    }
+
+    .clp__seg-btn.is-active {
+      background: var(--color-primary, #2b6cff);
+      color: #fff;
+    }
+
+    /* 参数滑块区 */
+    .clp__sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .clp__sliders--grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px 20px;
+    }
+
+    .clp__slider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .clp__slider-label {
+      min-width: 72px;
+      font-size: 13px;
+      color: var(--color-text-soft);
+    }
+
+    .clp__slider input[type='range'] {
+      flex: 1;
+      accent-color: var(--color-primary, #2b6cff);
+    }
+
+    .clp__slider-value {
+      min-width: 48px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-text-soft);
+      text-align: right;
+    }
+
+    /* polygon 参数提示 */
+    .clp__params--polygon {
+      padding: 12px 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .clp__params-hint {
+      font-size: 13px;
+      color: var(--color-text-soft);
+      line-height: 1.6;
+    }
+
+    /* CSS 代码输出 */
+    .clp__output {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .clp__output-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .clp__output-label {
+      font-size: 12px;
+      color: var(--color-text-soft);
+      font-weight: 600;
+    }
+
+    .clp__code {
+      margin: 0;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--color-text);
+      background: var(--color-bg);
+      overflow-x: auto;
+      word-break: break-all;
+    }
+
+    /* 768px 平板断点 */
+    @media (max-width: 768px) {
+      .clp__preview {
+        width: 180px !important;
+        height: 180px !important;
+      }
+
+      .clp__editor {
+        height: 200px;
+      }
+
+      .clp__sliders--grid {
+        grid-template-columns: 1fr;
+      }
+
+      .clp__preview-controls {
+        gap: 12px;
+      }
+
+      .clp__control-label {
+        display: none;
+      }
+
+      .clp__seg-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* 414px 移动端断点 */
+    @media (max-width: 414px) {
+      .clp__preview {
+        width: 150px !important;
+        height: 150px !important;
+      }
+
+      .clp__editor {
+        height: 180px;
+      }
+
+      .clp__slider {
+        flex-wrap: wrap;
+      }
+
+      .clp__slider-label {
+        min-width: 100%;
+      }
+
+      .clp__editor-hint {
+        font-size: 11px;
+      }
+    }
+
+    /* 暗色模式适配 */
+    :global(html.dark) .clp__preview {
+      background-color: #1e293b;
+      background-image:
+        linear-gradient(45deg, #334155 25%, transparent 25%),
+        linear-gradient(-45deg, #334155 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #334155 75%),
+        linear-gradient(-45deg, transparent 75%, #334155 75%);
+    }
+
+    :global(html.dark) .clp__editor rect[fill='url(#clp-grid)'] {
+      opacity: 0.5;
+    }
+  </style>
+</BaseLayout>
