@@ -253,8 +253,8 @@ function stringifyMdTable(rows: string[][], aligns: Align[], hasHeader: boolean)
   }
   lines.push('| ' + sepCells.join(' | ') + ' |');
 
-  // 数据行
-  for (let i = Math.max(dataStart, 1); i < normalizedRows.length; i++) {
+  // 数据行：hasHeader=true 时从 1 开始（跳过表头），hasHeader=false 时从 0 开始（全部为数据行）
+  for (let i = dataStart; i < normalizedRows.length; i++) {
     const cells = normalizedRows[i].map(escapeMdCell);
     lines.push('| ' + cells.join(' | ') + ' |');
   }
