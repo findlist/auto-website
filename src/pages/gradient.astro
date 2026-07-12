@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import GradientTool from '../components/GradientTool.tsx';
 
 const meta: SiteMeta = {
-  title: 'CSS 渐变生成器 - 在线 linear-gradient / radial-gradient 可视化工具',
+  title: 'CSS 渐变生成器 - 在线 linear-gradient / radial-gradient / conic-gradient 可视化工具',
   description:
-    '免费的在线 CSS 渐变生成器：支持线性渐变（linear-gradient）与径向渐变（radial-gradient），角度调节、方向预设、颜色停止点管理、中心位置控制，实时预览效果，一键复制 CSS 代码。内置日落、海洋、极光、紫粉、暖橙、深空、三色 7 组预设渐变。适用于网页背景、按钮设计、卡片渐变、Banner 海报等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+    '免费的在线 CSS 渐变生成器：支持线性渐变（linear-gradient）、径向渐变（radial-gradient）与圆锥渐变（conic-gradient），角度调节、方向预设、颜色停止点管理、中心位置控制、起始角度设置，实时预览效果，一键复制 CSS 代码。内置日落、海洋、极光、饼图、色轮、进度环等 12 组预设渐变。适用于网页背景、按钮设计、饼图、色轮、进度环、Banner 海报等前端开发场景。全本地处理，零上传、零追踪、零广告。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'CSS 渐变生成器',
-    description: '在线 CSS 渐变可视化生成器，支持 linear-gradient 与 radial-gradient，颜色停止点管理，实时预览，一键复制 CSS。',
+    description: '在线 CSS 渐变可视化生成器，支持 linear-gradient、radial-gradient 与 conic-gradient，颜色停止点管理，实时预览，一键复制 CSS。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -27,9 +27,10 @@ const meta: SiteMeta = {
     <div class="page-hero page-hero--tool">
       <h1>CSS 渐变生成器</h1>
       <p>
-        可视化生成 CSS <code>linear-gradient</code> 线性渐变与 <code>radial-gradient</code> 径向渐变：
-        支持角度调节、方向预设、颜色停止点增删与位置调节、径向中心位置控制。实时预览效果，
-        一键复制 CSS 代码。内置日落、海洋、极光等 7 组预设渐变。适用于网页背景、按钮设计、
+        可视化生成 CSS <code>linear-gradient</code> 线性渐变、<code>radial-gradient</code> 径向渐变
+        与 <code>conic-gradient</code> 圆锥渐变：支持角度调节、方向预设、颜色停止点增删与位置调节、
+        径向中心位置控制、圆锥起始角度设置。实时预览效果，一键复制 CSS 代码。内置日落、海洋、极光、
+        饼图、色轮、进度环等 12 组预设渐变。适用于网页背景、按钮设计、饼图、色轮、进度环、
         Banner 海报等前端开发场景。所有处理在浏览器本地完成。
       </p>
     </div>
@@ -39,14 +40,17 @@ const meta: SiteMeta = {
     <section class="json-faq" aria-labelledby="faq-title">
       <h2 id="faq-title">常见问题</h2>
       <details>
-        <summary>linear-gradient 和 radial-gradient 有什么区别？</summary>
+        <summary>linear-gradient、radial-gradient 和 conic-gradient 有什么区别？</summary>
         <p>
           <strong>线性渐变（linear-gradient）</strong>：颜色沿一条直线方向过渡，适合表现方向性的光照、
           天空、条纹等效果。语法：<code>linear-gradient(&lt;angle&gt;deg, color1 pos%, color2 pos%)</code>。
           <br />
           <strong>径向渐变（radial-gradient）</strong>：颜色从中心点向外辐射扩散，适合表现光源、光晕、
           聚光灯等效果。语法：<code>radial-gradient(circle at x% y%, color1 pos%, color2 pos%)</code>。
-          两者可单独使用，也可用逗号分隔叠加（前层覆盖后层）。
+          <br />
+          <strong>圆锥渐变（conic-gradient）</strong>：颜色围绕中心点旋转过渡，适合表现饼图、色轮、
+          进度环等环形图案。语法：<code>conic-gradient(from &lt;angle&gt;deg at x% y%, color1 pos%, color2 pos%)</code>。
+          三者可单独使用，也可用逗号分隔叠加（前层覆盖后层）。
         </p>
       </details>
       <details>
@@ -107,7 +111,46 @@ const meta: SiteMeta = {
           所有现代浏览器（Chrome、Firefox、Safari、Edge）全面支持，IE10+ 也已支持。
           角度值（如 <code>45deg</code>）、多色停止点、径向中心位置等特性在 IE10+ 均可用。
           旧版浏览器需加 <code>-webkit-</code> 前缀（IE9-），现代项目无需前缀可直接用于生产环境。
-          圆锥渐变 <code>conic-gradient</code> 兼容性稍差（IE 不支持），本工具暂未包含。
+          圆锥渐变 <code>conic-gradient</code> 兼容性稍差（IE 不支持），但 Chrome 69+、Firefox 83+、
+          Safari 12.1+ 已全面支持，现代项目可放心使用。
+        </p>
+      </details>
+      <details>
+        <summary>conic-gradient 的 from 角度和 at 位置是什么？</summary>
+        <p>
+          <strong>from 角度</strong>：指定圆锥渐变的起始方向，以正上方为 0°，顺时针递增。
+          默认 0° 表示从 12 点钟方向开始，<code>from 90deg</code> 表示从 3 点钟方向开始。
+          <br />
+          <strong>at 位置</strong>：指定圆锥渐变的中心点，语法与径向渐变一致，用
+          <code>at x% y%</code> 表示。0% 0% 为左上角、50% 50% 为正中心、100% 100% 为右下角。
+          <br />
+          完整语法：<code>conic-gradient(from 0deg at 50% 50%, #ff0000 0%, #0000ff 100%)</code>。
+          本工具在圆锥模式下提供 from 角度滑块与 X/Y 中心位置滑块，实时调节起始方向与中心点。
+        </p>
+      </details>
+      <details>
+        <summary>如何用 conic-gradient 实现饼图和进度环？</summary>
+        <p>
+          <strong>饼图</strong>：利用硬边界（相邻停止点位置相同），让颜色在指定角度"跳变"。
+          如四等分饼图：<code>conic-gradient(#ef4444 0% 25%, #f59e0b 25% 50%, #10b981 50% 75%, #3b82f6 75% 100%)</code>。
+          简写语法 <code>color 0% 25%</code> 等价于 <code>color 0%, color 25%</code>。
+          <br />
+          <strong>进度环</strong>：用 <code>transparent</code> 透明停止点表示未完成部分，配合
+          <code>border-radius: 50%</code> 裁剪为圆形。如 65% 进度环：
+          <code>conic-gradient(#2b6cff 0% 65%, transparent 65% 100%)</code>。
+          本工具内置饼图、色轮、进度环等圆锥预设，一键应用后可自由调节参数。
+        </p>
+      </details>
+      <details>
+        <summary>conic-gradient 和 repeating-conic-gradient 有什么区别？</summary>
+        <p>
+          <code>conic-gradient</code> 的颜色停止点位置范围为 0%-100%（对应 0°-360°），
+          超出部分由最后一个停止点的颜色填充。
+          <br />
+          <code>repeating-conic-gradient</code> 会将停止点模式重复填充整个 360°，适合绘制
+          放射状重复图案，如齿轮、太阳光芒、棋盘格等。例如
+          <code>repeating-conic-gradient(#ff0000 0% 10%, #0000ff 10% 20%)</code> 生成红蓝交替的
+          18 等分重复图案。两者语法一致，区别仅在于是否重复。
         </p>
       </details>
       <details>

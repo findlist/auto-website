@@ -1,17 +1,18 @@
 ---
-title: "CSS 渐变深度指南：linear-gradient、radial-gradient 与颜色停止点"
-description: "系统讲解 CSS 渐变的核心语法：线性渐变角度计算、径向渐变形状与中心位置、颜色停止点管理、多色渐变与硬渐变条纹、渐变叠加技巧与浏览器兼容性。帮助前端开发者掌握渐变设计的核心原理与最佳实践。"
+title: "CSS 渐变深度指南：linear-gradient、radial-gradient、conic-gradient 与颜色停止点"
+description: "系统讲解 CSS 渐变的核心语法：线性渐变角度计算、径向渐变形状与中心位置、圆锥渐变起始角度与饼图色轮实现、颜色停止点管理、多色渐变与硬渐变条纹、渐变叠加技巧与浏览器兼容性。帮助前端开发者掌握渐变设计的核心原理与最佳实践。"
 pubDate: 2026-07-12
-tags: ["CSS", "渐变", "linear-gradient", "radial-gradient", "前端设计", "工具矩阵"]
+tags: ["CSS", "渐变", "linear-gradient", "radial-gradient", "conic-gradient", "圆锥渐变", "饼图", "色轮", "前端设计", "工具矩阵"]
 relatedTool: "/gradient"
 ---
 
-## CSS 渐变基础：两种渐变类型
+## CSS 渐变基础：三种渐变类型
 
-CSS 渐变是一种特殊的图像类型（`<image>`），由浏览器按规则实时绘制，无需额外的网络请求加载图片文件。CSS 提供两种核心渐变类型：
+CSS 渐变是一种特殊的图像类型（`<image>`），由浏览器按规则实时绘制，无需额外的网络请求加载图片文件。CSS 提供三种核心渐变类型：
 
 - **线性渐变（`linear-gradient`）**：颜色沿一条直线方向过渡，适合表现方向性的光照、天空、条纹效果
 - **径向渐变（`radial-gradient`）**：颜色从中心点向外辐射扩散，适合表现光源、光晕、聚光灯效果
+- **圆锥渐变（`conic-gradient`）**：颜色围绕中心点旋转过渡，适合表现饼图、色轮、进度环等环形图案
 
 ```css
 /* 线性渐变：从左到右，红色到蓝色 */
@@ -19,6 +20,9 @@ background: linear-gradient(90deg, #ff0000 0%, #0000ff 100%);
 
 /* 径向渐变：从中心向外，白色到黑色 */
 background: radial-gradient(circle at 50% 50%, #ffffff 0%, #000000 100%);
+
+/* 圆锥渐变：从 12 点方向顺时针，红色到蓝色 */
+background: conic-gradient(from 0deg at 50% 50%, #ff0000 0%, #0000ff 100%);
 ```
 
 > 配套工具：[CSS 渐变生成器](/gradient)
@@ -72,6 +76,82 @@ radial-gradient(circle at 30% 70%, #ffffff 0%, #000000 100%);
 
 **大小关键字**（可选）：`closest-side`（到最近边）、`farthest-side`（到最远边）、`closest-corner`（到最近角）、`farthest-corner`（到最远角，默认）。这些关键字控制渐变的辐射范围，适用于需要精确控制渐变边界的场景。
 
+## 圆锥渐变与环形图案
+
+圆锥渐变（`conic-gradient`）是 CSS 渐变家族的第三种类型，颜色围绕中心点旋转过渡，而非沿直线或向外辐射。语法为 `conic-gradient(from <angle> at <position>, <stops>)`：
+
+```css
+/* 从 12 点方向顺时针，红色到蓝色绕一圈 */
+conic-gradient(from 0deg at 50% 50%, #ff0000 0%, #0000ff 100%);
+```
+
+**from 角度**：指定渐变的起始方向，以正上方为 0°，顺时针递增。`from 0deg` 表示从 12 点钟方向开始，`from 90deg` 表示从 3 点钟方向开始。这与 `linear-gradient` 的角度语义不同——linear 的角度是渐变线方向，conic 的 from 是起始方向。
+
+**at 位置**：指定圆锥渐变的中心点，语法与径向渐变一致，用 `at x% y%` 表示。中心点决定旋转轴心，偏移中心可创造偏心圆锥效果。
+
+**停止点位置**：0%-100% 对应 0°-360°，即完整一圈。`#ff0000 0%` 表示起始方向为红色，`#0000ff 100%` 表示绕一圈后回到起始方向为蓝色。
+
+### 饼图实现
+
+利用硬边界（相邻停止点位置相同），让颜色在指定角度"跳变"即可实现饼图：
+
+```css
+/* 四等分饼图：红黄绿蓝各占 25% */
+conic-gradient(
+  #ef4444 0% 25%,
+  #f59e0b 25% 50%,
+  #10b981 50% 75%,
+  #3b82f6 75% 100%
+);
+```
+
+简写语法 `color 0% 25%` 等价于 `color 0%, color 25%`，浏览器自动在相同位置创建硬边界。配合 `border-radius: 50%` 裁剪为圆形即可得到标准饼图。
+
+### 进度环实现
+
+用 `transparent` 透明停止点表示未完成部分，配合圆形裁剪实现进度环：
+
+```css
+/* 65% 进度环 */
+.conic-progress {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(#2b6cff 0% 65%, transparent 65% 100%);
+}
+```
+
+进度环是 conic-gradient 最经典的应用场景，相比 SVG 或 Canvas 实现更简洁，且支持 CSS 动画（通过 `--progress` 自定义属性配合 `@property` 注册实现平滑过渡）。
+
+### 色轮实现
+
+将色相均匀分布在 0°-360° 即可生成色轮：
+
+```css
+conic-gradient(
+  #ff0000 0%,
+  #ffff00 16.66%,
+  #00ff00 33.33%,
+  #00ffff 50%,
+  #0000ff 66.66%,
+  #ff00ff 83.33%,
+  #ff0000 100%
+);
+```
+
+六个主色相（红黄绿青蓝紫）均匀分布，首尾都是红色形成闭环，呈现完整的色相轮。
+
+### repeating-conic-gradient
+
+`repeating-conic-gradient` 会将停止点模式重复填充整个 360°，适合绘制放射状重复图案：
+
+```css
+/* 红蓝交替的 18 等分重复图案 */
+repeating-conic-gradient(#ff0000 0% 10%, #0000ff 10% 20%);
+```
+
+与 `repeating-linear-gradient` 类似，停止点模式（0%-20%）会重复填充整个圆周，生成齿轮、太阳光芒、放射条纹等图案。
+
 ## 硬渐变与条纹图案
 
 让相邻停止点位置相同，颜色无过渡区域，产生硬边界——这是 CSS 绘制条纹背景的核心技巧：
@@ -110,7 +190,7 @@ background:
 
 ## 浏览器兼容性与性能
 
-**兼容性**：`linear-gradient` 与 `radial-gradient` 是 CSS3 成熟特性，所有现代浏览器全面支持，IE10+ 也已支持。现代项目无需添加 `-webkit-` 前缀。圆锥渐变 `conic-gradient` 兼容性稍差（IE 不支持，Safari 12.1+ 支持）。
+**兼容性**：`linear-gradient` 与 `radial-gradient` 是 CSS3 成熟特性，所有现代浏览器全面支持，IE10+ 也已支持。现代项目无需添加 `-webkit-` 前缀。圆锥渐变 `conic-gradient` 兼容性稍差（IE 不支持），但 Chrome 69+、Firefox 83+、Safari 12.1+ 已全面支持，现代项目可放心使用。`repeating-conic-gradient` 兼容性与 `conic-gradient` 一致。
 
 **性能**：CSS 渐变由浏览器实时绘制，不占用网络带宽，性能优于图片背景。但在以下场景需注意：
 
@@ -128,5 +208,8 @@ CSS 渐变生成器适用于多种前端开发场景：
 - **图标着色**：用 `background-clip: text` 实现渐变文字
 - **遮罩效果**：配合 `mask-image` 实现淡入淡出
 - **条纹图案**：硬渐变绘制重复条纹背景
+- **饼图与进度环**：圆锥渐变配合 `border-radius: 50%` 实现纯 CSS 饼图与进度环
+- **色轮与调色板**：圆锥渐变将色相均匀分布生成色轮，辅助色彩设计
+- **放射图案**：`repeating-conic-gradient` 绘制齿轮、太阳光芒等放射状重复图案
 
-本工具支持线性与径向双类型、角度与方向预设、颜色停止点管理、7 组预设渐变，覆盖前端开发中的渐变设计需求。所有参数调节在浏览器本地完成，零上传零追踪。配合站内的 [CSS 盒阴影生成器](/box-shadow) 可为元素添加渐变背景与投影阴影，与 [CSS 格式化工具](/css-formatter) 协同美化渐变代码，与 [颜色工具](/color) 协同选择渐变配色。
+本工具支持线性、径向、圆锥三种渐变类型、角度与方向预设、颜色停止点管理、12 组预设渐变（含饼图、色轮、进度环等圆锥预设），覆盖前端开发中的渐变设计需求。所有参数调节在浏览器本地完成，零上传零追踪。配合站内的 [CSS 盒阴影生成器](/box-shadow) 可为元素添加渐变背景与投影阴影，与 [CSS 格式化工具](/css-formatter) 协同美化渐变代码，与 [颜色工具](/color) 协同选择渐变配色。

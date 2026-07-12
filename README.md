@@ -219,7 +219,7 @@ auto-website/
 - `password-hash-guide` 密码哈希：bcrypt 与 PBKDF2 实现原理与对比
 - `exif-metadata-guide` EXIF 元数据：图片信息解析、相机参数与隐私保护
 - `box-shadow-guide` CSS box-shadow 盒阴影：语法、多层叠加与 Material Design 体系
-- `gradient-guide` CSS 渐变：linear-gradient、radial-gradient 与颜色停止点
+- `gradient-guide` CSS 渐变：linear-gradient、radial-gradient、conic-gradient 与颜色停止点
 - `text-shadow-guide` CSS text-shadow 文字阴影：霓虹、3D、描边与浮雕效果实现
 - `border-radius-guide` CSS border-radius 圆角：单一值、四角独立与椭圆八值斜杠语法
 - `transform-guide` CSS transform 变换：translate、rotate、scale、skew 与变换原点
