@@ -169,7 +169,7 @@ SEO 与性能验收
 ---
 八、硬性约束红线（不可突破）
 1. 全站代码注释、页面文案、提示文字全部使用中文，适配国内用户
-2. Git 安全红线：无用户明确指令，禁止执行 git commit、git push、修改 git config、强制重置/删除等破坏性 Git 命令
+2. Git 提交规范：每次最小修改单元通过后必须执行 git add（仅本次修改的文件，禁止 git add -A）→ git commit → git push origin HEAD，提交信息使用中文（feat/fix/refactor/docs: 简要描述）。禁止修改 git config、force push、push --force-with-lease、reset --hard、branch -D、clean -f 等破坏性命令
 3. 禁止随意创建非必要文档，仅允许生成部署指南、站点配置、开发规划文档
 4. 全程轻量化开发，不引入付费依赖、重型框架，保证站点部署便捷、加载快速
 5. 所有代码改动必须本地验证通过，无报错、无BUG方可判定完成

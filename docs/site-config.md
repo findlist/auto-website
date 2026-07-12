@@ -3,7 +3,7 @@
 ## 基本信息
 - 站点名称：工具盒子（Toolbox）
 - 线上 URL：https://website.niuzi.asia
-- 部署平台：Cloudflare Pages（待确认）
+- 部署平台：Cloudflare Pages（已确认，git push 后自动触发部署）
 - 上线日期：2026-07-09
 - 站点类型：中文开发者在线工具集（零广告 · 全本地处理）
 
