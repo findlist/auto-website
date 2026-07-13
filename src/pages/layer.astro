@@ -1,0 +1,563 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import LayerTool from '../components/LayerTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS @layer 层叠层生成器 - 在线级联优先级可视化工具',
+  description:
+    '免费的在线 CSS @layer 层叠层生成器：可视化编辑多个级联层（@layer）并定义层叠顺序，完整支持层声明语句（@layer reset, base, components, utilities;）、具名层与匿名层、层内规则与声明、!important 切换、未分层样式区。内置级联胜出分析，按目标选择器实时计算每个属性的最终胜出声明与原因，完整实现 @layer 级联算法——普通声明（未分层 > 后层 > 前层）与 !important 反转（前层 > 后层 > 未分层）。iframe 隔离预览实时应用层叠 CSS，可编辑预览 HTML，8 组预设覆盖经典四层、第三方库隔离、主题覆盖、未分层最高、!important 反转、工具类优先、框架嵌套层等场景。实时生成浏览器原生支持的 @layer CSS 代码（2022 年起全主流浏览器支持），一键复制。适用于第三方库样式隔离、主题系统设计、CSS 优先级管理等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS @layer 层叠层生成器',
+    description: '在线 CSS @layer 层叠层生成器，支持多层管理、级联胜出分析、!important 反转，一键复制层叠 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS @layer 层叠层生成器</h1>
+      <p>
+        可视化生成 CSS 级联层（CSS Cascading Levels，<code>@layer</code>，2022 年起全主流浏览器原生支持）：
+        完整支持层声明语句（<code>@layer reset, base, components, utilities;</code>）、
+        具名层与匿名层、层内多规则编辑、<code>!important</code> 切换、未分层样式区。
+        内置<strong>级联胜出分析</strong>——按目标选择器实时计算每个属性的最终胜出声明与原因，
+        完整实现 <code>@layer</code> 级联算法：普通声明（未分层 &gt; 后层 &gt; 前层）与
+        <code>!important</code> 反转（前层 &gt; 后层 &gt; 未分层）。iframe 隔离预览实时应用层叠 CSS，
+        可编辑预览 HTML，内置经典四层、第三方库隔离、主题覆盖、未分层最高、!important 反转等 8 组预设。
+        适用于第三方库样式隔离、主题系统设计、CSS 优先级管理等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <LayerTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS @layer 层叠层？它解决了什么问题？</summary>
+        <p>
+          <strong>@layer</strong>（CSS 层叠层，CSS Cascading Levels Level 5）是 2022 年正式落地的原生 CSS 特性，
+          允许开发者把样式规则分组到具名的"层"中，并通过<strong>层声明语句</strong>显式定义层叠顺序
+          （如 <code>@layer reset, base, components, utilities;</code>，后者优先级更高）。
+          它解决了三大痛点：一是<strong>优先级失控</strong>，过去只能靠选择器特异性、<code>!important</code>、
+          源顺序争夺优先级，大型项目样式冲突频发；二是<strong>第三方库覆盖困难</strong>，引入 Bootstrap 等库后，
+          自定义样式常被库样式压制，只能堆 <code>!important</code>；三是<strong>主题系统难以实现</strong>，
+          切换主题需要精确控制覆盖关系，传统方案脆弱。@layer 让优先级从"隐式争夺"变为"显式声明"，清晰可控。
+        </p>
+      </details>
+      <details>
+        <summary>@layer 的级联优先级规则是怎样的？普通声明与 !important 有何不同？</summary>
+        <p>
+          @layer 的级联规则分两类，方向<strong>相反</strong>：<br />
+          <strong>普通声明</strong>（不带 !important）：优先级从高到低为——<strong>未分层 &gt; 后面的层 &gt; 前面的层</strong>。
+          即未分层样式优先级最高，层列表中越靠后的层优先级越高。<br />
+          <strong>!important 声明</strong>：优先级顺序<strong>反转</strong>——<strong>前面的层 &gt; 后面的层 &gt; 未分层</strong>。
+          即最早声明的层的 <code>!important</code> 优先级最高，未分层的 <code>!important</code> 反而最低。<br />
+          这意味着：普通声明用层顺序"后来居上"，而 <code>!important</code> 用层顺序"先到先得"。
+          本工具的"级联胜出分析"会自动按此规则计算每个属性的最终胜出值并标注原因。
+        </p>
+      </details>
+      <details>
+        <summary>层声明语句 @layer name1, name2; 有什么作用？不写会怎样？</summary>
+        <p>
+          层声明语句（如 <code>@layer reset, base, components;</code>）用于<strong>显式定义层的顺序</strong>，
+          语句中越靠后的层优先级越高。它的关键作用是：即使某个层尚未填充任何规则，
+          也会按声明顺序占位。不写声明语句时，层会按<strong>首次出现的顺序</strong>隐式排序——
+          第一个 <code>@layer xxx &#123; &#125;</code> 块成为第 1 层（优先级最低），后续块依次叠加。
+          建议始终在样式表开头写一条声明语句，明确顺序，避免后续新增层时顺序错乱。
+          本工具会自动根据层的排列顺序生成声明语句（仅含具名层）。
+        </p>
+      </details>
+      <details>
+        <summary>未分层样式（不在任何 @layer 中）的优先级为什么最高？</summary>
+        <p>
+          这是规范的有意设计：未分层样式优先级<strong>高于所有分层样式</strong>（仅指普通声明）。
+          原因是 @layer 的定位是"显式管理的低优先级区域"——把可预测的、希望被覆盖的样式（如第三方库、
+          基础重置）放进层里，把需要最终拍板的样式（如页面级覆盖、紧急修复）留在未分层区域，
+          确保它们总能覆盖层内样式。这种"层内 = 受控低优先级，层外 = 自由高优先级"的模型，
+          让开发者能精确控制哪些样式可被覆盖、哪些样式拥有最终决定权。本工具的"未分层最高"预设演示了这一行为。
+        </p>
+      </details>
+      <details>
+        <summary>如何用 @layer 隔离并覆盖第三方库（如 Bootstrap）的样式？</summary>
+        <p>
+          经典做法：把第三方库整体导入到一个低优先级层，自定义样式放在后面的层或未分层区域。
+          例如 <code>@layer library, components;</code>，把库样式放进 <code>@layer library</code>，
+          自定义组件样式放进 <code>@layer components</code>，由于 components 在后，优先级更高，
+          即使库用了高特异性选择器也能被轻松覆盖，无需 <code>!important</code>。
+          如果库本身不支持 @layer，可以用 <code>@import "bootstrap.css" layer(library);</code>
+          将其整体装入 library 层。本工具的"第三方库隔离"预设展示了这一模式。
+        </p>
+      </details>
+      <details>
+        <summary>@layer 支持嵌套层吗？framework.components 这种写法是什么？</summary>
+        <p>
+          支持。用点语法（<code>.</code>）命名可创建嵌套层，如 <code>@layer framework.components &#123; &#125;</code>
+          会创建 <code>framework</code> 层下的 <code>components</code> 子层。嵌套层的优先级规则：
+          子层在父层内部按声明顺序排序，父层之间的优先级仍由顶层顺序决定。
+          嵌套层常用于框架内部组织样式（如 <code>framework.reset</code>、<code>framework.theme</code>），
+          让框架既能整体被外部覆盖（外部层在后），又能内部有序管理。本工具的"框架嵌套层"预设演示了点语法命名。
+        </p>
+      </details>
+      <details>
+        <summary>@layer 与 specificity（选择器特异性）、源顺序的关系是什么？</summary>
+        <p>
+          <strong>层优先级高于特异性</strong>——这是 @layer 最核心的价值。在 @layer 之前，级联先比较特异性，
+          再比较源顺序；引入 @layer 后，级联顺序变为：<strong>来源与重要性 &gt; 层 &gt; 特异性 &gt; 源顺序</strong>。
+          即一个低特异性选择器（如 <code>.box</code>）在后置层中，能覆盖前置层中高特异性选择器
+          （如 <code>#main .box</code>）的样式。这让优先级管理从"堆特异性"转向"规划层结构"，
+          大型项目能彻底摆脱特异性战争。同一层内仍按特异性与源顺序决出胜者。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 层结构编辑、级联分析、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox</code> 属性限制能力，预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的 @layer CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 练习与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：lyr 命名空间 */
+  .lyr {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .lyr__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .lyr__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .lyr__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .lyr__editor,
+  .lyr__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .lyr__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .lyr__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .lyr__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .lyr__panel-body {
+    padding: 12px 14px;
+  }
+
+  .lyr__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 层卡片 */
+  .lyr__layer {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .lyr__layer:last-child {
+    margin-bottom: 0;
+  }
+
+  .lyr__layer-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .lyr__layer-idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .lyr__layer-name {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .lyr__layer-ops {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  /* 规则 */
+  .lyr__rule {
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .lyr__rule-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .lyr__rule-sel {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .lyr__decls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .lyr__decl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .lyr__decl-prop,
+  .lyr__decl-val {
+    min-width: 0;
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .lyr__decl-colon {
+    color: var(--color-text-muted, #6b7280);
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+
+  /* 通用按钮 */
+  .lyr__btn {
+    padding: 4px 10px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.1s), border-color var(--transition-fast, 0.1s);
+  }
+
+  .lyr__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.05));
+  }
+
+  .lyr__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .lyr__btn--preset {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .lyr__btn--add,
+  .lyr__btn--add-rule,
+  .lyr__btn--add-decl {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+    background: transparent;
+  }
+
+  .lyr__btn--add:hover,
+  .lyr__btn--add-rule:hover,
+  .lyr__btn--add-decl:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  .lyr__btn--add-rule,
+  .lyr__btn--add-decl {
+    margin-top: 4px;
+    align-self: flex-start;
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .lyr__btn--op {
+    width: 28px;
+    padding: 4px 0;
+    text-align: center;
+  }
+
+  .lyr__btn--del {
+    width: 26px;
+    padding: 4px 0;
+    color: var(--color-danger, #dc2626);
+    border-color: var(--color-border);
+  }
+
+  .lyr__btn--imp {
+    width: 26px;
+    padding: 4px 0;
+    font-weight: 700;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .lyr__btn--imp.is-active {
+    color: #fff;
+    background: var(--color-danger, #dc2626);
+    border-color: var(--color-danger, #dc2626);
+  }
+
+  .lyr__btn--copy {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .lyr__btn--copy:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  /* 预览 */
+  .lyr__preview {
+    width: 100%;
+    height: 160px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+  }
+
+  .lyr__html-edit {
+    margin-top: 8px;
+  }
+
+  .lyr__html-edit summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--color-primary, #2563eb);
+    padding: 4px 0;
+  }
+
+  .lyr__textarea {
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+  }
+
+  /* 级联分析表 */
+  .lyr__target {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .lyr__target input {
+    width: 100px;
+    padding: 3px 6px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .lyr__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .lyr__table th,
+  .lyr__table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .lyr__table th {
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .lyr__mono {
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+
+  .lyr__winner {
+    font-weight: 600;
+    color: var(--color-primary, #2563eb);
+  }
+
+  .lyr__tag {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-danger, #dc2626);
+    border-radius: 3px;
+  }
+
+  .lyr__reason {
+    color: var(--color-text-muted, #6b7280);
+    font-size: 11px;
+  }
+
+  /* 代码输出 */
+  .lyr__code {
+    margin: 0;
+    padding: 12px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    max-height: 320px;
+    overflow: auto;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .lyr__main {
+      grid-template-columns: 1fr;
+    }
+
+    .lyr__presets {
+      padding: 10px 12px;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .lyr__presets-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .lyr__btn--preset {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .lyr__layer-head {
+      flex-wrap: wrap;
+    }
+
+    .lyr__layer-name {
+      flex: 1 1 60%;
+    }
+
+    .lyr__table {
+      font-size: 11px;
+    }
+
+    .lyr__table th,
+    .lyr__table td {
+      padding: 4px 6px;
+    }
+  }
+
+  /* 暗色模式 */
+  :global(.dark) .lyr__preview {
+    background: #1e293b;
+  }
+</style>
