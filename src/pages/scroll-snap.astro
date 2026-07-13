@@ -1,0 +1,504 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ScrollSnapTool from '../components/ScrollSnapTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS scroll-snap 滚动捕捉生成器 - 在线滚动捕捉可视化工具',
+  description:
+    '免费的在线 CSS scroll-snap 滚动捕捉生成器：完整支持 scroll-snap-type（x/y/both 轴 + mandatory/proximity 严格度）、scroll-snap-align（none/start/center/end）、scroll-snap-stop（normal/always）、scroll-padding、scroll-margin 全属性。可实际滚动的预览区真实体验捕捉效果，点击子项独立编辑属性，动态增删子项（3-8 个），实时生成 CSS 代码一键复制。内置横向轮播、全屏滚动、图片画廊、分页滚动、卡片滑动、垂直时间线、网格捕捉、自由滑动 8 组预设。适用于轮播图、全屏滚动、图片画廊、分页导航、时间线等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS scroll-snap 滚动捕捉生成器',
+    description: '在线 scroll-snap 滚动捕捉可视化生成器，支持容器与子项全属性调节，可实际滚动预览捕捉效果，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS scroll-snap 滚动捕捉生成器</h1>
+      <p>
+        可视化生成 CSS <code>scroll-snap</code> 滚动捕捉：完整支持容器属性
+        （<code>scroll-snap-type</code> 轴向与严格度、<code>scroll-padding</code>、<code>overflow</code>）
+        与子项属性（<code>scroll-snap-align</code>、<code>scroll-snap-stop</code>、
+        <code>scroll-margin</code>）。可实际滚动的预览区真实体验捕捉效果，点击子项即可独立编辑，
+        实时预览，一键复制 CSS 代码。内置横向轮播、全屏滚动、图片画廊、分页、卡片滑动、时间线、
+        网格、自由 8 组预设。适用于轮播图、全屏滚动、图片画廊、分页导航等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ScrollSnapTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 scroll-snap？它解决了什么问题？</summary>
+        <p>
+          <strong>scroll-snap</strong> 是 CSS 的滚动捕捉模块，让滚动容器在滚动停止时自动"吸附"到指定的对齐位置。
+          它解决了传统滚动体验的两大痛点：一是滚动停止位置随意，用户需要手动微调才能对齐内容；
+          二是轮播、分页等场景需要 JavaScript 监听 scroll 事件并手动计算位置，性能差且体验生硬。
+          使用 scroll-snap 只需在容器上设置 <code>scroll-snap-type</code>，在子项上设置
+          <code>scroll-snap-align</code>，浏览器原生处理捕捉，零 JavaScript、高性能、丝滑流畅。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-snap-type 的 axis（x/y/both）和 strictness（mandatory/proximity）分别是什么含义？</summary>
+        <p>
+          <code>scroll-snap-type</code> 由两部分组成：轴（axis）和严格度（strictness）。
+          <br /><strong>轴</strong>：<code>x</code> 仅横向滚动时捕捉，<code>y</code> 仅纵向滚动时捕捉，
+          <code>both</code> 横纵向都捕捉（用于网格布局）。
+          <br /><strong>严格度</strong>：<code>mandatory</code>（强制）表示滚动停止后必须吸附到最近的捕捉点，
+          即使用户只滚动了一点也会被"拉"过去，适合轮播、分页等需要精确对齐的场景；
+          <code>proximity</code>（就近）表示仅在接近捕捉点时才吸附，离得远则保持自由滚动，体验更自然，
+          适合长列表、时间线等场景。
+          <br />语法：<code>scroll-snap-type: x mandatory;</code> 或 <code>scroll-snap-type: y proximity;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-snap-align 的 start、center、end 有什么区别？</summary>
+        <p>
+          <code>scroll-snap-align</code> 设置在子项上，决定子项如何对齐到滚动容器的捕捉点：
+          <br /><strong>start</strong>：子项的起始边（横向为左边，纵向为顶部）对齐到容器的起始边。
+          适合分页滚动、全屏滚动、时间线。
+          <br /><strong>center</strong>：子项中心对齐到容器中心。适合轮播图、图片画廊、卡片滑动。
+          <br /><strong>end</strong>：子项的结束边对齐到容器的结束边。较少单独使用，常用于反向滚动场景。
+          <br /><strong>none</strong>：该子项不作为捕捉点，滚动时不会被吸附。用于某些不需要捕捉的中间项。
+          <br />注意：scroll-snap-align 只决定"对齐到哪"，scroll-snap-type 才决定"是否捕捉"。
+          没有设置 snap-align 的子项不会成为捕捉点。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-snap-stop 的 normal 和 always 有什么区别？什么时候用 always？</summary>
+        <p>
+          <code>scroll-snap-stop</code> 控制滚动时是否允许"跳过"中间的捕捉点：
+          <br /><strong>normal</strong>（默认）：快速滚动时可以跳过中间的捕捉点，直接吸附到终点附近的捕捉点。
+          这是大多数场景的默认行为，体验流畅。
+          <br /><strong>always</strong>：每次滚动都必须停在下一个捕捉点，不能跳过。
+          适合全屏滚动、分页等需要"一页一页翻"的场景，防止用户快速滑动跳过多页。
+          <br />例如：5 个全屏分页，normal 模式下快速滑动可能从第 1 页直接到第 4 页；
+          always 模式下每次滑动只能到下一页（第 1→2→3→4→5），保证用户不会错过中间内容。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-padding 和 scroll-margin 的作用是什么？</summary>
+        <p>
+          两者用于在捕捉点与容器边缘之间预留间距，避免子项紧贴容器边缘：
+          <br /><strong>scroll-padding</strong>：设置在<strong>容器</strong>上，为所有捕捉点统一预留间距。
+          例如 <code>scroll-padding: 20px</code> 让所有子项在捕捉时与容器边缘保持 20px 距离。
+          常用于固定头部（sticky header）下方留出空间，避免子项被头部遮挡。
+          <br /><strong>scroll-margin</strong>：设置在<strong>子项</strong>上，为单个子项独立预留间距。
+          例如不同子项可以有不同的 scroll-margin，实现错落有致的捕捉效果。
+          <br />两者的关系类似 padding 与 margin：scroll-padding 是容器的"内边距"，
+          scroll-margin 是子项的"外边距"，最终捕捉间距是两者之和。
+        </p>
+      </details>
+      <details>
+        <summary>mandatory 和 proximity 应该选哪个？</summary>
+        <p>
+          选择依据是场景对"精确对齐"的要求程度：
+          <br /><strong>mandatory（强制）</strong>：滚动停止后<strong>必须</strong>吸附到捕捉点。
+          适合需要精确对齐的场景：轮播图、分页滚动、全屏滚动、图片画廊。用户不会停在两个子项中间的尴尬位置。
+          注意：mandatory 模式下若子项比容器大，可能导致用户无法滚动到子项末尾内容（被强制吸附回起点）。
+          <br /><strong>proximity（就近）</strong>：仅在<strong>接近</strong>捕捉点时才吸附，离得远则自由滚动。
+          适合内容浏览场景：长列表、时间线、信息流。用户可以自由浏览任意位置，仅在接近时"顺带"吸附。
+          <br />经验法则：需要"一屏一屏翻"用 mandatory，需要"自由浏览"用 proximity。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-snap 与 overflow 的关系是什么？必须设置 overflow 吗？</summary>
+        <p>
+          <strong>是的，scroll-snap 依赖 overflow 滚动。</strong>scroll-snap-type 只在可滚动容器上生效，
+          容器必须设置 <code>overflow: auto</code>、<code>overflow: scroll</code> 或 <code>overflow-x/y</code> 为
+          auto/scroll 才能滚动，scroll-snap 才能捕捉。
+          <br />横向滚动：<code>overflow-x: auto; overflow-y: hidden;</code>
+          <br />纵向滚动：<code>overflow-y: auto; overflow-x: hidden;</code>
+          <br />双向滚动：<code>overflow: auto;</code>（两个方向都可滚动）
+          <br />注意：若容器内容不超出容器尺寸，则不会产生滚动条，scroll-snap 也就无法触发。
+          因此子项总尺寸必须大于容器尺寸（横向时子项总宽度 > 容器宽度，纵向时子项总高度 > 容器高度）。
+          <br />本工具的预览区已正确配置 overflow，切换轴时自动调整 overflow 方向。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-snap 的浏览器兼容性和性能如何？</summary>
+        <p>
+          <strong>浏览器兼容性</strong>：scroll-snap 在 Chrome 69+、Firefox 65+、Safari 11+（带 -webkit- 前缀）
+          全面支持，覆盖 95%+ 的现代浏览器。iOS Safari 在 11+ 支持，移动端体验良好。
+          旧版浏览器不支持时降级为普通滚动，不影响功能可用性。
+          <br /><strong>性能</strong>：scroll-snap 由浏览器原生处理，不依赖 JavaScript，
+          滚动捕捉在合成层完成，性能远优于 JS 监听 scroll + 手动计算方案。
+          即使有数十个子项也不会有性能问题，因为浏览器只捕捉可见区域附近的捕捉点。
+          <br /><strong>无障碍</strong>：scroll-snap 不影响键盘导航，Tab 键仍可聚焦到容器内的子项。
+          屏幕阅读器会正常朗读子项内容，捕捉行为对辅助技术透明。
+          <br /><strong>本工具</strong>：所有处理在浏览器本地完成，零上传、零追踪、零广告。
+        </p>
+      </details>
+    </section>
+  </section>
+
+  <style>
+    /* scroll-snap 工具专属样式 .snp__* */
+    .snp {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    /* 预设按钮组 */
+    .snp__presets {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .snp__presets-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .snp__preset-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .snp__preset-btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* 主布局：左右两栏 */
+    .snp__main {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+    }
+
+    .snp__left,
+    .snp__right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 预览区 */
+    .snp__preview-wrap {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .snp__preview-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border-bottom: 1px solid var(--color-border);
+      font-size: 13px;
+      color: var(--color-text-soft);
+    }
+
+    .snp__add-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    .snp__add-btn:hover:not(:disabled) {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .snp__add-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 可滚动预览容器 */
+    .snp__preview {
+      height: 280px;
+      background: var(--color-bg);
+      background-image:
+        linear-gradient(45deg, var(--color-border) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--color-border) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--color-border) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--color-border) 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      opacity: 0.98;
+    }
+
+    /* 子项卡片 */
+    .snp__item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-size: 28px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      transition: outline-color var(--transition-fast);
+      user-select: none;
+    }
+
+    .snp__item:hover {
+      outline-color: var(--color-primary-ring);
+    }
+
+    .snp__item.is-selected {
+      outline-color: var(--color-primary);
+    }
+
+    .snp__item-label {
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .snp__item-del {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.4);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .snp__item:hover .snp__item-del {
+      opacity: 1;
+    }
+
+    .snp__item-del:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    /* 面板 */
+    .snp__panel {
+      padding: 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .snp__panel-title {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .snp__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .snp__field:last-child {
+      margin-bottom: 0;
+    }
+
+    .snp__field-label {
+      font-size: 13px;
+      color: var(--color-text-soft);
+    }
+
+    .snp__value {
+      font-family: var(--font-mono);
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    /* 分段按钮组 */
+    .snp__seg-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .snp__seg-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text-soft);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .snp__seg-btn:hover:not(:disabled) {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .snp__seg-btn.is-active {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .snp__seg-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 滑块 */
+    .snp__field input[type='range'] {
+      width: 100%;
+      accent-color: var(--color-primary);
+    }
+
+    /* 代码输出 */
+    .snp__code {
+      padding: 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .snp__code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .snp__copy-btn {
+      padding: 4px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), color var(--transition-fast),
+        background-color var(--transition-fast);
+    }
+
+    .snp__copy-btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .snp__copy-btn.is-copied {
+      border-color: var(--color-success);
+      background: var(--color-success);
+      color: #fff;
+    }
+
+    .snp__code-block {
+      margin: 0;
+      padding: 12px 14px;
+      background: var(--color-bg);
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+    }
+
+    .snp__code-block code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text);
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* 暗色模式适配 */
+    @media (prefers-color-scheme: dark) {
+      .snp__panel,
+      .snp__code,
+      .snp__presets,
+      .snp__preview-hint {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .snp__preview {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* 移动端响应式 */
+    @media (max-width: 768px) {
+      .snp__main {
+        grid-template-columns: 1fr;
+      }
+      .snp__preview {
+        height: 240px;
+      }
+    }
+
+    @media (max-width: 414px) {
+      .snp__presets {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .snp__presets-label {
+        text-align: center;
+      }
+      .snp__preview-hint {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .snp__seg-group {
+        flex-direction: column;
+      }
+      .snp__seg-btn {
+        width: 100%;
+      }
+      .snp__preview {
+        height: 200px;
+      }
+    }
+  </style>
+</BaseLayout>
