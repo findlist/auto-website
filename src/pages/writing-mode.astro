@@ -1,0 +1,473 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import WritingModeTool from '../components/WritingModeTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS writing-mode 书写模式生成器 - 在线竖排文字与多语言排版工具',
+  description:
+    '免费的在线 CSS writing-mode 书写模式生成器：完整支持 writing-mode（horizontal-tb/vertical-rl/vertical-lr/sideways-rl/sideways-lr）、text-orientation（mixed/upright/sideways）、direction（ltr/rtl）、text-combine-upright（数字横排）全属性。可编辑预览区实时体验竖排中文、日文、阿拉伯文 RTL、蒙古文等排版效果，8 组预设覆盖古籍竖排、现代杂志、多语言混排场景。实时生成 CSS 代码一键复制。适用于中文竖排、日文竖排、阿拉伯文 RTL、蒙古文、古籍排版、多语言国际化等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS writing-mode 书写模式生成器',
+    description: '在线 writing-mode 书写模式生成器，支持竖排文字、多语言排版、RTL 文本方向，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS writing-mode 书写模式生成器</h1>
+      <p>
+        可视化生成 CSS <code>writing-mode</code> 书写模式：完整支持
+        <code>writing-mode</code>（horizontal-tb / vertical-rl / vertical-lr / sideways-rl / sideways-lr）、
+        <code>text-orientation</code>（mixed / upright / sideways）、<code>direction</code>（ltr / rtl）、
+        <code>text-combine-upright</code>（数字横排）四大核心属性，以及字号、行高、字距、内边距等排版属性。
+        可编辑预览区实时体验竖排中文、日文竖排、阿拉伯文 RTL、蒙古文等排版效果，内置古籍竖排、现代杂志、
+        多语言混排 8 组预设。适用于中文竖排、日文竖排、阿拉伯文 RTL、蒙古文、古籍排版、多语言国际化等场景。
+        所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <WritingModeTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 writing-mode？它解决了什么问题？</summary>
+        <p>
+          <strong>writing-mode</strong> 是 CSS 的书写模式属性，决定文本流的方向——文字按什么方向排列、行按什么方向换行。
+          它解决了三大痛点：一是<strong>竖排文字</strong>需要 JavaScript 或 transform 模拟，体验差且不可选；
+          二是<strong>多语言排版</strong>（中文/日文竖排、阿拉伯文从右到左、蒙古文垂直从左到右）需要不同书写方向；
+          三是<strong>古籍排版</strong>、<strong>杂志竖排标题</strong>等设计场景缺乏原生方案。
+          使用 writing-mode 只需一行 CSS 即可切换书写方向，浏览器原生支持文本选择、光标移动、可访问性，
+          远优于 transform: rotate 等模拟方案。
+        </p>
+      </details>
+      <details>
+        <summary>writing-mode 的 5 个值（horizontal-tb/vertical-rl/vertical-lr/sideways-rl/sideways-lr）有什么区别？</summary>
+        <p>
+          <br /><strong>horizontal-tb</strong>（默认）：水平方向，从上到下换行。中英文标准横排。
+          <br /><strong>vertical-rl</strong>：垂直方向，从右到左换行。中文/日文传统竖排（书页从右往左翻）。
+          <br /><strong>vertical-lr</strong>：垂直方向，从左到右换行。蒙古文传统竖排。
+          <br /><strong>sideways-rl</strong>：侧向，从右到左，文字旋转 90°（西文侧排）。
+          <br /><strong>sideways-lr</strong>：侧向，从左到右，文字旋转 -90°。
+          <br />关键差异：vertical-* 文字本身不旋转（中文方块字正立），sideways-* 文字整体旋转 90°（西文侧躺）。
+          中文竖排应选 vertical-rl，蒙古文选 vertical-lr，西文侧排选 sideways-*。
+        </p>
+      </details>
+      <details>
+        <summary>text-orientation 的 mixed、upright、sideways 有什么区别？什么时候用？</summary>
+        <p>
+          <code>text-orientation</code> 仅在 <strong>vertical-*</strong> 模式下生效，决定字符在垂直行中的朝向：
+          <br /><strong>mixed</strong>（默认）：CJK 字符（中文/日文/韩文）正立，拉丁字母、数字侧躺 90°。
+          适合日文竖排（汉字正立，假名与西文侧排）。
+          <br /><strong>upright</strong>：所有字符正立，包括拉丁字母和数字。适合纯中文竖排、古籍排版。
+          <br /><strong>sideways</strong>：所有字符侧躺 90°（包括 CJK）。适合横向标签的垂直排列、蒙古文。
+          <br />选型：日文混排用 mixed，纯中文古籍用 upright，西文侧排用 sideways。
+        </p>
+      </details>
+      <details>
+        <summary>direction 的 ltr 和 rtl 有什么区别？什么场景用 rtl？</summary>
+        <p>
+          <code>direction</code> 决定文本的水平流向：
+          <br /><strong>ltr</strong>（默认）：从左到右。中文、英文、法文等大多数语言。
+          <br /><strong>rtl</strong>：从右到左。阿拉伯文、希伯来文、波斯文等 RTL 语言。
+          <br />注意：在 <strong>vertical-*</strong> 模式下，direction 影响<strong>行</strong>的换行方向
+          （vertical-rl + ltr 行从右往左换，vertical-lr + rtl 行从左往右换）。
+          <br />在 <strong>horizontal-tb</strong> 模式下，direction 决定文本水平流向。
+          阿拉伯文页面必须设置 <code>direction: rtl</code>，否则文本顺序错误。
+          <br />配合 <code>unicode-bidi</code> 属性可处理混合方向文本（如中英混排中的阿拉伯文段落）。
+        </p>
+      </details>
+      <details>
+        <summary>text-combine-upright 是什么？为什么竖排数字需要它？</summary>
+        <p>
+          <code>text-combine-upright</code> 让多个字符在垂直行中横向组合显示为一个字符宽度，
+          解决竖排文本中<strong>数字/英文</strong>需要横排的需求：
+          <br /><strong>none</strong>（默认）：不组合，每个字符单独垂直排列。
+          <br /><strong>all</strong>：行内所有连续的字符横向组合为一个单元。
+          <br /><strong>digits &lt;n&gt;</strong>：仅数字横向组合，n 为最大位数（2-4）。
+          例如 <code>text-combine-upright: digits 2</code> 让"2026"中的"20"和"26"分别横排显示。
+          <br /><strong>应用场景</strong>：中文古籍中的年号、竖排表格中的数字、日文竖排中的西文数字。
+          <br />本工具的"数字横排"预设展示了 <code>digits 2</code> 效果。
+        </p>
+      </details>
+      <details>
+        <summary>vertical-rl 和 vertical-lr 该选哪个？中文古籍和蒙古文有什么区别？</summary>
+        <p>
+          两者都是垂直书写，差别在<strong>行的换行方向</strong>：
+          <br /><strong>vertical-rl</strong>：第一行在最右，后续行向左换行。模拟中文/日文古籍翻页（从右往左翻）。
+          <br /><strong>vertical-lr</strong>：第一行在最左，后续行向右换行。模拟蒙古文、满文传统书写。
+          <br /><strong>中文古籍</strong>：用 <code>vertical-rl</code> + <code>text-orientation: upright</code>，
+          所有汉字正立，行从右往左排列。本工具的"古籍竖排"预设。
+          <br /><strong>蒙古文</strong>：用 <code>vertical-lr</code> + <code>text-orientation: sideways</code>，
+          蒙古文字符侧躺（蒙古文传统就是侧躺书写），行从左往右排列。本工具的"蒙古文"预设。
+          <br /><strong>现代竖排</strong>：中文杂志、日文漫画常用 vertical-rl + mixed，
+          兼容西文与数字的侧排显示。
+        </p>
+      </details>
+      <details>
+        <summary>writing-mode 与 transform: rotate 有什么区别？为什么推荐 writing-mode？</summary>
+        <p>
+          <strong>transform: rotate</strong> 是视觉变换，仅改变渲染位置，不改变文本流：
+          <br />- 文本选择方向错误（横排文本旋转后仍按横排选择）
+          <br />- 光标移动方向错误（按左右键仍按横排逻辑移动）
+          <br />- 屏幕阅读器朗读顺序错误（按 DOM 顺序朗读，非视觉顺序）
+          <br />- 无法自动换行（超出容器宽度不会自动断行）
+          <br /><strong>writing-mode</strong> 是语义化的书写模式，改变文本流本身：
+          <br />- 文本选择按视觉方向（竖排时按垂直方向选择）
+          <br />- 光标移动符合视觉预期（按上下键移动）
+          <br />- 屏幕阅读器按视觉顺序朗读
+          <br />- 自动换行（按行高换行）
+          <br />- 支持混合方向文本（unicode-bidi 配合）
+          <br />因此<strong>所有需要改变文本流的场景都应优先用 writing-mode</strong>，transform: rotate 仅用于装饰性旋转。
+        </p>
+      </details>
+      <details>
+        <summary>writing-mode 的浏览器兼容性如何？有哪些注意事项？</summary>
+        <p>
+          <strong>浏览器兼容性</strong>：writing-mode 在 Chrome 48+、Firefox 36+、Safari 11+ 全面支持，
+          覆盖 95%+ 的现代浏览器。旧版 IE 支持 -ms-writing-mode（值不同，需单独处理）。
+          <br /><strong>sideways-rl / sideways-lr</strong>：Chrome 91+、Firefox 69+ 支持，Safari 16+ 支持。
+          兼容性较新，使用前需确认目标浏览器支持。
+          <br /><strong>text-orientation</strong>：Chrome 53+、Firefox 36+、Safari 10.1+ 支持。
+          <br /><strong>text-combine-upright</strong>：需带 -webkit- 前缀（Chrome/Safari），
+          Firefox 48+ 支持标准属性。digits 值浏览器支持不一，建议降级为 all。
+          <br /><strong>注意事项</strong>：
+          <br />1. iOS Safari 对 sideways-* 支持有限，移动端优先用 vertical-*
+          <br />2. 老版本浏览器可能需要 -webkit-writing-mode 前缀
+          <br />3. 竖排文本的换行符、对齐方式可能与横排不同，需测试
+          <br />4. 垂直模式下 line-height 控制行间距（垂直方向），与横排不同
+          <br /><strong>本工具</strong>：所有处理在浏览器本地完成，零上传、零追踪、零广告。
+        </p>
+      </details>
+    </section>
+  </section>
+
+  <style>
+    /* writing-mode 工具专属样式 .wm__* */
+    .wm {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    /* 预设按钮组 */
+    .wm__presets {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .wm__presets-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .wm__preset-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .wm__preset-btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* 主布局：左右两栏 */
+    .wm__main {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+    }
+
+    .wm__left,
+    .wm__right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 预览区 */
+    .wm__preview-wrap {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .wm__preview-hint {
+      padding: 8px 12px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border-bottom: 1px solid var(--color-border);
+      font-size: 13px;
+      color: var(--color-text-soft);
+    }
+
+    /* 可滚动预览容器：容纳长文本 */
+    .wm__preview-scroll {
+      height: 360px;
+      overflow: auto;
+      background-image:
+        linear-gradient(45deg, var(--color-border) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--color-border) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--color-border) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--color-border) 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+
+    /* 实际预览区：应用 writing-mode */
+    .wm__preview {
+      min-height: 100%;
+      color: var(--color-text);
+      background: var(--color-bg);
+      box-sizing: border-box;
+    }
+
+    .wm__preview-line {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* 文本输入框 */
+    .wm__text-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .wm__text-input:focus {
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    }
+
+    /* 面板 */
+    .wm__panel {
+      padding: 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .wm__panel-title {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .wm__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .wm__field:last-child {
+      margin-bottom: 0;
+    }
+
+    .wm__field--inline {
+      margin-top: 8px;
+    }
+
+    .wm__field-label {
+      font-size: 13px;
+      color: var(--color-text-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wm__hint {
+      font-size: 12px;
+      color: var(--color-text-soft);
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .wm__value {
+      font-family: var(--font-mono);
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    /* 分段按钮组 */
+    .wm__seg-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .wm__seg-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text-soft);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        color var(--transition-fast);
+    }
+
+    .wm__seg-btn:hover:not(:disabled) {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .wm__seg-btn.is-active {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      color: #fff;
+    }
+
+    .wm__seg-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 滑块 */
+    .wm__field input[type='range'] {
+      width: 100%;
+      accent-color: var(--color-primary);
+    }
+
+    /* 代码输出 */
+    .wm__code {
+      padding: 16px;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .wm__code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .wm__copy-btn {
+      padding: 4px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color var(--transition-fast), color var(--transition-fast),
+        background-color var(--transition-fast);
+    }
+
+    .wm__copy-btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .wm__copy-btn.is-copied {
+      border-color: var(--color-success);
+      background: var(--color-success);
+      color: #fff;
+    }
+
+    .wm__code-block {
+      margin: 0;
+      padding: 12px 14px;
+      background: var(--color-bg);
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+    }
+
+    .wm__code-block code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--color-text);
+      white-space: pre;
+      line-height: 1.6;
+    }
+
+    /* 暗色模式适配 */
+    @media (prefers-color-scheme: dark) {
+      .wm__panel,
+      .wm__code,
+      .wm__presets,
+      .wm__preview-hint {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .wm__preview {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      .wm__text-input {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* 移动端响应式 */
+    @media (max-width: 768px) {
+      .wm__main {
+        grid-template-columns: 1fr;
+      }
+      .wm__preview-scroll {
+        height: 280px;
+      }
+    }
+
+    @media (max-width: 414px) {
+      .wm__presets {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .wm__presets-label {
+        text-align: center;
+      }
+      .wm__seg-group {
+        flex-direction: column;
+      }
+      .wm__seg-btn {
+        width: 100%;
+      }
+      .wm__preview-scroll {
+        height: 240px;
+      }
+    }
+  </style>
+</BaseLayout>
