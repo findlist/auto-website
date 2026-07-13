@@ -1,0 +1,607 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import BackgroundTool from '../components/BackgroundTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS background 复合属性生成器 - 在线多层背景可视化工具',
+  description:
+    '免费的在线 CSS background 复合属性生成器：可视化编辑多层背景叠加（最多 4 层），每层支持线性渐变、径向渐变、图片 URL，独立配置 repeat、position、size、attachment。支持 background-clip: text 文字裁剪特效、9 宫格位置选择、视差固定背景。实时预览，一键复制 CSS 简写代码。内置线性渐变、径向光晕、图片平铺、视差固定、多层叠加、文字裁剪、渐变叠图片、暖色渐变 8 组预设。适用于网页背景设计、Hero 区视觉、卡片纹理、文字渐变填充等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS background 复合属性生成器',
+    description: '在线 CSS background 复合属性生成器，支持多层背景叠加、渐变与图片混合、文字裁剪特效，实时预览，一键复制 CSS 代码。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS background 复合属性生成器</h1>
+      <p>
+        可视化生成 CSS <code>background</code> 复合属性：支持最多 4 层背景叠加，每层可选线性渐变、径向渐变或图片 URL，
+        独立配置 <code>repeat</code>、<code>position</code>、<code>size</code>、<code>attachment</code>。
+        内置 <code>background-clip: text</code> 文字裁剪特效与 9 宫格位置选择器。实时预览，一键复制 CSS 简写代码。
+        内置线性渐变、径向光晕、图片平铺、视差固定、多层叠加、文字裁剪、渐变叠图片、暖色渐变 8 组预设。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <BackgroundTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>CSS background 包含哪些子属性？</summary>
+        <p>
+          <code>background</code> 是 CSS 中最复杂的复合属性之一，包含 8 个子属性：
+          <br />① <code>background-color</code>：纯色背景，只能有一个值
+          <br />② <code>background-image</code>：背景图片或渐变，可多层逗号分隔
+          <br />③ <code>background-repeat</code>：平铺方式（repeat / no-repeat / repeat-x / repeat-y）
+          <br />④ <code>background-position</code>：位置（left / center / right / 百分比 / 像素）
+          <br />⑤ <code>background-size</code>：尺寸（auto / cover / contain / 自定义）
+          <br />⑥ <code>background-attachment</code>：附着方式（scroll / fixed / local）
+          <br />⑦ <code>background-origin</code>：定位参考区（border-box / padding-box / content-box）
+          <br />⑧ <code>background-clip</code>：绘制区域（border-box / padding-box / content-box / text）
+          <br />除 <code>background-color</code> 外，其余 7 个子属性都支持多层（逗号分隔）。
+        </p>
+      </details>
+      <details>
+        <summary>background 简写的语法是什么？position / size 的斜杠怎么用？</summary>
+        <p>
+          简写语法将所有子属性写在一行，多层用逗号分隔：
+          <br /><code>background: [image] [position] / [size] [repeat] [attachment] [origin] [clip] [color], ...;</code>
+          <br />关键规则：
+          <br />① <strong>position 与 size 用斜杠分隔</strong>：<code>center / cover</code> 表示位置 center、尺寸 cover。
+          斜杠前是 position，斜杠后是 size。不写斜杠时 size 默认 auto。
+          <br />② <strong>color 只能有一个</strong>，且必须在最后一层之后：<code>background: url(a.jpg), #fff;</code>
+          <br />③ <strong>层叠顺序</strong>：先写的层在上方，后写的层在下方。
+          <br />示例：<code>background: linear-gradient(135deg, #667eea, #764ba2) no-repeat center / cover, url(bg.jpg) no-repeat center / cover, #1a1a2e;</code>
+          <br />本工具自动生成符合规范的简写代码，非默认值省略保持精简。
+        </p>
+      </details>
+      <details>
+        <summary>多层背景的叠加顺序是怎样的？</summary>
+        <p>
+          多层背景中，<strong>先列出的层在最上方，后列出的层在最下方</strong>，background-color 在所有图层之下。
+          <br />这与 z-index 的直觉相反——CSS 中第一个图层覆盖后面的图层。
+          <br />典型应用——渐变遮罩叠在图片上：
+          <br /><code>background: linear-gradient(rgba(0,0,0,0.5), transparent) no-repeat center / cover, url(photo.jpg) no-repeat center / cover;</code>
+          <br />渐变层在前（上方）作为半透明遮罩，图片层在后（下方）作为底图。background-color 在最底层填充剩余透明区域。
+          <br />本工具支持最多 4 层叠加，可上移/下移调整层叠顺序。
+        </p>
+      </details>
+      <details>
+        <summary>background-clip: text 文字裁剪怎么实现？</summary>
+        <p>
+          <code>background-clip: text</code> 让背景只绘制在文字轮廓内，配合 <code>color: transparent</code> 使文字透明、
+          背景渐变填充文字形状，实现渐变文字效果：
+          <br />① <code>background: linear-gradient(90deg, #ff6b6b, #4ecdc4);</code> —— 设定渐变背景
+          <br />② <code>-webkit-background-clip: text;</code> —— WebKit/Blink 浏览器前缀（Chrome / Safari / Edge 必须）
+          <br />③ <code>background-clip: text;</code> —— 标准属性（Firefox 49+）
+          <br />④ <code>color: transparent;</code> —— 文字颜色透明，露出背景渐变
+          <br />注意：必须同时写 <code>-webkit-</code> 前缀版本，否则 Chrome / Safari 不生效。本工具的"文字裁剪"预设自动生成完整代码。
+          <br />兼容性：Chrome 3+、Safari 4+、Firefox 49+（需 -webkit- 前缀或 background-clip: text）。
+        </p>
+      </details>
+      <details>
+        <summary>background-size: cover 和 contain 有什么区别？</summary>
+        <p>
+          两者都让图片缩放以适应容器，但策略不同：
+          <br /><strong>cover（覆盖）</strong>：图片等比缩放<strong>完全填满</strong>容器，可能裁切超出部分。
+          适合 Hero 背景、全屏封面——保证无空白但可能看不到图片完整内容。
+          <br /><strong>contain（包含）</strong>：图片等比缩放<strong>完整显示</strong>在容器内，可能留白。
+          适合 logo 展示、产品图——保证图片完整但容器可能有空白区域。
+          <br /><strong>auto（原始）</strong>：图片按原始尺寸显示，不缩放。
+          <br />数学差异：cover 取 max(容器宽/图宽, 容器高/图高) 作为缩放比；contain 取 min。
+          <br />本工具每层可独立选择 cover / contain / auto。
+        </p>
+      </details>
+      <details>
+        <summary>background-attachment: fixed 视差效果有什么注意点？</summary>
+        <p>
+          <code>background-attachment: fixed</code> 让背景相对于<strong>视口固定</strong>，不随页面滚动，
+          产生视差效果——内容滚动时背景"不动"。
+          <br /><strong>注意点</strong>：
+          <br />① <strong>性能开销</strong>：fixed 背景在滚动时需要反复重绘，移动端尤其卡顿。
+          iOS Safari 默认忽略 fixed 改用 scroll 以保性能。
+          <br />② <strong>定位参考</strong>：fixed 模式下 background-position 相对于视口而非元素自身，
+          图片尺寸需足够大（推荐 cover）。
+          <br />③ <strong>替代方案</strong>：移动端视差推荐 <code>position: sticky</code> + transform 或
+          JavaScript scroll 监听，性能更好。
+          <br />④ <strong>local 模式</strong>：当元素自身可滚动（overflow: auto）时，<code>attachment: local</code>
+          让背景随元素内容滚动，适合滚动容器内的背景。
+        </p>
+      </details>
+      <details>
+        <summary>background-origin 和 background-clip 有什么区别？</summary>
+        <p>
+          两者都接受 <code>border-box / padding-box / content-box</code> 三个值，但作用不同：
+          <br /><strong>background-origin（定位参考区）</strong>：决定 <code>background-position</code> 的坐标系起点。
+          padding-box（默认）时 position: left top 对齐 padding 区左上角；border-box 时对齐边框左上角；
+          content-box 时对齐内容区左上角。
+          <br /><strong>background-clip（绘制区域）</strong>：决定背景<strong>绘制到哪个区域</strong>。
+          border-box（默认）时背景绘制到边框外缘；padding-box 时只绘制到 padding 区（不覆盖边框）；
+          content-box 时只绘制到内容区。
+          <br />区别总结：origin 管"从哪开始定位"，clip 管"画到哪截止"。两者经常配合使用实现精细控制。
+          <br />clip 还支持 <code>text</code> 值实现文字裁剪，但 origin 不支持 text。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有背景配置、渐变编辑、图片 URL 引用与 CSS 生成由
+          JavaScript 在你本地执行，不会发送到任何服务器。预览通过浏览器原生 CSS 渲染实时呈现，
+          全程零网络请求，可离线使用。图片 URL 仅在浏览器中作为 CSS background-image 引用加载，
+          不会被上传或存储。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS background 复合属性生成器专属样式 */
+  .bg {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区 */
+  .bg__preview-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 24px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 棋盘格背景可视化透明区域 */
+  .bg__preview {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    /* 棋盘格底纹 */
+    background-image:
+      linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
+      linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
+      linear-gradient(-45deg, transparent 75%, #d0d0d0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    overflow: hidden;
+  }
+
+  /* 文字裁剪模式下的预览文字 */
+  .bg__preview-text {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 2px;
+    word-break: break-all;
+    text-align: center;
+    padding: 0 16px;
+  }
+
+  .bg__preview-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .bg__preview-size,
+  .bg__preview-text-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bg__preview-size input[type='range'] {
+    width: 120px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .bg__preview-text-input input[type='text'] {
+    width: 120px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  /* 预设按钮组 */
+  .bg__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .bg__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 通用按钮 */
+  .bg__btn {
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  }
+
+  .bg__btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .bg__btn--add {
+    align-self: flex-start;
+    border-style: dashed;
+    color: var(--color-text-soft);
+  }
+
+  .bg__btn--copy {
+    min-width: 60px;
+  }
+
+  /* 全局设置区 */
+  .bg__global {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px;
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 颜色字段（color picker + text input 组合） */
+  .bg__color-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .bg__color-field input[type='color'] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--color-bg);
+  }
+
+  .bg__color-text {
+    width: 130px;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  /* 行布局：标签 + 控件 */
+  .bg__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .bg__row-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+    min-width: 36px;
+  }
+
+  /* 分段按钮组 */
+  .bg__seg {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .bg__seg-btn {
+    padding: 5px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .bg__seg-btn:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .bg__seg-btn.is-active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 9 宫格位置选择器 */
+  .bg__pos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 28px);
+    grid-template-rows: repeat(3, 28px);
+    gap: 3px;
+  }
+
+  .bg__pos-cell {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .bg__pos-cell:hover {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-bg-soft, rgba(43, 108, 255, 0.08));
+  }
+
+  .bg__pos-cell.is-active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 背景层列表 */
+  .bg__layers {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .bg__layer {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bg__layer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bg__layer-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .bg__layer-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .bg__icon-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .bg__icon-btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .bg__icon-btn--danger:hover:not(:disabled) {
+    border-color: var(--color-error, #dc2626);
+    color: var(--color-error, #dc2626);
+  }
+
+  .bg__icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  /* 字段（角度滑块等） */
+  .bg__field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .bg__field--full {
+    width: 100%;
+  }
+
+  .bg__field-label {
+    font-weight: 500;
+    min-width: 48px;
+  }
+
+  .bg__field-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-primary, #2b6cff);
+    min-width: 40px;
+  }
+
+  .bg__field input[type='range'] {
+    flex: 1;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .bg__url-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    min-width: 200px;
+  }
+
+  /* 颜色双字段区 */
+  .bg__colors {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* 代码输出区 */
+  .bg__output {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .bg__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .bg__output-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .bg__code {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 平板断点 */
+  @media (max-width: 768px) {
+    .bg__preview-text {
+      font-size: 28px;
+    }
+
+    .bg__global {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .bg__colors {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+
+  /* 移动端断点 */
+  @media (max-width: 414px) {
+    .bg__preview-wrap {
+      padding: 16px;
+    }
+
+    .bg__preview-text {
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+
+    .bg__preview-controls {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bg__preview-size input[type='range'] {
+      width: 100px;
+    }
+
+    .bg__row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+
+    .bg__row-label {
+      min-width: auto;
+    }
+
+    .bg__seg-btn {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    .bg__color-text {
+      width: 100px;
+    }
+
+    .bg__url-input {
+      min-width: 140px;
+    }
+
+    .bg__code {
+      font-size: 12px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global(html[data-theme='dark']) .bg__preview {
+    background-image:
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+  }
+</style>
