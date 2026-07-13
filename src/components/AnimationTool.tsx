@@ -16,6 +16,8 @@ import { copyText } from '../utils/clipboard';
 
 /** 单个关键帧的状态：位置 / 旋转 / 缩放 / 透明度 */
 interface KeyframeState {
+  /** 帧唯一标识，作为 React key，避免删除中间帧时受控 input 焦点错位 */
+  id: string;
   /** 帧位置百分比，0-100 */
   offset: number;
   translateX: number;
@@ -27,6 +29,9 @@ interface KeyframeState {
   /** 透明度 0-1 */
   opacity: number;
 }
+
+/** 预设/默认值用的关键帧输入类型（不含 id，应用预设时统一生成 id） */
+type KeyframeInput = Omit<KeyframeState, 'id'>;
 
 /** animation 简写相关的 7 个属性（play-state 单独输出） */
 interface AnimationConfig {
@@ -45,7 +50,7 @@ interface AnimationConfig {
 /** 预设动画数据结构 */
 interface AnimationPreset {
   name: string;
-  keyframes: KeyframeState[];
+  keyframes: KeyframeInput[];
   config: Partial<AnimationConfig>;
 }
 
@@ -59,11 +64,20 @@ const TIMING_FUNCTIONS = [
   'cubic-bezier(0.68, -0.55, 0.27, 1.55)',
 ];
 
+// 关键帧 id 生成器：模块级自增计数 + 时间戳，保证全局唯一，作为稳定 React key
+let _kfIdCounter = 0;
+const genKfId = (): string => `kf_${Date.now().toString(36)}_${(++_kfIdCounter).toString(36)}`;
+
+// 把不带 id 的关键帧输入数组转为带 id 的 KeyframeState 数组
+const withIds = (list: KeyframeInput[]): KeyframeState[] =>
+  list.map((k) => ({ ...k, id: genKfId() }));
+
 // 默认关键帧：0% 原始状态 + 100% 原始状态（占位）
-const makeDefaultKeyframes = (): KeyframeState[] => [
-  { offset: 0, translateX: 0, translateY: 0, rotate: 0, scale: 1, opacity: 1 },
-  { offset: 100, translateX: 0, translateY: 0, rotate: 0, scale: 1, opacity: 1 },
-];
+const makeDefaultKeyframes = (): KeyframeState[] =>
+  withIds([
+    { offset: 0, translateX: 0, translateY: 0, rotate: 0, scale: 1, opacity: 1 },
+    { offset: 100, translateX: 0, translateY: 0, rotate: 0, scale: 1, opacity: 1 },
+  ]);
 
 // 默认 animation 配置
 const DEFAULT_CONFIG: AnimationConfig = {
@@ -226,9 +240,9 @@ export default function AnimationTool() {
   // 手动重启动画
   const handleRestart = useCallback(() => setPreviewKey((k) => k + 1), []);
 
-  // 应用预设
+  // 应用预设：为预设的关键帧统一生成新 id，保证每次应用的帧 id 唯一
   const applyPreset = useCallback((preset: AnimationPreset) => {
-    setKeyframes(preset.keyframes.map((k) => ({ ...k })));
+    setKeyframes(withIds(preset.keyframes));
     setConfig({ ...DEFAULT_CONFIG, ...preset.config });
   }, []);
 
@@ -258,7 +272,7 @@ export default function AnimationTool() {
     setKeyframes((prev) => (prev.length <= 2 ? prev : prev.filter((_, i) => i !== index)));
   }, []);
 
-  // 新增中间关键帧，默认 50% 位置，复制最近一帧的状态
+  // 新增中间关键帧，默认 50% 位置，复制最近一帧的状态（生成新 id 作为稳定 key）
   const addKeyframe = useCallback(() => {
     setKeyframes((prev) => {
       if (prev.length >= 8) return prev;
@@ -273,7 +287,7 @@ export default function AnimationTool() {
           bestPos = Math.round((sorted[i].offset + sorted[i + 1].offset) / 2);
         }
       }
-      return [...prev, { ...sorted[sorted.length - 1], offset: bestPos }];
+      return [...prev, { ...sorted[sorted.length - 1], offset: bestPos, id: genKfId() }];
     });
   }, []);
 
@@ -432,7 +446,7 @@ export default function AnimationTool() {
         </div>
         <div className="amt__keyframes">
           {keyframes.map((kf, i) => (
-            <div key={i} className="amt__kf">
+            <div key={kf.id} className="amt__kf">
               <div className="amt__kf-head">
                 <label className="amt__kf-offset">
                   位置

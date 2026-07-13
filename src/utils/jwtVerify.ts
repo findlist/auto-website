@@ -299,20 +299,31 @@ function formatUnixTime(seconds: number): string {
 
 /**
  * 计算相对时间描述
- * @returns 「剩余 X 天 Y 小时」「已过期 X 天 Y 小时」「X 天前」等
+ * @param pastWord 过去时间的描述词：exp 已过期用「已过期」（前置），iat 签发时间用「前」（后置，如「3 天前」）
+ * @param pastWordSuffix true 时描述词后置（如「3 天 5 小时前」），false 时前置（如「已过期 3 天 5 小时」）
+ * @returns 「剩余 X 天 Y 小时」「已过期 X 天 Y 小时」「X 天 Y 小时前」等
  */
-function formatRelativeTime(targetSeconds: number, nowSeconds: number, isFuture: boolean): string {
+function formatRelativeTime(
+  targetSeconds: number,
+  nowSeconds: number,
+  isFuture: boolean,
+  pastWord: string = '已过期',
+  pastWordSuffix: boolean = false,
+): string {
   const diff = Math.abs(targetSeconds - nowSeconds);
   const days = Math.floor(diff / 86400);
   const hours = Math.floor((diff % 86400) / 3600);
   const minutes = Math.floor((diff % 3600) / 60);
-  if (days > 0) {
-    return isFuture ? `剩余 ${days} 天 ${hours} 小时` : `已${isFuture ? '' : '过期 '}${days} 天 ${hours} 小时`;
+  // 时长描述：天 > 小时 > 分钟，按最大可用单位组合
+  const duration = days > 0
+    ? `${days} 天 ${hours} 小时`
+    : hours > 0
+      ? `${hours} 小时 ${minutes} 分`
+      : `${minutes} 分钟`;
+  if (isFuture) {
+    return `剩余 ${duration}`;
   }
-  if (hours > 0) {
-    return isFuture ? `剩余 ${hours} 小时 ${minutes} 分` : `已过期 ${hours} 小时 ${minutes} 分`;
-  }
-  return isFuture ? `剩余 ${minutes} 分钟` : `已过期 ${minutes} 分钟`;
+  return pastWordSuffix ? `${duration}${pastWord}` : `${pastWord} ${duration}`;
 }
 
 /**
@@ -398,7 +409,7 @@ function checkTimeClaims(payload: Record<string, unknown>): ClaimCheck[] {
         status: isFuture ? 'invalid' : 'valid',
         value: iat,
         localTime: formatUnixTime(iat),
-        relative: isFuture ? '签发时间在未来（异常）' : formatRelativeTime(iat, nowSec, false),
+        relative: isFuture ? '签发时间在未来（异常）' : formatRelativeTime(iat, nowSec, false, '前', true),
         message: isFuture ? 'iat 在未来时间，可能令牌被篡改' : '签发时间正常',
       });
     }

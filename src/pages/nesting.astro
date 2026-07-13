@@ -1,0 +1,489 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import NestingTool from '../components/NestingTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS Nesting 原生嵌套生成器 - 在线 & 选择器与 @media 嵌套可视化工具',
+  description:
+    '免费的在线 CSS Nesting 原生嵌套生成器：可视化编辑根选择器与嵌套子规则，完整支持 & 嵌套选择器（&:hover / &.active / & + .sibling）、嵌套 @media / @supports / @container 等 at-rule、@media 内继续嵌套选择器的两层嵌套结构。iframe 隔离预览实时应用嵌套 CSS，可编辑预览 HTML，8 组预设覆盖卡片组件、按钮状态、响应式布局、导航菜单、表单输入、列表条纹、工具提示等常见场景。实时生成浏览器原生支持的嵌套 CSS 代码（2023 起全主流浏览器支持），一键复制。适用于组件化 CSS、BEM 替代方案、样式作用域组织等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS Nesting 原生嵌套生成器',
+    description: '在线 CSS nesting 原生嵌套生成器，支持 & 选择器、@media 嵌套、两层嵌套结构可视化编辑，一键复制嵌套 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS Nesting 原生嵌套生成器</h1>
+      <p>
+        可视化生成 CSS 原生嵌套语法（CSS Nesting Module Level 1，2023 年起全主流浏览器原生支持）：
+        完整支持 <code>&amp;</code> 嵌套选择器（<code>&amp;:hover</code> / <code>&amp;.active</code> / <code>&amp; + .sibling</code>）、
+        嵌套 <code>@media</code> / <code>@supports</code> / <code>@container</code> 等 at-rule、
+        以及 <code>@media</code> 内继续嵌套选择器规则的两层嵌套结构。
+        iframe 隔离预览实时应用嵌套 CSS，可编辑预览 HTML，内置卡片组件、按钮状态、响应式布局、导航菜单、
+        表单输入、列表条纹、工具提示 8 组预设。适用于组件化 CSS、BEM 替代方案、样式作用域组织等现代前端开发场景。
+        所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <NestingTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS Nesting 原生嵌套？它解决了什么问题？</summary>
+        <p>
+          <strong>CSS Nesting</strong>（CSS 嵌套模块 Level 1）是 2023 年正式落地的原生 CSS 特性，
+          允许在一个选择器内部嵌套定义另一个选择器的样式，语法与 Sass/Less 等预处理器的嵌套类似但由浏览器原生解析。
+          它解决了三大痛点：一是<strong>样式组织松散</strong>，传统 CSS 必须把同一组件的样式分散在多处，难以维护；
+          二是<strong>预处理器依赖</strong>，过去实现嵌套必须引入 Sass/Less 等工具，增加构建链复杂度；
+          三是<strong>选择器重复</strong>，传统写法需重复书写父选择器（如 .card、.card .title、.card:hover），
+          嵌套写法把相关规则聚合在父选择器内部，结构更清晰。原生嵌套无需编译，浏览器直接解析，性能与原生 CSS 一致。
+        </p>
+      </details>
+      <details>
+        <summary>& 嵌套选择器是什么？什么时候必须使用 &？</summary>
+        <p>
+          <code>&</code> 是嵌套选择器（nesting selector），代表父选择器的引用。
+          它有两种用法：<br />
+          <strong>显式用法</strong>（必须用 &）：当子选择器需要附加在父选择器上时，
+          如 <code>&:hover</code>（父的悬停态）、<code>&.active</code>（父的 active 类）、
+          <code>&::before</code>（父的伪元素）、<code>& + .sibling</code>（父的相邻兄弟）。
+          这些场景下 & 不可省略，因为浏览器需要明确知道是"附加"关系。<br />
+          <strong>隐式用法</strong>（可省略 &）：当子选择器是后代关系时，
+          如 <code>.child &#123; &#125;</code> 等价于 <code>& .child &#123; &#125;</code>（父的后代 .child）。
+          浏览器会自动推断为后代选择器。但建议在可能引起歧义时显式使用 &。
+        </p>
+      </details>
+      <details>
+        <summary>嵌套 @media / @supports / @container 等 at-rule 怎么用？</summary>
+        <p>
+          CSS Nesting 允许在选择器内部嵌套 at-rule，最常见的场景是嵌套 <code>@media</code> 实现组件级响应式。
+          例如：<code>.card &#123; padding: 32px; @media (max-width: 768px) &#123; padding: 16px; &#125; &#125;</code>
+          等价于传统写法 <code>.card &#123; padding: 32px; &#125; @media (max-width: 768px) &#123; .card &#123; padding: 16px; &#125; &#125;</code>。
+          嵌套写法把同一组件的响应式规则聚合在一起，避免在不同断点文件中分散维护。
+          同理可嵌套 <code>@supports</code>（特性查询）、<code>@container</code>（容器查询）等。
+          本工具支持在 @media 规则内部继续嵌套选择器规则，演示两层嵌套结构。
+        </p>
+      </details>
+      <details>
+        <summary>CSS 原生嵌套与 Sass/Less 预处理器嵌套有什么区别？</summary>
+        <p>
+          两者语法相似但有本质差异：<br />
+          <strong>解析方式</strong>：原生嵌套由浏览器直接解析，无需编译；Sass/Less 需要构建工具编译成传统 CSS。<br />
+          <strong>性能</strong>：原生嵌套与原生 CSS 性能一致；Sass/Less 编译后的 CSS 性能也一致，但构建过程消耗时间。<br />
+          <strong>功能范围</strong>：Sass/Less 还提供变量、混入、函数、循环等编程能力；原生嵌套仅提供嵌套语法，
+          变量需用 CSS Custom Properties（<code>--var</code>），混入可用 <code>@layer</code> 部分替代。<br />
+          <strong>选择器拼接</strong>：Sass 中 <code>&</code> 可任意拼接（如 <code>&__title</code> 用于 BEM），
+          原生嵌套的 <code>&</code> 只能作为完整选择器的引用，不能拼接字符串（如 <code>&__title</code> 在原生嵌套中无效）。
+          这是原生嵌套相对 Sass 的主要限制。
+        </p>
+      </details>
+      <details>
+        <summary>浏览器兼容性如何？哪些浏览器支持？</summary>
+        <p>
+          CSS Nesting 自 2023 年起在所有主流浏览器中已全面支持：<br />
+          - Chrome 112+（2023 年 4 月）<br />
+          - Edge 112+（2023 年 4 月）<br />
+          - Firefox 117+（2023 年 8 月）<br />
+          - Safari 16.5+（2023 年 5 月）<br />
+          根据 caniuse 数据，全球浏览器支持率已超过 95%。
+          早期版本（2023 年前）需要 <code>@nest</code> 显式语法或 PostCSS 嵌套插件降级编译。
+          当前新项目可直接使用原生嵌套无需任何 polyfill。如需兼容旧浏览器，可用 PostCSS <code>postcss-nesting</code> 插件
+          自动降级编译为传统 CSS。
+        </p>
+      </details>
+      <details>
+        <summary>嵌套层级过深会有什么问题？最佳实践是什么？</summary>
+        <p>
+          嵌套虽好但过深会带来问题：<br />
+          <strong>选择器特异性升高</strong>：每层嵌套增加一个选择器，特异性提高，后续覆盖样式更困难。<br />
+          <strong>选择器长度增加</strong>：编译后选择器变长（如 .card .body .title .text），性能略降且可读性差。<br />
+          <strong>耦合度上升</strong>：深层嵌套依赖父选择器结构，组件难以复用到其他位置。<br />
+          <strong>最佳实践</strong>：建议嵌套不超过 3 层。组件级样式用 1-2 层嵌套组织，状态修饰（&:hover / &.active）
+          用 1 层。避免为了"组织代码"而深层嵌套后代选择器——优先用 BEM 命名或 CSS Custom Properties 控制样式。
+          本工具限制为两层嵌套（根 → 子规则 → @media 内子规则），符合大多数实际场景需求。
+        </p>
+      </details>
+      <details>
+        <summary>原生嵌套中的 & 与隐式嵌套有什么区别？何时用哪个？</summary>
+        <p>
+          <strong>显式 &</strong>：明确表示"父选择器"，用于伪类、伪元素、类名附加、兄弟选择器等"附加"关系。
+          如 <code>&:hover</code>、<code>&.active</code>、<code>&::before</code>、<code>& + .next</code>。
+          <br />
+          <strong>隐式嵌套</strong>：直接写选择器，浏览器推断为"后代关系"。如 <code>.child &#123; &#125;</code> 等价于 <code>& .child &#123; &#125;</code>。
+          <br />
+          关键区别：隐式嵌套只能表达"后代"关系，& 可以表达"附加"关系。当需要附加伪类/类名时必须用 &。
+          本工具的预设中，<code>.title</code> 用隐式嵌套（后代），<code>&:hover</code> 用显式 &（附加伪类），
+          展示了两者的典型用法。建议在不确定时优先用显式 &，语义更清晰。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 嵌套结构编辑、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox</code> 属性限制能力，预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的嵌套 CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 练习与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：nst 命名空间 */
+  .nst {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .nst__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .nst__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .nst__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .nst__editor,
+  .nst__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 配置面板 */
+  .nst__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .nst__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nst__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 选择器输入框 */
+  .nst__selector-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+
+  .nst__panel-head + .nst__selector-input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+  }
+
+  /* 声明列表 */
+  .nst__decls {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nst__decl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nst__decl-prop {
+    flex: 0 0 38%;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-primary);
+    background: var(--color-bg);
+  }
+
+  .nst__decl-colon {
+    color: var(--color-text-soft);
+    font-family: var(--font-mono);
+  }
+
+  .nst__decl-val {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  /* 规则卡片 */
+  .nst__rules {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nst__rule {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .nst__rule--child {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    border-style: dashed;
+  }
+
+  .nst__rule-head {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .nst__rule-head .nst__selector-input {
+    flex: 1;
+  }
+
+  /* @media 内嵌套规则区 */
+  .nst__children {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .nst__children-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .nst__children-title {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 600;
+  }
+
+  .nst__empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-size: 13px;
+  }
+
+  /* 通用按钮 */
+  .nst__btn {
+    padding: 5px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .nst__btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .nst__btn--preset {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .nst__btn--add,
+  .nst__btn--add-child,
+  .nst__btn--add-decl {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-soft, transparent);
+  }
+
+  .nst__btn--add:hover,
+  .nst__btn--add-child:hover,
+  .nst__btn--add-decl:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .nst__btn--del {
+    border: none;
+    color: var(--color-danger, #dc2626);
+    background: transparent;
+    padding: 4px 8px;
+  }
+
+  .nst__btn--del:hover {
+    background: rgba(220, 38, 38, 0.1);
+  }
+
+  .nst__btn--copy {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .nst__btn--copy:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 输出区头部 */
+  .nst__output-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+
+  .nst__output-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* iframe 预览 */
+  .nst__iframe {
+    width: 100%;
+    height: 260px;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: #fff;
+  }
+
+  /* HTML 编辑区 */
+  .nst__textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  /* 代码输出 */
+  .nst__code-pre {
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* 768px 平板断点：单列布局 */
+  @media (max-width: 768px) {
+    .nst__main {
+      grid-template-columns: 1fr;
+    }
+
+    .nst__presets {
+      gap: 6px;
+    }
+
+    .nst__btn--preset {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+  }
+
+  /* 414px 手机断点：紧凑布局 */
+  @media (max-width: 414px) {
+    .nst__presets-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .nst__rule-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .nst__decl-prop {
+      flex: 1;
+    }
+
+    .nst__iframe {
+      height: 200px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme='dark']) .nst__iframe {
+    background: #1f2937;
+  }
+</style>
