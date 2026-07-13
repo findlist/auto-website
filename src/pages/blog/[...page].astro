@@ -186,7 +186,8 @@ const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
 
   .blog-card:hover {
     border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
+    /* 与首页 tool-card / blog-section__card 悬停反馈统一：主色光晕 + 上浮 */
+    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-ring);
     transform: translateY(-3px);
   }
 

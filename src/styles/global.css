@@ -163,6 +163,13 @@ button {
   padding: 0 20px;
 }
 
+/* 窄屏容器收紧内边距，给内容留出更多可视区域 */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
 /* 顶部导航 */
 .site-header {
   border-bottom: 1px solid var(--color-border);
@@ -264,6 +271,31 @@ button {
 
 .site-footer a:hover {
   color: var(--color-primary);
+}
+
+/* 移动端窄屏：导航链接收紧间距、字号微缩，避免 320px 屏幕换行 */
+@media (max-width: 480px) {
+  .site-header__inner {
+    height: 54px;
+  }
+  .site-header__brand {
+    font-size: 16px;
+  }
+  .site-header__brand-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+  .site-header__nav a {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .site-footer__inner {
+    /* 窄屏底部信息与导航垂直堆叠并居中，避免文字拥挤 */
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
 }
 
 /* 标题区 */

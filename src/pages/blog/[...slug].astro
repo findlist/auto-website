@@ -284,6 +284,13 @@ const meta: SiteMeta = {
     color: var(--color-primary);
     text-decoration: underline;
     text-underline-offset: 2px;
+    /* 链接下划线粗细统一为 1px，避免粗体链接下划线过厚 */
+    text-decoration-thickness: 1px;
+    transition: color var(--transition-fast);
+  }
+
+  .blog-article__content a:hover {
+    color: var(--color-primary-hover);
   }
 
   /* 文末 CTA */
