@@ -1,0 +1,727 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ContainerTool from '../components/ContainerTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS @container 容器查询生成器 - 在线组件级响应式布局工具',
+  description:
+    '免费的在线 CSS @container 容器查询生成器：可视化编辑 container-type（size/inline-size/normal）与 container-name 容器声明，构建多条 @container 查询（min-width/max-width 阈值 + 命中样式）。可拖拽调整预览容器宽度，实时观察样式随容器尺寸变化的"组件级响应式"效果。实时预览，一键复制 CSS 代码。内置单断点窄宽、双断点窄中宽、卡片三栏自适应、字号自适应、紧凑/宽松切换、侧栏显隐、渐变颜色 4 断点等 8 组预设。适用于卡片组件、面板布局、组件库响应式设计等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS @container 容器查询生成器',
+    description: '在线 CSS 容器查询可视化生成器，支持 container-type 与 container-name 声明，构建多条 @container 查询，实时拖拽预览，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS @container 容器查询生成器</h1>
+      <p>
+        可视化生成 CSS <code>@container</code> 容器查询：完整支持容器声明（<code>container-type</code>、
+        <code>container-name</code>）与多条 <code>@container</code> 查询（<code>min-width</code> /
+        <code>max-width</code> 阈值 + 命中后样式）。拖拽预览容器右侧手柄即可调整宽度，
+        实时观察样式随容器尺寸变化的"组件级响应式"效果，一键复制 CSS 代码。
+        内置单断点窄宽、双断点窄中宽、卡片三栏自适应、字号自适应、紧凑/宽松切换等 8 组预设。
+        适用于卡片组件、面板布局、组件库响应式设计等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ContainerTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS 容器查询？它与 @media 媒体查询有什么区别？</summary>
+        <p>
+          <strong>容器查询（Container Queries）</strong>是 CSS 在 2023 年正式落地的现代响应式特性，
+          允许组件根据<strong>其父容器（containment context）的尺寸</strong>应用不同样式，而非视口尺寸。
+          <br />与 <code>@media</code> 媒体查询的核心区别：
+          <br /><strong>@media</strong>：基于<strong>浏览器视口（viewport）</strong>查询。同一组件在不同位置（侧栏窄、主区宽）只能响应视口，无法真正"组件级响应式"。
+          <br /><strong>@container</strong>：基于<strong>父容器尺寸</strong>查询。同一组件放在侧栏 200px 与主区 800px 时可自动应用不同样式，真正实现"组件即插即用"的响应式。
+          <br />典型场景：一个卡片组件在窄容器中显示为竖向堆叠，在宽容器中显示为横向布局，与卡片在页面中的位置无关。本工具的可拖拽预览区直观展示这一效果。
+        </p>
+      </details>
+      <details>
+        <summary>container-type 的 size、inline-size、normal 有什么区别？应该选哪个？</summary>
+        <p>
+          <code>container-type</code> 声明元素为 containment context，决定可查询的维度：
+          <br /><strong>size</strong>：在宽高<strong>两个维度</strong>建立 containment，可查询 <code>width</code> 与 <code>height</code>。但会同时影响元素尺寸计算（元素尺寸不再由内容撑开，需显式指定），可能引起布局副作用。
+          <br /><strong>inline-size</strong>（推荐）：仅在<strong>横向（inline 方向）</strong>建立 containment，仅可查询 <code>width</code>（即 <code>inline-size</code>）。不影响元素高度计算，性能最优，覆盖 95% 实际场景。
+          <br /><strong>normal</strong>：默认值，<strong>不建立</strong> containment context，无法被 <code>@container</code> 查询。
+          <br />选型建议：除非需要响应高度变化（如全屏 Hero 区按高度切换布局），优先使用 <code>inline-size</code>，避免 <code>size</code> 带来的布局复杂度。
+        </p>
+      </details>
+      <details>
+        <summary>container-name 是什么？什么时候需要命名容器？</summary>
+        <p>
+          <code>container-name</code> 为 containment context 命名，使 <code>@container</code> 查询可指定目标容器。
+          <br /><strong>匿名容器</strong>（默认）：不指定 <code>container-name</code>，<code>@container (min-width: 480px)</code> 会匹配最近的祖先 containment context。简单场景足够，但多层嵌套时可能误匹配。
+          <br /><strong>命名容器</strong>：声明 <code>container-name: card</code> 后，<code>@container card (min-width: 480px)</code> 仅匹配名为 <code>card</code> 的容器，避免命名冲突。
+          <br />命名规则：必须是合法 CSS 标识符（字母/数字/连字符），不能以数字开头。本工具会自动过滤非法字符。
+          <br />建议：组件库或复杂嵌套场景下显式命名容器，避免匿名容器的隐式匹配带来的维护困难。
+        </p>
+      </details>
+      <details>
+        <summary>@container 查询的语法是什么？min-width 和 max-width 如何组合？</summary>
+        <p>
+          <code>@container</code> 语法：
+          <br /><code>@container [name] (condition) { /* 命中样式 */ }</code>
+          <br />其中 <code>name</code> 可选（命名容器时使用），<code>condition</code> 是查询条件。
+          <br /><strong>单条件</strong>：<code>@container (min-width: 480px)</code>，容器宽度 ≥ 480px 时命中。
+          <br /><strong>多条件（且）</strong>：<code>@container (min-width: 320px) and (max-width: 640px)</code>，宽度在 320-640px 区间命中。
+          <br /><strong>多条件（或）</strong>：<code>@container (min-width: 800px) or (height &gt; 600px)</code>，任一条件满足即命中。
+          <br />注意：与 <code>@media</code> 不同，<code>@container</code> 的 <code>min-width</code> / <code>max-width</code> 是<strong>容器自身尺寸</strong>而非视口尺寸。本工具的预览容器宽度可拖拽调整，实时反映查询命中情况。
+        </p>
+      </details>
+      <details>
+        <summary>容器查询的优先级如何确定？多条查询同时命中怎么办？</summary>
+        <p>
+          容器查询遵循 CSS 层叠规则：<strong>后定义的查询覆盖先定义的</strong>（同等特异性下）。
+          <br />例如同时定义 <code>@container (min-width: 320px)</code> 与 <code>@container (min-width: 640px)</code>，
+          当容器宽度为 700px 时两条都命中，但后定义的（640px）样式会覆盖前者。
+          <br />实战技巧：从小到大排列断点，让宽屏样式自然覆盖窄屏样式，符合"渐进增强"思想。
+          <br />本工具的预设"渐变颜色（4 断点）"展示了这一规则——4 个查询从 240px 到 800px 递增，
+          拖拽预览容器从窄到宽，颜色依次切换为玫瑰→橙→青柠→青，直观体现优先级覆盖。
+        </p>
+      </details>
+      <details>
+        <summary>使用容器查询需要考虑浏览器兼容性吗？</summary>
+        <p>
+          容器查询于 2023 年 2 月在所有主流浏览器（Chrome 105+、Firefox 110+、Safari 16+）正式支持，2026 年已是成熟特性。
+          <br />兼容性数据：
+          <br /><strong>container-type / container-name</strong>：Chrome 105+、Firefox 110+、Safari 16+，全球浏览器支持率 &gt; 95%
+          <br /><strong>@container 规则</strong>：同上
+          <br /><strong>style() 函数查询（基于自定义属性值）</strong>：Chrome 111+、Safari 17.4+，较新特性
+          <br />对于需要兼容旧浏览器（如 IE、Chrome 100 以下）的项目，可使用 <code>@supports</code> 检测后降级为 <code>@media</code>。
+          <br />本工具生成的代码仅使用稳定的容器查询语法，无需 polyfill 即可在 2026 年主流浏览器中运行。
+        </p>
+      </details>
+      <details>
+        <summary>容器查询对性能有什么影响？应该避免哪些用法？</summary>
+        <p>
+          容器查询本身性能开销极小，浏览器仅在容器尺寸变化时重新评估查询，不触发额外布局。
+          <br /><strong>性能建议</strong>：
+          <br />1. 优先使用 <code>container-type: inline-size</code> 而非 <code>size</code>——后者会同时影响宽高布局，可能触发更多重排。
+          <br />2. 避免在大范围内嵌套多层 containment context，每层都会增加样式评估成本。
+          <br />3. 命中样式中优先修改合成层属性（如 <code>background</code>、<code>color</code>、<code>transform</code>），避免触发重排。
+          <br />4. 容器查询的命中样式会触发完整样式重计算，但仅在容器尺寸变化时发生，正常滚动不触发。
+          <br />本工具的预览区使用了 <code>inline-size</code> 与轻量样式属性，性能表现优异，可作为生产实践参考。
+        </p>
+      </details>
+      <details>
+        <summary>数据会上传到服务器吗？</summary>
+        <p>
+          不会。本工具完全在浏览器内运行，所有容器声明、查询条件、样式调节与 CSS 生成由 JavaScript 在你本地执行，
+          不会发送任何配置或代码到服务器。全程零网络请求，可离线使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* CSS @container 容器查询生成器专属样式 */
+  .cnt {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 预览区：包含拖拽手柄与命中状态显示 */
+  .cnt__preview {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .cnt__preview-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .cnt__preview-label {
+    font-weight: 700;
+  }
+
+  .cnt__preview-width {
+    font-family: var(--font-mono);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__preview-status {
+    margin-left: auto;
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  /* 预览舞台：横向滚动 + 可拖拽手柄 */
+  .cnt__preview-stage {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 16px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow-x: auto;
+    min-height: 200px;
+  }
+
+  /* 可拖拽的预览容器 */
+  .cnt__resizable {
+    flex-shrink: 0;
+    min-width: 160px;
+    max-width: 960px;
+    transition: width 0.05s linear;
+  }
+
+  /* 演示项：实时应用命中查询的样式 */
+  .cnt__item {
+    width: 100%;
+    box-sizing: border-box;
+    transition: background 0.2s ease, color 0.2s ease, padding 0.2s ease,
+      border-radius 0.2s ease, font-size 0.2s ease;
+  }
+
+  .cnt__item-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .cnt__item-desc {
+    opacity: 0.9;
+    line-height: 1.5;
+  }
+
+  /* 拖拽手柄：右侧的视觉拖动点 */
+  .cnt__resize-handle {
+    flex-shrink: 0;
+    width: 16px;
+    align-self: stretch;
+    margin-left: 4px;
+    border-radius: 4px;
+    background: var(--color-primary, #2b6cff);
+    cursor: ew-resize;
+    position: relative;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  .cnt__resize-handle::before,
+  .cnt__resize-handle::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 1px;
+  }
+
+  .cnt__resize-handle::before {
+    left: 5px;
+  }
+
+  .cnt__resize-handle::after {
+    right: 5px;
+  }
+
+  .cnt__resize-handle:hover,
+  .cnt__resize-handle:focus-visible {
+    background: var(--color-primary-dark, #1e54d6);
+    outline: 2px solid var(--color-primary, #2b6cff);
+    outline-offset: 2px;
+  }
+
+  /* 宽度快捷按钮 */
+  .cnt__width-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .cnt__shortcuts-label {
+    font-weight: 600;
+  }
+
+  .cnt__btn--width {
+    padding: 3px 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .cnt__btn--width-active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  /* 预设按钮组 */
+  .cnt__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .cnt__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 通用按钮 */
+  .cnt__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .cnt__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .cnt__btn--add {
+    align-self: flex-start;
+    margin-top: 12px;
+    padding: 8px 18px;
+    border-style: dashed;
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__btn--copy {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__btn--copy:hover:not(:disabled) {
+    background: var(--color-primary-dark, #1e54d6);
+    border-color: var(--color-primary-dark, #1e54d6);
+  }
+
+  /* 控制面板布局 */
+  .cnt__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .cnt__panel {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .cnt__panel-title {
+    margin: 0 0 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cnt__panel-sub {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-soft);
+  }
+
+  /* 字段（按钮组 / 滑块 / 输入） */
+  .cnt__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .cnt__field--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .cnt__field--info {
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-left: 3px solid var(--color-primary, #2b6cff);
+  }
+
+  .cnt__field--info ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .cnt__field--info li {
+    margin: 4px 0;
+    line-height: 1.5;
+  }
+
+  .cnt__field-label {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cnt__field-label output {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: 500;
+  }
+
+  .cnt__field-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+  }
+
+  .cnt__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__field input[type='color'] {
+    width: 100%;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+  }
+
+  .cnt__input-text {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: var(--font-mono);
+  }
+
+  .cnt__input-text:focus {
+    border-color: var(--color-primary, #2b6cff);
+    outline: none;
+  }
+
+  /* 按钮组 */
+  .cnt__btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .cnt__btn-option {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .cnt__btn-option:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__btn-option--active {
+    background: var(--color-primary, #2b6cff);
+    border-color: var(--color-primary, #2b6cff);
+    color: #fff;
+  }
+
+  .cnt__btn-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 查询列表 */
+  .cnt__query-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cnt__query-item {
+    display: grid;
+    grid-template-columns: 16px 1fr auto auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .cnt__query-item:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__query-item:focus-visible {
+    outline-color: var(--color-primary, #2b6cff);
+  }
+
+  .cnt__query-item--selected {
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 3px rgba(43, 108, 255, 0.15);
+  }
+
+  .cnt__query-item--disabled {
+    opacity: 0.55;
+  }
+
+  .cnt__query-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .cnt__query-label {
+    font-weight: 600;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cnt__query-cond {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-soft);
+    padding: 2px 6px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border-radius: 3px;
+  }
+
+  .cnt__query-toggle,
+  .cnt__query-remove {
+    padding: 2px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .cnt__query-toggle:hover {
+    background: var(--color-success, #16a34a);
+    color: #fff;
+    border-color: var(--color-success, #16a34a);
+  }
+
+  .cnt__query-remove:hover:not(:disabled) {
+    background: var(--color-danger, #dc2626);
+    color: #fff;
+    border-color: var(--color-danger, #dc2626);
+  }
+
+  .cnt__query-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* 查询编辑器 */
+  .cnt__query-editor {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cnt__editor-title {
+    margin: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .cnt__editor-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .cnt__editor-row--style {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .cnt__editor-divider {
+    margin: 4px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--color-border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+
+  /* CSS 代码输出 */
+  .cnt__output {
+    padding: 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .cnt__output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .cnt__output-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .cnt__code {
+    margin: 0;
+    padding: 14px;
+    background: var(--color-code-bg, #1e1e2e);
+    color: var(--color-code-fg, #cdd6f4);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .cnt__hint {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    line-height: 1.5;
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .cnt__panel,
+    .cnt__code,
+    .cnt__preview-stage,
+    .cnt__query-item,
+    .cnt__query-editor {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .cnt__query-cond {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  /* 移动端响应式 */
+  @media (max-width: 768px) {
+    .cnt__panels {
+      grid-template-columns: 1fr;
+    }
+    .cnt__preview-stage {
+      min-height: 160px;
+    }
+    .cnt__editor-row,
+    .cnt__editor-row--style {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .cnt__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cnt__presets-label {
+      text-align: center;
+    }
+    .cnt__btn-group {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cnt__btn-option {
+      width: 100%;
+    }
+    .cnt__preview-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .cnt__preview-status {
+      margin-left: 0;
+    }
+    .cnt__query-item {
+      grid-template-columns: 14px 1fr;
+      grid-template-rows: auto auto;
+      gap: 4px 8px;
+    }
+    .cnt__query-cond,
+    .cnt__query-toggle,
+    .cnt__query-remove {
+      grid-column: 2;
+    }
+  }
+</style>
