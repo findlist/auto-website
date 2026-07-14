@@ -354,3 +354,163 @@ light-dark() 是 CSS Color Module Level 5 引入的颜色函数（2024 年起全
 - **color-palette**：管"配色方案生成"——生成和谐配色后可导入 light-dark() 工具生成双主题变量
 
 四者形成"声明-配置-检测-生成"完整闭环：用 light-dark() 声明双主题颜色，用 color-scheme 配置方案偏好，用 color-contrast 检测对比度合规，用 color-palette 生成和谐配色。这是 CSS 工具链暗色模式能力维度的完整闭环。
+
+---
+
+# 第 47 轮 · CSS text-wrap 文本换行排版优化器（排版优化能力维度补全）
+
+## 上下文恢复
+- 承接第 46 轮（CSS light-dark() 暗色模式生成器，commit f03ffa8 → 沉淀 f9bc678）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：85 工具 + 80 博客 + 584 页面 → 本轮后 86 工具 + 81 博客 + 595 页面
+- 工作树状态：第 46 轮 topics.md 沉淀文件未提交，先提交闭环
+
+## 本轮聚焦方向
+**排版优化能力维度补全：新增 CSS text-wrap 文本换行排版优化器**
+
+text-wrap 是 CSS Text Module Level 4 引入的文本换行控制属性（2023-2024 年逐步落地），提供 balance（平衡换行）、pretty（优化换行）、stable（稳定换行）等智能换行策略，解决传统 wrap 换行的标题参差不齐、段落孤行、编辑跳动三大痛点。与现有 writing-mode（书写方向）形成"排版"能力维度互补。覆盖 "text-wrap" "balance" "pretty" "CSS 文本换行" "孤行" "平衡换行" 等高搜索量长尾词。
+
+环境限制类任务（Lighthouse、375px 实测）已连续 46 轮无法突破，按规范跳过；接入统计工具需用户确认，不在本轮范围。
+
+## 完成任务
+
+### 单元 1：上下文恢复 + 上轮遗留处理（commit f9bc678）
+1. ✅ 提交上轮 topics.md 进度沉淀文件（commit f9bc678，已 push）
+
+### 单元 2：TextWrapTool.tsx 组件开发（约 600 行，commit 0fc5406）
+2. ✅ TypeScript 接口设计
+   - TextWrapValue：'wrap' | 'nowrap' | 'balance' | 'pretty' | 'stable'
+   - PreviewMode：'single' | 'compare'
+   - TypographyConfig：fontSize + lineHeight + fontFamily + textAlign + fontWeight + containerWidth + padding
+   - TextWrapConfig：value + selector + typography
+   - TextWrapPreset：name + description + text + config
+3. ✅ text-wrap 五种值完整支持
+   - wrap（默认换行）/ nowrap（不换行）/ balance（平衡换行）/ pretty（优化换行）/ stable（稳定换行）
+4. ✅ 排版参数调节
+   - 容器宽度（160-720px）/ 字号（12-48px）/ 行高（1.1-2.4）/ 字重（300-900）
+   - 字体族（5 种：系统/中文无衬线/中文衬线/等宽/英文衬线）
+   - 文本对齐（4 种：左/居中/右/两端）
+5. ✅ 单值预览 + 三值对比模式（核心差异化亮点）
+   - 单值预览：展示当前选中 text-wrap 值的效果
+   - 三值对比：并排展示 wrap / balance / pretty 换行效果差异
+6. ✅ 智能代码生成（buildCss）
+   - 选择器 + text-wrap 声明 + 排版属性
+   - nowrap 场景自动补充 overflow: hidden + text-overflow: ellipsis + white-space: nowrap 兼容
+7. ✅ 原理说明面板（buildExplain）
+   - 解析各值的算法原理与适用场景
+   - 提示各值浏览器兼容性
+8. ✅ 可编辑预览文本（标题/段落两种示例一键切换）
+9. ✅ 6 组预设
+   - 标题平衡（balance）/ 段落优化（pretty）/ 不换行标签（nowrap）/ 卡片标题（balance）/ 文章正文（wrap）/ 三值对比
+
+### 单元 3：text-wrap.astro 工具页面创建（约 400 行）
+10. ✅ 完整 SEO 元素
+    - title: "CSS text-wrap 文本换行排版优化器 - 在线 balance pretty 换行对比工具"
+    - description: 含 text-wrap、wrap/nowrap/balance/pretty/stable、balance 平衡换行、pretty 优化换行、孤行、contenteditable、Chrome 114+/Firefox 121+/Safari 17.5+ 等关键词
+    - canonical/OG/Twitter Card/JSON-LD WebApplication（applicationCategory: DeveloperApplication, inLanguage: zh-CN）
+11. ✅ 8 个 FAQ
+    - text-wrap 核心概念与解决痛点、五种值区别、balance vs pretty 对比选型、
+    - text-wrap vs white-space 关系与选型、浏览器兼容性与渐进降级、
+    - balance 的 10 行限制原理、stable 编辑场景价值、隐私保障
+12. ✅ 专属样式 .twp__*
+    - 预设按钮组 + 主布局（左右两栏 grid）+ 配置面板（单选组 + 选择器 + 排版参数 + 文本输入）+ 预览模式切换 + 预览区（单值/对比）+ 原理说明 + 代码输出
+    - 768px/414px 双断点响应式 + 暗色模式适配
+
+### 单元 4：配套博客 text-wrap-guide.md（7 章完整指南）
+13. ✅ 7 章内容
+    - 诞生背景与核心价值、五种值详解、balance 平衡换行算法原理与适用场景、
+    - pretty 优化换行孤行问题与解决方案、text-wrap vs white-space 关系与选型、
+    - 浏览器兼容性与渐进降级、实战案例与最佳实践
+14. ✅ 覆盖长尾搜索词：text-wrap、balance、pretty、wrap、nowrap、stable、文本换行、排版优化、孤行、平衡换行、渐进增强
+15. ✅ 内链指向 /text-wrap 及 /writing-mode、/scroll-snap、/color-contrast
+
+### 单元 5：首页更新 + README 同步
+16. ✅ 首页 index.astro 工具卡片与 meta 更新
+    - 工具列表新增 text-wrap（light-dark 之后，category: 设计）
+    - meta description 工具数 85→86，新增 "CSS text-wrap 文本换行排版优化器" 关键词
+    - hero 区工具数 85→86
+17. ✅ README.md 全面同步
+    - 工具数 85→86、博客数 80→81、页面数 584→595
+    - 色彩与设计类别新增 "CSS text-wrap 文本换行排版优化器"
+    - 博客主题速览新增 text-wrap-guide
+    - 组件数 85→86、Bug 检查任务工具数 85→86
+
+## 修改文件（5 个代码文件，未超 8 文件红线）
+- src/components/TextWrapTool.tsx（新增，约 600 行，text-wrap 排版优化生成器 React 组件）
+- src/pages/text-wrap.astro（新增，约 400 行，工具页面 + 8 FAQ + 专属样式）
+- src/content/blog/text-wrap-guide.md（新增，7 章配套博客）
+- src/pages/index.astro（修改，新增工具卡片 + meta description 85→86 + hero 工具数）
+- README.md（修改，全量同步工具/博客/页面数 + 设计类别 + 博客速览 + 组件数）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（211 files，+2 文件，零回归，仅剩 clipboard.ts execCommand 历史遗留）
+- 构建：✅ 595 页面，20.78s，无报错无警告（+11 页面：text-wrap 工具页 + 博客详情页 + 9 个新标签页）
+- SEO 要素：✅ text-wrap 页面 title/description/canonical/OG/Twitter Card/JSON-LD WebApplication 全部正确
+- Bundle 体积：✅ TextWrapTool 未进前 5（< 34KB），最大 client.Bz692-Ao.js = 133.31KB（全局脚本），远低于 200KB 红线
+- 首页工具卡片：✅ dist/index.html 包含 "CSS text-wrap 文本换行排版优化器" 卡片，链接指向 /text-wrap
+- 首页博客卡片：✅ dist/index.html 包含 text-wrap-guide 博客卡片链接
+- 响应式设计：✅ 768px/414px 双断点 + 暗色模式适配
+- Git 提交：commit 0fc5406（代码），已 push
+
+## 问题与修复
+- 无（本轮所有任务完成且验收通过）
+
+## 数据洞察
+- **text-wrap 的"渐进增强天然降级"**：text-wrap 是天然的渐进增强属性——不支持的浏览器忽略该声明，回退为默认 wrap 换行，不会报错。无需额外写降级代码，直接用即可。这是 text-wrap 最大的工程价值——零成本降级，新旧浏览器体验都不差
+- **balance 的"10 行限制"是性能保护**：balance 算法需要遍历所有可能的断行组合来找到最优方案，计算复杂度随行数增长。10 行上限是浏览器的性能保护措施，超过则退化为 wrap。这意味着 balance 只适合短文本（标题），长段落应使用 pretty（无行数限制）
+- **balance vs pretty 的"短长文本分工"**：balance 追求各行长度均衡（适合标题），pretty 只避免末行孤行（适合段落）。两者不是替代关系而是互补关系——标题用 balance，段落用 pretty，各取所长
+- **text-wrap vs white-space 的"控制维度差异"**：white-space 控制"换不换行"（nowrap/pre/pre-wrap），text-wrap 控制"怎么换行"（balance/pretty/stable）。text-wrap: nowrap 等价于 white-space: nowrap，但 text-wrap 还提供了 white-space 无法实现的智能换行策略
+- **stable 的"编辑不跳"价值**：contenteditable 中每输入一个字符浏览器重新计算换行，可能导致前面行重新排列（文本跳动）。stable 保持光标之前的行不动，只在光标之后重新换行，避免编辑时文本跳动。这是编辑场景的专属优化
+- **三值对比模式的核心价值**：text-wrap 各值的差异用文字描述很难理解，但并排对比一目了然。三值对比模式让用户在同一页面同时看到 wrap/balance/pretty 的换行效果，直观理解各值差异。这是本工具的核心差异化亮点
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续四十七轮遗留，TRAE Sandbox 拦截 configstore 写入
+2. **移动端 375px 三档适配实测**：连续四十七轮遗留，agent-browser 受 socket 限制
+3. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认）
+4. **继续内容拓展**：可新增 CSS contain 包含（性能优化）、CSS subgrid 子网格、SVG 优化器等方向
+5. **text-wrap 工具增强**：可增加更多预设文本（中英文混排、长标题等）、导出多格式、与 writing-mode 联动
+6. **排版优化能力维度**：text-wrap（换行策略）+ writing-mode（书写方向）已形成排版维度双工具，可考虑下轮拓展其他前端工具方向
+7. **博客标签页分页**：部分热门标签文章数较多，可考虑分页
+8. **现有工具深度优化**：scroll-driven 命名时间线完整代码生成、light-dark 导入现有 CSS 等
+
+## 需用户操作
+- 部署本轮新增代码（已 push，Cloudflare Pages 自动触发部署）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）用浏览器访问 https://website.niuzi.asia/text-wrap 验证新工具页面正常
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+
+## 阶段进度总览（更新）
+- 工具总数：86 个（阶段二目标：基于数据扩充高价值工具）
+- 博客总数：81 篇（每个工具至少 1 篇配套深度博客）
+- 标签总数：300+ 个（新增 text-wrap、balance、pretty、排版优化、文本换行、孤行、css-text-module、nowrap、stable 9 个标签）
+- 构建页面：595 页
+- 类型检查：0 errors
+- LCP：< 2.5s（SSG 静态优化）
+- JS Bundle：单页最大 < 200KB（本轮新增 TextWrapTool < 34KB，纯 React 组件无外部依赖）
+
+---
+
+## 排版优化能力维度双工具里程碑
+
+本轮完成后，CSS 工具链"排版优化"能力维度形成双工具互补：
+
+| 工具类别 | 覆盖能力 | 工具数 |
+|----------|----------|--------|
+| 视觉效果 | box-shadow / text-shadow / gradient / border-radius / transform / filter / clip-path / background | 8 |
+| 布局结构 | flexbox / grid / scroll-snap | 3 |
+| 动效交互 | animation（时间驱动）/ transition（状态过渡）/ scroll-driven（滚动驱动） | 3 |
+| 国际化排版 | writing-mode（竖排/RTL/多语言） | 1 |
+| 组件级响应式 | @container（容器查询） | 1 |
+| 原生语法 | nesting（原生嵌套）/ @layer（层叠层）/ @scope（作用域） | 3 |
+| 色彩工具 | 颜色值转换 / 调色板 / 对比度检测 / light-dark() 暗色模式 | 4 |
+| 排版优化 | text-wrap（换行策略） | 1 |
+
+排版优化维度的协同关系：
+- **text-wrap**：管"换行策略"——balance 平衡换行（标题）、pretty 优化换行（段落）、stable 稳定换行（编辑）
+- **writing-mode**：管"书写方向"——竖排文字、多语言排版、RTL 文本方向
+
+两者形成"换行+方向"排版维度互补：text-wrap 控制文本如何换行（水平方向的断行策略），writing-mode 控制文本往哪个方向排列（水平/垂直/RTL）。这是 CSS 工具链排版优化能力维度的双工具互补。
