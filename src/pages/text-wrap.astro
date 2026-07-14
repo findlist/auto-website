@@ -1,0 +1,561 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TextWrapTool from '../components/TextWrapTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS text-wrap 文本换行排版优化器 - 在线 balance pretty 换行对比工具',
+  description:
+    '免费的在线 CSS text-wrap 文本换行排版优化器：完整支持 text-wrap 五种值（wrap / nowrap / balance / pretty / stable），可视化对比 balance 平衡换行与 pretty 优化换行的效果差异。可调节容器宽度、字号、行高、字体族、对齐方式等排版参数，内置三值对比模式并排展示 wrap / balance / pretty 换行效果，原理说明面板解析各值算法与适用场景。6 组预设覆盖标题平衡、段落优化、不换行标签、卡片标题等场景。实时生成 CSS 代码一键复制。适用于 CSS 排版优化、标题换行平衡、段落孤行避免、contenteditable 编辑稳定换行等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS text-wrap 文本换行排版优化器',
+    description: '在线 CSS text-wrap 文本换行排版优化器，支持 balance 平衡换行、pretty 优化换行、wrap/nowrap/stable，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS text-wrap 文本换行排版优化器</h1>
+      <p>
+        可视化生成 CSS <code>text-wrap</code> 文本换行属性（CSS Text Module Level 4，2023-2024 年逐步落地）：
+        完整支持 <code>wrap</code>（默认换行）、<code>nowrap</code>（不换行）、
+        <code>balance</code>（平衡换行，适合标题）、<code>pretty</code>（优化换行，避免孤行）、
+        <code>stable</code>（稳定换行，适合编辑）五种值。内置<strong>三值对比模式</strong>——
+        并排展示 wrap / balance / pretty 的换行效果差异，直观理解各值算法原理。
+        可调节容器宽度、字号、行高、字体族、对齐方式等排版参数，6 组预设覆盖标题平衡、
+        段落优化、不换行标签、卡片标题等场景。适用于 CSS 排版优化、标题换行平衡、
+        段落孤行避免等前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <TextWrapTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 text-wrap？它解决了什么问题？</summary>
+        <p>
+          <strong>text-wrap</strong> 是 CSS Text Module Level 4 引入的文本换行控制属性，决定元素内文本的换行方式。
+          它解决了传统换行的三大痛点：一是<strong>标题换行不均衡</strong>——默认 wrap 按容器宽度逐行填充，
+          标题最后一行可能只剩几个字，视觉参差不齐；二是<strong>段落孤行问题</strong>——最后一行只剩一个词，
+          阅读体验差；三是<strong>编辑时文本跳动</strong>——在 contenteditable 中输入文字时，新增字符导致前面行重新换行，
+          光标位置不稳定。text-wrap 提供了 balance（平衡）、pretty（优化）、stable（稳定）三种新值，
+          分别解决这三个问题。语法：<code>.title &#123; text-wrap: balance; &#125;</code>，一行 CSS 即可优化排版。
+        </p>
+      </details>
+      <details>
+        <summary>text-wrap 的五个值（wrap/nowrap/balance/pretty/stable）有什么区别？</summary>
+        <p>
+          <br /><strong>wrap</strong>（默认）：正常换行，文本填满容器宽度后换行。简单高效，但可能出现孤行。
+          <br /><strong>nowrap</strong>：不换行，文本强制在一行内。需配合 overflow: hidden 和 text-overflow: ellipsis 处理溢出。
+          <br /><strong>balance</strong>：平衡换行，浏览器计算最优断行点让各行长度均衡。限制最多 10 行（超过退化为 wrap）。
+          适合标题、引言等短文本。
+          <br /><strong>pretty</strong>：优化换行，在 wrap 基础上避免孤行（最后一行单个词）。适合段落正文。
+          <br /><strong>stable</strong>：稳定换行，编辑场景下光标后面的行不会因新增字符重新换行。适合 contenteditable。
+          <br />关键差异：wrap 是"填满即换"，balance 是"各行均衡"，pretty 是"避免孤行"，stable 是"编辑不跳"。
+        </p>
+      </details>
+      <details>
+        <summary>balance 和 pretty 有什么区别？各自适合什么场景？</summary>
+        <p>
+          两者都优化换行，但策略和适用场景不同：<br />
+          <strong>balance</strong>：目标是<strong>各行长度均衡</strong>。浏览器计算所有可能的断行点，
+          选择让各行长度差异最小的方案。例如标题"CSS text-wrap 属性让排版更优雅"，wrap 可能第二行只剩"更优雅"，
+          balance 会调整为两行长度接近。限制最多 10 行（长文本退化为 wrap），因此<strong>适合标题、卡片标题、引言</strong>等短文本。<br />
+          <strong>pretty</strong>：目标是<strong>避免孤行</strong>。不追求各行均衡，只在 wrap 基础上检查最后一行是否只剩一个词，
+          如果是则提前将上一个词换到下一行。计算开销比 balance 小，<strong>适合段落正文</strong>等长文本。<br />
+          简单经验：短文本（标题）用 balance，长文本（段落）用 pretty。
+        </p>
+      </details>
+      <details>
+        <summary>text-wrap 与 white-space 有什么区别？什么时候用哪个？</summary>
+        <p>
+          两者都影响文本换行，但控制维度不同：<br />
+          <strong>white-space</strong>：控制<strong>空白符和换行符的处理方式</strong>。如 <code>nowrap</code> 禁止换行，
+          <code>pre</code> 保留空白和换行，<code>pre-wrap</code> 保留空白但正常换行。它是 CSS 2.1 的老属性，
+          语法稳定、兼容性极好。<br />
+          <strong>text-wrap</strong>：控制<strong>换行算法的策略</strong>。在 white-space 允许换行的前提下
+         （即 white-space 不是 nowrap/pre），决定如何选择断行点。它是 CSS Text Level 4 的新属性，
+          提供 balance/pretty/stable 等智能换行策略。<br />
+          关系：<code>text-wrap: nowrap</code> 等价于 <code>white-space: nowrap</code>。
+          新项目可用 text-wrap 统一管理换行，老项目兼容性考虑可同时写 <code>white-space: nowrap</code> 作为回退。
+          本工具生成 nowrap 代码时会自动补充 white-space: nowrap 兼容声明。
+        </p>
+      </details>
+      <details>
+        <summary>text-wrap 的浏览器兼容性如何？旧浏览器怎么降级？</summary>
+        <p>
+          <strong>各值兼容性</strong>（截至 2025 年）：<br />
+          - <code>wrap</code> / <code>nowrap</code>：全浏览器支持（等价于 white-space 的 wrap/nowrap）。<br />
+          - <code>balance</code>：Chrome 114+ / Edge 114+ / Firefox 121+ / Safari 17.5+ 支持，覆盖率约 90%。<br />
+          - <code>pretty</code>：Chrome 117+ / Edge 117+ 支持，Firefox/Safari 暂不支持，覆盖率约 65%。<br />
+          - <code>stable</code>：Firefox 支持，Chrome/Safari 暂不支持，覆盖率较低。<br />
+          <strong>降级策略</strong>：text-wrap 是<strong>渐进增强</strong>属性——不支持的浏览器忽略该声明，
+          回退为默认的 wrap 换行，不会报错。因此可放心使用，新浏览器享受优化排版，旧浏览器正常换行不受影响。
+          无需额外写降级代码。对于 nowrap 场景，建议同时写 <code>white-space: nowrap</code> 确保旧浏览器也不换行。
+        </p>
+      </details>
+      <details>
+        <summary>balance 的 10 行限制是什么意思？为什么不适合长段落？</summary>
+        <p>
+          <strong>10 行限制</strong>是浏览器实现 balance 算法的性能保护措施。balance 需要计算所有可能的断行组合
+          来找到最优方案，计算复杂度随行数增长。如果文本超过 10 行，浏览器会<strong>自动退化为 wrap</strong>（默认换行），
+          避免性能开销。<br />
+          这意味着 balance 对长段落<strong>无效</strong>——长段落本身就会超过 10 行，
+          balance 退化为 wrap，与不写 balance 效果相同。<br />
+          因此 balance 的最佳使用场景是<strong>短文本块</strong>：h1-h6 标题（通常 1-3 行）、
+          卡片标题（2-4 行）、引言（3-5 行）、列表项（1-2 行）。<br />
+          长段落应使用 <code>pretty</code>（优化孤行，无行数限制）或保持默认 <code>wrap</code>。
+          本工具的预设已按场景区分：标题用 balance，段落用 pretty。
+        </p>
+      </details>
+      <details>
+        <summary>stable 值适合什么场景？为什么编辑时需要它？</summary>
+        <p>
+          <strong>stable</strong> 专为<strong>编辑场景</strong>设计（contenteditable、输入框）。<br />
+          问题背景：在 contenteditable 中编辑文本时，每输入一个字符，浏览器会重新计算整个文本块的换行。
+          如果新增字符导致某行变长溢出，该行末尾的词会换到下一行，<strong>导致光标后面的所有行重新排列</strong>——
+          用户看到文本不停跳动，体验很差。<br />
+          <strong>stable 的解决方案</strong>：保持光标<strong>之前</strong>的行不动，只在光标之后的行重新换行。
+          这样编辑时前面的文本稳定不跳，只有后面的行可能调整。<br />
+          适用场景：富文本编辑器、评论输入框、笔记应用等 contenteditable 场景。
+          静态展示页面不需要 stable（没有编辑行为，不存在跳动问题）。<br />
+          注意：stable 目前仅 Firefox 支持，Chrome/Safari 暂不支持。在编辑器中可写
+          <code>.editor &#123; text-wrap: stable; &#125;</code>，Firefox 用户享受稳定编辑体验，其他浏览器不受影响。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 文本编辑、排版参数调节、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区直接在页面 DOM 中渲染 text-wrap 效果，不使用 iframe，不加载外部资源。<br />
+          - 生成的 CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          - 无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何文本排版场景。<br />
+          你输入的文本内容不会离开你的设备，可放心使用。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：twp 命名空间（text-wrap） */
+  .twp {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .twp__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .twp__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .twp__preset-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .twp__preset-btn:hover {
+    border-color: var(--color-accent, #2563eb);
+    color: var(--color-accent, #2563eb);
+  }
+
+  /* 主布局：左右两栏 */
+  .twp__main {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .twp__config,
+  .twp__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .twp__panel {
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .twp__panel-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 单选按钮组 */
+  .twp__radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .twp__radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .twp__radio input[type='radio'] {
+    accent-color: var(--color-accent, #2563eb);
+  }
+
+  /* 输入框 */
+  .twp__input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .twp__input:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 表单字段 */
+  .twp__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .twp__field:last-child {
+    margin-bottom: 0;
+  }
+
+  .twp__field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .twp__field-value {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-accent, #2563eb);
+  }
+
+  .twp__field input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-accent, #2563eb);
+  }
+
+  .twp__select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  .twp__select:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 文本输入区 */
+  .twp__textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .twp__textarea:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .twp__text-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .twp__text-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .twp__text-btn:hover {
+    border-color: var(--color-accent, #2563eb);
+    color: var(--color-accent, #2563eb);
+  }
+
+  /* 预览模式切换 */
+  .twp__preview-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .twp__tab {
+    flex: 1;
+    padding: 7px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .twp__tab--active {
+    background: var(--color-bg);
+    color: var(--color-accent, #2563eb);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 预览区 */
+  .twp__preview-area {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: auto;
+  }
+
+  .twp__preview-single {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .twp__preview-label {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .twp__preview-label strong {
+    color: var(--color-accent, #2563eb);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .twp__preview-box {
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    color: var(--color-text);
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  /* 对比模式 */
+  .twp__preview-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .twp__compare-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* 原理说明 */
+  .twp__explain {
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .twp__explain-title {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .twp__explain-body {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text);
+  }
+
+  .twp__explain-body strong {
+    color: var(--color-accent, #2563eb);
+  }
+
+  .twp__explain-body p {
+    margin: 6px 0 0;
+  }
+
+  .twp__explain-tip {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .twp__tip-icon {
+    flex-shrink: 0;
+  }
+
+  /* 代码输出 */
+  .twp__code-section {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .twp__code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .twp__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .twp__copy-btn {
+    padding: 4px 14px;
+    border: 1px solid var(--color-accent, #2563eb);
+    border-radius: var(--radius-sm);
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .twp__copy-btn:hover {
+    opacity: 0.9;
+  }
+
+  .twp__copy-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .twp__code {
+    margin: 0;
+    padding: 12px;
+    max-height: 320px;
+    overflow: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .twp__code code {
+    font-family: inherit;
+  }
+
+  /* 响应式：768px 以下单列 */
+  @media (max-width: 768px) {
+    .twp__main {
+      grid-template-columns: 1fr;
+    }
+
+    .twp__preview-compare {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .twp__presets {
+      padding: 10px;
+    }
+
+    .twp__panel {
+      padding: 10px;
+    }
+
+    .twp__preview-area {
+      padding: 10px;
+    }
+
+    .twp__code {
+      font-size: 11px;
+      padding: 10px;
+    }
+  }
+</style>
