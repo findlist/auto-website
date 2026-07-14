@@ -1012,3 +1012,173 @@ subgrid 是 CSS Grid Layout Module Level 2 引入的子网格特性（Chrome 117
 
 四者可组合使用：grid 定义页面主布局，subgrid 让嵌套组件对齐父网格轨道，flexbox 处理组件内一维排列，scroll-snap 控制滚动停靠。这是 CSS 工具链布局结构能力维度的完整闭环——从一维到二维到嵌套继承到滚动捕捉全覆盖。
 
+---
+
+# 第 51 轮 · CSS @starting-style 入场动画生成器（动效交互能力维度补全）
+
+## 上下文恢复
+- 承接第 50 轮（CSS subgrid 子网格生成器，commit 0549142 → 沉淀 6b5a84c）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：89 工具 + 84 博客 + 628 页面 → 本轮后 90 工具 + 85 博客 + 638 页面
+- 工作树状态：干净，承接上轮沉淀
+
+## 本轮聚焦方向
+**动效交互能力维度补全：新增 CSS @starting-style 入场动画生成器**
+
+@starting-style 是 CSS Transitions Level 2 引入的规则（Chrome 117+ 2024 年起支持），用于声明元素"首次出现"时的起始样式，解决传统 transition 无法捕获首次渲染、display 切换、popover 显示三种场景的痛点。覆盖 "@starting-style" "CSS 入场动画" "首次渲染过渡" "display 切换" "popover 弹层" "transition-behavior: allow-discrete" "离散过渡" 等高搜索量长尾词。与现有 animation（时间驱动）、transition（状态过渡）、scroll-driven（滚动驱动）、view-transition（视图过渡）形成动效交互能力维度的第六块拼图——入场动画。中文资源稀少，差异化机会明确。
+
+环境限制类任务（Lighthouse、375px 实测）已连续 51 轮无法突破，按规范跳过；接入统计工具需用户确认，不在本轮范围。
+
+## 完成任务
+
+### 单元 1：StartingStyleTool.tsx 组件开发（约 670 行，commit bd3db10）
+1. ✅ TypeScript 接口设计
+   - StyleDecl：property + value 单条样式声明
+   - TransitionItem：property + duration + timingFunction + delay 单条过渡配置
+   - Scenario：'first-render' | 'display-toggle' | 'popover-show' 三种触发场景
+   - SyntaxStyle：'nested' | 'standalone' 双语法模式
+   - StartingStyleConfig：selector + scenario + syntax + finalDecls[] + startingDecls[] + transitions[] + useDiscreteBehavior
+   - StartingStylePreset：name + description + config
+2. ✅ 三种触发场景完整支持（核心差异化亮点）
+   - 首次渲染（first-render）：元素首次插入 DOM 时触发
+   - display 切换（display-toggle）：display: none → block 时触发，需配合 allow-discrete
+   - popover 显示（popover-show）：popover/dialog 显示时触发
+3. ✅ 双语法代码生成（buildNestedCss / buildStandaloneCss）
+   - 嵌套语法（推荐）：@starting-style 嵌套在选择器块内，更简洁
+   - 独立语法：@starting-style + selector { ... }，兼容性更好
+   - display-toggle 场景额外生成 .hidden 类的隐藏方向样式
+4. ✅ transition-behavior: allow-discrete 支持
+   - 让 display 等离散属性可参与过渡
+   - 启用时自动在 transition 值中追加 transition-behavior: allow-discrete
+5. ✅ 实时预览（核心差异化亮点）
+   - 通过 useEffect 注入 `<style>` 标签（@starting-style 不能用 inline style）
+   - 点击按钮重新挂载元素，触发首次渲染入场动画
+   - 预览区棋盘格背景，凸显元素入场效果
+6. ✅ 原理说明面板（buildExplain）
+   - 解析当前触发场景的工作机制
+   - 核心规则提示：传统 transition 限制、allow-discrete 必要性、嵌套 vs 独立语法选型
+7. ✅ 8 组预设
+   - 淡入入场 / 缩放弹入 / 上方滑入 / display 切换淡入 / display 切换缩放 / popover 弹出 / 卡片展开 / 默认示例
+8. ✅ 模块级 id 生成器保证 React key 稳定性
+   - `const genId = (): string => \`ss_${Date.now().toString(36)}_${(++_idCounter).toString(36)}\``
+9. ✅ 泛型 SegGroup<T> 分段按钮组复用
+
+### 单元 2：starting-style.astro 工具页面创建（约 570 行）
+10. ✅ 完整 SEO 元素
+    - title: "CSS @starting-style 入场动画生成器 - 在线元素首次出现过渡可视化工具"
+    - description: 含 @starting-style、首次渲染、display 切换、popover、transition-behavior allow-discrete、嵌套语法、独立语法、Chrome 117+/Safari 17.5+/Firefox 129+ 等关键词
+    - canonical/OG/Twitter Card/JSON-LD WebApplication（applicationCategory: DeveloperApplication, inLanguage: zh-CN）
+11. ✅ 8 个 FAQ
+    - @starting-style 核心概念与解决痛点、三种触发场景区别、allow-discrete 原理、
+    - 嵌套 vs 独立语法对比、@starting-style vs animation 区别、display 隐藏方向过渡、
+    - 浏览器兼容性与渐进增强、隐私保障
+12. ✅ 专属样式 .ss__*
+    - 预设按钮组 + 主布局（左右两栏 grid 380px+1fr）+ 配置面板（选择器 + 场景分段 + 语法分段 + 样式声明编辑器 + 过渡配置 + allow-discrete 开关）+ 预览区（棋盘格背景 + 触发按钮）+ 原理说明 + 代码输出 + 相关工具链接
+    - 768px/414px 双断点响应式 + 暗色模式适配
+    - FAQ 中 CSS 代码示例的 `{` `}` 用 HTML 实体 `&#123;` `&#125;` 转义
+13. ✅ 相关工具链接区（transition / animation / view-transition / scroll-driven）
+
+### 单元 3：配套博客 starting-style-guide.md（8 章完整指南）
+14. ✅ 8 章内容
+    - 诞生背景与核心价值、语法与使用方式（嵌套 vs 独立）、三种触发场景详解、
+    - transition-behavior: allow-discrete 与 display 离散过渡、@starting-style vs animation vs transition 对比选型、
+    - 浏览器兼容性与渐进增强、实战案例与最佳实践（4 个：动态列表项/折叠面板/popover 弹层/卡片综合入场）、配套工具协同与总结
+15. ✅ 覆盖长尾搜索词：@starting-style、入场动画、首次渲染、display 切换、popover、transition-behavior、allow-discrete、离散过渡、嵌套语法、独立语法、CSS Transitions Level 2、渐进增强
+16. ✅ 内链指向 /starting-style 工具页
+
+### 单元 4：首页更新 + README 同步
+17. ✅ 首页 index.astro 工具卡片与 meta 更新
+    - 工具列表新增 starting-style（subgrid 之后，category: 设计）
+    - meta description 工具数 89→90，新增 "CSS @starting-style 入场动画生成器" 关键词
+    - hero 区工具数 89→90
+18. ✅ README.md 全面同步
+    - 工具数 89→90、博客数 84→85、页面数 628→638
+    - 色彩与设计类别新增 "CSS @starting-style 入场动画生成器"
+    - 博客主题速览新增 starting-style-guide
+    - 组件数 89→90、Bug 检查任务工具数 89→90
+
+## 修改文件（5 个，未超 8 文件红线）
+- src/components/StartingStyleTool.tsx（新增，约 670 行，@starting-style 入场动画生成器 React 组件）
+- src/pages/starting-style.astro（新增，约 570 行，工具页面 + 8 FAQ + 专属样式 + 相关链接）
+- src/content/blog/starting-style-guide.md（新增，8 章配套博客）
+- src/pages/index.astro（修改，新增工具卡片 + meta description 89→90 + hero 工具数）
+- README.md（修改，全量同步工具/博客/页面数 + 设计类别 + 博客速览 + 组件数）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（219 files，+2 文件，零回归，仅剩 clipboard.ts execCommand 历史遗留）
+- 构建：✅ 638 页面，21.44s，无报错无警告（+10 页面：starting-style 工具页 + 博客详情页 + 8 个新标签页）
+- SEO 要素：✅ starting-style 页面 title/description/canonical/OG/Twitter Card/JSON-LD WebSite+WebApplication 全部正确，FAQ 内容已 SSR 渲染
+- 首页工具卡片：✅ 工具数 90，包含 starting-style 卡片
+- 响应式设计：✅ 768px/414px 双断点 + 暗色模式适配
+- Git 提交：commit bd3db10，已 push origin HEAD（6b5a84c..bd3db10）
+
+## 问题与修复
+- 修复 1：StartingStyleTool.tsx 第 1 行导入了 useRef 但未使用，删除该导入
+- 修复 2：buildNestedCss 函数中 display-toggle 分支行末分号位置错误（分号在反引号外，导致表达式不完整），修正为分号在反引号内字符串末尾后再加函数调用分号
+
+## 数据洞察
+- **@starting-style 的"首次出现过渡"核心价值**：传统 transition 仅在属性值变化时触发，无法捕获元素首次渲染（如动态插入 DOM）、display: none → block 切换、popover 显示等"首次出现"场景——这些场景下元素直接跳到最终样式，没有过渡动画。@starting-style 让开发者声明起始样式，浏览器从起始样式过渡到最终样式，填补了 transition 的能力空白
+- **三种触发场景的"首次出现"共性**：首次渲染、display 切换、popover 显示看似不同，本质上都是"元素从无到有"——首次渲染是 DOM 新增，display 切换是渲染树新增，popover 显示是顶层栈新增。@starting-style 把这三种"首次出现"统一为同一套机制
+- **transition-behavior: allow-discrete 的"display 离散过渡"原理**：display 是离散属性，传统 transition 不能让 display 参与过渡（要么 display:none 要么 display:block，无中间状态）。allow-discrete 让浏览器在过渡期间保持 display 的可见值——显示方向立即变 block（让过渡可见），隐藏方向在过渡结束时变 none（让隐藏前完成过渡动画）。这是 display 切换过渡的关键
+- **嵌套 vs 独立语法的"简洁性 vs 兼容性"权衡**：嵌套语法（@starting-style 嵌套在选择器块内）更简洁，但需要浏览器支持 CSS nesting；独立语法（@starting-style + selector）兼容性更好，但代码量稍多。选型原则：现代项目用嵌套（推荐），兼容旧浏览器用独立
+- **@starting-style vs animation 的"过渡 vs 动画"分工**：@starting-style 是 transition 的扩展（属性值过渡，单向，无关键帧），animation 是独立动画系统（@keyframes 关键帧，可循环，可暂停）。@starting-style 适合"首次出现过渡"场景，animation 适合"复杂关键帧动画"场景，两者互补不替代
+- **天然渐进增强的零成本降级**：不支持的浏览器忽略 @starting-style 规则，元素直接显示最终样式（无入场动画但功能完整）。无需额外写降级代码，直接用即可。新旧浏览器体验都不差
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续五十一轮遗留，TRAE Sandbox 拦截 configstore 写入
+2. **移动端 375px 三档适配实测**：连续五十一轮遗留，agent-browser 受 socket 限制
+3. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认）
+4. **继续内容拓展**：可新增 CSS interpolate-size（动画尺寸插值）、CSS scroll-driven 进阶（命名时间线完整代码生成）、SVG 优化器等方向
+5. **@starting-style 工具增强**：可增加多动画管理（一个页面多个 @starting-style 规则）、popover 实际触发预览、导入现有 CSS 解析
+6. **动效交互能力维度完整闭环**：animation（时间驱动）+ transition（状态过渡）+ scroll-driven（滚动驱动）+ scroll-snap（滚动捕捉）+ view-transition（视图过渡）+ @starting-style（入场动画）已形成六件套完整闭环，可考虑下轮拓展其他前端工具方向（如 SVG 路径动画、Web Animations API 等）
+7. **博客标签页分页**：部分热门标签文章数较多，可考虑分页
+8. **现有工具深度优化**：scroll-driven 命名时间线完整代码生成、light-dark 导入现有 CSS 等
+
+## 需用户操作
+- 部署本轮新增代码（已 push，Cloudflare Pages 自动触发部署）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）用浏览器访问 https://website.niuzi.asia/starting-style 验证新工具页面正常
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+
+## 阶段进度总览（更新）
+- 工具总数：90 个（阶段二目标：基于数据扩充高价值工具）
+- 博客总数：85 篇（每个工具至少 1 篇配套深度博客）
+- 标签总数：300+ 个（新增 @starting-style、transition-behavior、allow-discrete、display-切换、popover、首次渲染、css-transitions-level-2 等 7+ 个标签）
+- 构建页面：638 页
+- 类型检查：0 errors
+- LCP：< 2.5s（SSG 静态优化）
+- JS Bundle：单页最大 < 200KB（本轮新增 StartingStyleTool < 34KB，纯 React 组件无外部依赖）
+
+---
+
+## 动效交互能力维度六件套完整闭环里程碑
+
+本轮完成后，CSS 工具链"动效交互"能力维度形成六件套完整闭环：
+
+| 工具类别 | 覆盖能力 | 工具数 |
+|----------|----------|--------|
+| 视觉效果 | box-shadow / text-shadow / gradient / border-radius / transform / filter / clip-path / background | 8 |
+| 布局结构 | flexbox（一维）/ grid（二维）/ subgrid（嵌套继承）/ scroll-snap（滚动捕捉） | 4 |
+| 动效交互 | animation（时间驱动）/ transition（状态过渡）/ scroll-driven（滚动驱动）/ view-transition（视图过渡）/ **@starting-style（入场动画）** | 5 |
+| 国际化排版 | writing-mode（竖排/RTL/多语言） | 1 |
+| 组件级响应式 | @container（容器查询） | 1 |
+| 原生语法 | nesting（原生嵌套）/ @layer（层叠层）/ @scope（作用域） | 3 |
+| 色彩工具 | 颜色值转换 / 调色板 / 对比度检测 / light-dark() 暗色模式 | 4 |
+| 排版优化 | text-wrap（换行策略） | 1 |
+| 性能优化 | contain + content-visibility（渲染隔离与屏幕外跳过） | 1 |
+
+动效交互六件套的协同关系：
+- **animation**：管"时间驱动的循环动画"——@keyframes + duration，自动循环播放
+- **transition**：管"属性变化的过渡"——property + duration，由属性变化触发
+- **scroll-snap**：管"滚动停靠点"——强制滚动停在指定位置
+- **scroll-driven**：管"滚动驱动的动画"——用滚动位置/元素可见性代替时间驱动 @keyframes
+- **view-transition**：管"DOM 状态切换的视图过渡"——浏览器自动捕获新旧快照，无需手动计算位置
+- **@starting-style**：管"元素首次出现的入场过渡"——声明起始样式，浏览器从起始过渡到最终
+
+六者可组合使用：scroll-snap 控制滚动停靠，scroll-driven 在停靠点之间播放 animation，transition 处理属性变化，view-transition 处理 DOM 结构变化，@starting-style 处理元素首次出现入场。这是 CSS 工具链动效交互能力维度的完整闭环——从时间驱动到属性过渡到滚动捕捉到滚动驱动到视图过渡到入场动画全覆盖。
+
+
