@@ -1,0 +1,610 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ScrollTimelineTool from '../components/ScrollTimelineTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS scroll-driven 动画生成器 - 在线滚动驱动动画可视化工具',
+  description:
+    '免费的在线 CSS scroll-driven 动画生成器：可视化编辑滚动驱动动画，完整支持 scroll()（滚动位置驱动）与 view()（元素可见性驱动）两种时间线、animation-timeline 属性、animation-range 范围控制（cover/contain/entry/exit/entry-crossing/exit-crossing）、命名时间线、@keyframes 关键帧编辑。内置原理说明面板——实时展示时间线类型、滚动容器源、轴向、范围语义。iframe 沙箱预览可在预览区内滚动实时查看动画效果，可编辑预览 HTML，7 组预设覆盖滚动进度条、淡入入场、视差滚动、卡片揭示、旋转进度、半程入场等场景。实时生成浏览器原生支持的 scroll-driven CSS 代码（Chrome 115+ 支持），一键复制。适用于滚动进度指示、元素入场动画、视差效果、滚动揭示等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS scroll-driven 动画生成器',
+    description: '在线 CSS scroll-driven 动画生成器，支持 scroll() 与 view() 时间线、animation-range 范围控制，一键复制滚动驱动动画 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS scroll-driven 动画生成器</h1>
+      <p>
+        可视化生成 CSS 滚动驱动动画（Scroll-driven Animations，<code>animation-timeline</code>，Chrome 115+ 原生支持）：
+        完整支持 <code>scroll()</code>（滚动位置驱动）与 <code>view()</code>（元素可见性驱动）两种时间线、
+        <code>animation-range</code> 范围控制（cover / contain / entry / exit / entry-crossing / exit-crossing）、
+        命名时间线、<code>@keyframes</code> 关键帧编辑。内置<strong>原理说明面板</strong>——实时展示
+        时间线类型、滚动容器源、轴向、范围语义。iframe 沙箱预览可在预览区内滚动实时查看动画效果，
+        可编辑预览 HTML，内置滚动进度条、淡入入场、视差滚动、卡片揭示等 7 组预设。
+        适用于滚动进度指示、元素入场动画、视差效果、滚动揭示等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ScrollTimelineTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS scroll-driven 动画？它和普通动画有什么区别？</summary>
+        <p>
+          <strong>scroll-driven 动画</strong>（滚动驱动动画，Scroll-driven Animations 规范）是 CSS 动画的进化形态——
+          用<strong>滚动位置或元素可见性</strong>代替<strong>时间</strong>来驱动 <code>@keyframes</code> 关键帧进度。
+          普通动画的进度由 <code>animation-duration</code>（时长）决定，时间走完动画结束；
+          scroll-driven 动画的进度由滚动位置决定，<strong>滚动到哪动画到哪</strong>，可暂停、可回滚、可反复。
+          这带来三大优势：一是<strong>天然可交互</strong>，用户滚动即驱动动画，无需监听 scroll 事件写 JS；
+          二是<strong>性能更好</strong>，浏览器在合成线程处理，不掉帧；三是<strong>可暂停可回滚</strong>，
+          向上滚动动画反向播放，符合直觉。典型应用有滚动进度条、元素入场揭示、视差滚动等。
+        </p>
+      </details>
+      <details>
+        <summary>scroll() 与 view() 时间线有什么区别？各自适合什么场景？</summary>
+        <p>
+          两者是 scroll-driven 动画的两类时间线，驱动源不同：<br />
+          <strong>scroll()</strong> 时间线：基于<strong>滚动容器的滚动位置</strong>驱动。整个滚动条从顶到底的进度
+          映射到关键帧 from → to。适合<strong>全局性</strong>动画，如顶部滚动进度条、视差背景、
+          随滚动旋转的图标。<code>scroll(root block)</code> 监听根容器垂直滚动，
+          <code>scroll(nearest inline)</code> 监听最近祖先的水平滚动。<br />
+          <strong>view()</strong> 时间线：基于<strong>元素自身在滚动容器中的可见性</strong>驱动。
+          元素从进入视口到离开视口的过程映射到关键帧。适合<strong>元素级</strong>动画，
+          如卡片淡入入场、列表项依次揭示、图片缩放进场。<code>view(nearest block)</code> 监听元素在最近滚动祖先中的可见性，
+          可用 <code>inset</code> 调整可见区边距。<br />
+          简单经验：动画与"整体滚动进度"相关用 scroll()，与"单个元素进场"相关用 view()。
+        </p>
+      </details>
+      <details>
+        <summary>animation-range 是什么？cover / contain / entry / exit 有什么区别？</summary>
+        <p>
+          <code>animation-range</code> 控制 scroll-driven 动画的<strong>有效范围</strong>——即滚动进度的哪一段映射到关键帧。
+          这对 view() 时间线尤其重要，因为元素进入视口到离开视口有多个阶段：<br />
+          <strong>cover</strong>：元素从开始进入视口到完全离开视口的全程（默认范围）。<br />
+          <strong>contain</strong>：元素完全在视口内的区间（元素完全可见才动画）。<br />
+          <strong>entry</strong>：元素从开始进入视口到完全进入视口（进场阶段）。<br />
+          <strong>exit</strong>：元素从开始离开视口到完全离开视口（离场阶段）。<br />
+          <strong>entry-crossing</strong>：元素跨越视口边缘进入的阶段。<br />
+          <strong>exit-crossing</strong>：元素跨越视口边缘离开的阶段。<br />
+          还可用<strong>自定义范围</strong>，如 <code>animation-range: entry 0% to entry 50%;</code>
+          表示只在元素进场的前半段动画。本工具的"半程入场"预设展示了自定义范围的用法。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 animation-duration 必须设为 auto？animation-timeline 能写入 animation 简写吗？</summary>
+        <p>
+          这是 scroll-driven 动画的两条核心规则：<br />
+          <strong>animation-duration: auto</strong>：scroll-driven 动画的进度由时间线（滚动位置/可见性）决定，
+          不再由时长决定。<code>auto</code> 表示"时长由时间线接管"。若设为具体时长（如 <code>1s</code>），
+          动画会退化为普通时间驱动动画，scroll-driven 失效。<br />
+          <strong>animation-timeline 必须单独声明</strong>：不能写入 <code>animation</code> 简写。
+          因为 <code>animation</code> 简写会把 <code>animation-duration</code> 重置为默认值 <code>0s</code>，
+          导致动画无法播放。正确写法是：<br />
+          <code>.target &#123; animation-name: fade; animation-duration: auto; animation-timeline: view(); &#125;</code>。<br />
+          本工具生成的代码即遵循这一规则，确保动画在浏览器中正确运行。
+        </p>
+      </details>
+      <details>
+        <summary>source 的 nearest 和 root 有什么区别？如何选择滚动容器？</summary>
+        <p>
+          <code>source</code> 参数指定时间线监听哪个滚动容器：<br />
+          <strong>nearest</strong>：监听<strong>最近的滚动祖先</strong>（即 <code>overflow: auto/scroll</code> 的最近祖先元素）。
+          适合组件内滚动场景，如一个固定高度的滚动列表内元素的入场动画。<br />
+          <strong>root</strong>：监听<strong>根滚动容器</strong>（即文档/documentElement 的滚动）。
+          适合全页滚动场景，如顶部进度条监听整页滚动进度。<br />
+          选择原则：动画与"哪个滚动容器"相关就选哪个。若是全页滚动效果选 root，
+          若是组件内滚动效果选 nearest。注意：若最近祖先不是滚动容器（无 overflow 设置），
+          nearest 会向上查找直到根容器。本工具的"滚动进度条"预设用 root 监听全页滚动，
+          "淡入入场"预设用 nearest 监听组件内滚动。
+        </p>
+      </details>
+      <details>
+        <summary>什么是命名时间线？它和 scroll() / view() 有什么区别？</summary>
+        <p>
+          命名时间线是 scroll-driven 动画的<strong>进阶用法</strong>——先在滚动容器上用
+          <code>scroll-timeline-name</code> 或 <code>view-timeline-name</code> 定义具名时间线，
+          再在目标元素上用 <code>animation-timeline: --name</code> 引用。<br />
+          <strong>与 scroll()/view() 的区别</strong>：scroll() 和 view() 是<strong>匿名时间线</strong>，
+          在目标元素上直接声明，简单直接但无法跨组件复用；命名时间线把时间线定义与动画引用<strong>分离</strong>，
+          一个滚动容器定义的时间线可被多个后代元素引用，适合复杂场景。<br />
+          典型用法：<br />
+          <code>.scroller &#123; view-timeline-name: --my-timeline; &#125;</code><br />
+          <code>.target &#123; animation-timeline: --my-timeline; animation-range: entry; &#125;</code><br />
+          命名时间线还支持 <code>timeline-scope</code> 把时间线作用域提升到祖先元素，便于跨层级引用。
+          本工具支持命名时间线类型，可输入自定义名称生成引用代码。
+        </p>
+      </details>
+      <details>
+        <summary>scroll-driven 动画的浏览器兼容性如何？如何做渐进增强？</summary>
+        <p>
+          <strong>兼容性</strong>：scroll-driven 动画自 Chrome 115+（2023-08）和 Edge 115+ 原生支持，
+          Safari 26+（2025）开始支持，Firefox 正在实现中（截至 2025 年仍在 flag 后）。
+          全球覆盖率约 75-80%，在 Chrome 系浏览器可放心生产使用。<br />
+          <strong>渐进增强策略</strong>：scroll-driven 动画是<strong>增强特性</strong>——
+          不支持的浏览器会忽略 <code>animation-timeline</code>，元素保持默认样式（动画不播放但不报错）。
+          建议的渐进增强写法：<br />
+          1. 先定义普通动画作为<strong>降级</strong>：<code>.target &#123; animation: fade 1s; &#125;</code><br />
+          2. 再用 <code>@supports</code> 增强：<code>@supports (animation-timeline: view()) &#123; .target &#123; animation: fade auto; animation-timeline: view(); &#125; &#125;</code><br />
+          这样旧浏览器播放 1 秒的普通淡入，新浏览器播放滚动驱动的淡入，两者体验都不差。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 时间线配置、关键帧编辑、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox</code> 属性限制能力，预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的 scroll-driven CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 练习与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：sdt 命名空间（scroll-driven timeline） */
+  .sdt {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .sdt__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .sdt__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .sdt__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .sdt__editor,
+  .sdt__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .sdt__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .sdt__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sdt__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sdt__panel-body {
+    padding: 12px 14px;
+  }
+
+  .sdt__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 字段 */
+  .sdt__field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 10px;
+  }
+
+  .sdt__field:last-child {
+    margin-bottom: 0;
+  }
+
+  .sdt__field-label {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .sdt__field-input,
+  .sdt__field-select {
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .sdt__field-select {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* 单选组 */
+  .sdt__radio-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .sdt__radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  /* 子配置区（scroll/view/命名 参数） */
+  .sdt__sub-config {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .sdt__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    line-height: 1.5;
+  }
+
+  .sdt__hint code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    color: var(--color-primary, #2563eb);
+  }
+
+  /* 关键帧卡片 */
+  .sdt__kf {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .sdt__kf:last-child {
+    margin-bottom: 0;
+  }
+
+  .sdt__kf-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sdt__kf-idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .sdt__kf-offset {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .sdt__kf-decls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sdt__decl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .sdt__decl-prop,
+  .sdt__decl-val {
+    min-width: 0;
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .sdt__decl-colon {
+    color: var(--color-text-muted, #6b7280);
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+
+  /* 通用按钮 */
+  .sdt__btn {
+    padding: 4px 10px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.1s), border-color var(--transition-fast, 0.1s);
+  }
+
+  .sdt__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.05));
+  }
+
+  .sdt__btn--preset {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .sdt__btn--add,
+  .sdt__btn--add-decl {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+    background: transparent;
+  }
+
+  .sdt__btn--add:hover,
+  .sdt__btn--add-decl:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  .sdt__btn--add-decl {
+    margin-top: 4px;
+    align-self: flex-start;
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .sdt__btn--del {
+    width: 26px;
+    padding: 4px 0;
+    color: var(--color-danger, #dc2626);
+    border-color: var(--color-border);
+  }
+
+  .sdt__btn--copy {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .sdt__btn--copy:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  /* 说明面板 */
+  .sdt__panel--explain {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .sdt__explain-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .sdt__explain-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .sdt__explain-label {
+    flex-shrink: 0;
+    width: 48px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sdt__explain-text {
+    flex: 1;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .sdt__explain-text code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    color: var(--color-primary, #2563eb);
+  }
+
+  /* 预览 HTML 编辑 */
+  .sdt__preview-html {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    padding: 12px 14px;
+  }
+
+  .sdt__textarea {
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+  }
+
+  /* iframe 预览 */
+  .sdt__preview {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .sdt__preview-head {
+    padding: 8px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sdt__preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sdt__iframe {
+    width: 100%;
+    height: 460px;
+    border: 0;
+    background: #fff;
+    display: block;
+  }
+
+  /* 代码输出 */
+  .sdt__code {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .sdt__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .sdt__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .sdt__code-pre {
+    margin: 0;
+    padding: 12px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--color-bg);
+    color: var(--color-text);
+    max-height: 320px;
+    overflow: auto;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .sdt__main {
+      grid-template-columns: 1fr;
+    }
+
+    .sdt__presets {
+      padding: 10px 12px;
+    }
+
+    .sdt__iframe {
+      height: 380px;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .sdt__presets-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .sdt__btn--preset {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .sdt__radio-group {
+      gap: 8px;
+    }
+
+    .sdt__kf-head {
+      flex-wrap: wrap;
+    }
+
+    .sdt__explain-row {
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sdt__explain-label {
+      width: auto;
+    }
+
+    .sdt__iframe {
+      height: 320px;
+    }
+  }
+
+  /* 暗色模式 */
+  :global(.dark) .sdt__iframe {
+    background: #1e293b;
+  }
+</style>

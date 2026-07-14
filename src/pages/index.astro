@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '83 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
+    '84 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器、CSS scroll-driven 动画生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -769,6 +769,15 @@ const tools = [
     category: '设计',
     keywords: 'css @scope 作用域 css 作用域 甜甜圈作用域 donut scope 下边界 :scope shadow dom 替代 bem 替代 样式隔离 组件级样式 相对选择器 作用域生成器',
   },
+  {
+    href: '/scroll-driven',
+    title: 'CSS scroll-driven 动画生成器',
+    desc: '在线 CSS scroll-driven 动画生成器：可视化编辑滚动驱动动画，完整支持 scroll()（滚动位置驱动）与 view()（元素可见性驱动）两种时间线、animation-timeline 属性、animation-range 范围控制（cover/contain/entry/exit/entry-crossing/exit-crossing）、命名时间线、@keyframes 关键帧编辑。内置原理说明面板，实时展示时间线类型、滚动容器源、轴向、范围语义。iframe 沙箱预览可在预览区内滚动实时查看动画效果，7 组预设覆盖滚动进度条、淡入入场、视差滚动、卡片揭示、旋转进度、半程入场等场景。实时生成浏览器原生支持的 scroll-driven CSS 代码（Chrome 115+ 支持），一键复制。适用于滚动进度指示、元素入场动画、视差效果、滚动揭示。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: 'css scroll-driven 滚动驱动动画 animation-timeline scroll view animation-range cover contain entry exit entry-crossing exit-crossing 视差滚动 入场动画 进度条 命名时间线 timeline-scope 渐进增强',
+  },
 ];
 
 // 工具分类列表（去重），用于分类筛选按钮
@@ -831,7 +840,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 83 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 84 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
