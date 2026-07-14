@@ -1,0 +1,583 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import SubgridTool from '../components/SubgridTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS subgrid 子网格生成器 - 在线嵌套网格轨道继承可视化工具',
+  description:
+    '免费的在线 CSS subgrid 子网格生成器：可视化生成嵌套网格轨道继承效果，完整支持 grid-template-columns: subgrid 与 grid-template-rows: subgrid 双向轨道继承、none/columns/rows/both 四种方向切换、子网格跨列跨行定位（grid-column/grid-row span）、父网格列行轨道定义（fr/px/%/auto）、gap 自动继承。内置父子双层可视化预览——蓝色虚线父网格轨道 + 橙色实线子网格，直观展示子网格如何继承并对齐父网格轨道。8 组预设覆盖默认双向继承、仅列继承、仅行继承、无继承对比基线、卡片墙列对齐、表单标签对齐、杂志嵌套布局、双行嵌套对齐等场景。实时生成浏览器原生支持的 subgrid CSS 代码（Chrome 117+、Firefox 71+、Safari 16+），一键复制。适用于卡片墙列对齐、表单标签输入对齐、杂志式嵌套排版、仪表盘嵌套布局等需要嵌套网格轨道对齐的现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS subgrid 子网格生成器',
+    description: '在线 CSS subgrid 子网格生成器，支持双向轨道继承、跨列跨行定位、父子双层可视化预览，一键复制 subgrid CSS 代码。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS subgrid 子网格生成器</h1>
+      <p>
+        可视化生成 CSS <code>subgrid</code> 子网格（Chrome 117+、Firefox 71+、Safari 16+ 原生支持）：
+        完整支持 <code>grid-template-columns: subgrid</code> 与 <code>grid-template-rows: subgrid</code>
+        <strong>双向轨道继承</strong>、<code>none</code> / <code>columns</code> / <code>rows</code> /
+        <code>both</code> 四种方向切换、子网格跨列跨行定位（<code>grid-column</code> /
+        <code>grid-row span</code>）、父网格列行轨道定义（<code>fr</code> / <code>px</code> /
+        <code>%</code> / <code>auto</code>）、gap 自动继承。内置<strong>父子双层可视化预览</strong>——
+        蓝色虚线父网格轨道 + 橙色实线子网格，直观展示子网格如何继承并对齐父网格轨道。
+        8 组预设覆盖双向继承、仅列/仅行继承、无继承对比、卡片墙列对齐、表单标签对齐、杂志嵌套布局等场景。
+        适用于卡片墙列对齐、表单标签输入对齐、杂志式嵌套排版等需要嵌套网格轨道对齐的场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <SubgridTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS subgrid？它解决了什么问题？</summary>
+        <p>
+          <strong>CSS subgrid</strong> 是 CSS Grid Layout Module Level 2 引入的子网格特性，
+          允许嵌套的 grid 容器<strong>继承父网格的轨道定义</strong>——通过将子网格的
+          <code>grid-template-columns</code> 或 <code>grid-template-rows</code> 设为
+          <code>subgrid</code>，子网格直接复用父网格对应方向的轨道，实现嵌套元素的轨道级对齐。
+          <br />它解决的核心痛点是：<strong>嵌套网格无法对齐父网格轨道</strong>。传统嵌套 grid
+          的子网格独立定义轨道，父子网格的列线/行线无法对齐，导致嵌套元素错位。开发者只能用百分比硬凑对齐
+          （脆弱，父网格轨道变化即失效）或放弃嵌套用扁平结构（语义丢失）。subgrid 让嵌套结构保持语义的同时
+          实现轨道级精确对齐。
+          <br />典型场景：卡片墙中每张卡片内部的列与父网格列对齐、表单中标签与输入框跨字段对齐、
+          杂志式排版中文章内容列与版面列对齐。
+        </p>
+      </details>
+      <details>
+        <summary>subgrid 与普通嵌套 grid 有什么区别？</summary>
+        <p>
+          <strong>普通嵌套 grid</strong>：子网格独立定义自己的 <code>grid-template-columns</code>，
+          与父网格轨道无关联。例如父网格 <code>1fr 2fr 1fr</code>，子网格 <code>1fr 1fr</code>，
+          子网格的列线与父网格列线完全错位。<br />
+          <strong>subgrid 嵌套</strong>：子网格的 <code>grid-template-columns: subgrid</code>，
+          直接继承父网格的列轨道定义。子网格的列线与父网格列线完全对齐，父网格轨道变化时子网格自动跟随。
+          <br /><strong>关键差异</strong>：普通嵌套是"两层独立网格"，subgrid 是"一层网格的延伸"。
+          subgrid 下子网格的 gap 也继承父网格，无需重复声明。本工具的"无继承（对比基线）"预设可直观对比
+          两者差异——切换到 columns/rows/both 即可观察 subgrid 的对齐效果。
+        </p>
+      </details>
+      <details>
+        <summary>grid-template-columns: subgrid 和 grid-template-rows: subgrid 怎么用？</summary>
+        <p>
+          两者分别让子网格继承父网格的<strong>列轨道</strong>与<strong>行轨道</strong>，可单独使用或组合使用。
+          <br /><strong>仅列继承</strong>：<code>grid-template-columns: subgrid;</code>，子网格列对齐父网格列，
+          行轨道独立定义。适合卡片墙、表单标签对齐等只需列对齐的场景。
+          <br /><strong>仅行继承</strong>：<code>grid-template-rows: subgrid;</code>，子网格行对齐父网格行，
+          列轨道独立定义。适合需要行对齐的场景。
+          <br /><strong>双向继承</strong>：同时声明两者，子网格列与行都对齐父网格。适合需要完整对齐的场景。
+          <br /><strong>继承的轨道数</strong>：子网格继承的轨道数取决于它在父网格中跨越的轨道数。例如子网格
+          <code>grid-column: span 3</code> 且父网格有 3 列，则子网格继承 3 条列轨道。本工具的方向切换按钮
+          可实时切换四种方向（none/columns/rows/both）观察效果。
+        </p>
+      </details>
+      <details>
+        <summary>subgrid 方向（columns / rows / both）如何选择？</summary>
+        <p>
+          选型原则：<strong>看需要对齐哪个方向的轨道</strong>。
+          <br />- <strong>columns</strong>：只需列对齐。典型场景：卡片墙（卡片内列对齐父网格列）、
+          表单（标签列与输入框列对齐）、杂志排版（文章列对齐版面列）。
+          <br />- <strong>rows</strong>：只需行对齐。典型场景：需要子网格行与父网格行对齐的布局，
+          如时间轴、日程表。
+          <br />- <strong>both</strong>：需要双向对齐。典型场景：仪表盘卡片（行列都需要对齐）、
+          复杂嵌套表格布局。
+          <br />- <strong>none</strong>：不需要对齐，作为对比基线。
+          <br />实践建议：优先用 <strong>columns</strong>（覆盖 80% 场景），只有确实需要行对齐时才升级为
+          <strong>both</strong>。subgrid 方向越多，约束越强，灵活性越低。本工具默认采用 both 方向展示
+          完整对齐效果，可按需切换。
+        </p>
+      </details>
+      <details>
+        <summary>subgrid 方向下 gap 如何继承？需要重复声明吗？</summary>
+        <p>
+          <strong>不需要重复声明</strong>。subgrid 方向下，子网格的 <code>gap</code>（<code>row-gap</code>
+          与 <code>column-gap</code>）自动继承父网格的 gap 值。这是 subgrid 的核心便利之一——
+          父子网格间距保持一致，无需手动同步。
+          <br />例如父网格 <code>gap: 16px</code>，子网格 <code>grid-template-columns: subgrid</code>，
+          子网格的列间距自动为 16px，与父网格列间距一致。
+          <br /><strong>注意</strong>：只有 subgrid 方向的 gap 会继承。若子网格只 <code>columns: subgrid</code>
+          而 <code>rows</code> 独立定义，则 <code>row-gap</code> 可独立设置，<code>column-gap</code> 继承父网格。
+          本工具在 subgrid 方向下自动注释"gap 继承父网格"，在 none 方向下允许独立配置 gap。
+        </p>
+      </details>
+      <details>
+        <summary>子网格如何跨列跨行？grid-column / grid-row span 怎么配合 subgrid？</summary>
+        <p>
+          子网格通过 <code>grid-column: span N</code> 与 <code>grid-row: span N</code> 在父网格中定位，
+          决定它<strong>继承多少条父网格轨道</strong>。
+          <br />例如父网格 4 列，子网格 <code>grid-column: span 2</code> 且
+          <code>grid-template-columns: subgrid</code>，则子网格继承 2 条父网格列轨道。
+          <br /><strong>关键规则</strong>：子网格继承的轨道数 = 跨越的父网格轨道数。若子网格跨 3 列且
+          <code>columns: subgrid</code>，则子网格有 3 条列轨道，与父网格对应 3 列完全对齐。
+          <br /><strong>实践建议</strong>：跨列数应与子网格内项的预期列数匹配。例如子网格跨 3 列且希望 6 个项
+          排成 2 行 3 列，则 <code>colSpan: 3</code> + <code>columns: subgrid</code> 即可。本工具的跨列跨行
+          输入框可实时调整继承的轨道数。
+        </p>
+      </details>
+      <details>
+        <summary>subgrid 的浏览器兼容性如何？如何渐进降级？</summary>
+        <p>
+          <strong>subgrid 已全主流浏览器支持</strong>：Chrome 117+（2023 年 9 月）、Firefox 71+（2019 年）、
+          Safari 16+（2022 年）。截至 2024 年底全球浏览器支持率已超 95%，可放心用于生产环境。
+          <br /><strong>渐进降级策略</strong>：不支持的浏览器会忽略 <code>subgrid</code> 值，子网格退化为
+          独立网格（无轨道继承）。推荐写法：
+          <br /><code>grid-template-columns: 1fr 1fr 1fr; /* 降级 */</code>
+          <br /><code>grid-template-columns: subgrid; /* 增强 */</code>
+          <br />先写降级值，再用 subgrid 覆盖。支持的浏览器用 subgrid 对齐，不支持的用独立网格，
+          两者都能正常渲染，只是对齐精度不同。这是天然的渐进增强——零额外开销，新旧浏览器体验都不差。
+        </p>
+      </details>
+      <details>
+        <summary>使用本工具会保存我的数据吗？隐私如何保障？</summary>
+        <p>
+          <strong>零数据上传，全本地处理</strong>。本工具的所有配置（父网格轨道、子网格方向、跨列跨行、
+          gap 等）仅在浏览器内存中处理，不发起任何网络请求，不写入本地存储，不收集任何用户数据。
+          关闭页面后所有配置自动清除。<br />复制代码功能使用浏览器原生 Clipboard API，内容直接写入系统剪贴板，
+          不经过任何中间服务。<br />本站定位为"零广告 · 全本地处理"的中文开发者工具集，隐私保障是核心承诺。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/grid">CSS Grid 可视化生成器</a> — 父网格布局定义，与 subgrid 配合实现嵌套对齐</li>
+        <li><a href="/flexbox">CSS Flexbox 可视化生成器</a> — 一维布局，组件内排列</li>
+        <li><a href="/container">CSS @container 容器查询生成器</a> — 组件级响应式</li>
+        <li><a href="/nesting">CSS Nesting 原生嵌套生成器</a> — 选择器嵌套语法</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* subgrid 工具专属样式 */
+  .sbg {
+    --sbg-parent-bg: #f0f4f8;
+    --sbg-parent-border: #3b82f6;
+    --sbg-child-bg: #fef3c7;
+    --sbg-child-border: #f59e0b;
+    --sbg-child-item-bg: #ffffff;
+    --sbg-child-item-border: #d97706;
+    --sbg-placeholder-bg: #e5e7eb;
+    --sbg-placeholder-border: #9ca3af;
+    --sbg-code-bg: #1e293b;
+    --sbg-code-color: #e2e8f0;
+    --sbg-explain-bg: #f8fafc;
+    --sbg-explain-border: #cbd5e1;
+    --sbg-preview-bg: #ffffff;
+    --sbg-border: #e2e8f0;
+    --sbg-text: #1e293b;
+    --sbg-text-muted: #64748b;
+    --sbg-accent: #3b82f6;
+    --sbg-accent-bg: #eff6ff;
+  }
+
+  /* 主布局：左右两栏 */
+  .sbg__main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    margin: 16px 0;
+  }
+
+  /* 面板通用 */
+  .sbg__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 预设按钮组 */
+  .sbg__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--sbg-accent-bg);
+    border-radius: 8px;
+  }
+  .sbg__presets-label {
+    font-weight: 600;
+    color: var(--sbg-text);
+    margin-right: 4px;
+  }
+
+  /* 按钮通用 */
+  .sbg__btn {
+    padding: 6px 12px;
+    border: 1px solid var(--sbg-border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--sbg-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .sbg__btn:hover {
+    border-color: var(--sbg-accent);
+    color: var(--sbg-accent);
+  }
+  .sbg__btn--small {
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+  .sbg__btn--danger:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+  .sbg__btn--preset {
+    padding: 6px 12px;
+  }
+  .sbg__btn--active {
+    background: var(--sbg-accent);
+    color: #fff;
+    border-color: var(--sbg-accent);
+  }
+  .sbg__btn--copy {
+    background: var(--sbg-accent);
+    color: #fff;
+    border-color: var(--sbg-accent);
+  }
+  .sbg__btn--copy:hover {
+    background: #2563eb;
+    color: #fff;
+  }
+  .sbg__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 字段集 */
+  .sbg__fieldset {
+    border: 1px solid var(--sbg-border);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 0;
+  }
+  .sbg__fieldset legend {
+    font-weight: 600;
+    color: var(--sbg-text);
+    padding: 0 8px;
+  }
+
+  /* 字段 */
+  .sbg__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .sbg__field > span {
+    font-size: 13px;
+    color: var(--sbg-text-muted);
+    font-weight: 500;
+  }
+  .sbg__field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .sbg__field--inline > span {
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .sbg__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* 输入框 */
+  .sbg__input {
+    padding: 6px 10px;
+    border: 1px solid var(--sbg-border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+    color: var(--sbg-text);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .sbg__input:focus {
+    outline: none;
+    border-color: var(--sbg-accent);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  }
+  .sbg__input--small {
+    width: 70px;
+  }
+  .sbg__select {
+    padding: 4px 8px;
+    border: 1px solid var(--sbg-border);
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+    color: var(--sbg-text);
+  }
+  .sbg__select--small {
+    padding: 3px 6px;
+  }
+  .sbg__value {
+    font-size: 12px;
+    color: var(--sbg-text-muted);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* 轨道编辑器 */
+  .sbg__track-editor {
+    margin-bottom: 12px;
+  }
+  .sbg__track-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--sbg-text-muted);
+    margin-bottom: 6px;
+  }
+  .sbg__track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sbg__track-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* 分段按钮组 */
+  .sbg__seg-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .sbg__seg {
+    padding: 6px 14px;
+    border: 1px solid var(--sbg-border);
+    background: #fff;
+    color: var(--sbg-text);
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: monospace;
+  }
+  .sbg__seg--active {
+    background: var(--sbg-accent);
+    color: #fff;
+    border-color: var(--sbg-accent);
+  }
+  .sbg__seg:hover:not(.sbg__seg--active) {
+    border-color: var(--sbg-accent);
+    color: var(--sbg-accent);
+  }
+
+  /* 区块 */
+  .sbg__section {
+    border: 1px solid var(--sbg-border);
+    border-radius: 8px;
+    padding: 14px;
+    background: #fff;
+  }
+  .sbg__section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .sbg__section-head h3 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--sbg-text);
+  }
+  .sbg__hint {
+    font-size: 12px;
+    color: var(--sbg-text-muted);
+    max-width: 60%;
+    text-align: right;
+  }
+
+  /* 预览区 */
+  .sbg__preview {
+    background: var(--sbg-preview-bg);
+    border-radius: 6px;
+    padding: 8px;
+    overflow: auto;
+  }
+  .sbg__child-item {
+    background: var(--sbg-child-item-bg);
+    border: 1px solid var(--sbg-child-item-border);
+    border-radius: 4px;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--sbg-text);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sbg__placeholder-item {
+    background: var(--sbg-placeholder-bg);
+    border: 1px dashed var(--sbg-placeholder-border);
+    border-radius: 4px;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--sbg-text-muted);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 原理说明 */
+  .sbg__explain {
+    background: var(--sbg-explain-bg);
+    border-left: 3px solid var(--sbg-explain-border);
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--sbg-text);
+    white-space: pre-line;
+  }
+  .sbg__explain :global(strong) {
+    color: var(--sbg-accent);
+  }
+
+  /* 代码输出 */
+  .sbg__code {
+    background: var(--sbg-code-bg);
+    color: var(--sbg-code-color);
+    padding: 14px;
+    border-radius: 6px;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+  }
+  .sbg__code code {
+    white-space: pre;
+  }
+
+  /* 相关链接 */
+  .related-links ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .related-links li {
+    padding: 10px 14px;
+    background: var(--sbg-accent-bg);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .related-links a {
+    color: var(--sbg-accent);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .related-links a:hover {
+    text-decoration: underline;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .sbg__main {
+      grid-template-columns: 1fr;
+    }
+    .sbg__row {
+      grid-template-columns: 1fr;
+    }
+    .sbg__hint {
+      max-width: 100%;
+      text-align: left;
+      display: block;
+      margin-top: 4px;
+    }
+    .sbg__section-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .sbg__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .sbg__presets-label {
+      text-align: center;
+    }
+    .sbg__btn--preset {
+      width: 100%;
+    }
+    .sbg__seg-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .sbg__seg {
+      text-align: center;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme='dark']) .sbg,
+  :global(.dark) .sbg {
+    --sbg-parent-bg: #1e293b;
+    --sbg-parent-border: #60a5fa;
+    --sbg-child-bg: #422006;
+    --sbg-child-border: #fbbf24;
+    --sbg-child-item-bg: #1e293b;
+    --sbg-child-item-border: #fbbf24;
+    --sbg-placeholder-bg: #334155;
+    --sbg-placeholder-border: #64748b;
+    --sbg-code-bg: #0f172a;
+    --sbg-code-color: #e2e8f0;
+    --sbg-explain-bg: #1e293b;
+    --sbg-explain-border: #475569;
+    --sbg-preview-bg: #0f172a;
+    --sbg-border: #334155;
+    --sbg-text: #e2e8f0;
+    --sbg-text-muted: #94a3b8;
+    --sbg-accent: #60a5fa;
+    --sbg-accent-bg: #1e3a5f;
+  }
+  :global([data-theme='dark']) .sbg__btn,
+  :global(.dark) .sbg__btn,
+  :global([data-theme='dark']) .sbg__input,
+  :global(.dark) .sbg__input,
+  :global([data-theme='dark']) .sbg__select,
+  :global(.dark) .sbg__select,
+  :global([data-theme='dark']) .sbg__seg,
+  :global(.dark) .sbg__seg,
+  :global([data-theme='dark']) .sbg__section,
+  :global(.dark) .sbg__section {
+    background: #1e293b;
+    color: var(--sbg-text);
+  }
+</style>
