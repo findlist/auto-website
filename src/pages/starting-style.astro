@@ -1,0 +1,569 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import StartingStyleTool from '../components/StartingStyleTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS @starting-style 入场动画生成器 - 在线元素首次出现过渡可视化工具',
+  description:
+    '免费的在线 CSS @starting-style 入场动画生成器：完整支持元素首次渲染、display 切换、popover 显示三种触发场景，配合 transition-behavior: allow-discrete 实现 display 属性离散过渡。支持嵌套语法与独立语法双模式代码生成，实时预览触发入场动画，原理说明面板解析 @starting-style 的核心机制与使用要点。8 组预设覆盖淡入入场、缩放弹入、滑入入场、display 切换淡入、popover 弹出等场景。实时生成 CSS 代码一键复制。适用于 CSS 入场动画、元素首次出现过渡、display none 切换过渡、popover 弹层动画、折叠面板展开等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS @starting-style 入场动画生成器',
+    description: '在线 CSS @starting-style 入场动画生成器，支持首次渲染、display 切换、popover 显示三种场景，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS @starting-style 入场动画生成器</h1>
+      <p>
+        可视化生成 CSS <code>@starting-style</code> 规则，解决元素首次出现时的入场动画痛点。
+        完整支持三种触发场景：<strong>首次渲染</strong>（动态插入 DOM）、
+        <strong>display 切换</strong>（<code>none ↔ block</code>）、
+        <strong>popover 显示</strong>（弹层入场）。
+        配合 <code>transition-behavior: allow-discrete</code> 让 <code>display</code> 属性可离散过渡，
+        原理说明面板解析 <code>@starting-style</code> 的核心机制。
+        8 组预设覆盖淡入、缩放、滑入、display 切换、popover 弹出等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <StartingStyleTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS @starting-style？它解决了什么问题？</summary>
+        <p>
+          <strong>@starting-style</strong> 是 CSS Transitions Level 2 引入的规则（Chrome 117+ 2024 年起支持），
+          用于声明元素<strong>"首次出现"时的起始样式</strong>。它解决了一个长期痛点：
+          传统 <code>transition</code> 仅在属性值变化时触发过渡，无法捕获元素首次渲染（如动态插入 DOM）、
+          <code>display: none → block</code> 切换、popover 显示等场景——这些场景下元素直接跳到最终样式，没有过渡动画。
+          <code>@starting-style</code> 让开发者声明起始样式，浏览器从起始样式过渡到最终样式。
+          语法：<code>.card &#123; opacity: 1; transition: opacity 0.3s; @starting-style &#123; opacity: 0; &#125; &#125;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>@starting-style 的三种触发场景有什么区别？</summary>
+        <p>
+          <br /><strong>首次渲染（first-render）</strong>：元素首次插入 DOM 时触发，如动态添加列表项、路由切换挂载组件。
+          浏览器从 @starting-style 声明的起始样式过渡到最终样式。
+          <br /><strong>display 切换（display-toggle）</strong>：<code>display: none → block</code> 时触发，
+          元素从隐藏变为可见相当于"首次出现"。需配合 <code>transition-behavior: allow-discrete</code>
+          让 display 属性参与过渡（隐藏方向在过渡结束时变 none，显示方向立即变 block）。
+          <br /><strong>popover 显示（popover-show）</strong>：popover 或 dialog 元素显示时触发，
+          @starting-style 声明显示前的起始状态，实现弹层入场动画。
+        </p>
+      </details>
+      <details>
+        <summary>transition-behavior: allow-discrete 是什么？为什么 display 切换需要它？</summary>
+        <p>
+          <strong>transition-behavior: allow-discrete</strong> 是让离散属性（如 <code>display</code>）参与过渡的开关。
+          默认情况下 <code>display</code> 是离散属性，变化时立即生效，不会产生过渡动画。
+          启用 <code>allow-discrete</code> 后，浏览器会特殊处理 display 的变化时机：
+          <strong>显示方向</strong>（none → block）display 立即变为 block，让其他属性可以正常过渡；
+          <strong>隐藏方向</strong>（block → none）display 在过渡<strong>结束时</strong>才变为 none，
+          让其他属性先完成过渡再隐藏。语法：
+          <code>transition: opacity 0.3s, display 0.3s allow-discrete;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>嵌套语法和独立语法有什么区别？应该选哪个？</summary>
+        <p>
+          <strong>嵌套语法</strong>（推荐）：把 <code>@starting-style</code> 嵌套在选择器规则内，
+          语法更简洁。需要浏览器支持 CSS nesting（2023 年起全主流浏览器支持）。
+          示例：<code>.card &#123; opacity: 1; @starting-style &#123; opacity: 0; &#125; &#125;</code>。
+          <br /><strong>独立语法</strong>：把 <code>@starting-style</code> 作为顶级规则，
+          内部嵌套选择器。兼容性更好（不依赖 nesting）。
+          示例：<code>@starting-style &#123; .card &#123; opacity: 0; &#125; &#125;</code>。
+          <br />两者效果完全相同，推荐使用嵌套语法（更简洁），需要兼容旧浏览器时切换为独立语法。
+        </p>
+      </details>
+      <details>
+        <summary>@starting-style 和 animation 有什么区别？什么时候该用哪个？</summary>
+        <p>
+          <strong>@starting-style + transition</strong>：适合<strong>一次性入场动画</strong>——
+          元素首次出现时从起始样式过渡到最终样式，过渡完成后保持最终状态。代码简洁，无需 @keyframes。
+          <br /><strong>animation</strong>：适合<strong>循环动画或复杂关键帧动画</strong>——
+          需要多个关键帧、循环播放、暂停控制等。用 @keyframes 定义关键帧，animation 属性控制播放。
+          <br />选型原则：如果是"元素出现时播放一次过渡"，用 @starting-style；
+          如果是"持续循环的动画"或"多关键帧复杂动画"，用 animation。两者可组合使用——
+          @starting-style 处理入场，animation 处理入场后的循环动画。
+        </p>
+      </details>
+      <details>
+        <summary>display: none → block 切换时，隐藏方向（block → none）怎么实现过渡？</summary>
+        <p>
+          隐藏方向的过渡需要额外配置。基本思路：给元素添加 <code>.hidden</code> 类，
+          在 <code>.hidden</code> 状态下声明隐藏样式（如 <code>opacity: 0</code>）和 <code>display: none</code>。
+          配合 <code>transition-behavior: allow-discrete</code>，浏览器会先过渡 opacity 到 0，
+          过渡结束后才将 display 变为 none。示例：
+          <code>.panel &#123; opacity: 1; transition: opacity 0.3s, display 0.3s allow-discrete; @starting-style &#123; opacity: 0; &#125; &#125;</code>，
+          <code>.panel.hidden &#123; opacity: 0; display: none; &#125;</code>。
+          注意：<code>@starting-style</code> 声明的是<strong>显示方向的起始样式</strong>，
+          隐藏方向用普通 transition 即可（元素已可见，属性变化触发过渡）。
+        </p>
+      </details>
+      <details>
+        <summary>@starting-style 的浏览器兼容性如何？如何渐进增强？</summary>
+        <p>
+          <strong>Chrome 117+</strong>（2023 年 9 月）、<strong>Edge 117+</strong>、
+          <strong>Safari 17.5+</strong>（2024 年 5 月）、<strong>Firefox 129+</strong>（2024 年 8 月）支持。
+          不支持的浏览器会忽略 <code>@starting-style</code> 规则，元素直接使用最终样式（无入场动画），
+          <strong>功能完整但无过渡效果</strong>——这是天然的渐进增强，无需额外降级代码。
+          如果需要保证动画效果，可用 <code>@supports</code> 检测：
+          <code>@supports (@starting-style) &#123; /* 支持时的增强样式 */ &#125;</code>。
+          实际项目中直接使用即可，新旧浏览器体验都不会出错。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会保存或上传我的数据吗？</summary>
+        <p>
+          不会。本工具是<strong>纯前端应用</strong>，所有配置编辑、预览渲染、代码生成都在浏览器本地完成，
+          不发起任何网络请求，不保存任何用户数据。配置仅存在于当前浏览器会话中，关闭页面即清除。
+          可放心编辑任意 CSS 配置，无隐私泄露风险。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/transition">CSS transition 过渡生成器</a> — 配合 @starting-style 实现入场动画的过渡配置</li>
+        <li><a href="/animation">CSS animation 动画生成器</a> — 时间驱动的循环动画，与 @starting-style 互补</li>
+        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — DOM 状态切换的视图过渡</li>
+        <li><a href="/scroll-driven">CSS scroll-driven 动画生成器</a> — 滚动驱动的动画</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具主容器 */
+  .ss-tool {
+    margin: 1.5rem 0;
+  }
+
+  /* 预设按钮组 */
+  .ss-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .ss-preset-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ss-preset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+  }
+
+  /* 主布局：左右两栏 */
+  .ss-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+  }
+
+  /* 配置面板 */
+  .ss-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .ss-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .ss-field--toggle {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ss-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .ss-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+  }
+  .ss-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+
+  /* 分段按钮组 */
+  .ss-seg {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--surface-alt);
+    border-radius: 0.5rem;
+  }
+  .ss-seg__btn {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ss-seg__btn.is-active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* 样式声明编辑器 */
+  .ss-decls__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+  }
+  .ss-decls__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .ss-decls__add {
+    padding: 0.25rem 0.625rem;
+    border: 1px dashed var(--border);
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .ss-decls__add:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+  .ss-decl {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+  }
+  .ss-decl__prop,
+  .ss-decl__val {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-family: var(--font-mono);
+  }
+  .ss-decl__prop:focus,
+  .ss-decl__val:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .ss-decl__del {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--danger);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .ss-decl__del:hover {
+    border-color: var(--danger);
+  }
+
+  /* transition 配置 */
+  .ss-transitions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .ss-trans {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto auto auto auto;
+    gap: 0.3rem;
+    align-items: center;
+    padding: 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+  }
+  .ss-trans__prop {
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    min-width: 0;
+  }
+  .ss-trans__label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+  .ss-trans__num {
+    width: 3rem;
+    padding: 0.25rem 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  .ss-trans__unit {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+  .ss-trans__select {
+    padding: 0.25rem 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.75rem;
+  }
+
+  /* 开关按钮 */
+  .ss-toggle {
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ss-toggle.is-on {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .ss-warn {
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--warning);
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
+    color: var(--text);
+    font-size: 0.8125rem;
+    border-radius: 0.25rem;
+  }
+
+  /* 右栏输出区 */
+  .ss-output {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* 预览区 */
+  .ss-preview {
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+  }
+  .ss-preview__stage {
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    background:
+      linear-gradient(45deg, var(--border) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--border) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--border) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--border) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+  .ss-preview__target {
+    padding: 1.5rem 2.5rem;
+    border-radius: 0.5rem;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  .ss-preview__btn {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ss-preview__btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  .ss-preview__hint {
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* 原理说明 */
+  .ss-explain {
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+  }
+  .ss-explain__title {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .ss-explain__text {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+  .ss-explain__tips {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .ss-explain__tips li {
+    margin-bottom: 0.25rem;
+  }
+
+  /* 代码输出 */
+  .ss-code {
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .ss-code__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+  }
+  .ss-code__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .ss-code__copy {
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ss-code__copy:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .ss-code__pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    font-family: var(--font-mono);
+    color: var(--text);
+  }
+
+  /* 相关链接 */
+  .related-links {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+  }
+  .related-links h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .related-links ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.875rem;
+    line-height: 1.8;
+  }
+  .related-links a {
+    color: var(--primary);
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .ss-layout {
+      grid-template-columns: 1fr;
+    }
+    .ss-trans {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .ss-presets {
+      gap: 0.375rem;
+    }
+    .ss-preset-btn {
+      padding: 0.375rem 0.625rem;
+      font-size: 0.8125rem;
+    }
+    .ss-preview__stage {
+      min-height: 120px;
+    }
+    .ss-preview__target {
+      padding: 1rem 1.5rem;
+      font-size: 0.8125rem;
+    }
+  }
+</style>
