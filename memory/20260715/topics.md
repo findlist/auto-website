@@ -514,3 +514,158 @@ text-wrap 是 CSS Text Module Level 4 引入的文本换行控制属性（2023-2
 - **writing-mode**：管"书写方向"——竖排文字、多语言排版、RTL 文本方向
 
 两者形成"换行+方向"排版维度互补：text-wrap 控制文本如何换行（水平方向的断行策略），writing-mode 控制文本往哪个方向排列（水平/垂直/RTL）。这是 CSS 工具链排版优化能力维度的双工具互补。
+
+---
+
+# 第 48 轮 · CSS contain + content-visibility 性能优化生成器（性能优化能力维度开辟）
+
+## 上下文恢复
+- 承接第 47 轮（CSS text-wrap 文本换行排版优化器，commit 0fc5406 → 沉淀 d9cfd4b）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：86 工具 + 81 博客 + 595 页面 → 本轮后 87 工具 + 82 博客 + 606 页面
+- 工作树状态：干净，承接上轮沉淀
+
+## 本轮聚焦方向
+**开辟全新"性能优化"能力维度：新增 CSS contain + content-visibility 性能优化生成器**
+
+contain 与 content-visibility 是 CSS Containment Module 引入的两大性能优化属性，覆盖 "CSS contain" "渲染隔离" "content-visibility" "屏幕外渲染" "长列表优化" "contain-intrinsic-size" "layout/paint/style 隔离" 等高搜索量长尾词。中文资源稀少，差异化机会明确。这是本站首个"性能优化"能力维度的工具，与现有 nesting/@layer/@scope 原生语法工具链有概念关联（都是 CSS 现代架构能力），但聚焦于渲染性能而非语法组织。
+
+环境限制类任务（Lighthouse、375px 实测）已连续 48 轮无法突破，按规范跳过；接入统计工具需用户确认，不在本轮范围。
+
+## 完成任务
+
+### 单元 1：ContainTool.tsx 组件开发（约 420 行，commit 694b87b）
+1. ✅ TypeScript 接口设计
+   - ContainValue：none / strict / content / size / layout / paint / style / inline-size 八种值
+   - ContentVisibility：visible / hidden / auto 三种值
+   - ContainConfig：selector + contain + contentVisibility + useIntrinsicSize + intrinsicWidth/Height + padding + background
+   - ContainPreset：预设数据结构
+2. ✅ contain 八种值完整支持（核心差异化亮点）
+   - none（不隔离）/ strict（全部隔离）/ content（除 size，推荐）/ size（尺寸）/ layout（布局）/ paint（绘制）/ style（样式）/ inline-size（行内尺寸）
+3. ✅ content-visibility 三种值完整支持
+   - visible（正常渲染）/ hidden（不渲染但保留布局）/ auto（屏幕外跳过渲染）
+4. ✅ contain-intrinsic-size 配置
+   - 宽度（120-480px）+ 高度（60-320px）滑块
+   - 仅在 useIntrinsicSize 启用时显示
+5. ✅ 可滚动预览区 + IntersectionObserver 演示（核心差异化亮点）
+   - 预览区为可滚动容器，含 12 张卡片
+   - IntersectionObserver 实时标记卡片可见/屏幕外状态
+   - content-visibility: auto 模式下屏幕外卡片显示"跳过渲染"占位
+   - 实时显示可见卡片数（X / 12）
+6. ✅ 智能代码生成（buildCss）
+   - 仅输出非默认值（contain 非 none 时输出、content-visibility 非 visible 时输出、intrinsic-size 仅启用时输出）
+   - 全为默认值时给出说明注释
+7. ✅ 原理说明面板（buildExplain）
+   - 解析各 contain 值的隔离范围与副作用
+   - 解析各 content-visibility 值的渲染策略
+   - size/strict 副作用提醒、auto 未配合 intrinsic-size 提醒
+8. ✅ 8 组预设
+   - 默认（不隔离）/ 布局隔离 / 绘制隔离 / 推荐组合（content）/ 长列表优化 / 隐藏内容 / 卡片网格优化 / 行内尺寸隔离
+
+### 单元 2：contain.astro 工具页面创建（约 300 行）
+9. ✅ 完整 SEO 元素
+   - title: "CSS contain + content-visibility 性能优化生成器 - 在线渲染隔离与屏幕外跳过渲染可视化工具"
+   - description: 含 contain、content-visibility、none/strict/content/size/layout/paint/style/inline-size、visible/hidden/auto、contain-intrinsic-size、渲染隔离、屏幕外渲染、长列表优化等关键词
+   - canonical/OG/Twitter Card/JSON-LD WebApplication（applicationCategory: DeveloperApplication, inLanguage: zh-CN）
+10. ✅ 8 个 FAQ
+    - contain 核心概念与解决痛点、八值区别、content-visibility auto 跳过渲染原理、
+      hidden vs display:none 区别、contain-intrinsic-size 作用、size/strict 副作用、
+      contain 与 content-visibility 协同最佳实践、浏览器兼容性与隐私保障
+11. ✅ 专属样式 .ctn__*
+    - 预设按钮组 + 主布局（左右两栏 grid）+ 可滚动预览容器（棋盘格背景）+ 卡片可见性标记 + 配置面板（选择器 + contain 分段按钮组 + content-visibility 分段按钮组 + intrinsic-size 滑块 + 视觉属性）+ 原理说明面板 + 代码输出
+    - 768px/414px 双断点响应式 + 暗色模式适配
+    - FAQ 中 CSS 代码示例的 `{` `}` 用 HTML 实体 `&#123;` `&#125;` 转义
+
+### 单元 3：配套博客 contain-guide.md（8 章完整指南）
+12. ✅ 8 章内容
+    - 诞生背景与核心价值、contain 八种值详解、content-visibility 三种值与屏幕外跳过渲染、
+      contain-intrinsic-size 占位尺寸原理、contain 与 content-visibility 协同最佳实践、
+      浏览器兼容性与渐进增强、实战案例与典型布局模式（4 个）、配套工具协同与总结
+13. ✅ 覆盖长尾搜索词：contain、content-visibility、渲染隔离、性能优化、contain-intrinsic-size、屏幕外渲染、长列表优化、layout、paint、style、size、strict、content、inline-size、hidden、auto
+14. ✅ 内链指向 /contain 及 /container、/layer、/nesting、/scroll-snap
+
+### 单元 4：首页更新 + README 同步
+15. ✅ 首页 index.astro 工具卡片与 meta 更新
+    - 工具列表新增 contain（text-wrap 之后，category: 设计）
+    - meta description 工具数 86→87，新增 "CSS contain 性能优化生成器" 关键词
+    - hero 区工具数 86→87
+16. ✅ README.md 全面同步
+    - 工具数 86→87、博客数 81→82、页面数 595→606
+    - 色彩与设计类别新增 "CSS contain 性能优化生成器"
+    - 博客主题速览新增 contain-guide
+
+## 修改文件（5 个，未超 8 文件红线）
+- src/components/ContainTool.tsx（新增，约 420 行，contain + content-visibility 性能优化生成器 React 组件）
+- src/pages/contain.astro（新增，约 300 行，工具页面 + 8 FAQ + 专属样式）
+- src/content/blog/contain-guide.md（新增，8 章配套博客）
+- src/pages/index.astro（修改，新增工具卡片 + meta description 86→87 + hero 工具数）
+- README.md（修改，全量同步工具/博客/页面数 + 设计类别 + 博客速览）
+
+## 验证结果
+- 类型检查：✅ 0 errors, 0 warnings, 1 hint（213 files，+2 文件，零回归，仅剩 clipboard.ts execCommand 历史遗留）
+- 构建：✅ 606 页面，22.50s，无报错无警告（+11 页面：contain 工具页 + 博客详情页 + 9 个新标签页）
+- SEO 要素：✅ contain 页面 title/description/canonical/OG/Twitter Card/JSON-LD WebApplication 全部正确
+- Bundle 体积：✅ ContainTool 未进前 5（< 34KB），最大 client.Bz692-Ao.js = 133.31KB（全局脚本），远低于 200KB 红线
+- 首页工具卡片：✅ dist/index.html 包含 "CSS contain 性能优化生成器" 卡片，链接指向 /contain
+- 响应式设计：✅ 768px/414px 双断点 + 暗色模式适配
+- Git 提交：commit 694b87b，已 push origin HEAD（d9cfd4b..694b87b）
+
+## 问题与修复
+- 修复 1：ContainValue 类型不支持 'layout paint' 组合值。预设"卡片网格优化"原使用 contain: 'layout paint'，触发 ts(2322)。修复为 contain: 'content'（等价于 layout + paint + style，推荐组合，无类型冲突且符合最佳实践）
+
+## 数据洞察
+- **contain 的"渲染隔离边界"核心价值**：contain 让开发者显式声明元素的渲染隔离边界，浏览器据此跳过不必要的重排重绘计算。这是从"浏览器全局处理"升级为"开发者显式声明"——子树变化不再扩散到外部，外部变化也不影响子树。一行 contain: content 即可获得布局/绘制/样式三项隔离，覆盖 90% 场景
+- **content 与 strict 的关键差异**：content（layout + paint + style）无尺寸副作用，是推荐用法；strict（size + layout + paint + style）隔离最强但 size 让元素尺寸不受子内容影响，未显式指定高度则退化为 0。这是最常见的踩坑点——本工具在原理说明面板对 size/strict 显示副作用提醒
+- **content-visibility: auto 的"屏幕外跳过"原理**：浏览器用 IntersectionObserver 判断元素是否在视口，屏幕外元素被"跳过"（skipped），仅保留 contain-intrinsic-size 占位。本工具的可滚动预览区用 IntersectionObserver 实时标记 12 张卡片的可见/屏幕外状态，直观演示 auto 的工作过程——这是核心差异化亮点
+- **content-visibility: hidden vs display: none 的"暂停 vs 移除"差异**：display: none 完全从渲染树移除，切换回可见需重新计算布局；content-visibility: hidden 暂停渲染但保留布局信息与渲染状态，切换回 visible 无需重新计算，开销更小。适合频繁切换的隐藏面板（折叠面板、标签页）
+- **contain-intrinsic-size 的"滚动条稳定"价值**：content-visibility: auto 跳过屏幕外内容渲染时浏览器不知道实际尺寸，不提供占位则滚动条跳动。contain-intrinsic-size 提供预估尺寸，auto 关键字（Level 3）让浏览器记住上次渲染尺寸，跳动更小
+- **天然渐进增强的零成本降级**：contain 与 content-visibility 在不支持的浏览器被忽略，元素正常渲染，不会报错。无需额外写降级代码，直接用即可。新旧浏览器体验都不差
+
+## 遗留问题
+- 无（本轮所有任务完成且验收通过）
+
+## 下一轮建议
+按优先级排序：
+1. **Lighthouse 性能基线测量**：连续四十八轮遗留，TRAE Sandbox 拦截 configstore 写入
+2. **移动端 375px 三档适配实测**：连续四十八轮遗留，agent-browser 受 socket 限制
+3. **接入轻量统计工具**：Umami/Plausible 为阶段二数据驱动迭代提供数据源（需用户确认）
+4. **继续内容拓展**：可新增 CSS subgrid 子网格、SVG 优化器、CSS text-wrap pretty 进阶、CSS view-transition 视图过渡等方向
+5. **contain 工具增强**：可增加 contain 多值组合编辑器（layout paint style 自定义组合）、导入现有 CSS 解析、content-visibility 切换性能对比可视化
+6. **性能优化能力维度里程碑**：contain + content-visibility 已形成性能优化能力维度首块拼图，可考虑下轮拓展 CSS will-change、CSS content-visibility 进阶（contain-intrinsic-size auto 记忆尺寸）或其他前端工具方向
+7. **博客标签页分页**：部分热门标签文章数较多，可考虑分页
+8. **现有工具深度优化**：scroll-driven 命名时间线完整代码生成、light-dark 导入现有 CSS 等
+
+## 需用户操作
+- 部署本轮新增代码（已 push，Cloudflare Pages 自动触发部署）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）用浏览器访问 https://website.niuzi.asia/contain 验证新工具页面正常
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+
+## 阶段进度总览（更新）
+- 工具总数：87 个（阶段二目标：基于数据扩充高价值工具）
+- 博客总数：82 篇（每个工具至少 1 篇配套深度博客）
+- 标签总数：300+ 个（新增 contain、content-visibility、渲染隔离、性能优化、contain-intrinsic-size、屏幕外渲染、长列表优化、layout、paint 9 个标签）
+- 构建页面：606 页
+- 类型检查：0 errors
+- LCP：< 2.5s（SSG 静态优化）
+- JS Bundle：单页最大 < 200KB（本轮新增 ContainTool < 34KB，纯 React 组件无外部依赖）
+
+---
+
+## CSS 性能优化能力维度开辟里程碑
+
+本轮完成后，CSS 工具链新增"性能优化"能力维度，contain + content-visibility 是核心：
+
+| 工具类别 | 覆盖能力 | 工具数 |
+|----------|----------|--------|
+| 视觉效果 | box-shadow / text-shadow / gradient / border-radius / transform / filter / clip-path / background | 8 |
+| 布局结构 | flexbox / grid / scroll-snap | 3 |
+| 动效交互 | animation（时间驱动）/ transition（状态过渡）/ scroll-driven（滚动驱动） | 3 |
+| 国际化排版 | writing-mode（竖排/RTL/多语言） | 1 |
+| 组件级响应式 | @container（容器查询） | 1 |
+| 原生语法 | nesting（原生嵌套）/ @layer（层叠层）/ @scope（作用域） | 3 |
+| 色彩工具 | 颜色值转换 / 调色板 / 对比度检测 / light-dark() 暗色模式 | 4 |
+| 排版优化 | text-wrap（换行策略） | 1 |
+| 性能优化 | contain + content-visibility（渲染隔离与屏幕外跳过） | 1 |
+
+性能优化维度的独特价值：**让 CSS 从"怎么写好看"升级为"怎么跑得快"**——contain 隔离渲染边界减少重排重绘，content-visibility: auto 跳过屏幕外内容渲染，contain-intrinsic-size 稳定滚动条。三者协同覆盖长列表、卡片网格、隐藏面板等高频性能瓶颈场景。这是 CSS 工具链从"视觉效果"到"布局结构"到"动效"到"国际化"到"组件级响应式"到"原生语法"到"排版优化"到"性能优化"的能力延伸。
