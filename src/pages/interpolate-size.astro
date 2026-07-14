@@ -1,0 +1,527 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import InterpolateSizeTool from '../components/InterpolateSizeTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS interpolate-size 尺寸插值动画生成器 - 在线 auto 高度过渡可视化工具',
+  description:
+    '免费的在线 CSS interpolate-size 尺寸插值动画生成器：完整支持 allow-keywords 与 numeric-only 两种取值，让浏览器原生支持 auto、min-content、max-content、fit-content 等尺寸关键字的平滑过渡。配合 calc-size() 函数可在尺寸关键字基础上做加减乘除计算（如 calc-size(auto, size + 20px)）。解决了传统 transition 无法对 height: auto 过渡的长期痛点，无需 JS 测量元素高度。8 组预设覆盖折叠面板 auto 高度过渡、下拉菜单 min-content、卡片 max-content、calc-size 计算、透明度双重过渡、fit-content 自适应等场景。实时预览折叠/展开状态切换，原理说明面板解析 interpolate-size 核心机制。适用于折叠面板展开、accordion、下拉菜单、卡片展开等需要尺寸关键字过渡的前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS interpolate-size 尺寸插值动画生成器',
+    description: '在线 CSS interpolate-size 尺寸插值动画生成器，支持 auto/min-content/max-content 等尺寸关键字平滑过渡，配合 calc-size() 实现尺寸计算。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS interpolate-size 尺寸插值动画生成器</h1>
+      <p>
+        可视化生成 CSS <code>interpolate-size</code> 规则，解决传统 transition 无法对
+        <code>height: auto</code> 过渡的长期痛点。完整支持 <strong>allow-keywords</strong>
+        与 <strong>numeric-only</strong> 两种取值，让浏览器原生支持
+        <code>auto</code>、<code>min-content</code>、<code>max-content</code>、<code>fit-content</code>
+        等尺寸关键字的平滑过渡。配合 <code>calc-size()</code> 函数可在尺寸关键字基础上做计算
+        （如 <code>calc-size(auto, size + 20px)</code>）。
+        8 组预设覆盖折叠面板、下拉菜单、卡片展开等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <InterpolateSizeTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS interpolate-size？它解决了什么问题？</summary>
+        <p>
+          <strong>interpolate-size</strong> 是 CSS 2024 年新增属性（Chrome 129+、Firefox 129+、Safari 17.4+），
+          用于控制尺寸关键字（<code>auto</code>、<code>min-content</code>、<code>max-content</code>、
+          <code>fit-content</code> 等）是否参与动画与过渡的插值。
+          它解决了一个长期痛点：<strong>传统 <code>transition</code> 无法对 <code>height: auto</code> 过渡</strong>——
+          因为浏览器不知道 <code>auto</code> 的具体数值，过渡会立即跳变。
+          开发者只能用 <code>max-height</code> 技巧（设置一个足够大的 max-height 过渡）或 JS 测量元素实际高度。
+          设置 <code>interpolate-size: allow-keywords</code> 后，浏览器原生支持
+          <code>auto</code> 等关键字与数值之间的平滑过渡，无需 JS。语法：
+          <code>.panel &#123; interpolate-size: allow-keywords; transition: height 0.4s; &#125;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>allow-keywords 和 numeric-only 有什么区别？应该选哪个？</summary>
+        <p>
+          <strong>numeric-only</strong>（默认值）：仅数值（如 <code>200px</code>、<code>50%</code>）参与插值，
+          尺寸关键字（<code>auto</code>、<code>min-content</code> 等）不参与插值，过渡立即跳变。
+          这与传统 CSS 行为一致。<br />
+          <strong>allow-keywords</strong>：允许尺寸关键字参与插值，浏览器在关键字与数值之间平滑过渡。
+          例如 <code>height: 0 → auto</code> 会从 0 平滑过渡到内容的实际高度。<br />
+          选型原则：如果需要在 <code>auto</code>、<code>min-content</code>、<code>max-content</code>、
+          <code>fit-content</code> 等关键字与数值之间过渡，必须用 <code>allow-keywords</code>；
+          如果只在数值之间过渡（如 <code>200px → 400px</code>），<code>numeric-only</code> 即可。
+          实际项目中 <code>allow-keywords</code> 是更通用的选择。
+        </p>
+      </details>
+      <details>
+        <summary>calc-size() 函数是什么？什么时候需要用它？</summary>
+        <p>
+          <strong>calc-size()</strong> 是配合 <code>interpolate-size: allow-keywords</code> 使用的计算函数，
+          让开发者在尺寸关键字基础上做加减乘除计算。语法：<code>calc-size(&lt;basis&gt;, &lt;expression&gt;)</code>，
+          其中 <code>basis</code> 是基础尺寸关键字（如 <code>auto</code>），<code>expression</code> 是计算表达式
+          （<code>size</code> 代表基础尺寸的当前值）。<br />
+          例如 <code>calc-size(auto, size + 20px)</code> 表示"自动高度加 20px"，
+          <code>calc-size(auto, size * 0.5)</code> 表示"自动高度的一半"。<br />
+          使用场景：当你需要在 <code>auto</code> 基础上加额外空间（如 padding 补偿）、
+          或实现"半高展开"等效果时，<code>calc-size()</code> 让尺寸关键字具备计算能力。
+          如果只用纯 <code>auto</code> 过渡，无需 <code>calc-size()</code>。
+        </p>
+      </details>
+      <details>
+        <summary>interpolate-size 和 max-height 技巧相比有什么优势？</summary>
+        <p>
+          <strong>max-height 技巧</strong>（传统方案）：设置 <code>max-height: 0 → 1000px</code> 实现折叠过渡。
+          缺点：① 需要猜测一个"足够大"的 max-height 值，过小则内容被裁剪，过大则过渡提前结束（动画结束后才到实际高度）；
+          ② 过渡曲线不自然（前半段过渡 max-height 但实际高度未到，后半段无过渡直接跳到实际高度）；
+          ③ 嵌套折叠面板时 max-height 会相互干扰。<br />
+          <strong>interpolate-size: allow-keywords</strong>（新方案）：<code>height: 0 → auto</code> 浏览器自动计算实际高度并平滑过渡。
+          优势：① 无需猜测高度值；② 过渡曲线自然（从 0 到实际高度全程平滑）；③ 嵌套面板互不干扰。<br />
+          这是 interpolate-size 最大的价值——从"max-height 黑魔法"升级为"浏览器原生 auto 过渡"。
+        </p>
+      </details>
+      <details>
+        <summary>interpolate-size 和 @starting-style、view-transition 有什么关系？</summary>
+        <p>
+          三者都是 CSS 动画能力维度的拼图，互补不替代：<br />
+          <strong>interpolate-size</strong>：管"尺寸关键字的插值"——让 <code>auto</code>、<code>min-content</code> 等关键字可过渡。
+          解决"高度宽度过渡"问题。<br />
+          <strong>@starting-style</strong>：管"元素首次出现的入场过渡"——声明起始样式，浏览器从起始过渡到最终。
+          解决"首次渲染/display 切换/popover 显示无过渡"问题。<br />
+          <strong>view-transition</strong>：管"DOM 状态切换的视图过渡"——浏览器捕获新旧快照实现平滑过渡。
+          解决"页面/组件切换无动画"问题。<br />
+          三者可组合使用：折叠面板用 interpolate-size 实现 auto 高度过渡，
+          面板首次出现用 @starting-style 实现入场动画，
+          页面切换用 view-transition 实现视图过渡。
+        </p>
+      </details>
+      <details>
+        <summary>为什么预览中 auto 关键字过渡看起来不流畅？</summary>
+        <p>
+          本工具的预览区使用 React inline style 应用尺寸值。浏览器对 <code>auto</code> 等关键字的
+          inline style 支持有限——inline style 中的 <code>height: auto</code> 不会触发 interpolate-size 插值
+          （因为 inline style 不经过 CSS 级联与 interpolate-size 检测）。<br />
+          <strong>真实效果以生成的 CSS 为准</strong>：将生成的 CSS 复制到项目中，
+          配合 <code>data-state</code> 属性切换，即可看到 <code>auto</code> 关键字的平滑过渡效果。
+          预览区主要展示折叠/展开的视觉概念，而非精确的过渡动画。<br />
+          这是工具类网站预览用户输入的固有限制——inline style 无法完全模拟 CSS 级联行为。
+        </p>
+      </details>
+      <details>
+        <summary>interpolate-size 的浏览器兼容性如何？如何渐进增强？</summary>
+        <p>
+          <strong>Chrome 129+</strong>（2024 年 9 月）、<strong>Edge 129+</strong>、
+          <strong>Firefox 129+</strong>（2024 年 8 月）、<strong>Safari 17.4+</strong>（2024 年 3 月）支持。
+          不支持的浏览器会忽略 <code>interpolate-size</code> 属性，尺寸关键字过渡立即跳变
+          （<strong>功能完整但无过渡效果</strong>）——这是天然的渐进增强，无需额外降级代码。<br />
+          如果需要保证动画效果，可用 <code>@supports</code> 检测：
+          <code>@supports (interpolate-size: allow-keywords) &#123; /* 支持时的增强样式 */ &#125;</code>。<br />
+          实际项目中直接使用即可，新旧浏览器体验都不会出错（新浏览器有平滑过渡，旧浏览器直接跳变）。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会保存或上传我的数据吗？</summary>
+        <p>
+          不会。本工具是<strong>纯前端应用</strong>，所有配置编辑、预览渲染、代码生成都在浏览器本地完成，
+          不发起任何网络请求，不保存任何用户数据。配置仅存在于当前浏览器会话中，关闭页面即清除。
+          可放心编辑任意 CSS 配置，无隐私泄露风险。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — 元素首次出现的入场过渡，与 interpolate-size 协同</li>
+        <li><a href="/transition">CSS transition 过渡生成器</a> — 属性变化的过渡配置，interpolate-size 的基础</li>
+        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — DOM 状态切换的视图过渡</li>
+        <li><a href="/animation">CSS animation 动画生成器</a> — 时间驱动的循环动画</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具主容器 */
+  .is-tool {
+    margin: 1.5rem 0;
+  }
+
+  /* 预设按钮组 */
+  .is-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .is-preset-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .is-preset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+  }
+  .is-preset-btn--active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+
+  /* 主布局：左右两栏 */
+  .is-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+  }
+
+  /* 配置面板 */
+  .is-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .is-field {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .is-field legend {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0 0.5rem;
+  }
+
+  /* 输入框 */
+  .is-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface-alt);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-family: var(--font-mono);
+    min-width: 0;
+  }
+  .is-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  .is-input--select {
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .is-input--text {
+    flex: 1;
+  }
+  .is-input--number {
+    width: 4rem;
+  }
+
+  /* 行布局 */
+  .is-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .is-row--size {
+    grid-template-columns: auto 1fr auto 1fr auto;
+  }
+  .is-arrow {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+  .is-mini-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .is-mini-label .is-input {
+    font-size: 0.8125rem;
+  }
+  .is-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .is-calcsize-config {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* 按钮 */
+  .is-btn {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .is-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .is-btn--danger {
+    padding: 0.25rem 0.5rem;
+    border-color: transparent;
+    color: var(--danger, #dc2626);
+    background: transparent;
+  }
+  .is-btn--danger:hover {
+    background: color-mix(in srgb, var(--danger, #dc2626) 10%, transparent);
+    border-color: transparent;
+  }
+  .is-btn--add {
+    margin-top: 0.25rem;
+    width: 100%;
+    border-style: dashed;
+  }
+  .is-btn--toggle {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .is-btn--toggle:hover {
+    background: color-mix(in srgb, var(--primary) 85%, #000);
+    border-color: color-mix(in srgb, var(--primary) 85%, #000);
+    color: #fff;
+  }
+  .is-btn--copy {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .is-btn--copy:hover {
+    background: color-mix(in srgb, var(--primary) 85%, #000);
+    color: #fff;
+  }
+  .is-btn--copied {
+    background: var(--success, #16a34a);
+    border-color: var(--success, #16a34a);
+  }
+
+  /* 分段按钮组 */
+  .is-seg {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .is-seg__label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .is-seg__btns {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--surface-alt);
+    border-radius: 0.5rem;
+  }
+  .is-seg__btn {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .is-seg__btn--active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* 提示文字 */
+  .is-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .is-hint code {
+    font-family: var(--font-mono);
+    background: var(--surface-alt);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+  }
+
+  /* 右栏输出区 */
+  .is-output {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .is-section-title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 预览区 */
+  .is-preview-block {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .is-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .is-preview-stage {
+    border: 2px dashed var(--border);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background: 
+      linear-gradient(45deg, var(--surface-alt) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--surface-alt) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--surface-alt) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--surface-alt) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    min-height: 80px;
+    overflow: hidden;
+  }
+  .is-preview-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    padding: 0.75rem;
+    transition: all 0.4s ease;
+  }
+  .is-preview-text {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .is-preview-text:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 原理说明 */
+  .is-explain-block {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .is-explain-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+  }
+  .is-explain-list li {
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  /* 代码输出 */
+  .is-code-block {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .is-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .is-code {
+    margin: 0;
+    padding: 1rem;
+    background: var(--surface-alt);
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .is-code code {
+    font-family: inherit;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .is-layout {
+      grid-template-columns: 1fr;
+    }
+    .is-row--size {
+      grid-template-columns: 1fr;
+    }
+    .is-row {
+      flex-wrap: wrap;
+    }
+  }
+
+  /* 响应式：414px 移动端 */
+  @media (max-width: 414px) {
+    .is-preset-btn {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+    }
+    .is-field {
+      padding: 0.75rem;
+    }
+    .is-preview-stage {
+      padding: 0.5rem;
+    }
+    .is-code {
+      padding: 0.75rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .is-preview-stage {
+    background-color: var(--surface-alt);
+  }
+</style>
