@@ -226,16 +226,20 @@ export default function RegexTool() {
   const [notice, setNotice] = useState<string>('');
   const [copied, setCopied] = useState(false);
 
-  // 测试模式匹配结果
-  const matchResult = useMemo<RegexResult>(() => {
-    return runMatch(pattern, flags, text);
-  }, [pattern, flags, text]);
+  // 输入超限截断：避免超长输入触发 ReDoS 拖慢浏览器（与下方 overLimit 提示共用同一计算）
+  const overLimit = text.length > MAX_INPUT_LENGTH;
+  const effectiveText = overLimit ? text.slice(0, MAX_INPUT_LENGTH) : text;
 
-  // 替换模式结果
+  // 测试模式匹配结果（使用截断后的 effectiveText，防止超长输入触发回溯爆炸）
+  const matchResult = useMemo<RegexResult>(() => {
+    return runMatch(pattern, flags, effectiveText);
+  }, [pattern, flags, effectiveText]);
+
+  // 替换模式结果（同样使用 effectiveText 限制 ReDoS 风险）
   const replaceResult = useMemo<ReplaceResult>(() => {
     if (viewMode !== 'replace') return { ok: true, value: '', error: '', count: 0 };
-    return runReplace(pattern, flags, text, replacement);
-  }, [viewMode, pattern, flags, text, replacement]);
+    return runReplace(pattern, flags, effectiveText, replacement);
+  }, [viewMode, pattern, flags, effectiveText, replacement]);
 
   /** 切换标志位 */
   const toggleFlag = useCallback((flag: Flag) => {
@@ -318,10 +322,6 @@ export default function RegexTool() {
     setNotice('');
     setCopied(false);
   }, []);
-
-  // 输入超限提示
-  const overLimit = text.length > MAX_INPUT_LENGTH;
-  const effectiveText = overLimit ? text.slice(0, MAX_INPUT_LENGTH) : text;
 
   // 渲染高亮：在测试字符串中用 <mark> 包裹匹配片段
   const highlighted = useMemo(() => {

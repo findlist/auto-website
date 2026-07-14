@@ -87,39 +87,45 @@ export default function AesTool() {
     setTimeout(() => setCopyState((s) => ({ ...s, [key]: false })), 1500);
   }, []);
 
-  /** 执行加密 */
+  /** 执行加密（try/finally 保证 loading 状态一定被复位，避免异常时按钮永久禁用） */
   const handleEncrypt = useCallback(async () => {
     setLoading(true);
     setEncResult(null);
-    const result = await encrypt(plaintext, {
-      mode,
-      keyLength,
-      keySource,
-      keyInput,
-      outputFormat,
-      iterations,
-    });
-    setEncResult(result);
-    setLoading(false);
+    try {
+      const result = await encrypt(plaintext, {
+        mode,
+        keyLength,
+        keySource,
+        keyInput,
+        outputFormat,
+        iterations,
+      });
+      setEncResult(result);
+    } finally {
+      setLoading(false);
+    }
   }, [plaintext, mode, keyLength, keySource, keyInput, outputFormat, iterations]);
 
-  /** 执行解密 */
+  /** 执行解密（同上，try/finally 保证 loading 复位） */
   const handleDecrypt = useCallback(async () => {
     setLoading(true);
     setDecResult(null);
-    const result = await decrypt({
-      mode,
-      keyLength,
-      keySource,
-      keyInput,
-      ciphertextInput,
-      ivInput,
-      outputFormat,
-      iterations,
-      saltInput: keySource === 'password' ? saltInput : undefined,
-    });
-    setDecResult(result);
-    setLoading(false);
+    try {
+      const result = await decrypt({
+        mode,
+        keyLength,
+        keySource,
+        keyInput,
+        ciphertextInput,
+        ivInput,
+        outputFormat,
+        iterations,
+        saltInput: keySource === 'password' ? saltInput : undefined,
+      });
+      setDecResult(result);
+    } finally {
+      setLoading(false);
+    }
   }, [mode, keyLength, keySource, keyInput, ciphertextInput, ivInput, outputFormat, iterations, saltInput]);
 
   /** 生成随机密钥并填入输入框 */
