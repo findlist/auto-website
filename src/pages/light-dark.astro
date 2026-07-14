@@ -1,0 +1,616 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import LightDarkTool from '../components/LightDarkTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS light-dark() 暗色模式颜色函数生成器 - 在线双主题配色可视化工具',
+  description:
+    '免费的在线 CSS light-dark() 颜色函数生成器：可视化编辑多对 light-dark() 颜色对（浅色模式色 + 深色模式色），完整支持 color-scheme 配置（light dark / dark light / light only / dark only / normal）、CSS 变量定义、使用示例生成。内置原理说明面板——实时展示 color-scheme 与 light-dark() 的协同关系。iframe 沙箱预览可切换 自动 / 强制浅色 / 强制深色 三种模式实时查看双主题渲染效果，WCAG 对比度参考帮助配色合规。6 组预设覆盖完整设计系统、文本、背景、链接、按钮等场景。实时生成浏览器原生支持的 light-dark() CSS 代码（Chrome 123+ / Safari 17.5+ / Firefox 120+，2024 年起全主流浏览器支持），一键复制。适用于暗色模式实现、双主题配色、替代 @media (prefers-color-scheme) 查询、设计系统主题变量等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS light-dark() 暗色模式颜色函数生成器',
+    description: '在线 CSS light-dark() 颜色函数生成器，支持 color-scheme 配置与多颜色对管理，一键复制双主题 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS light-dark() 暗色模式颜色函数生成器</h1>
+      <p>
+        可视化生成 CSS 双主题颜色函数（<code>light-dark()</code>，CSS Color Module Level 5，
+        2024 年起全主流浏览器原生支持）：完整支持 <code>color-scheme</code> 配置、
+        多颜色对管理（浅色 + 深色）、CSS 变量定义、使用示例生成。内置<strong>原理说明面板</strong>——
+        实时展示 color-scheme 与 light-dark() 的协同关系。iframe 沙箱预览可切换
+        <strong>自动 / 强制浅色 / 强制深色</strong>三种模式实时查看双主题渲染效果，
+        WCAG 对比度参考帮助配色合规。内置完整设计系统、文本、背景、链接、按钮等 6 组预设。
+        适用于暗色模式实现、双主题配色、替代 <code>@media (prefers-color-scheme)</code> 查询、
+        设计系统主题变量等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <LightDarkTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS light-dark() 颜色函数？它解决了什么问题？</summary>
+        <p>
+          <strong>light-dark()</strong> 是 CSS Color Module Level 5 引入的颜色函数，语法为
+          <code>light-dark(&lt;lightColor&gt;, &lt;darkColor&gt;)</code>——第一个值是浅色模式下的颜色，
+          第二个值是深色模式下的颜色。浏览器会根据用户的系统偏好（<code>prefers-color-scheme</code>）
+          <strong>自动选择</strong>两个值之一，无需写 <code>@media</code> 查询，也无需 JS 切换。<br />
+          它解决了暗色模式实现的三大痛点：一是<strong>代码重复</strong>，过去每个颜色都要写两份
+          （<code>.text &#123; color: #333; &#125;</code> + <code>@media (prefers-color-scheme: dark) &#123; .text &#123; color: #ccc; &#125; &#125;</code>），
+          维护成本高；二是<strong>切换延迟</strong>，JS 切换主题需要重新计算样式，可能闪烁；
+          三是<strong>组件隔离困难</strong>，全局 <code>@media</code> 查询无法精确控制单个组件的主题。
+          <code>light-dark()</code> 把双主题颜色<strong>内联到一条声明</strong>，浏览器原生处理切换，
+          零延迟、零 JS、组件级可控。
+        </p>
+      </details>
+      <details>
+        <summary>light-dark() 必须配合 color-scheme 使用吗？为什么？</summary>
+        <p>
+          <strong>是的，必须配合 <code>color-scheme</code> 声明才生效</strong>。这是 light-dark() 的核心规则。<br />
+          <code>color-scheme</code> 告诉浏览器"这个元素/文档支持哪种颜色方案"，浏览器据此决定
+          <code>light-dark()</code> 取哪个值。常见取值：<br />
+          <strong>light dark</strong>（默认推荐）：两种方案都支持，浏览器按 <code>prefers-color-scheme</code> 自动切换；<br />
+          <strong>light only</strong>：强制只使用浅色，<code>light-dark()</code> 始终取第一个值；<br />
+          <strong>dark only</strong>：强制只使用深色，<code>light-dark()</code> 始终取第二个值；<br />
+          <strong>normal</strong>：不声明偏好，<code>light-dark()</code> 回退到第一个值（浅色）。<br />
+          若不声明 <code>color-scheme</code>，浏览器默认 <code>normal</code>，<code>light-dark()</code>
+          会始终返回浅色值，深色模式失效。正确写法：<br />
+          <code>:root &#123; color-scheme: light dark; --text: light-dark(#1a1a1a, #e5e5e5); &#125;</code>。
+          本工具的"全局配置"面板即对应 <code>color-scheme</code> 选项。
+        </p>
+      </details>
+      <details>
+        <summary>light-dark() 与 @media (prefers-color-scheme) 有什么区别？哪个更好？</summary>
+        <p>
+          两者都能实现双主题，但机制与可维护性差异显著：<br />
+          <strong>@media (prefers-color-scheme: dark)</strong>：在媒体查询中重写颜色变量或样式。
+          缺点是<strong>代码分散</strong>——每个颜色都要在两处定义（基础 + 媒体查询），新增颜色要改两处；
+          且媒体查询是<strong>全局的</strong>，无法精确控制单个组件。<br />
+          <strong>light-dark()</strong>：把双主题颜色<strong>内联到一条声明</strong>。
+          优点是<strong>代码集中</strong>——一个颜色对的浅色/深色在一行内定义，新增颜色只改一处；
+          且 <code>light-dark()</code> 可作用到<strong>任意元素</strong>，组件级可控。<br />
+          简单经验：新项目优先用 <code>light-dark()</code>，老项目迁移可逐步把 <code>@media</code> 查询
+          改写为 <code>light-dark()</code>。本工具生成的代码即采用 <code>light-dark()</code> 最佳实践。
+        </p>
+      </details>
+      <details>
+        <summary>light-dark() 能用在 CSS 变量里吗？如何组织双主题变量？</summary>
+        <p>
+          <strong>可以，且强烈推荐</strong>。把 <code>light-dark()</code> 包在 CSS 变量里是最佳实践——
+          在 <code>:root</code> 上集中定义所有双主题变量，组件用 <code>var()</code> 引用，
+          实现主题切换与组件样式解耦。典型结构：<br />
+          <code>:root &#123; color-scheme: light dark; --text: light-dark(#1a1a1a, #e5e5e5); --bg: light-dark(#fff, #1a1a1a); &#125;</code><br />
+          <code>.card &#123; color: var(--text); background: var(--bg); &#125;</code><br />
+          这样组件代码<strong>完全不含主题逻辑</strong>，主题切换由变量定义处统一处理。
+          新增颜色只需在 <code>:root</code> 加一条 <code>--name: light-dark(...)</code>，
+          无需改动任何组件代码。本工具的"完整设计系统"预设即展示了这一组织方式，
+          覆盖文本、背景、边框、链接 6 对核心变量。
+        </p>
+      </details>
+      <details>
+        <summary>light-dark() 的浏览器兼容性如何？旧浏览器怎么降级？</summary>
+        <p>
+          <strong>兼容性</strong>：<code>light-dark()</code> 自 2024 年起在 Chrome 123+、Edge 123+、
+          Safari 17.5+、Firefox 120+ 全主流浏览器原生支持，覆盖率已超过 90%，可在生产环境放心使用。<br />
+          <strong>降级策略</strong>：旧浏览器不识别 <code>light-dark()</code>，会忽略该声明，
+          元素使用前一条颜色声明作为回退。推荐写法：<br />
+          1. 先写基础颜色作为<strong>降级</strong>：<code>.text &#123; color: #1a1a1a; &#125;</code><br />
+          2. 再用 <code>light-dark()</code> 增强：<code>.text &#123; color: light-dark(#1a1a1a, #e5e5e5); &#125;</code><br />
+          旧浏览器停留在 <code>#1a1a1a</code>（浅色），新浏览器按系统偏好切换。<br />
+          也可用 <code>@supports (color: light-dark(red, blue))</code> 做特性检测，
+          仅在支持时应用 <code>light-dark()</code>。本工具生成的代码可作为新浏览器的实现参考，
+          生产环境建议加降级声明。
+        </p>
+      </details>
+      <details>
+        <summary>如何在本地强制预览 light 或 dark 模式？</summary>
+        <p>
+          有两种方式：<br />
+          <strong>1. 修改系统偏好</strong>：在操作系统设置中切换"深色模式"开关，浏览器会同步系统偏好。
+          优点是真实模拟用户环境，缺点是切换麻烦，影响所有窗口。<br />
+          <strong>2. 在 CSS 中强制 color-scheme</strong>：在元素上覆盖 <code>color-scheme</code> 值，
+          如 <code>.preview-light &#123; color-scheme: light only; &#125;</code> 强制浅色，
+          <code>.preview-dark &#123; color-scheme: dark only; &#125;</code> 强制深色。
+          优点是可在同一页面同时预览两种模式，互不干扰。<br />
+          本工具的预览区采用第二种方式——"强制浅色"按钮把 iframe 内的 <code>color-scheme</code>
+          设为 <code>light only</code>，"强制深色"设为 <code>dark only</code>，"自动"则跟随系统。
+          这样无需切换系统设置即可在三种模式间快速切换，便于调试双主题配色。
+        </p>
+      </details>
+      <details>
+        <summary>light-dark() 能用于 background、border 等所有颜色属性吗？</summary>
+        <p>
+          <strong>可以</strong>。<code>light-dark()</code> 是一个通用的颜色函数，可用在任何接受
+          <code>&lt;color&gt;</code> 值的 CSS 属性中，包括但不限于：<br />
+          <code>color</code>（文本色）、<code>background-color</code> / <code>background</code>（背景色）、
+          <code>border-color</code> / <code>border</code>（边框色）、<code>box-shadow</code>（阴影色）、
+          <code>text-shadow</code>（文字阴影色）、<code>outline-color</code>（轮廓色）、
+          <code>fill</code> / <code>stroke</code>（SVG 填充与描边）、<code>caret-color</code>（光标色）、
+          <code>accent-color</code>（表单控件强调色）等。<br />
+          也可用于 <code>linear-gradient()</code>、<code>radial-gradient()</code> 等渐变函数中的颜色停止点，
+          如 <code>background: linear-gradient(light-dark(#fff, #000), light-dark(#eee, #111));</code>。
+          本工具的预览区会同时展示每个颜色对作为背景色和文本色的效果，方便验证可用性。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 颜色对编辑、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox</code> 属性限制能力，预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的 light-dark() CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 双主题配色与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：ldk 命名空间（light-dark） */
+  .ldk {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .ldk__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .ldk__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .ldk__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .ldk__editor,
+  .ldk__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .ldk__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .ldk__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ldk__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .ldk__panel-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ldk__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 表单字段 */
+  .ldk__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ldk__field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ldk__field--check {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .ldk__field-input,
+  .ldk__field-select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .ldk__field-input:focus,
+  .ldk__field-select:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 颜色对卡片 */
+  .ldk__pair {
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .ldk__pair-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .ldk__pair-idx {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ldk__pair-name {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .ldk__pair-name:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ldk__pair-desc {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+  }
+
+  .ldk__pair-desc:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ldk__pair-colors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ldk__pair-color {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ldk__pair-color-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ldk__pair-color-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ldk__pair-color-row input[type="color"] {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ldk__pair-color-hex {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .ldk__pair-contrast {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 按钮 */
+  .ldk__btn {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .ldk__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+  }
+
+  .ldk__btn--preset {
+    font-size: 12px;
+  }
+
+  .ldk__btn--add {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ldk__btn--add:hover {
+    background: var(--color-accent-hover, #1d4ed8);
+  }
+
+  .ldk__btn--del {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    line-height: 1;
+    color: var(--color-text-muted, #6b7280);
+    border-color: transparent;
+  }
+
+  .ldk__btn--del:hover {
+    color: #dc2626;
+    border-color: var(--color-border);
+  }
+
+  .ldk__btn--copy {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ldk__btn--copy:hover {
+    background: var(--color-accent-hover, #1d4ed8);
+  }
+
+  .ldk__btn--tab {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .ldk__btn--tab.is-active {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 原理说明 */
+  .ldk__panel--explain {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .ldk__explain {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .ldk__explain code {
+    padding: 1px 5px;
+    background: var(--color-bg, #fff);
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .ldk__explain--tip {
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border);
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 预览模式切换 */
+  .ldk__preview-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .ldk__preview-tabs-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* iframe 预览 */
+  .ldk__preview {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .ldk__preview-head {
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ldk__preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .ldk__iframe {
+    display: block;
+    width: 100%;
+    height: 480px;
+    border: 0;
+    background: #fff;
+  }
+
+  /* 代码输出 */
+  .ldk__code {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .ldk__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ldk__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .ldk__code-pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 360px;
+    overflow: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .ldk__code-pre code {
+    font-family: inherit;
+  }
+
+  /* 响应式：768px 以下单列 */
+  @media (max-width: 768px) {
+    .ldk__main {
+      grid-template-columns: 1fr;
+    }
+
+    .ldk__pair-colors {
+      grid-template-columns: 1fr;
+    }
+
+    .ldk__iframe {
+      height: 380px;
+    }
+  }
+
+  /* 414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .ldk__presets {
+      padding: 10px;
+    }
+
+    .ldk__panel-body {
+      padding: 10px;
+    }
+
+    .ldk__pair {
+      padding: 8px;
+    }
+
+    .ldk__iframe {
+      height: 320px;
+    }
+
+    .ldk__code-pre {
+      font-size: 11px;
+      padding: 10px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .ldk__iframe,
+  :global(.dark) .ldk__iframe {
+    background: #1a1a1a;
+  }
+</style>

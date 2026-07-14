@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '84 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器、CSS scroll-driven 动画生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
+    '85 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器、CSS scroll-driven 动画生成器、CSS light-dark() 暗色模式生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -778,6 +778,15 @@ const tools = [
     category: '设计',
     keywords: 'css scroll-driven 滚动驱动动画 animation-timeline scroll view animation-range cover contain entry exit entry-crossing exit-crossing 视差滚动 入场动画 进度条 命名时间线 timeline-scope 渐进增强',
   },
+  {
+    href: '/light-dark',
+    title: 'CSS light-dark() 暗色模式生成器',
+    desc: '在线 CSS light-dark() 颜色函数生成器：可视化编辑多对 light-dark() 颜色对（浅色模式色 + 深色模式色），完整支持 color-scheme 配置（light dark / dark light / light only / dark only / normal）、CSS 变量定义、使用示例生成。内置原理说明面板，实时展示 color-scheme 与 light-dark() 的协同关系。iframe 沙箱预览可切换 自动 / 强制浅色 / 强制深色 三种模式实时查看双主题渲染效果，WCAG 对比度参考帮助配色合规。6 组预设覆盖完整设计系统、文本、背景、链接、按钮等场景。实时生成浏览器原生支持的 light-dark() CSS 代码（Chrome 123+ / Safari 17.5+ / Firefox 120+，2024 年起全主流支持），一键复制。适用于暗色模式实现、双主题配色、替代 @media (prefers-color-scheme) 查询、设计系统主题变量等场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: 'css light-dark 暗色模式 深色模式 双主题 color-scheme prefers-color-scheme css 变量 设计系统 暗色主题 切换 渐进降级 浏览器自动',
+  },
 ];
 
 // 工具分类列表（去重），用于分类筛选按钮
@@ -840,7 +849,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 84 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 85 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
