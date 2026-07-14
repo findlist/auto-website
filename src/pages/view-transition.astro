@@ -1,0 +1,623 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ViewTransitionTool from '../components/ViewTransitionTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS view-transition 视图过渡生成器 - 在线视图过渡可视化工具',
+  description:
+    '免费的在线 CSS view-transition 视图过渡生成器：可视化生成现代视图过渡效果，完整支持同文档过渡（document.startViewTransition，SPA 场景）与跨文档过渡（@view-transition，MPA 场景）、view-transition-name 命名元素、::view-transition-group / image-pair / old / new 四种伪元素动画覆盖。内置原理说明面板——快照机制、命名元素独立过渡、伪元素树结构、浏览器兼容性一目了然。iframe 沙箱预览可实际触发 startViewTransition 观察 A/B 状态切换效果，8 组预设覆盖默认淡入淡出、卡片展开、共享元素过渡、主题切换、侧栏滑入、列表重排、跨文档导航、快速切换等场景。实时生成浏览器原生支持的视图过渡 CSS 与 JS 触发代码（Chrome 111+ 同文档 / Chrome 126+ 跨文档，Safari 18+，Firefox 136+），一键复制。适用于 SPA 状态切换平滑过渡、MPA 多页应用导航动画、共享元素动画、主题切换动画等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS view-transition 视图过渡生成器',
+    description: '在线 CSS view-transition 视图过渡生成器，支持同文档/跨文档过渡、命名元素、伪元素动画覆盖，一键复制视图过渡 CSS 与 JS 代码。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS view-transition 视图过渡生成器</h1>
+      <p>
+        可视化生成 CSS 视图过渡（View Transitions API，<code>document.startViewTransition</code>，
+        Chrome 111+ 同文档 / Chrome 126+ 跨文档，Safari 18+，Firefox 136+ 原生支持）：
+        完整支持<strong>同文档过渡</strong>（SPA 场景，<code>document.startViewTransition(callback)</code>）与
+        <strong>跨文档过渡</strong>（MPA 场景，<code>@view-transition &#123; navigation: auto; &#125;</code>）、
+        <code>view-transition-name</code> 命名元素独立过渡、
+        <code>::view-transition-group / image-pair / old / new</code> 四种伪元素动画覆盖。
+        内置<strong>原理说明面板</strong>——快照机制、命名元素独立过渡、伪元素树结构、浏览器兼容性一目了然。
+        iframe 沙箱预览可实际触发 <code>startViewTransition</code> 观察 A/B 状态切换效果，
+        内置默认淡入淡出、卡片展开、共享元素过渡、主题切换等 8 组预设。
+        适用于 SPA 状态切换平滑过渡、MPA 多页应用导航动画、共享元素动画、主题切换动画等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ViewTransitionTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS view-transition 视图过渡？它解决了什么问题？</summary>
+        <p>
+          <strong>view-transition 视图过渡</strong>（View Transitions API）是浏览器原生的视图切换动画机制——
+          通过<strong>自动捕获新旧 DOM 快照</strong>并在伪元素树上播放交叉淡入，实现状态/页面间的平滑过渡，
+          无需手动编写过渡动画。<br />
+          它解决的核心痛点是：<strong>状态切换的动画一致性</strong>。传统方案要么用框架过渡组件（增加体积与复杂度），
+          要么手动监听 DOM 变更写动画（难以对齐新旧位置）。view-transition 让浏览器接管快照与动画，
+          开发者只需调用 <code>document.startViewTransition(() =&gt; &#123; /* DOM 变更 */ &#125;)</code>，
+          浏览器自动捕获旧快照、执行变更、捕获新快照、播放过渡。<br />
+          三大优势：一是<strong>声明式</strong>，不依赖框架，原生 API；二是<strong>性能好</strong>，
+          快照在合成线程处理，不掉帧；三是<strong>支持命名元素独立过渡</strong>，可实现共享元素动画等复杂效果。
+        </p>
+      </details>
+      <details>
+        <summary>同文档过渡（SPA）与跨文档过渡（MPA）有什么区别？如何选择？</summary>
+        <p>
+          两者是 view-transition 的两种模式，适用场景不同：<br />
+          <strong>同文档过渡（same-document，SPA）</strong>：在<strong>单页应用</strong>内切换状态时使用。
+          通过 JS 调用 <code>document.startViewTransition(callback)</code> 触发，callback 内执行 DOM 变更。
+          适合：Tab 切换、列表/详情切换、主题切换、侧栏展开等 SPA 内部状态变化。<br />
+          <strong>跨文档过渡（cross-document，MPA）</strong>：在<strong>多页应用</strong>页面跳转时使用。
+          通过 CSS 声明 <code>@view-transition &#123; navigation: auto; &#125;</code> 启用，
+          浏览器在页面导航时自动捕获旧页快照并在新页播放过渡。适合：传统多页站点、SSR 应用的页面间跳转。<br />
+          选择原则：应用是 SPA（客户端路由）用同文档，是 MPA（真实页面跳转）用跨文档。
+          注意跨文档过渡要求 Chrome 126+，兼容性晚于同文档（Chrome 111+）。
+        </p>
+      </details>
+      <details>
+        <summary>view-transition-name 是什么？为什么说它是"命名元素独立过渡"的关键？</summary>
+        <p>
+          <code>view-transition-name</code> 是视图过渡的核心属性——为元素分配一个<strong>唯一名称</strong>，
+          让该元素从默认的整页 root 快照中<strong>独立出来</strong>，单独参与过渡。<br />
+          <strong>未命名元素</strong>：归入 <code>::view-transition-old(root)</code> 与
+          <code>::view-transition-new(root)</code>，随整页一起交叉淡入。<br />
+          <strong>命名元素</strong>：如 <code>.card &#123; view-transition-name: card; &#125;</code>，
+          浏览器单独捕获其新旧快照，放入 <code>::view-transition-group(card)</code> →
+          <code>::view-transition-image-pair(card)</code> →
+          <code>::view-transition-old(card)</code> / <code>::view-transition-new(card)</code> 伪元素树。
+          group 会自动在元素的<strong>旧位置与新位置间插值</strong>（位置、尺寸动画），实现"共享元素过渡"效果。<br />
+          典型应用：列表项点击展开为详情——列表态与详情态的图片都命名 <code>view-transition-name: hero</code>，
+          切换时图片在新旧位置间平滑过渡，而非简单淡入。<strong>注意：同一时刻每个 name 只能对应一个元素</strong>，
+          否则过渡跳过该 name。
+        </p>
+      </details>
+      <details>
+        <summary>::view-transition-* 伪元素树结构是怎样的？如何自定义动画？</summary>
+        <p>
+          视图过渡通过<strong>伪元素树</strong>渲染，结构为：<br />
+          <code>::view-transition</code>（根，覆盖整页）<br />
+          → <code>::view-transition-group(name)</code>（命名元素的组，管位置/尺寸动画）<br />
+          → <code>::view-transition-image-pair(name)</code>（新旧图像对容器）<br />
+          → <code>::view-transition-old(name)</code>（旧快照）与 <code>::view-transition-new(name)</code>（新快照）<br />
+          <strong>自定义动画</strong>：通过为伪元素设置 <code>animation-duration</code>、
+          <code>animation-timing-function</code>、<code>transform</code>、<code>opacity</code> 覆盖默认动画。
+          例如让旧快照向左滑出、新快照从右滑入：<br />
+          <code>::view-transition-old(card) &#123; animation: slide-out 0.3s forwards; &#125;</code><br />
+          <code>::view-transition-new(card) &#123; animation: slide-in 0.3s forwards; &#125;</code><br />
+          未命名的整页元素用 <code>::view-transition-old(root)</code> 与 <code>::view-transition-new(root)</code>。
+          本工具支持为每种伪元素单独配置时长、缓动、transform、opacity，实时生成对应 CSS。
+        </p>
+      </details>
+      <details>
+        <summary>同文档过渡如何用 JS 触发？startViewTransition 的回调里应该做什么？</summary>
+        <p>
+          同文档过渡通过 <code>document.startViewTransition(callback)</code> 触发，<strong>callback 内执行 DOM 变更</strong>。
+          完整流程：<br />
+          1. 浏览器捕获当前 DOM 的<strong>旧快照</strong>（渲染状态截图）；<br />
+          2. 调用 <code>callback</code>，开发者在其中修改 DOM（如切换 class、替换 innerHTML、更新状态）；<br />
+          3. 浏览器捕获新 DOM 的<strong>新快照</strong>；<br />
+          4. 在伪元素树上播放过渡（默认交叉淡入）；<br />
+          5. 过渡结束，伪元素移除，新 DOM 正常显示。<br />
+          典型代码：<br />
+          <code>function toggle() &#123;</code><br />
+          <code>&nbsp;&nbsp;if (!document.startViewTransition) &#123; applyChange(); return; &#125;</code><br />
+          <code>&nbsp;&nbsp;document.startViewTransition(() =&gt; applyChange());</code><br />
+          <code>&#125;</code><br />
+          <strong>注意</strong>：callback 内的 DOM 变更应是<strong>同步</strong>的，异步变更（如 fetch 后更新）需用
+          <code>transition.ready.then()</code> 或 Promise。返回的 transition 对象有
+          <code>finished</code>、<code>ready</code>、<code>updateCallbackDone</code> 三个 Promise 可监听各阶段。
+        </p>
+      </details>
+      <details>
+        <summary>跨文档过渡如何启用？@view-transition 规则怎么写？</summary>
+        <p>
+          跨文档过渡（MPA 场景）通过 CSS 声明启用，无需 JS：<br />
+          <code>@view-transition &#123;</code><br />
+          <code>&nbsp;&nbsp;navigation: auto;</code><br />
+          <code>&#125;</code><br />
+          将此规则加入 CSS 后，浏览器在<strong>同源页面导航</strong>（a 标签跳转、history 导航）时自动捕获旧页快照，
+          新页加载后播放过渡。<br />
+          <strong>同源限制</strong>：仅在同源（同协议/域名/端口）跳转时生效，跨源跳转无过渡。<br />
+          <strong>命名元素跨页</strong>：若新旧页面都有 <code>view-transition-name: hero</code> 的元素，
+          该元素会在两页间独立过渡（共享元素效果），实现列表页 → 详情页的图片平滑放大。<br />
+          <strong>兼容性</strong>：跨文档过渡 Chrome 126+（2024）支持，晚于同文档（Chrome 111+）。
+          Safari/Firefox 逐步跟进。不支持的浏览器忽略该规则，正常跳转无副作用。
+        </p>
+      </details>
+      <details>
+        <summary>view-transition 与 CSS transition / animation 有什么区别？何时该用哪个？</summary>
+        <p>
+          三者定位不同：<br />
+          <strong>CSS transition</strong>：元素<strong>属性变化</strong>时的过渡（如 hover 改颜色）。
+          适合单个元素的属性级动画，需明确起止状态。<br />
+          <strong>CSS animation</strong>：基于 <code>@keyframes</code> 的<strong>时间驱动动画</strong>。
+          适合循环、多阶段、复杂路径动画，不依赖状态切换。<br />
+          <strong>view-transition</strong>：<strong>DOM 状态/页面切换</strong>时的视图过渡。
+          适合整页或元素在新旧状态间的过渡，浏览器自动捕获快照，开发者无需定义起止状态。<br />
+          选择原则：<br />
+          - 单个元素属性变化（hover、focus）→ transition<br />
+          - 循环或复杂关键帧动画（loading、脉冲）→ animation<br />
+          - DOM 结构变化（列表重排、状态切换、页面跳转）→ view-transition<br />
+          view-transition 的独特价值是<strong>快照机制</strong>——即使新旧 DOM 结构完全不同（如列表变详情），
+          也能通过命名元素实现位置平滑过渡，这是 transition/animation 难以做到的。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 过渡模式配置、命名元素管理、伪元素动画覆盖、CSS/JS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox="allow-same-origin allow-scripts"</code> 属性——允许脚本以触发
+            <code>startViewTransition</code>，但禁止表单提交、弹窗、父页面访问等敏感能力。<br />
+          - 生成的视图过渡 CSS 与 JS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 练习与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：vt 命名空间（view-transition） */
+
+  /* 预设按钮组 */
+  .vt__presets {
+    margin: 24px 0 16px;
+    padding: 14px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .vt__subtitle {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .vt__preset-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .vt__preset-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .vt__preset-btn:hover {
+    border-color: var(--color-primary, #2563eb);
+    color: var(--color-primary, #2563eb);
+  }
+
+  /* 主布局：左右两栏 */
+  .vt__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .vt__config,
+  .vt__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .vt__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .vt__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .vt__panel-head .vt__subtitle {
+    margin: 0;
+  }
+
+  /* 面板内边距（无 head 时） */
+  .vt__panel > .vt__subtitle {
+    padding: 10px 14px 0;
+  }
+
+  .vt__panel > *:not(.vt__panel-head):not(.vt__subtitle) {
+    padding: 12px 14px;
+  }
+
+  .vt__subtitle-tag {
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: var(--radius-sm);
+  }
+
+  /* 字段 */
+  .vt__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .vt__field:last-child {
+    margin-bottom: 0;
+  }
+
+  .vt__field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .vt__label {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .vt__input,
+  .vt__select {
+    width: 100%;
+    padding: 6px 9px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .vt__select {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .vt__input:focus,
+  .vt__select:focus {
+    outline: 2px solid var(--color-primary, #2563eb);
+    outline-offset: -1px;
+  }
+
+  /* 分段选择 */
+  .vt__seg {
+    display: flex;
+    gap: 6px;
+  }
+
+  .vt__seg-btn {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .vt__seg-btn.is-active {
+    color: #fff;
+    background: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  /* 提示文字 */
+  .vt__hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    line-height: 1.6;
+  }
+
+  .vt__hint code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    color: var(--color-primary, #2563eb);
+  }
+
+  /* 空状态 */
+  .vt__empty {
+    margin: 0;
+    padding: 16px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    border-radius: var(--radius-sm);
+  }
+
+  /* 命名元素列表 */
+  .vt__add-btn,
+  .vt__del-btn,
+  .vt__reload-btn,
+  .vt__copy-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .vt__add-btn:hover,
+  .vt__reload-btn:hover,
+  .vt__copy-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+  }
+
+  .vt__del-btn {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+  }
+
+  .vt__del-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+  }
+
+  .vt__named-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .vt__named-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .vt__named-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .vt__named-item.is-selected {
+    border-color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .vt__named-item:hover {
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .vt__named-select {
+    flex-shrink: 0;
+    margin-right: 4px;
+  }
+
+  .vt__named-selector,
+  .vt__named-name {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 12px;
+    color: var(--color-text);
+  }
+
+  .vt__named-arrow {
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+  }
+
+  .vt__del-btn {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* 伪元素覆盖编辑器 */
+  .vt__override {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .vt__override:last-child {
+    margin-bottom: 0;
+  }
+
+  .vt__override-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+
+  .vt__override-desc {
+    display: block;
+    font-weight: 400;
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    margin-top: 2px;
+  }
+
+  .vt__override-body {
+    margin-top: 8px;
+  }
+
+  /* 预览 iframe */
+  .vt__preview {
+    width: 100%;
+    height: 280px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #f5f5f7;
+  }
+
+  /* 原理说明 */
+  .vt__explain {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text);
+  }
+
+  .vt__explain p {
+    margin: 0 0 8px;
+  }
+
+  .vt__explain p:last-child {
+    margin-bottom: 0;
+  }
+
+  .vt__explain code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 12px;
+    color: var(--color-primary, #2563eb);
+  }
+
+  /* 代码输出 */
+  .vt__code {
+    margin: 0;
+    padding: 12px 14px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .vt__code code {
+    font-family: inherit;
+  }
+
+  /* ============ 响应式：768px 平板 ============ */
+  @media (max-width: 768px) {
+    .vt__main {
+      grid-template-columns: 1fr;
+    }
+
+    .vt__field-row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .vt__preview {
+      height: 240px;
+    }
+  }
+
+  /* ============ 响应式：414px 手机 ============ */
+  @media (max-width: 414px) {
+    .vt__presets {
+      padding: 10px 12px;
+    }
+
+    .vt__preset-grid {
+      gap: 6px;
+    }
+
+    .vt__preset-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .vt__seg {
+      flex-direction: column;
+    }
+
+    .vt__named-item {
+      flex-wrap: wrap;
+      gap: 4px;
+      font-size: 12px;
+    }
+
+    .vt__named-selector,
+    .vt__named-name {
+      font-size: 11px;
+    }
+
+    .vt__preview {
+      height: 200px;
+    }
+
+    .vt__code {
+      font-size: 11px;
+      padding: 10px;
+    }
+  }
+
+  /* ============ 暗色模式适配 ============ */
+  :global(html[data-theme='dark']) .vt__preset-btn,
+  :global(html.dark) .vt__preset-btn {
+    background: var(--color-bg);
+  }
+
+  :global(html[data-theme='dark']) .vt__preview,
+  :global(html.dark) .vt__preview {
+    background: #1d1d1f;
+  }
+
+  :global(html[data-theme='dark']) .vt__code,
+  :global(html.dark) .vt__code {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(html:not([data-theme='light'])) .vt__preset-btn {
+      background: var(--color-bg);
+    }
+
+    :global(html:not([data-theme='light'])) .vt__preview {
+      background: #1d1d1f;
+    }
+
+    :global(html:not([data-theme='light'])) .vt__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+</style>
