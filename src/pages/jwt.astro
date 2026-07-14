@@ -405,17 +405,24 @@ const meta: SiteMeta = {
     border-radius: var(--radius-sm);
     background: var(--color-bg);
     overflow: hidden;
+    /* 段落悬停时轻微上浮，增强交互感 */
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
-  /* 三段彩色左边框：header 红、payload 紫、signature 蓝 */
+  .jwttool__seg:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* 三段彩色左边框：header 红、payload 紫、signature 蓝，宽度加粗增强辨识度 */
   .jwttool__seg--header {
-    border-left: 3px solid var(--color-error);
+    border-left: 4px solid var(--color-error);
   }
   .jwttool__seg--payload {
-    border-left: 3px solid var(--color-accent);
+    border-left: 4px solid var(--color-accent);
   }
   .jwttool__seg--signature {
-    border-left: 3px solid var(--color-primary);
+    border-left: 4px solid var(--color-primary);
   }
 
   .jwttool__seg-head {

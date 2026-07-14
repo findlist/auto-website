@@ -170,13 +170,17 @@ const meta: SiteMeta = {
     cursor: pointer;
     transition: all var(--transition-base);
     min-height: 220px;
+    /* 拖拽区使用渐变背景，增加视觉深度 */
+    background-image: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-soft) 100%);
   }
 
   .hashtool__dropzone:hover,
   .hashtool__dropzone:focus-visible {
     border-color: var(--color-primary);
-    background: var(--color-bg-soft);
+    background: var(--color-primary-soft);
     color: var(--color-primary);
+    /* 悬停时轻微放大，增强交互反馈 */
+    transform: scale(1.01);
   }
 
   .hashtool__dropzone.is-dragover {
@@ -316,7 +320,13 @@ const meta: SiteMeta = {
 
   .hashtool__result-item {
     border-left: 3px solid var(--color-primary);
-    padding-left: 12px;
+    padding-left: 14px;
+    /* 结果项悬停时增强左边框，提升视觉反馈 */
+    transition: border-color var(--transition-fast);
+  }
+
+  .hashtool__result-item:hover {
+    border-left-color: var(--color-accent);
   }
 
   .hashtool__result-head {

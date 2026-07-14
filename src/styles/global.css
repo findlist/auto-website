@@ -54,15 +54,19 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(20, 25, 35, 0.06);
-  --shadow-md: 0 4px 12px rgba(20, 25, 35, 0.08);
-  --shadow-lg: 0 12px 32px rgba(20, 25, 35, 0.12);
+  /* 阴影系统：分层叠加，模拟自然光照深度 */
+  --shadow-sm: 0 1px 2px rgba(20, 25, 35, 0.06), 0 1px 1px rgba(20, 25, 35, 0.04);
+  --shadow-md: 0 4px 12px rgba(20, 25, 35, 0.08), 0 2px 4px rgba(20, 25, 35, 0.04);
+  --shadow-lg: 0 12px 32px rgba(20, 25, 35, 0.12), 0 4px 8px rgba(20, 25, 35, 0.06);
+  /* 悬停专用阴影：带主色调染色，增强可供性提示 */
+  --shadow-hover: 0 8px 24px rgba(43, 108, 255, 0.12), 0 2px 8px rgba(20, 25, 35, 0.08);
 
-  /* 过渡曲线 */
+  /* 过渡曲线：使用更具弹性的缓动函数，提升交互精致感 */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-fast: 0.12s var(--ease-out);
-  --transition-base: 0.18s var(--ease-out);
-  --transition-slow: 0.28s var(--ease-out);
+  --transition-base: 0.2s var(--ease-out);
+  --transition-slow: 0.32s var(--ease-out);
 
   /* z-index 层级 */
   --z-header: 50;
@@ -101,9 +105,10 @@
     --color-accent-soft: rgba(122, 76, 255, 0.14);
     --color-success-border: rgba(26, 170, 85, 0.35);
     --color-success-ring: rgba(26, 170, 85, 0.22);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.35);
+    --shadow-hover: 0 8px 24px rgba(91, 140, 255, 0.18), 0 2px 8px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -214,11 +219,13 @@ button {
   font-size: 14px;
   font-weight: 700;
   box-shadow: 0 2px 8px var(--color-primary-ring);
-  transition: transform var(--transition-base);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
 }
 
 .site-header__brand:hover .site-header__brand-mark {
-  transform: scale(1.08) rotate(-3deg);
+  transform: scale(1.1) rotate(-4deg);
+  /* 悬停时增强光晕，强化品牌标志的交互感 */
+  box-shadow: 0 4px 14px var(--color-primary-ring), 0 0 0 3px var(--color-primary-soft);
 }
 
 .site-header__nav {
@@ -330,12 +337,16 @@ button {
 
 /* 工具页 hero 变体：与下方工具容器视觉衔接更紧密 */
 .page-hero--tool {
-  padding: 40px 0 20px;
+  padding: 44px 0 24px;
   text-align: center;
+  /* 顶部主色光晕背景，增强页面入口视觉层次 */
+  background:
+    radial-gradient(600px 200px at 50% 0%, var(--color-primary-soft), transparent 70%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .page-hero--tool h1 {
-  font-size: 28px;
+  font-size: 30px;
   margin: 0 0 10px;
   letter-spacing: -0.02em;
   font-weight: 700;
@@ -347,11 +358,18 @@ button {
 .page-hero--tool h1::after {
   content: '';
   display: block;
-  width: 48px;
+  width: 56px;
   height: 3px;
-  margin: 10px auto 0;
+  margin: 12px auto 0;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  /* 入场动画：从中心向两侧展开 */
+  animation: underline-expand 0.5s var(--ease-out) both;
+}
+
+@keyframes underline-expand {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 .page-hero--tool p {
@@ -388,17 +406,23 @@ button {
   font-size: 14px;
   font-weight: 500;
   transition: border-color var(--transition-fast), color var(--transition-fast),
-    background-color var(--transition-fast), box-shadow var(--transition-fast);
+    background-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   white-space: nowrap;
+  /* 确保按钮在触摸设备上有足够大的点击区域 */
+  min-height: 36px;
 }
 
 .btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 
 .btn:active {
   transform: scale(0.97);
+  /* 按压时过渡加快，模拟物理按压的即时反馈 */
+  transition-duration: 0.06s;
 }
 
 .btn--primary {
@@ -412,17 +436,24 @@ button {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
   color: #fff;
-  box-shadow: 0 4px 14px var(--color-primary-ring);
+  box-shadow: 0 6px 20px var(--color-primary-ring);
+  transform: translateY(-1px);
+}
+
+.btn--primary:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn--sm {
   padding: 5px 10px;
   font-size: 13px;
+  min-height: 28px;
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* 文章式排版（关于 / 隐私政策页） */
@@ -530,8 +561,10 @@ button {
 }
 
 .json-faq details[open] {
-  border-color: var(--color-primary-ring);
+  border-color: var(--color-primary-border);
   box-shadow: var(--shadow-sm);
+  /* 展开时左侧主色指示条，增强视觉层次 */
+  border-left: 3px solid var(--color-primary);
 }
 
 .json-faq summary {
@@ -586,7 +619,7 @@ button {
 }
 
 /* ============ 复制成功反馈动画 ============ */
-/* 复制按钮成功后短暂变绿 + 缩放弹跳，给用户明确的操作反馈 */
+/* 复制按钮成功后短暂变绿 + 弹性缩放 + 发光，给用户明确的操作反馈 */
 @keyframes copy-flash {
   0% { background: var(--color-primary); border-color: var(--color-primary); }
   30% { background: var(--color-success); border-color: var(--color-success); }
@@ -595,14 +628,16 @@ button {
 
 @keyframes copy-pop {
   0% { transform: scale(1); }
-  40% { transform: scale(1.12); }
+  35% { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
 
 .is-copied {
-  animation: copy-flash 0.7s var(--ease-out), copy-pop 0.4s var(--ease-out);
+  animation: copy-flash 0.7s var(--ease-out), copy-pop 0.45s var(--ease-spring);
   border-color: var(--color-success) !important;
   color: var(--color-success) !important;
+  /* 复制成功时短暂发光，强化视觉反馈 */
+  box-shadow: 0 0 0 3px var(--color-success-ring) !important;
 }
 
 /* ============ 工具页表单焦点统一 ============ */

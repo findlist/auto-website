@@ -311,6 +311,13 @@ END:VCARD</code></pre>
     height: auto;
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-md);
+    /* 二维码入场动画：从模糊到清晰 */
+    animation: qr-appear 0.3s var(--ease-out);
+  }
+
+  @keyframes qr-appear {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   .qrtool__empty {

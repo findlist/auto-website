@@ -296,11 +296,13 @@ const meta: SiteMeta = {
   /* 文末 CTA */
   .blog-article__cta {
     margin-top: 48px;
-    padding: 24px;
-    border: 1px solid var(--color-border);
+    padding: 28px 24px;
+    border: 1px solid var(--color-primary-border);
     border-radius: var(--radius-md);
-    background: var(--color-bg-soft);
+    background: var(--color-primary-soft);
     text-align: center;
+    /* CTA 区域使用主色光晕背景，引导用户行动 */
+    background-image: radial-gradient(400px 160px at 50% 0%, var(--color-primary-soft), transparent 70%);
   }
 
   .blog-article__cta p {
@@ -331,12 +333,14 @@ const meta: SiteMeta = {
     border-radius: var(--radius-md);
     background: var(--color-bg);
     color: inherit;
-    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base),
+      transform var(--transition-base);
   }
 
   .post-nav__link:hover:not(.post-nav__link--placeholder) {
     border-color: var(--color-primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
   }
 
   .post-nav__link--next {
