@@ -1,0 +1,554 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ContainTool from '../components/ContainTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS contain + content-visibility 性能优化生成器 - 在线渲染隔离与屏幕外跳过渲染可视化工具',
+  description:
+    '免费的在线 CSS contain + content-visibility 性能优化生成器：完整支持 contain 八种值（none / strict / content / size / layout / paint / style / inline-size）与 content-visibility 三种值（visible / hidden / auto），配合 contain-intrinsic-size 提供占位尺寸。可滚动预览区用 IntersectionObserver 实时演示 content-visibility: auto 跳过屏幕外内容渲染的效果，原理说明面板解析各值的隔离范围、性能影响与副作用。8 组预设覆盖布局隔离、绘制隔离、长列表优化、卡片网格、隐藏面板等场景。实时生成 CSS 代码一键复制。适用于 CSS 性能优化、渲染隔离、长列表渲染优化、屏幕外内容跳过、滚动性能提升等前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS contain + content-visibility 性能优化生成器',
+    description: '在线 CSS contain 与 content-visibility 性能优化生成器，支持渲染隔离与屏幕外跳过渲染，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS contain + content-visibility 性能优化生成器</h1>
+      <p>
+        可视化生成 CSS <code>contain</code> 与 <code>content-visibility</code> 两大性能优化属性：
+        完整支持 <code>contain</code> 八种值（<code>none</code> / <code>strict</code> /
+        <code>content</code> / <code>size</code> / <code>layout</code> / <code>paint</code> /
+        <code>style</code> / <code>inline-size</code>）与 <code>content-visibility</code>
+        三种值（<code>visible</code> / <code>hidden</code> / <code>auto</code>），
+        配合 <code>contain-intrinsic-size</code> 为跳过渲染的元素提供占位尺寸。
+        <strong>可滚动预览区</strong>用 IntersectionObserver 实时演示
+        <code>content-visibility: auto</code> 跳过屏幕外内容渲染的效果，原理说明面板解析各值的隔离范围与副作用。
+        8 组预设覆盖布局隔离、绘制隔离、长列表优化、卡片网格等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ContainTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS contain？它解决了什么问题？</summary>
+        <p>
+          <strong>contain</strong> 是 CSS Containment Module 引入的属性，让开发者声明元素的渲染隔离边界，
+          浏览器据此优化重排重绘计算。它解决了大型页面的<strong>性能问题</strong>——当页面元素众多时，
+          任意一处布局变化都可能触发整页重排，contain 把元素隔离成独立单元，子树的变化不会扩散到外部。
+          例如一个卡片设置了 <code>contain: layout</code>，卡片内部布局变化（如展开折叠）不会触发外部元素重排，
+          外部布局变化也不会影响卡片内部。<code>contain: content</code> 是推荐用法，
+          语法：<code>.card &#123; contain: content; &#125;</code>，一行 CSS 即可获得布局/绘制/样式三项隔离。
+        </p>
+      </details>
+      <details>
+        <summary>contain 的八个值（none/strict/content/size/layout/paint/style/inline-size）有什么区别？</summary>
+        <p>
+          <br /><strong>none</strong>：不隔离（默认值）。
+          <br /><strong>layout</strong>：隔离布局，子树布局变化不触发外部重排。
+          <br /><strong>paint</strong>：隔离绘制，子树内容不会绘制到元素边界外（类似 overflow:clip 但作用于绘制阶段）。
+          <br /><strong>style</strong>：隔离样式，counter-reset/increment 和 quotes 作用域隔离，避免计数器串扰。
+          <br /><strong>size</strong>：隔离尺寸，元素尺寸不受子内容影响，<strong>必须显式指定高度</strong>，否则高度为 0。
+          <br /><strong>inline-size</strong>：仅隔离行内方向尺寸（Level 2 新增），块向高度仍由子内容决定，适合横向滚动容器。
+          <br /><strong>content</strong>：等价于 layout + paint + style，<strong>推荐用法</strong>，无尺寸副作用。
+          <br /><strong>strict</strong>：等价于 size + layout + paint + style，全部隔离，最强但需显式尺寸。
+          <br />关键选型：日常用 content（推荐），固定尺寸组件用 strict，横向滚动用 inline-size，size/strict 谨慎使用。
+        </p>
+      </details>
+      <details>
+        <summary>content-visibility 是什么？auto 值如何跳过屏幕外渲染？</summary>
+        <p>
+          <strong>content-visibility</strong> 是 CSS Containment Module Level 2 引入的属性，
+          控制元素内容的渲染策略。<code>auto</code> 值让浏览器自动跳过<strong>屏幕外</strong>内容的渲染——
+          当元素不在视口内时，浏览器仅保留其布局占位（跳过子树布局/绘制/合成），
+          滚动进入视口时才渲染，离开时释放渲染资源。这能大幅提升长列表、卡片网格、长文档的滚动性能。
+          工作原理：浏览器用 IntersectionObserver 判断元素是否在视口，屏幕外元素被"跳过"（skipped），
+          仅保留 contain-intrinsic-size 指定的占位尺寸。本工具的可滚动预览区用 IntersectionObserver
+          实时标记可见/屏幕外状态，直观演示 auto 的工作过程。语法：
+          <code>.list-item &#123; content-visibility: auto; contain-intrinsic-size: 320px 140px; &#125;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>content-visibility: hidden 和 display: none 有什么区别？</summary>
+        <p>
+          两者都让元素不可见，但机制不同：<br />
+          <strong>display: none</strong>：元素完全从渲染树移除，不保留布局信息。切换回可见时需重新计算布局、构建渲染对象，
+          开销较大，适合"永久"隐藏。<br />
+          <strong>content-visibility: hidden</strong>：元素不渲染内容但<strong>保留布局信息与渲染状态</strong>。
+          切换回 visible 时无需重新计算布局，浏览器直接恢复渲染，开销小，适合频繁切换的隐藏面板（如折叠面板、标签页）。
+          <br />关键差异：display:none 是"移除"，content-visibility:hidden 是"暂停"。
+          频繁切换的场景用 content-visibility: hidden 性能更好；一次性隐藏用 display: none 更彻底。
+        </p>
+      </details>
+      <details>
+        <summary>contain-intrinsic-size 是什么？为什么 content-visibility: auto 需要它？</summary>
+        <p>
+          <strong>contain-intrinsic-size</strong> 为跳过渲染的元素提供预估占位尺寸。
+          当 <code>content-visibility: auto</code> 跳过屏幕外内容渲染时，浏览器不知道内容的实际尺寸，
+          如果不提供占位尺寸，滚动条会跳动（内容渲染前后尺寸突变）。
+          <code>contain-intrinsic-size: 320px 140px</code> 告诉浏览器"这个元素未渲染时约占 320×140px"，
+          浏览器据此计算滚动条位置，内容渲染后尺寸相近则无明显跳动。
+          <br />最佳实践：用元素渲染后的典型尺寸作为 intrinsic-size，值越接近实际，跳动越小。
+          也可用 <code>contain-intrinsic-size: auto 320px</code> 让浏览器记住上次渲染尺寸（auto 关键字，Level 3 新增）。
+          本工具在启用 contain-intrinsic-size 后提供宽高滑块，方便调整占位尺寸。
+        </p>
+      </details>
+      <details>
+        <summary>contain: size 和 contain: strict 有什么副作用？什么时候该用？</summary>
+        <p>
+          <strong>副作用</strong>：contain: size 和 strict（含 size）会让元素尺寸<strong>不受子内容影响</strong>——
+          元素高度不再被子内容撑开，若未显式指定 height，元素高度退化为 0，子内容不可见。这是最常见的踩坑点。
+          <br /><strong>何时该用</strong>：仅当元素有固定尺寸（如固定高度的卡片、固定宽度的侧栏）时使用 size/strict。
+          若元素高度由内容决定（流式布局），用 <code>contain: content</code>（不含 size，推荐）或
+          <code>contain: layout paint</code> 组合更安全。
+          <br />本工具在选中 size/strict 时会在原理说明面板显示副作用提醒，帮助避免误用。
+        </p>
+      </details>
+      <details>
+        <summary>contain 和 content-visibility 如何配合使用？最佳实践是什么？</summary>
+        <p>
+          两者协同是现代 CSS 性能优化的核心组合。最佳实践：<br />
+          <strong>1. 组件级隔离</strong>：对独立组件用 <code>contain: content</code>（layout + paint + style），
+          隔离子树布局/绘制/样式，无尺寸副作用。<br />
+          <strong>2. 长列表优化</strong>：对列表项用 <code>contain: content; content-visibility: auto;
+          contain-intrinsic-size: &lt;w&gt; &lt;h&gt;;</code>，浏览器跳过屏幕外项的渲染，仅保留占位。<br />
+          <strong>3. 隐藏面板</strong>：对折叠面板用 <code>content-visibility: hidden</code> 暂停渲染，
+          切换比 display:none 更快。<br />
+          <strong>4. 避免过度隔离</strong>：size/strict 有尺寸副作用，仅在确定固定尺寸时使用。
+          content 是最安全的组合，覆盖 90% 场景。<br />
+          <strong>5. 渐进增强</strong>：contain 与 content-visibility 在不支持的浏览器被忽略，元素正常渲染，无需降级代码。
+        </p>
+      </details>
+      <details>
+        <summary>浏览器兼容性如何？有性能风险吗？数据是否上传？</summary>
+        <p>
+          <strong>兼容性</strong>：contain 基础值（layout/paint/style/content/strict/size）自 2020 年起全主流浏览器支持，
+          inline-size 自 2022 年起支持，style 自 2023 年起支持。content-visibility 自 2023 年起全主流浏览器支持。
+          不支持的浏览器忽略这些属性，元素正常渲染，天然降级。<br />
+          <strong>性能风险</strong>：contain 本身开销极小，过度使用不会明显变慢；content-visibility: auto 在快速滚动时
+          可能出现短暂渲染延迟（内容渲染需时间），用 contain-intrinsic-size 接近实际尺寸可缓解。<br />
+          <strong>隐私保障</strong>：本工具全部在浏览器本地处理，不发起任何网络请求，不上传任何数据，
+          不使用 Cookie 与 LocalStorage，无追踪。生成的 CSS 代码也不会离开你的浏览器。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* contain 工具专属样式 */
+  .ctn {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 预设按钮组 */
+  .ctn__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .ctn__preset-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ctn__preset-btn:hover {
+    border-color: var(--color-accent, #2563eb);
+    color: var(--color-accent, #2563eb);
+    background: rgba(37, 99, 235, 0.05);
+  }
+
+  /* 主布局：左右两栏 */
+  .ctn__layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* 预览列 */
+  .ctn__preview-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ctn__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    border-bottom: none;
+  }
+
+  .ctn__visible-count {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-accent, #2563eb);
+    font-size: 12px;
+  }
+
+  /* 可滚动预览容器 */
+  .ctn__scroller {
+    height: 420px;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(0, 0, 0, 0.02),
+        rgba(0, 0, 0, 0.02) 10px,
+        transparent 10px,
+        transparent 20px
+      ),
+      var(--color-bg);
+    scrollbar-width: thin;
+  }
+
+  .ctn__preview-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    line-height: 1.5;
+  }
+
+  /* 预览卡片 */
+  .ctn__card-wrap {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  .ctn__card-wrap[data-visible='false'] {
+    opacity: 0.7;
+  }
+
+  .ctn__card {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .ctn__card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .ctn__card-no {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-weight: 700;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ctn__card-status {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .ctn__card-status.is-on {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+  }
+
+  .ctn__card-status.is-off {
+    background: rgba(234, 88, 12, 0.12);
+    color: #c2410c;
+  }
+
+  .ctn__card-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .ctn__card-skipped {
+    padding: 16px 8px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-muted, #9ca3af);
+    border: 1px dashed var(--color-border);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  /* 配置列 */
+  .ctn__config-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 面板 */
+  .ctn__panel {
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .ctn__label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .ctn__label input[type='checkbox'] {
+    margin-right: 6px;
+    accent-color: var(--color-accent, #2563eb);
+    cursor: pointer;
+  }
+
+  .ctn__input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .ctn__input:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 分段按钮组 */
+  .ctn__seg-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .ctn__seg {
+    flex: 1 1 auto;
+    min-width: 70px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ctn__seg:hover {
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ctn__seg.is-active {
+    background: var(--color-accent, #2563eb);
+    border-color: var(--color-accent, #2563eb);
+    color: #fff;
+  }
+
+  /* intrinsic-size 配置 */
+  .ctn__intrinsic {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ctn__slider {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ctn__slider span {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .ctn__slider input[type='range'] {
+    width: 100%;
+    accent-color: var(--color-accent, #2563eb);
+  }
+
+  .ctn__color-row {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ctn__color-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    cursor: pointer;
+  }
+
+  .ctn__color-row input[type='color'] {
+    width: 32px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* 原理说明面板 */
+  .ctn__explain {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .ctn__tip {
+    margin: 0 0 8px;
+    padding-left: 10px;
+    border-left: 3px solid var(--color-accent, #2563eb);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .ctn__tip:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 代码输出 */
+  .ctn__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .ctn__code-head .ctn__label {
+    margin-bottom: 0;
+  }
+
+  .ctn__copy {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ctn__copy:hover {
+    border-color: var(--color-accent, #2563eb);
+    color: var(--color-accent, #2563eb);
+  }
+
+  .ctn__code {
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .ctn__layout {
+      grid-template-columns: 1fr;
+    }
+
+    .ctn__scroller {
+      height: 320px;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .ctn__presets {
+      padding: 8px;
+    }
+
+    .ctn__preset-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .ctn__seg {
+      min-width: 60px;
+      padding: 5px 6px;
+      font-size: 11px;
+    }
+
+    .ctn__panel {
+      padding: 10px;
+    }
+
+    .ctn__scroller {
+      height: 280px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global(html[data-theme='dark']) .ctn__card-status.is-on {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+
+  :global(html[data-theme='dark']) .ctn__card-status.is-off {
+    background: rgba(234, 88, 12, 0.2);
+    color: #fb923c;
+  }
+
+  :global(html[data-theme='dark']) .ctn__card-skipped {
+    background: rgba(255, 255, 255, 0.03);
+  }
+</style>
