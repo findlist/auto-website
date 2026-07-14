@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '82 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
+    '83 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -760,6 +760,15 @@ const tools = [
     category: '设计',
     keywords: 'css @layer 层叠层 级联层 cascade layers css 优先级 !important 反转 未分层 嵌套层 第三方库 主题系统 specificity 特异性 层叠顺序 层声明',
   },
+  {
+    href: '/scope',
+    title: 'CSS @scope 作用域生成器',
+    desc: '在线 CSS @scope 作用域生成器：可视化编辑多个作用域块，完整支持根选择器（@scope (.card)）、下边界子句（to (.content)）、甜甜圈作用域（donut scope）、:scope 伪类与 & 选择器、相对选择器解析。内置作用域说明面板，实时展示每条规则的完整选择器与下边界排除范围。iframe 隔离预览实时应用作用域 CSS，8 组预设覆盖基本作用域、甜甜圈作用域、卡片组件、多组件作用域、导航菜单、表单组件、列表条纹等场景。实时生成浏览器原生支持的 @scope CSS 代码（2024 起全主流浏览器支持），一键复制。适用于组件级样式隔离、避免选择器冲突、替代 Shadow DOM 轻量方案、BEM 命名替代。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: 'css @scope 作用域 css 作用域 甜甜圈作用域 donut scope 下边界 :scope shadow dom 替代 bem 替代 样式隔离 组件级样式 相对选择器 作用域生成器',
+  },
 ];
 
 // 工具分类列表（去重），用于分类筛选按钮
@@ -822,7 +831,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 82 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 83 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
@@ -985,7 +994,7 @@ const features = [
 
 <style>
   .hero {
-    padding: 72px 0 48px;
+    padding: 80px 0 56px;
     text-align: center;
     background:
       radial-gradient(1200px 400px at 50% -10%, rgba(43, 108, 255, 0.12), transparent 60%),
@@ -1001,20 +1010,23 @@ const features = [
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
-    width: 64px;
+    width: 72px;
     height: 3px;
     border-radius: 2px;
     background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-    opacity: 0.7;
+    opacity: 0.8;
+    animation: underline-expand 0.6s var(--ease-out) 0.2s both;
   }
 
   .hero__inner h1 {
-    font-size: 42px;
-    line-height: 1.2;
+    font-size: 44px;
+    line-height: 1.15;
     margin: 0 auto 16px;
     max-width: 720px;
     letter-spacing: -0.02em;
     font-weight: 700;
+    /* 标题入场动画：淡入上滑，提升首屏感知速度 */
+    animation: fade-in-up 0.5s var(--ease-out) 0.1s both;
   }
 
   .hero__accent {
@@ -1030,6 +1042,8 @@ const features = [
     color: var(--color-text-soft);
     font-size: 17px;
     line-height: 1.7;
+    /* 引导文字入场动画：稍后于标题出现 */
+    animation: fade-in-up 0.5s var(--ease-out) 0.2s both;
   }
 
   .hero__cta {
@@ -1037,6 +1051,8 @@ const features = [
     gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
+    /* CTA 按钮最后入场，引导用户行动 */
+    animation: fade-in-up 0.5s var(--ease-out) 0.3s both;
   }
 
   .section-title {
@@ -1080,7 +1096,7 @@ const features = [
   .tools__search input:focus-visible {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-ring);
+    box-shadow: var(--focus-ring);
   }
 
   .tools__filters {
@@ -1170,9 +1186,9 @@ const features = [
 
   .tool-card:hover {
     border-color: var(--color-primary);
-    /* 悬停时叠加主色光晕，强化"可点击"的可供性提示 */
-    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-ring);
-    transform: translateY(-3px);
+    /* 悬停时使用主色染色阴影，强化"可点击"的可供性提示 */
+    box-shadow: var(--shadow-hover), 0 0 0 3px var(--color-primary-ring);
+    transform: translateY(-4px);
   }
 
   .tool-card:hover::before {
@@ -1249,14 +1265,20 @@ const features = [
   }
 
   .feature:hover {
-    border-color: var(--color-border-strong);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-2px);
+    border-color: var(--color-primary-border);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
   }
 
   .feature__icon {
-    font-size: 28px;
+    font-size: 32px;
     line-height: 1;
+    /* 图标入场动画：轻微弹跳，增加趣味性 */
+    transition: transform var(--transition-base);
+  }
+
+  .feature:hover .feature__icon {
+    transform: scale(1.1);
   }
 
   .feature__title {
@@ -1313,8 +1335,8 @@ const features = [
   .blog-section__card:hover {
     border-color: var(--color-primary);
     /* 与 tool-card 悬停反馈保持一致：主色光晕 + 上浮 */
-    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-primary-ring);
-    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover), 0 0 0 3px var(--color-primary-ring);
+    transform: translateY(-4px);
   }
 
   /* 拉伸链接：标题链接撑满整张卡片 */

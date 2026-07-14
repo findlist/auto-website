@@ -1,0 +1,547 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ScopeTool from '../components/ScopeTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS @scope 作用域生成器 - 在线组件级样式隔离可视化工具',
+  description:
+    '免费的在线 CSS @scope 作用域生成器：可视化编辑多个作用域块（@scope），完整支持根选择器（@scope (.card)）、下边界子句（to (.content)）、甜甜圈作用域（donut scope）、:scope 伪类与 & 选择器、相对选择器解析。内置作用域说明面板，实时展示每条规则的完整选择器（根选择器 + 相对选择器）与下边界排除范围。iframe 隔离预览实时应用作用域 CSS，可编辑预览 HTML，8 组预设覆盖基本作用域、甜甜圈作用域、卡片组件、多组件作用域、导航菜单、表单组件、列表条纹等场景。实时生成浏览器原生支持的 @scope CSS 代码（2024 年起全主流浏览器支持），一键复制。适用于组件级样式隔离、避免选择器冲突、替代 Shadow DOM 轻量方案、BEM 命名替代等现代前端开发场景。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS @scope 作用域生成器',
+    description: '在线 CSS @scope 作用域生成器，支持下边界、甜甜圈作用域、:scope 伪类，一键复制作用域 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS @scope 作用域生成器</h1>
+      <p>
+        可视化生成 CSS 作用域（CSS Scoping Module Level 1，<code>@scope</code>，2024 年起全主流浏览器原生支持）：
+        完整支持根选择器（<code>@scope (.card)</code>）、下边界子句（<code>to (.content)</code>）、
+        甜甜圈作用域（donut scope）、<code>:scope</code> 伪类与 <code>&amp;</code> 选择器、相对选择器解析。
+        内置<strong>作用域说明面板</strong>——实时展示每条规则的完整选择器（根选择器 + 相对选择器）
+        与下边界排除范围。iframe 隔离预览实时应用作用域 CSS，可编辑预览 HTML，
+        内置基本作用域、甜甜圈作用域、卡片组件、导航菜单等 8 组预设。
+        适用于组件级样式隔离、避免选择器冲突、替代 Shadow DOM 轻量方案等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <ScopeTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS @scope 作用域？它解决了什么问题？</summary>
+        <p>
+          <strong>@scope</strong>（CSS 作用域，CSS Scoping Module Level 1）是 2024 年正式落地的原生 CSS 特性，
+          允许开发者把样式规则的<strong>作用范围限制在某个 DOM 子树内</strong>，而无需依赖 Shadow DOM 或 BEM 命名约定。
+          它解决了三大痛点：一是<strong>选择器冲突</strong>，过去全局样式容易意外影响其他组件，只能靠 BEM、CSS Modules
+          等命名约定规避；二是<strong>样式隔离成本高</strong>，Shadow DOM 虽能隔离样式，但会创建真实边界，
+          影响事件冒泡、表单参与、可访问性，成本较重；三是<strong>组件样式难以复用</strong>，组件的样式规则
+          一旦全局生效，放到不同上下文时可能产生意外覆盖。@scope 让样式隔离从"命名约定"或"真实边界"
+          升级为"轻量级作用域声明"，清晰可控且不破坏 DOM 结构。
+        </p>
+      </details>
+      <details>
+        <summary>@scope 的基本语法是怎样的？根选择器与 to (boundary) 子句有何区别？</summary>
+        <p>
+          @scope 有三种语法形式：<br />
+          <strong>无根选择器</strong>：<code>@scope &#123; ... &#125;</code>，作用域匹配整个文档（少见）。<br />
+          <strong>仅根选择器</strong>：<code>@scope (.card) &#123; ... &#125;</code>，样式仅作用于 <code>.card</code> 内部的后代元素。<br />
+          <strong>根 + 下边界</strong>：<code>@scope (.card) to (.content) &#123; ... &#125;</code>，样式作用于 <code>.card</code> 内部，
+          但<strong>排除</strong> <code>.content</code> 及其后代（甜甜圈作用域）。<br />
+          根选择器决定"从哪里开始作用"，下边界决定"到哪里停止作用"。无下边界时样式覆盖整个根的后代子树；
+          有下边界时样式在边界处"打洞"，边界内的元素不被样式化。本工具的根选择器与下边界输入框分别对应这两个参数。
+        </p>
+      </details>
+      <details>
+        <summary>什么是甜甜圈作用域（donut scope）？下边界如何工作？</summary>
+        <p>
+          甜甜圈作用域是 @scope 最具差异化的能力——通过 <code>to (boundary)</code> 子句在作用域内"打洞"，
+          让边界内部的元素<strong>不被样式化</strong>，形成类似甜甜圈的"有洞"作用范围。
+          例如 <code>@scope (.card) to (.content) &#123; .title &#123; color: red; &#125; &#125;</code>，
+          会样式化 <code>.card</code> 内的 <code>.title</code>，但<strong>不会</strong>样式化 <code>.content</code> 内的 <code>.title</code>。
+          这在嵌套组件场景下极其有用——外层组件的样式不会渗透到内层组件区域，避免意外覆盖。
+          本工具的"甜甜圈作用域"预设直观展示了这一行为：标题在作用域内被样式化，而内容区内的同名元素被下边界排除。
+        </p>
+      </details>
+      <details>
+        <summary>:scope 伪类与 & 选择器在 @scope 中有何作用？</summary>
+        <p>
+          在 @scope 内，<code>:scope</code> 与 <code>&amp;</code> 都指向<strong>作用域根本身</strong>，但用法略有差异：<br />
+          <strong>:scope</strong> 是 CSS 标准伪类，可直接作为选择器起始，如 <code>:scope &#123; padding: 16px; &#125;</code>
+          样式化作用域根本身，<code>:scope &gt; a</code> 匹配作用域根的直接子级 <code>a</code>。<br />
+          <strong>&amp;</strong> 是嵌套选择器（需配合 CSS Nesting），指向作用域根，如 <code>&amp;.active</code> 匹配
+          带有 <code>active</code> 类的作用域根。<br />
+          两者在 @scope 中可互换使用。<strong>不以 :scope 或 &amp; 起始的选择器</strong>会被自动视为"作用域根的后代选择器"，
+          如 <code>.title</code> 等价于 <code>:scope .title</code>。本工具的"作用域说明"面板会解析这些前缀，
+          展示每条规则的完整选择器（如 <code>.card .title</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>@scope 与 Shadow DOM 有什么区别？各自适用什么场景？</summary>
+        <p>
+          两者都能实现样式隔离，但机制与成本不同：<br />
+          <strong>@scope</strong> 是<strong>轻量级逻辑隔离</strong>——只在选择器匹配层面限制范围，不创建真实 DOM 边界，
+          不影响事件冒泡、表单参与、可访问性树，DOM 结构保持原样。适合组件级样式隔离、避免选择器冲突、
+          第三方内容嵌入等<strong>不需要强隔离</strong>的场景。<br />
+          <strong>Shadow DOM</strong> 是<strong>物理级强隔离</strong>——创建真实 Shadow Root，样式完全无法渗透，
+          但同时事件需要 retarget、表单参与需要 attachInternals、可访问性需要额外处理，成本较高。
+          适合自定义元素（Web Components）、需要完全封装的<strong>可分发组件</strong>。<br />
+          简单经验：能用 @scope 解决就不要用 Shadow DOM，需要强封装才用 Shadow DOM。
+        </p>
+      </details>
+      <details>
+        <summary>@scope 如何避免选择器冲突？相比 BEM 命名约定有何优势？</summary>
+        <p>
+          BEM 命名约定（如 <code>.card__title</code>、<code>.card__title--active</code>）通过人为约定唯一类名来避免冲突，
+          但依赖团队纪律维护，类名冗长且难以应对动态嵌套。@scope 从<strong>机制层面</strong>避免冲突——
+          作用域内的选择器只在根子树内生效，即使选择器是简单的 <code>.title</code>，也不会影响作用域外的 <code>.title</code>。
+          这意味着可以用<strong>语义化短选择器</strong>替代冗长的 BEM 类名，且无需担心全局污染。
+          例如 <code>@scope (.card) &#123; .title &#123; ... &#125; &#125;</code> 中的 <code>.title</code>
+          只匹配 <code>.card</code> 内的标题，作用域外的 <code>.title</code> 完全不受影响。
+          本工具的"默认示例"预设展示了这一隔离行为。
+        </p>
+      </details>
+      <details>
+        <summary>@scope 的浏览器兼容性如何？性能影响怎样？</summary>
+        <p>
+          <strong>兼容性</strong>：@scope 自 2024 年起在 Chrome 118+、Edge 118+、Safari 17.4+、Firefox 118+ 全主流浏览器原生支持，
+          覆盖率已超过 92%，可在生产环境放心使用。旧浏览器会忽略 <code>@scope</code> 块（样式不生效），
+          建议作为渐进增强特性使用，或用 <code>@supports (selector(@scope))</code> 做特性检测。<br />
+          <strong>性能</strong>：@scope 的匹配在浏览器内部完成，性能与普通选择器相当，不会引入额外开销。
+          需要注意的是：作用域根匹配会在 DOM 变化时重新计算，若根选择器匹配大量元素（如 <code>div</code>），
+          可能增加样式重算成本。建议根选择器尽量精确（如 <code>.card</code> 而非 <code>div</code>），
+          下边界同理。本工具生成的代码即遵循这一最佳实践。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 作用域块编辑、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox</code> 属性限制能力，预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的 @scope CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 练习与生产场景。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：scp 命名空间（scope） */
+  .scp {
+    margin: 24px 0;
+  }
+
+  /* 预设按钮组 */
+  .scp__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .scp__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .scp__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .scp__editor,
+  .scp__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .scp__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .scp__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .scp__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .scp__panel-body {
+    padding: 12px 14px;
+  }
+
+  .scp__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 作用域块卡片 */
+  .scp__block {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .scp__block:last-child {
+    margin-bottom: 0;
+  }
+
+  .scp__block-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .scp__block-idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .scp__block-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .scp__field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .scp__field-label {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .scp__field-input {
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  /* 规则 */
+  .scp__rule {
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .scp__rule-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .scp__rule-sel {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .scp__decls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .scp__decl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .scp__decl-prop,
+  .scp__decl-val {
+    min-width: 0;
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .scp__decl-colon {
+    color: var(--color-text-muted, #6b7280);
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+
+  /* 通用按钮 */
+  .scp__btn {
+    padding: 4px 10px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.1s), border-color var(--transition-fast, 0.1s);
+  }
+
+  .scp__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.05));
+  }
+
+  .scp__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .scp__btn--preset {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .scp__btn--add,
+  .scp__btn--add-rule,
+  .scp__btn--add-decl {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+    background: transparent;
+  }
+
+  .scp__btn--add:hover,
+  .scp__btn--add-rule:hover,
+  .scp__btn--add-decl:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  .scp__btn--add-rule,
+  .scp__btn--add-decl {
+    margin-top: 4px;
+    align-self: flex-start;
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .scp__btn--del {
+    width: 26px;
+    padding: 4px 0;
+    color: var(--color-danger, #dc2626);
+    border-color: var(--color-border);
+  }
+
+  .scp__btn--copy {
+    color: var(--color-primary, #2563eb);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .scp__btn--copy:hover {
+    background: var(--color-primary-ring, rgba(37, 99, 235, 0.1));
+  }
+
+  /* 预览 */
+  .scp__preview {
+    width: 100%;
+    height: 160px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+  }
+
+  .scp__html-edit {
+    margin-top: 8px;
+  }
+
+  .scp__html-edit summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--color-primary, #2563eb);
+    padding: 4px 0;
+  }
+
+  .scp__textarea {
+    width: 100%;
+    margin-top: 6px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    resize: vertical;
+  }
+
+  /* 作用域说明 */
+  .scp__explain {
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .scp__explain:last-child {
+    margin-bottom: 0;
+  }
+
+  .scp__explain-head {
+    font-size: 13px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+  }
+
+  .scp__explain-tip {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .scp__explain-list {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .scp__mono {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    color: var(--color-primary, #2563eb);
+  }
+
+  .scp__mono--boundary {
+    color: var(--color-danger, #dc2626);
+  }
+
+  .scp__mono--rel {
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .scp__mono--full {
+    color: var(--color-primary, #2563eb);
+    font-weight: 600;
+  }
+
+  .scp__arrow {
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 代码输出 */
+  .scp__code {
+    margin: 0;
+    padding: 12px;
+    font-size: 12px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    max-height: 320px;
+    overflow: auto;
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .scp__main {
+      grid-template-columns: 1fr;
+    }
+
+    .scp__presets {
+      padding: 10px 12px;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .scp__presets-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .scp__btn--preset {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .scp__block-head {
+      flex-wrap: wrap;
+    }
+
+    .scp__explain-list {
+      font-size: 11px;
+    }
+  }
+
+  /* 暗色模式 */
+  :global(.dark) .scp__preview {
+    background: #1e293b;
+  }
+</style>
