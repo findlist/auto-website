@@ -1181,4 +1181,145 @@ subgrid 是 CSS Grid Layout Module Level 2 引入的子网格特性（Chrome 117
 
 六者可组合使用：scroll-snap 控制滚动停靠，scroll-driven 在停靠点之间播放 animation，transition 处理属性变化，view-transition 处理 DOM 结构变化，@starting-style 处理元素首次出现入场。这是 CSS 工具链动效交互能力维度的完整闭环——从时间驱动到属性过渡到滚动捕捉到滚动驱动到视图过渡到入场动画全覆盖。
 
+---
+
+# 第 52 轮 · CSS interpolate-size 尺寸插值动画生成器（动效交互能力维度补全）
+
+## 上下文恢复
+- 承接第 51 轮（CSS @starting-style 入场动画生成器，commit b6a9537）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：90 工具 + 85 博客 + 638 页面 → 本轮后 91 工具 + 86 博客 + 651 页面
+- 工作树状态：干净，从远端最新 main 拉取后开始本轮
+
+## 本轮聚焦方向
+**单一方向：新增 CSS interpolate-size 尺寸插值动画生成器（第 91 个工具）**
+
+interpolate-size 是 2024-2025 年 CSS 在尺寸动画领域的标志性新特性（CSS Values and Units Module Level 5）：
+- 允许插值 `auto`、`min-content`、`max-content`、`fit-content` 等尺寸关键字——传统 transition 完全无法过渡这些关键字
+- 配套 `calc-size()` 函数，可在尺寸关键字基础上做加减乘除（如 `calc-size(auto, size + 20px)`）
+- 长期痛点 `auto` 高度过渡（折叠面板、下拉菜单、卡片展开）从 JavaScript 测量方案升级为纯 CSS 声明式方案
+- Chrome 129+ / Firefox 129+ / Safari 17.4+ 支持，渐进增强天然兼容
+
+与已有的 @starting-style、transition、view-transition 工具形成"动效交互能力维度"的尺寸过渡分支补全。本工具是承接 @starting-style 后的下一块拼图——@starting-style 解决"首次出现"，interpolate-size 解决"尺寸关键字过渡"。
+
+## 完成任务
+
+### 单元 1：InterpolateSizeTool.tsx 组件开发（约 798 行）
+1. ✅ 类型定义：InterpolateSizeValue（'numeric-only' | 'allow-keywords'）、PreviewScenario（accordion/menu/card）、InterpolateSizeConfig 完整配置接口
+2. ✅ 模块级 id 生成器 genId()：保证删除中间项时 React key 稳定性，避免焦点错位
+3. ✅ 8 组预设配置：
+   - 折叠面板（auto 高度过渡）
+   - 菜单展开（min-content）
+   - 卡片展开（max-content）
+   - calc-size 计算（auto + 20px）
+   - 透明度+高度双重过渡
+   - fit-content 自适应
+   - calc-size 缩放（auto × 0.5）
+   - 默认（numeric-only 对比基线）
+4. ✅ 配置面板：选择器、interpolate-size 值切换、size-transitions 编辑器、transitions 编辑器、calc-size 表达式构造器、预览场景切换
+5. ✅ 实时预览：三种场景（accordion 折叠面板 / menu 下拉菜单 / card 卡片展开），点击触发动画
+6. ✅ 代码生成：实时生成完整 CSS 代码，支持复制
+7. ✅ 不可变状态更新：所有 setConfig 使用展开运算符，避免直接修改
+
+### 单元 2：interpolate-size.astro 工具页面（约 380 行）
+1. ✅ 完整 SEO meta：title / description（覆盖 CSS interpolate-size、auto 高度过渡、calc-size、折叠面板等关键词）
+2. ✅ JSON-LD WebApplication 结构化数据（含 Offer 价格 0 CNY）
+3. ✅ 8 个 FAQ：覆盖 interpolate-size 定义、与 max-height 技巧对比、calc-size() 函数、三种场景差异、浏览器兼容性、渐进增强、与 @starting-style 协同、隐私安全
+4. ✅ 相关工具链接区：transition / animation / starting-style / view-transition
+5. ✅ HTML 实体转义：FAQ 中 CSS 代码示例的 `{` `}` 用 `&#123;` `&#125;` 转义
+6. ✅ 专属样式 `.is-*`：响应式 768px/414px 双断点 + 暗色模式 + 与 starting-style.astro 风格一致
+
+### 单元 3：interpolate-size-guide.md 配套博客（8 章）
+1. ✅ 诞生背景：auto 高度过渡的 JavaScript 方案痛点（scrollHeight 测量 + requestAnimationFrame 强制重排）
+2. ✅ 语法详解：interpolate-size: allow-keywords / numeric-only 两种取值
+3. ✅ calc-size() 函数：size 关键字引用、算术运算、与 calc() 的区别
+4. ✅ 与 max-height 技巧对比：max-height: 9999px 的缺陷（动画曲线不自然、需预设上限）
+5. ✅ 与 @starting-style / view-transition 协同：尺寸过渡 + 入场动画 + 视图过渡组合
+6. ✅ 浏览器兼容性与渐进增强：@supports 检测方案
+7. ✅ 4 个实战案例：折叠面板、下拉菜单、卡片展开、计算尺寸
+8. ✅ 常见陷阱与最佳实践
+9. ✅ 16 个 tags（CSS、interpolate-size、auto 高度过渡、calc-size、尺寸关键字、折叠面板、allow-keywords、numeric-only、min-content、max-content、fit-content、CSS Values and Units Module Level 5 等）
+
+### 单元 4：首页 index.astro + README.md 同步
+1. ✅ index.astro meta description 90→91（新增 "CSS interpolate-size 尺寸插值动画生成器" 关键词）
+2. ✅ index.astro hero 区工具数 90→91
+3. ✅ index.astro 工具列表新增 interpolate-size 卡片（starting-style 之后，category: 设计）
+4. ✅ README.md 全量同步（8 处更新）：
+   - 第 23 行：91 个工具 + 86 篇博客
+   - 第 60 行：86 篇
+   - 第 73 行：（91 个）
+   - 第 94 行：设计类别新增 "CSS interpolate-size 尺寸插值动画生成器"
+   - 第 106 行：91 个 React 工具组件
+   - 第 161-162 行：91 个 React 工具组件 / 86 篇技术博客
+   - 第 171 行：[91 个工具页]
+   - 第 183 行：651 页（含 86 篇博客 + 300+ 个标签筛选页 + 91 个工具页及其它）
+   - 第 187 行：（86 篇）
+   - 第 246 行：新增 interpolate-size-guide 条目 + 共 86 篇
+   - 第 340 行：91 个工具组件
+
+### 单元 5：全量验收
+1. ✅ `npm run check`：0 errors / 0 warnings / 1 hint（仅剩 clipboard.ts execCommand 历史遗留）
+2. ✅ `npm run build`：651 page(s) built in 21.96s，0 errors
+3. ✅ 构建产物验证：
+   - `/interpolate-size/index.html` ✓
+   - `/blog/tag/interpolate-size/index.html` ✓
+   - `/blog/tag/auto-高度过渡/index.html` ✓
+   - `/blog/tag/calc-size/index.html` ✓
+   - `/blog/tag/尺寸关键字/index.html` ✓
+   - `/blog/tag/折叠面板/index.html` ✓
+   - `/blog/tag/allow-keywords/index.html` ✓
+   - `/blog/tag/numeric-only/index.html` ✓
+   - `/blog/tag/min-content/index.html` ✓
+   - `/blog/tag/max-content/index.html` ✓
+   - `/blog/tag/fit-content/index.html` ✓
+   - `/blog/tag/css-values-and-units-module-level-5/index.html` ✓
+4. ✅ interpolate-size.astro SEO 要素：title / description / JSON-LD WebApplication / Offer / FAQ / 相关工具链接区 全齐备
+5. ✅ 首页工具卡片包含 interpolate-size（href: '/interpolate-size'）
+
+### 单元 6：Git 提交 + push
+- ✅ commit 3ba6100：feat: 新增 CSS interpolate-size 尺寸插值动画生成器，支持 auto/min-content/max-content 关键字过渡与 calc-size() 函数计算
+- ✅ 5 files changed, 1666 insertions(+), 14 deletions(-)
+- ✅ push 到 origin/main：b6a9537..3ba6100
+
+## 修改文件清单
+| 文件 | 类型 | 说明 |
+|------|------|------|
+| src/components/InterpolateSizeTool.tsx | 新增 | 第 91 个工具组件，约 798 行 |
+| src/pages/interpolate-size.astro | 新增 | 工具页面，SEO + FAQ + 相关工具 + 专属样式 |
+| src/content/blog/interpolate-size-guide.md | 新增 | 配套博客，8 章完整指南 + 16 tags |
+| src/pages/index.astro | 修改 | meta description + hero 工具数 + 工具卡片 |
+| README.md | 修改 | 8 处数字同步（91/86/651）+ 博客列表新增条目 |
+
+## 问题与发现
+1. **CSS 命名规范一致性**：初版使用 `is__` 前缀（BEM 风格），通过 grep StartingStyleTool.tsx 发现项目使用 `is-` 前缀（连字符风格），重写组件保持一致
+2. **PowerShell heredoc 限制**：`<<'EOF'` 在 PowerShell 中报错 "The '<' operator is reserved for future use"，需改用单行 commit message
+3. **构建页面数精确同步**：README 原写 638 页（90 工具 + 85 博客），实际构建后为 651 页（91 工具 + 86 博客 + 11 个新标签筛选页），修正 README 数字为 651 以精确反映构建产物
+4. **interpolate-size 与 @starting-style 协同价值**：@starting-style 处理"元素首次出现入场"，interpolate-size 处理"尺寸关键字过渡"，两者经常组合使用（如折叠面板首次展开时同时播放入场动画 + auto 高度过渡）
+
+## 累计规模
+- 工具：91 个（本轮 +1）
+- 博客：86 篇（本轮 +1）
+- 标签：300+ 个（本轮 +11 个新标签：interpolate-size / auto-高度过渡 / calc-size / 尺寸关键字 / 折叠面板 / allow-keywords / numeric-only / min-content / max-content / fit-content / css-values-and-units-module-level-5）
+- 页面：651 页（本轮 +13：1 工具页 + 1 博客页 + 11 新标签筛选页）
+- 总代码行数：约 49000 行
+
+## 动效交互能力维度更新
+| 工具 | 能力维度 | 子方向 |
+|------|---------|--------|
+| animation | 时间驱动循环动画 | @keyframes + duration |
+| transition | 属性变化过渡 | property + duration |
+| scroll-snap | 滚动停靠点 | mandatory / proximity |
+| scroll-driven | 滚动驱动动画 | scroll() / view() 时间线 |
+| view-transition | DOM 状态切换视图过渡 | 同文档/跨文档 |
+| @starting-style | 元素首次出现入场 | 首次渲染 / display 切换 / popover |
+| **interpolate-size** | **尺寸关键字过渡** | **auto / min-content / max-content / fit-content / calc-size()** |
+
+动效交互能力维度现已有 7 个工具覆盖：时间驱动、属性过渡、滚动停靠、滚动驱动、视图过渡、入场动画、尺寸关键字过渡。本轮 interpolate-size 是尺寸动画领域的核心补全——auto 高度过渡从 JavaScript 测量方案升级为纯 CSS 声明式方案，与 @starting-style 经常组合使用（折叠面板首次展开）。
+
+## 下轮建议
+1. **CSS 锚点定位（anchor-positioning）生成器**：2024 年 CSS 定位领域新特性，`anchor()` / `anchor-size()` 函数 + `position-anchor` 属性，让元素相对锚点定位，替代 JavaScript 计算坐标的 tooltip / popover 方案。Chrome 125+ 支持，是定位能力维度的下一块拼图
+2. **CSS if() 条件函数生成器**：2025 年 CSS 值与单位模块新特性，`if(condition: value; condition: value; else: value)` 内联条件判断，替代 @media + 多规则的传统方案
+3. **环境限制类任务跳过**：Lighthouse 性能基线、375px 实测、线上验证已连续多轮无法突破，按规范跳过，等待用户配置 TRAE Sandbox 白名单或换环境执行
+4. **统计工具接入**：需用户确认是否接入 Cloudflare Web Analytics 或 Plausible（无 cookie 轻量方案），目前仍无访问数据，阶段二数据驱动优化无法真正落地
+
 
