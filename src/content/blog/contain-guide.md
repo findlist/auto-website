@@ -1,6 +1,6 @@
 ---
 title: 'CSS contain 与 content-visibility 性能优化完全指南：渲染隔离、屏幕外跳过渲染与长列表优化'
-description: '深入解析 CSS contain 与 content-visibility 两大性能优化属性：contain 八种值（none/strict/content/size/layout/paint/style/inline-size）详解、content-visibility 三种值（visible/hidden/auto）与屏幕外跳过渲染原理、contain-intrinsic-size 占位尺寸、contain 与 content-visibility 协同最佳实践、浏览器兼容性与渐进增强、长列表与卡片网格实战案例。'
+description: '深入解析 CSS contain 与 content-visibility 性能优化：contain 八种值、屏幕外跳过渲染原理、contain-intrinsic-size 占位与长列表实战。'
 pubDate: 2026-07-15
 tags: ['CSS', 'contain', 'content-visibility', '渲染隔离', '性能优化', 'contain-intrinsic-size', '屏幕外渲染', '长列表优化', '前端开发', 'CSS Containment Module', '设计工具', 'layout', 'paint']
 relatedTool: '/contain'

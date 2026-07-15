@@ -1,6 +1,6 @@
 ---
 title: "SQL 格式化与 SQL 解析器设计：词法分析器、token 类型与缩进策略"
-description: "系统讲解 SQL 格式化工具的实现原理：词法分析器（tokenizer）的状态机设计、9 种 token 类型（空白/注释/字符串/数字/标识符/关键字/标点/参数）、关键字分类策略（主子句/JOIN/AND-OR/函数/数据类型）、缩进引擎（depth 计数器 + 主子句归零 + 子查询递增）、CASE/WHEN 块状缩进、压缩算法、基础语法校验、关键字分色高亮。对比 6 种主流 SQL 美化器（sql-formatter/prettier-plugin-sql/DBeaver/DataGrip/Navicat/Azure Data Studio）的实现差异与功能边界。配套可交互 SQL 工具，帮你彻底搞懂 SQL 解析器设计。"
+description: "系统讲解 SQL 格式化与解析器设计：词法分析器状态机、9 种 token 类型、关键字分类策略、缩进引擎与语法校验，对比 6 种主流 SQL 美化器实现差异。"
 pubDate: 2026-07-05
 tags: ["SQL", "数据库", "词法分析", "tokenizer", "解析器", "算法", "代码调试"]
 relatedTool: "/sql"

@@ -1,6 +1,6 @@
 ---
 title: 'CSS Flexbox 弹性布局完全指南：主轴交叉轴、容器与项属性、实战布局模式'
-description: '深入解析 CSS Flexbox 弹性盒子布局模型：主轴与交叉轴概念、容器属性（flex-direction、flex-wrap、justify-content、align-items、align-content、gap）、单项属性（order、flex-grow、flex-shrink、flex-basis、align-self）、flex 三件套的协同机制、space-between vs space-around vs space-evenly 间距差异、典型布局模式（居中、圣杯、卡片网格）与浏览器兼容性实践。'
+description: '深入解析 CSS Flexbox 弹性布局：主轴与交叉轴、容器与单项属性、flex 三件套协同机制，附居中与圣杯等典型布局实践。'
 pubDate: 2026-07-13
 tags: ['CSS', 'Flexbox', 'flex 布局', '弹性盒子', 'justify-content', 'align-items', 'flex-grow', '前端开发', '设计工具', '响应式布局']
 relatedTool: '/flexbox'

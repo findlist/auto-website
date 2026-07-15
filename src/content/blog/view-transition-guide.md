@@ -1,6 +1,6 @@
 ---
 title: 'CSS view-transition 视图过渡完全指南：同文档/跨文档过渡、命名元素与伪元素动画'
-description: '深入解析 CSS view-transition 视图过渡（View Transitions API）：同文档过渡（document.startViewTransition，SPA 场景）与跨文档过渡（@view-transition，MPA 场景）的区别与选型、view-transition-name 命名元素独立过渡、::view-transition-group/image-pair/old/new 伪元素树结构、自定义动画覆盖、startViewTransition 回调机制、浏览器兼容性与渐进增强策略。附卡片展开、共享元素过渡、主题切换、跨文档导航等实战示例。'
+description: '深入解析 CSS view-transition 视图过渡：同文档与跨文档过渡选型、view-transition-name 命名、伪元素树结构与自定义动画，附 SPA 与 MPA 实战示例。'
 pubDate: 2026-07-15
 tags: ['CSS', 'view-transition', '视图过渡', 'View Transitions API', 'startViewTransition', 'SPA', 'MPA', '命名元素', '伪元素', '共享元素过渡', '前端开发', '设计工具', '渐进增强']
 relatedTool: '/view-transition'

@@ -1,6 +1,6 @@
 ---
 title: 'CSS Grid 网格布局完全指南：轨道、单元格、二维布局与典型布局模式'
-description: '深入解析 CSS Grid 二维布局模型：轨道（track）与单元格概念、fr 弹性单位与 px/% 差异、grid-template-columns/rows 显式轨道与 grid-auto-columns/rows 隐式轨道、justify-items vs justify-content 区别、grid-column/grid-row 跨列跨行、grid-auto-flow 自动排列与密集填充、gap 间距简写、典型布局模式（三列等宽、圣杯、侧栏+主内容、卡片网格、Header-Main-Footer、杂志布局）与 Flexbox 协同实践。'
+description: '深入解析 CSS Grid 二维布局：轨道与 fr 单位、显式与隐式轨道、跨列跨行、自动排列与密集填充，附三列等宽与圣杯等典型布局实践。'
 pubDate: 2026-07-13
 tags: ['CSS', 'Grid', '网格布局', 'grid-template-columns', 'fr 单位', 'grid-auto-flow', 'justify-items', 'align-items', '二维布局', '前端开发', '设计工具']
 relatedTool: '/grid'

@@ -1,6 +1,6 @@
 ---
 title: 'CSS writing-mode 书写模式完全指南：竖排文字、多语言排版与国际化文本方向'
-description: '深入解析 CSS writing-mode 书写模式：5 个值（horizontal-tb/vertical-rl/vertical-lr/sideways-rl/sideways-lr）详解、text-orientation 文字朝向、direction 与 unicode-bidi 多语言文本方向、text-combine-upright 数字横排、vertical-rl 与 vertical-lr 选型、writing-mode 与 transform: rotate 本质区别、浏览器兼容性与性能优化。附中文竖排、日文竖排、阿拉伯文 RTL、蒙古文、古籍排版实战示例。'
+description: '深入解析 CSS writing-mode 书写模式：5 种值详解、text-orientation 与 direction 多语言文本方向、text-combine-upright 数字横排，附中文竖排与 RTL 实战示例。'
 pubDate: 2026-07-14
 tags: ['CSS', 'writing-mode', '竖排', '竖排文字', '中文竖排', '日文竖排', 'text-orientation', 'direction', 'rtl', '阿拉伯文', '蒙古文', 'text-combine-upright', 'vertical-rl', 'vertical-lr', '古籍排版', '多语言', '国际化', '前端开发', '设计工具']
 relatedTool: '/writing-mode'

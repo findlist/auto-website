@@ -1,6 +1,6 @@
 ---
 title: 'CSS animation 动画完全指南：@keyframes 关键帧、八大子属性、缓动函数与性能优化'
-description: '深入解析 CSS animation 动画系统：@keyframes 关键帧的百分比语义、animation-name/duration/timing-function/delay/iteration-count/direction/fill-mode/play-state 八大子属性、cubic-bezier 缓动曲线、fill-mode 填充模式、alternate 往返方向、transform 与 animation 协同的 GPU 合成层动画、animation 与 transition 选型对比与性能优化实践。'
+description: '深入解析 CSS animation 动画系统：@keyframes 关键帧、八大子属性、cubic-bezier 缓动曲线、fill-mode 填充模式与 GPU 合成层优化实践。'
 pubDate: 2026-07-13
 tags: ['CSS', 'animation', '动画', 'keyframes', '关键帧', 'timing-function', 'cubic-bezier', 'fill-mode', 'transform', '前端动画', '前端开发', '设计工具']
 relatedTool: '/animation'

@@ -1,6 +1,6 @@
 ---
 title: "JSON Schema 与数据校验实践：从关键字体系到轻量校验器实现"
-description: "系统讲解 JSON Schema draft-07 标准：type/required/properties/items/enum/const/数值范围/字符串约束/数组唯一性/对象额外属性/allOf/anyOf/oneOf/not/$ref 内部引用等核心关键字，校验器递归下降实现思路，format 校验的 9 种常见格式，与 ajv 的功能/bundle/场景对比选型，以及 OpenAPI/Swagger、API 请求体校验、配置文件验证等实战场景。结合在线 JSON Schema 校验工具实操，帮你理解数据校验的底层逻辑。"
+description: "系统讲解 JSON Schema draft-07：type/required/properties 等核心关键字、校验器递归实现、与 ajv 选型对比，附 API 与配置文件校验实战。"
 pubDate: 2026-07-06
 tags: ["json", "json schema", "校验", "draft-07", "数据校验", "openapi", "工具矩阵"]
 relatedTool: "/json-schema"
