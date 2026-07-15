@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~100 字符，避免 Google 截断与关键词堆砌误判
   description:
-    '91 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS subgrid 子网格生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器、CSS scroll-driven 动画生成器、CSS light-dark() 暗色模式生成器、CSS text-wrap 文本换行排版优化器、CSS contain 性能优化生成器、CSS view-transition 视图过渡生成器、CSS @starting-style 入场动画生成器、CSS interpolate-size 尺寸插值动画生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
+    '92 个面向中文开发者的在线工具：JSON 格式化、Base64、JWT、正则、时间戳、UUID、Hash、AES、bcrypt 密码哈希、二维码、进制转换、IEEE 754 浮点数可视化、HTML 转 Markdown、CSV 与 Markdown 表格互转、文本大小写转换、文本去重、文本排序、随机选择器、URL Slug 生成器、文本反转、字符替换、文本截断、文本相似度对比、摩斯密码、图片压缩、EXIF 信息查看器、CSS 盒阴影生成器、CSS 渐变生成器、CSS 文字阴影生成器、CSS border-radius 生成器、CSS transform 可视化工具、CSS 滤镜生成器、CSS clip-path 路径裁剪生成器、CSS Flexbox 可视化生成器、CSS Grid 可视化生成器、CSS subgrid 子网格生成器、CSS animation 动画生成器、CSS transition 过渡生成器、CSS background 复合属性生成器、CSS scroll-snap 滚动捕捉生成器、CSS writing-mode 书写模式生成器、CSS @container 容器查询生成器、CSS Nesting 原生嵌套生成器、CSS @layer 层叠层生成器、CSS @scope 作用域生成器、CSS scroll-driven 动画生成器、CSS light-dark() 暗色模式生成器、CSS text-wrap 文本换行排版优化器、CSS contain 性能优化生成器、CSS view-transition 视图过渡生成器、CSS @starting-style 入场动画生成器、CSS interpolate-size 尺寸插值动画生成器、CSS 锚点定位生成器等编码转换、加密哈希、时间日期、代码调试、设计工具。全本地处理，零追踪零广告。',
 };
 
 // 获取最新 3 篇博客文章
@@ -841,6 +841,15 @@ const tools = [
     category: '设计',
     keywords: 'css interpolate-size 尺寸插值 auto 高度过渡 calc-size allow-keywords numeric-only min-content max-content fit-content 折叠面板 accordion 下拉菜单 卡片展开 展开折叠 过渡 transition chrome 129 firefox 129 safari 17.4 渐进增强 动效',
   },
+  {
+    href: '/anchor-positioning',
+    title: 'CSS 锚点定位生成器',
+    desc: '在线 CSS 锚点定位（anchor-positioning）生成器：可视化生成 anchor-name 声明锚点、position-anchor 引用锚点、anchor() 函数按锚点边定位、anchor-size() 函数引用锚点尺寸、position-try-fallbacks 翻转策略自动避让视口。完整支持 top/bottom/left/right/center/start/end 七种边关键字与 width/height/block/inline 四种尺寸关键字。iframe 沙箱实时预览锚点与定位元素的真实关系，原理说明面板解析锚点定位核心机制。8 组预设覆盖下方 tooltip、上方 tooltip、右侧 dropdown、居中弹层、跟随锚点宽度、双向翻转避让、左侧气泡、默认示例等场景。适用于 CSS tooltip 定位、popover 弹层、dropdown 下拉菜单、侧边气泡等前端开发场景，替代 JavaScript 坐标计算方案。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '设计',
+    keywords: 'css 锚点定位 anchor-positioning anchor-name position-anchor anchor 函数 anchor-size 函数 position-try-fallbacks flip-block flip-inline flip-start flip-end tooltip popover dropdown 下拉菜单 弹层 侧边气泡 视口避让 自动翻转 chrome 125 firefox 131 safari 26 渐进增强 定位',
+  },
 ];
 
 // 工具分类列表（去重），用于分类筛选按钮
@@ -903,7 +912,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 91 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 92 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
@@ -1091,10 +1100,11 @@ const features = [
   }
 
   .hero__inner h1 {
-    font-size: 44px;
+    /* 响应式字号：小屏 30px、大屏 52px 之间平滑缩放，避免多断点跳变 */
+    font-size: clamp(30px, 5vw + 16px, 52px);
     line-height: 1.15;
     margin: 0 auto 16px;
-    max-width: 720px;
+    max-width: 760px;
     letter-spacing: -0.02em;
     font-weight: 700;
     /* 标题入场动画：淡入上滑，提升首屏感知速度 */
@@ -1109,10 +1119,11 @@ const features = [
   }
 
   .hero__lead {
-    max-width: 580px;
+    max-width: 600px;
     margin: 0 auto 28px;
     color: var(--color-text-soft);
-    font-size: 17px;
+    /* 引导文字响应式字号，与标题保持视觉节奏 */
+    font-size: clamp(15px, 1.2vw + 11px, 18px);
     line-height: 1.7;
     /* 引导文字入场动画：稍后于标题出现 */
     animation: fade-in-up 0.5s var(--ease-out) 0.2s both;
@@ -1227,7 +1238,8 @@ const features = [
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    /* 中等屏幕 280px 起步，避免卡片过窄；大屏自动填充多列 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
   }
 
@@ -1343,14 +1355,24 @@ const features = [
   }
 
   .feature__icon {
-    font-size: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
     line-height: 1;
+    border-radius: var(--radius-md);
+    /* 图标背景使用主色柔和底，统一暗色模式下的视觉一致性 */
+    background: var(--color-primary-soft);
+    box-shadow: inset 0 0 0 1px var(--color-primary-border);
     /* 图标入场动画：轻微弹跳，增加趣味性 */
-    transition: transform var(--transition-base);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
   }
 
   .feature:hover .feature__icon {
-    transform: scale(1.1);
+    transform: scale(1.1) rotate(-4deg);
+    box-shadow: inset 0 0 0 1px var(--color-primary), 0 4px 12px var(--color-primary-ring);
   }
 
   .feature__title {

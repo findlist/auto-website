@@ -1,0 +1,494 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import AnchorPositionTool from '../components/AnchorPositionTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 锚点定位生成器 - 在线 anchor-positioning tooltip 可视化工具',
+  description:
+    '免费的在线 CSS 锚点定位（anchor-positioning）生成器：完整支持 anchor-name 声明锚点、position-anchor 引用锚点、anchor() 函数定位（top/bottom/left/right/center）、anchor-size() 函数尺寸引用（width/height）、position-try-fallbacks 翻转策略（flip-block/flip-inline/flip-start/flip-end）自动避让视口。iframe 沙箱实时预览锚点与定位元素的真实关系，原理说明面板解析锚点定位核心机制。8 组预设覆盖 tooltip、popover、dropdown、居中弹层、跟随宽度、双向翻转等场景。实时生成 CSS 代码一键复制。适用于 CSS tooltip 定位、popover 弹层、dropdown 下拉菜单、侧边气泡等前端开发场景，替代 JavaScript 坐标计算方案。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 锚点定位生成器',
+    description: '在线 CSS anchor-positioning 锚点定位生成器，支持 anchor() / anchor-size() 函数与 position-try-fallbacks 翻转策略，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 锚点定位生成器</h1>
+      <p>
+        可视化生成 CSS <code>anchor-positioning</code> 锚点定位规则，用纯 CSS 实现 tooltip / popover / dropdown 定位。
+        完整支持 <strong>anchor-name</strong> 声明锚点、<strong>position-anchor</strong> 引用锚点、
+        <strong>anchor()</strong> 函数按锚点边定位、<strong>anchor-size()</strong> 函数引用锚点尺寸、
+        <strong>position-try-fallbacks</strong> 翻转策略自动避让视口。
+        原理说明面板解析锚点定位的核心机制。8 组预设覆盖下方 tooltip、上方 tooltip、右侧 dropdown、
+        居中弹层、跟随宽度、双向翻转等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <AnchorPositionTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS 锚点定位（anchor-positioning）？它解决了什么问题？</summary>
+        <p>
+          <strong>CSS 锚点定位</strong>（anchor-positioning）是 CSS Positioned Layout Module Level 3 引入的定位机制
+         （Chrome 125+ 2024 年起支持），让元素可以<strong>相对另一个"锚点"元素定位</strong>，无需 JavaScript 计算坐标。
+          它解决了一个长期痛点：传统 tooltip / popover / dropdown 需要用 JS 监听锚点位置、计算坐标、处理视口边界翻转，
+          代码复杂且在滚动/缩放时需要重新计算。锚点定位把"相对定位"交给浏览器原生处理——声明锚点，
+          用 <code>anchor()</code> 函数引用锚点边，浏览器自动维护定位关系。语法：
+          <code>.anchor &#123; anchor-name: --tip; &#125; .tooltip &#123; position: absolute; position-anchor: --tip; top: anchor(bottom); &#125;</code>。
+        </p>
+      </details>
+      <details>
+        <summary>anchor() 函数和 anchor-size() 函数有什么区别？分别什么时候用？</summary>
+        <p>
+          <strong>anchor(side)</strong>：引用锚点的<strong>边/中心位置</strong>，用于<strong>定位属性</strong>（top/left/right/bottom）。
+          参数为边关键字：top / bottom / left / right / center / start / end。例如 <code>top: anchor(bottom)</code>
+          表示定位元素的 top 等于锚点的 bottom 边（即定位元素出现在锚点正下方）。
+          <br /><strong>anchor-size(size)</strong>：引用锚点的<strong>尺寸</strong>，用于<strong>尺寸属性</strong>（width/height）。
+          参数为尺寸关键字：width / height / block / inline。例如 <code>width: anchor-size(width)</code>
+          表示定位元素宽度等于锚点宽度（dropdown 宽度匹配触发按钮）。
+          <br />选型原则：需要"定位在哪"用 anchor()，需要"尺寸多大"用 anchor-size()。两者可组合使用。
+        </p>
+      </details>
+      <details>
+        <summary>position-try-fallbacks 翻转策略是什么？为什么需要它？</summary>
+        <p>
+          <strong>position-try-fallbacks</strong> 是锚点定位的"自动避让"能力。当定位元素在默认方向溢出视口时，
+          浏览器自动尝试翻转方向，找到不溢出的位置。四种翻转策略：
+          <br /><strong>flip-block</strong>：垂直翻转（上下方向翻转，默认在下则翻到上）；
+          <br /><strong>flip-inline</strong>：水平翻转（左右方向翻转，默认在右则翻到左）；
+          <br /><strong>flip-start</strong>：翻转对角线起始方向；
+          <br /><strong>flip-end</strong>：翻转对角线结束方向。
+          <br />示例：<code>position-try-fallbacks: flip-block, flip-inline</code> 同时启用垂直与水平翻转。
+          这是锚点定位相对 JS 方案的最大优势——浏览器原生检测视口边界并自动翻转，无需 JS 监听 scroll/resize。
+        </p>
+      </details>
+      <details>
+        <summary>anchor-name 和 position-anchor 的关系是什么？必须成对使用吗？</summary>
+        <p>
+          <strong>anchor-name</strong> 声明一个元素为锚点并命名（如 <code>anchor-name: --my-anchor</code>），
+          <strong>position-anchor</strong> 让定位元素引用该锚点（如 <code>position-anchor: --my-anchor</code>）。
+          两者成对使用建立"锚点-目标"绑定关系。
+          <br />命名规则：anchor-name 的值是自定义标识符，推荐用 <code>--</code> 前缀（与 CSS 变量一致），
+          如 <code>--tooltip-anchor</code>。一个锚点可被多个定位元素引用（共享同一 anchor-name）。
+          <br />不使用 position-anchor 时，定位元素会查找最近的祖先锚点（隐式锚点），但显式声明 position-anchor
+          更清晰可控，推荐始终显式声明。
+        </p>
+      </details>
+      <details>
+        <summary>锚点定位和 JavaScript 定位方案（如 Popper.js / Floating UI）相比有什么优势？</summary>
+        <p>
+          <strong>JS 方案</strong>（Popper.js / Floating UI）需要监听 scroll/resize/DOM 变化，实时计算坐标并写入 style，
+          有性能开销与闪烁问题，且在 SSR 场景下首屏定位需等待 JS 执行。
+          <br /><strong>锚点定位</strong>的优势：
+          <br />1. <strong>零 JS</strong>：浏览器原生维护定位关系，无需监听事件、无需计算坐标；
+          <br />2. <strong>零闪烁</strong>：定位在浏览器渲染阶段完成，不会出现"先错位后修正"的闪烁；
+          <br />3. <strong>自动避让</strong>：position-try-fallbacks 原生检测视口边界并翻转，无需 JS 判断；
+          <br />4. <strong>SSR 友好</strong>：定位规则是静态 CSS，首屏即可正确定位，不依赖 JS 执行。
+          <br />代价是浏览器兼容性（Chrome 125+ / Firefox 131+ / Safari 26+），旧浏览器需降级到 JS 方案。
+        </p>
+      </details>
+      <details>
+        <summary>anchor() 函数的偏移量怎么用？可以为负数吗？</summary>
+        <p>
+          <code>anchor(side, offset)</code> 的第二参数是偏移量，让定位元素与锚点边保持距离。
+          示例：<code>top: anchor(bottom, 8px)</code> 表示定位元素 top 等于锚点 bottom 边再向下偏移 8px
+          （即定位元素与锚点底部保持 8px 间距，典型 tooltip 间距）。
+          <br /><strong>偏移量可为负数</strong>：<code>top: anchor(bottom, -4px)</code> 表示定位元素向上偏移 4px
+          （与锚点底部重叠 4px）。常用于让定位元素与锚点有部分重叠的视觉效果。
+          <br />偏移量支持任意长度单位：px / rem / em / % / calc() 等。
+          <code>anchor(bottom, calc(0.5rem + 4px))</code> 也合法。anchor-size() 同样支持第二偏移参数。
+        </p>
+      </details>
+      <details>
+        <summary>浏览器兼容性如何？不支持锚点定位的浏览器怎么降级？</summary>
+        <p>
+          锚点定位的浏览器支持：Chrome 125+（2024 年 5 月）、Edge 125+、Firefox 131+（2024 年 10 月）、
+          Safari 26+（2025 年起逐步支持）。目前 Chrome/Edge/Firefox 主流支持，Safari 正在跟进。
+          <br /><strong>渐进降级方案</strong>：不支持 anchor() 的浏览器会忽略相关声明，定位元素退化为普通绝对定位
+          （基于 top/left 固定值或静态文档流）。推荐用 <code>@supports</code> 检测并降级：
+          <code>@supports (anchor-name: --x) &#123; /* 锚点定位代码 */ &#125;</code>
+          在 <code>@supports</code> 外写固定坐标降级方案，或配合 JS 库（Floating UI）作为旧浏览器兜底。
+          零额外开销，新旧浏览器体验都不差。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会保存我的数据吗？隐私安全如何保障？</summary>
+        <p>
+          所有配置与代码生成<strong>完全在浏览器本地处理</strong>，不发起任何网络请求，不上传任何数据到服务器。
+          关闭页面后所有输入即丢失。iframe 预览使用 <code>sandbox="allow-same-origin"</code> 沙箱隔离，
+          不执行脚本，不访问父页面 DOM。可打开浏览器开发者工具的 Network 面板审计网络请求，确认零上传。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools-list">
+        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — 锚点定位常配合 popover 弹层入场动画使用</li>
+        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值动画生成器</a> — 弹层尺寸过渡与锚点定位协同</li>
+        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — 视图过渡与锚点定位的组合</li>
+        <li><a href="/container">CSS @container 容器查询生成器</a> — 组件级响应式定位</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 专属样式：ap- 前缀，避免与全局样式冲突 */
+  .ap-tool {
+    margin: 1.5rem 0;
+  }
+
+  /* 预设按钮组 */
+  .ap-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .ap-presets-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .ap-preset-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .ap-preset-btn {
+    padding: 0.4rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ap-preset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+  }
+
+  /* 主布局：左右两栏 */
+  .ap-main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* 左栏配置面板 */
+  .ap-config {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .ap-fieldset {
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    padding: 0.875rem;
+    background: var(--surface);
+  }
+  .ap-fieldset legend {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary);
+    padding: 0 0.5rem;
+  }
+  .ap-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+  .ap-field:last-child {
+    margin-bottom: 0;
+  }
+  .ap-field-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .ap-input,
+  .ap-select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-family: var(--font-mono);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .ap-input:focus,
+  .ap-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  .ap-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .ap-checkbox input {
+    cursor: pointer;
+  }
+
+  /* 分段按钮组 */
+  .ap-seg-group {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--surface-alt);
+    border-radius: 0.5rem;
+  }
+  .ap-seg-btn {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-mono);
+  }
+  .ap-seg-btn.is-active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* 定位声明编辑器 */
+  .ap-decl {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto auto;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+    align-items: center;
+  }
+  .ap-decl-prop {
+    min-width: 0;
+  }
+  .ap-decl-anchor {
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .ap-decl-fixed {
+    min-width: 0;
+  }
+  .ap-decl-offset {
+    width: 3.5rem;
+  }
+  .ap-remove-btn {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--danger);
+    font-size: 0.9rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .ap-remove-btn:hover {
+    border-color: var(--danger);
+  }
+  .ap-add-btn {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed var(--border);
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    width: 100%;
+  }
+  .ap-add-btn:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+  }
+
+  /* 翻转策略复选框组 */
+  .ap-fallbacks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  /* 右栏输出区 */
+  .ap-output {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .ap-section {
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    padding: 1rem;
+    background: var(--surface);
+  }
+  .ap-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 预览区 iframe */
+  .ap-preview {
+    width: 100%;
+    height: 320px;
+    border: none;
+    border-radius: 0.5rem;
+    background: #f5f5f7;
+  }
+
+  /* 原理说明 */
+  .ap-explain {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .ap-explain li {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  /* 代码输出 */
+  .ap-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .ap-code-header .ap-section-title {
+    margin: 0;
+  }
+  .ap-copy-btn {
+    padding: 0.35rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .ap-copy-btn:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+  .ap-copy-btn.is-copied {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .ap-code {
+    margin: 0;
+    padding: 0.875rem;
+    background: var(--bg);
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .ap-code code {
+    font-family: inherit;
+    white-space: pre;
+  }
+
+  /* 相关工具链接 */
+  .related-tools {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .related-tools h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .related-tools-list {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .related-tools-list a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  .related-tools-list a:hover {
+    text-decoration: underline;
+  }
+  .related-tools-list li {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .ap-main {
+      grid-template-columns: 1fr;
+    }
+    .ap-decl {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
+    .ap-decl-offset {
+      width: 100%;
+    }
+    .ap-fallbacks {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .ap-preview {
+      height: 260px;
+    }
+    .ap-presets {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme='dark']) .ap-preview {
+    background: #1a1a1f;
+  }
+</style>
