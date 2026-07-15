@@ -5,7 +5,7 @@ import TomlSchemaTool from '../components/TomlSchemaTool.tsx';
 const meta: SiteMeta = {
   title: 'TOML Schema 校验工具 - 在线 pyproject.toml/Cargo.toml 配置校验器',
   description:
-    '免费的在线 TOML Schema 校验工具：用 JSON Schema（draft-07）校验 TOML 数据，支持 pyproject.toml（PEP 621）、Cargo.toml、rust-toolchain.toml、renovate.json 等场景。复用 draft-07 校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字，额外检测 TOML 类型陷阱（日期时间值转 JSON 丢失类型与时区信息、64 位整数超过 Number.MAX_SAFE_INTEGER 丢失精度）。实时校验、错误路径定位、关键字分类徽章、中文错误消息，全部在浏览器本地处理，零上传、零追踪、零广告。',
+    '在线 TOML Schema 校验器：用 JSON Schema draft-07 校验 TOML，支持 pyproject.toml/Cargo.toml，检测类型陷阱。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',

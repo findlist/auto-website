@@ -5,7 +5,7 @@ import JwtVerifyTool from '../components/JwtVerifyTool.tsx';
 const meta: SiteMeta = {
   title: 'JWT 签名验证工具 - 在线验签 HS256/RS256/ES256 JSON Web Token',
   description:
-    '免费的在线 JWT 签名验证工具：支持 HS256/HS384/HS512（HMAC 对称密钥）、RS256/RS384/RS512（RSA 公钥）、ES256/ES384/ES512（ECDSA 椭圆曲线公钥）、none 共 10 种算法验签。粘贴 JWT 自动识别算法并切换密钥输入区，实时校验 exp/nbf/iat 时间声明，算法白名单防御 alg=none 攻击，验签结果三段拆分展示（Header/Payload/Signature base64url + 美化 JSON）。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥与验签计算在浏览器本地完成，零上传、零追踪、零广告。',
+    '在线 JWT 验签工具：支持 HS/RS/ES 三类共 10 种算法，自动识别算法、校验时间声明、防御 alg=none 攻击。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',

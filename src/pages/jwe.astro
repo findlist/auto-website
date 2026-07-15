@@ -5,7 +5,7 @@ import JweTool from '../components/JweTool.tsx';
 const meta: SiteMeta = {
   title: 'JWE 解码工具 - 在线解密 JSON Web Encryption 五段式加密令牌',
   description:
-    '免费的在线 JWE 解码工具：支持 Compact 与 Flattened JSON 两种序列化格式，自动解析 Protected Header 与五段（protected / encrypted_key / iv / ciphertext / tag），基于 Web Crypto API 本地解密 dir / A128KW / A192KW / A256KW / RSA-OAEP-256/384/512 / RSA1_5 / PBES2-HS256+A128KW / ECDH-ES / ECDH-ES+A128KW 等 16 种密钥管理算法，配套 A128GCM / A192GCM / A256GCM 内容加密算法。PBES2 支持密码派生解密（PBKDF2 + AES-KW），ECDH-ES 支持椭圆曲线协商解密（ECDH + Concat KDF），明文若为 JSON 自动美化，若为 JWT 提示用 JWT 工具继续解码。所有解密在浏览器本地完成，密钥不上传、不存储、零追踪、零广告。',
+    '在线 JWE 解码与解密工具：解析五段式加密令牌，支持 dir/AES-KW/RSA-OAEP/PBES2/ECDH-ES 等 16 种算法本地解密。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',

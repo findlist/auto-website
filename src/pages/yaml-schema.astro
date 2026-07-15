@@ -5,7 +5,7 @@ import YamlSchemaTool from '../components/YamlSchemaTool.tsx';
 const meta: SiteMeta = {
   title: 'YAML Schema 校验工具 - 在线 K8s/配置文件 YAML 校验器',
   description:
-    '免费的在线 YAML Schema 校验工具：用 JSON Schema（draft-07）校验 YAML 数据，支持 K8s Deployment/Service/Pod 清单、CI/CD 配置（GitHub Actions/GitLab CI）、Helm values、docker-compose 等场景。复用 draft-07 校验引擎，覆盖 type/required/properties/items/enum/数值范围/字符串 pattern 与 format/数组 uniqueItems/$ref 等核心关键字，额外检测 YAML 类型推断陷阱（yes/no/on/off 布尔化、版本号被解析为数字等）。实时校验、错误路径定位、关键字分类徽章、中文错误消息，全部在浏览器本地处理，零上传、零追踪、零广告。',
+    '在线 YAML Schema 校验器：用 JSON Schema draft-07 校验 YAML，支持 K8s/CI-CD/Helm，检测类型推断陷阱。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
