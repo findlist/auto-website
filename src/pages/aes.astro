@@ -5,7 +5,7 @@ import AesTool from '../components/AesTool.tsx';
 const meta: SiteMeta = {
   title: 'AES 加解密工具 - 在线 AES-GCM/CBC/CTR 加密解密 AES-128/192/256',
   description:
-    '免费的在线 AES 加解密工具：支持 AES-GCM（认证加密，推荐）、AES-CBC（传统分组）、AES-CTR（流模式）三种模式，AES-128/192/256 三种密钥长度。密钥输入支持 Hex 字符串、Base64、UTF-8 口令、PBKDF2 密码派生四种来源。加密输出密文、IV/Nonce、盐（派生模式）、派生密钥，解密输入密文+IV+盐即可还原明文。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，密钥与明文在浏览器本地处理，零上传、零追踪、零广告。',
+    '在线 AES 加解密工具：支持 GCM/CBC/CTR 三种模式与 128/192/256 三种密钥长度，PBKDF2 密码派生，基于 Web Crypto API。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
