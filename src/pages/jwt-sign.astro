@@ -5,7 +5,7 @@ import JwtSignTool from '../components/JwtSignTool.tsx';
 const meta: SiteMeta = {
   title: 'JWT 签名生成器 - 在线签发 HS256/RS256/ES256 JSON Web Token',
   description:
-    '免费的在线 JWT 签名生成工具：支持 HS256/HS384/HS512（HMAC 对称密钥）、RS256/RS384/RS512（RSA 非对称密钥）、ES256/ES384/ES512（ECDSA 椭圆曲线非对称密钥）、none（无签名，仅调试）共 10 种算法。在线生成 RSA 密钥对（2048/3072/4096 位）与 EC 密钥对（P-256/P-384/P-521 曲线），均输出 PEM 与 JWK 双格式；实时校验 Header/Payload JSON 合法性，HMAC 密钥长度不足时警告，签名结果三段拆分展示（Header/Payload/Signature base64url + 美化 JSON），可复制完整 JWT 或单段。基于 Web Crypto API 纯原生 TypeScript 零依赖实现，所有密钥与签名计算在浏览器本地完成，零上传、零追踪、零广告。',
+    '在线 JWT 签名生成器：支持 HS/RS/ES 三类共 10 种算法，在线生成 RSA 与 EC 密钥对，纯 Web Crypto 本地计算。全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
