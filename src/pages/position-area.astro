@@ -1,0 +1,539 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import PositionAreaTool from '../components/PositionAreaTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS position-area 生成器 - 在线 3x3 网格定位区域可视化工具',
+  description:
+    '免费的在线 CSS position-area 定位区域生成器：3x3 网格可视化选择锚点定位区域，完整支持物理关键字（top/left/bottom/right）、逻辑关键字（block-start/inline-start/block-end/inline-end）、坐标关键字（y-start/x-start/y-end/x-end）三套体系，支持 span-left/span-right/span-top/span-bottom/span-all 跨格定位。与 anchor-positioning 协同，通过 anchor-name 声明锚点、position-anchor 引用、position-area 放入网格，无需 anchor() 函数即可实现 tooltip / popover / dropdown 定位。iframe 沙箱实时预览 3x3 网格与定位元素真实关系，原理说明解析默认对齐行为与 popover 重置技巧。8 组预设覆盖下方 tooltip、上方 tooltip、右侧 dropdown、左下角气泡、居中覆盖、底部通栏、popover 弹层、逻辑 RTL 适配等场景。实时生成 CSS 代码一键复制，替代 JavaScript 坐标计算方案。全本地处理，零上传、零追踪、零广告。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS position-area 生成器',
+    description: '在线 CSS position-area 定位区域生成器，3x3 网格可视化选择锚点定位区域，支持物理/逻辑/坐标三套关键字体系。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS position-area 生成器</h1>
+      <p>
+        可视化生成 CSS <code>position-area</code> 定位区域规则，通过 3x3 网格把定位元素放入锚点的指定区域。
+        完整支持<strong>物理</strong>（top/left）、<strong>逻辑</strong>（block-start/inline-start）、<strong>坐标</strong>（y-start/x-start）
+        三套关键字体系，支持 <strong>span-left</strong> / <strong>span-right</strong> / <strong>span-top</strong> / <strong>span-bottom</strong> / <strong>span-all</strong>
+        跨格定位。与 <strong>anchor-positioning</strong> 协同，无需 <code>anchor()</code> 函数即可实现 tooltip / popover / dropdown 定位。
+        8 组预设覆盖下方 tooltip、右侧 dropdown、居中覆盖、底部通栏、popover 弹层、逻辑 RTL 适配等场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <PositionAreaTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS position-area？它和 anchor() 函数有什么区别？</summary>
+        <p>
+          <strong>position-area</strong> 是 CSS 锚点定位模块引入的属性（原名 <code>inset-area</code>，Chrome 125+ 2024 年起支持），
+          它把锚点元素视为 3x3 网格的<strong>中心单元</strong>，定位元素被放入指定的网格区域。
+          例如 <code>position-area: top center</code> 把定位元素放在锚点正上方居中。
+          <br /><strong>与 anchor() 函数的区别</strong>：anchor() 需要为每个方向单独写
+          <code>top: anchor(bottom); left: anchor(left);</code>，繁琐且易错；position-area 用一个属性值
+          <code>position-area: top left</code> 即可完成定位，语义更直观、代码更简洁。
+          <br />选型原则：需要精细控制单个方向的偏移用 anchor()，需要快速把元素放入某个网格区域用 position-area。
+          两者也可组合使用。
+        </p>
+      </details>
+      <details>
+        <summary>position-area 的 3x3 网格是怎么划分的？九个格子分别叫什么？</summary>
+        <p>
+          position-area 把锚点周围的可用空间划分为 3x3 共 9 个网格单元，锚点本身占据<strong>中心格</strong>。
+          三行从上到下是 <code>top</code> / <code>center</code> / <code>bottom</code>，
+          三列从左到右是 <code>left</code> / <code>center</code> / <code>right</code>。
+          <br />指定行 + 列即可定位到单个格子，如 <code>top left</code>（左上角）、<code>bottom center</code>（正下方）、
+          <code>center right</code>（正右侧）。逻辑关键字下行为 <code>block-start</code>/<code>block-end</code>，
+          列为 <code>inline-start</code>/<code>inline-end</code>；坐标关键字下为 <code>y-start</code>/<code>y-end</code>、
+          <code>x-start</code>/<code>x-end</code>。
+        </p>
+      </details>
+      <details>
+        <summary>span-left / span-right / span-top / span-bottom / span-all 是什么意思？怎么用？</summary>
+        <p>
+          <strong>span-*</strong> 关键字让定位元素跨多个网格单元：
+          <br /><strong>span-left</strong>：跨"居中列 + 起始列"（横向跨 2 格，向左延伸）；
+          <br /><strong>span-right</strong>：跨"居中列 + 结束列"（横向跨 2 格，向右延伸）；
+          <br /><strong>span-top</strong>：跨"居中行 + 起始行"（纵向跨 2 格，向上延伸）；
+          <br /><strong>span-bottom</strong>：跨"居中行 + 结束行"（纵向跨 2 格，向下延伸）；
+          <br /><strong>span-all</strong>：跨该轴全部 3 格（整行或整列）。
+          <br />用法示例：<code>position-area: top span-left</code> 表示放在顶部行，横向跨居中列与起始列（顶部居中偏左两格）；
+          <code>position-area: bottom span-all</code> 表示放在底部行，横向跨全部三列（底部通栏）。
+          span 关键字常用于菜单宽度匹配、通栏提示等场景。
+        </p>
+      </details>
+      <details>
+        <summary>物理关键字、逻辑关键字、坐标关键字有什么区别？该选哪个？</summary>
+        <p>
+          <strong>物理关键字</strong>（top/left/bottom/right）：固定方向，不受书写模式影响。简单直观，适合 LTR 横排场景。
+          <br /><strong>逻辑关键字</strong>（block-start/inline-start/block-end/inline-end）：随 <code>writing-mode</code>
+          和 <code>direction</code> 自动适配。在 RTL（阿拉伯语）或竖排（日文中文）场景下自动翻转方向，适合国际化组件库。
+          <br /><strong>坐标关键字</strong>（y-start/y-end/x-start/x-end）：按坐标轴方向，与 writing-mode 解耦，
+          适合需要按绝对坐标轴思考的场景。
+          <br />选型建议：中文/英文 LTR 横排站点用物理关键字最直观；需要支持 RTL/竖排的多语言站点用逻辑关键字；
+          坐标关键字较少使用，但在特定坐标系场景下更清晰。
+        </p>
+      </details>
+      <details>
+        <summary>position-area 和 position-anchor、anchor-name 怎么配合使用？</summary>
+        <p>
+          三者协同完成锚点定位：
+          <br />1. 锚点元素声明 <code>anchor-name: --my-anchor;</code>，成为命名锚点；
+          <br />2. 定位元素声明 <code>position-anchor: --my-anchor;</code>，引用该锚点（建立绑定关系）；
+          <br />3. 定位元素声明 <code>position-area: top center;</code>，指定放入锚点 3x3 网格的哪个区域。
+          <br />完整示例：
+          <code>.anchor &#123; anchor-name: --tip; &#125; .tooltip &#123; position: absolute; position-anchor: --tip; position-area: top center; &#125;</code>。
+          <br />注意：position-area 仅对"有默认锚点且为绝对/固定定位"的元素生效。没有 position-anchor 时，
+          定位元素会查找最近的祖先锚点（隐式锚点），但显式声明 position-anchor 更清晰可控。
+        </p>
+      </details>
+      <details>
+        <summary>为什么用 position-area 定位 popover 时需要重置 margin 和 inset？</summary>
+        <p>
+          HTML <code>[popover]</code> 元素有<strong>默认 UA 样式</strong>： <code>margin: auto</code> 和
+          <code>inset: 0</code>，用于默认居中显示。这些默认值会与 position-area 的网格定位<strong>冲突</strong>——
+          margin:auto 会把元素拉向居中，inset:0 会覆盖网格区域定位。
+          <br />解决方法：显式重置 <code>margin: 0;</code> 和 <code>inset: auto;</code>，让 position-area 生效。
+          <br />示例：
+          <code>[popover] &#123; position: fixed; position-anchor: --btn; position-area: bottom center; margin: 0; inset: auto; &#125;</code>。
+          <br />这是 popover + position-area 组合的常见陷阱，CSS 工作组正在考虑未来版本自动处理此冲突。
+        </p>
+      </details>
+      <details>
+        <summary>position-area 的"默认对齐行为"是什么意思？为什么不用手动写 align/justify？</summary>
+        <p>
+          position-area 有"调整默认行为"特性：当设置 position-area 后，self-alignment 属性（align-self/justify-self）
+          的 <code>normal</code> 值会自动变为合理的对齐方向，无需手动声明：
+          <br />1. 若某轴方向 position-area 指定的是<strong>居中区域</strong>，则该轴默认对齐为 <code>anchor-center</code>（相对锚点居中）；
+          <br />2. 若指定的是<strong>起始/结束区域</strong>，则默认对齐为<strong>区域相反侧</strong>
+              （如 top 区域默认 align-self: end，让元素底部贴近锚点顶部）。
+          <br />这意味着大多数场景下只需写 <code>position-area</code> 一行即可获得合理对齐，无需额外写 align-self/justify-self。
+          只有需要自定义对齐时才覆盖默认值。
+        </p>
+      </details>
+      <details>
+        <summary>position-area 的浏览器兼容性如何？不支持时怎么降级？</summary>
+        <p>
+          position-area（原名 inset-area）目前属于<strong>Limited availability</strong>，Chrome 125+ / Edge 125+ 已支持，
+          Firefox 与 Safari 在持续跟进中（规范仍在演进，属性名从 inset-area 改为 position-area）。
+          <br /><strong>渐进降级方案</strong>：用 <code>@supports (position-area: top center)</code> 检测支持，
+          不支持时回退到传统方案——anchor() 函数（需 Chromium）或 JavaScript 定位库（Floating UI / Popper.js）。
+          <br />示例：
+          <code>@supports not (position-area: top) &#123; .tooltip &#123; top: anchor(bottom); left: anchor(left); &#125; &#125;</code>。
+          <br />由于规范仍在演进，建议生产环境配合 polyfill（如 css-anchor-positioning）或 JS 兜底方案使用。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools-list">
+        <li><a href="/anchor-positioning">CSS 锚点定位生成器</a> — anchor-name / position-anchor / anchor() / anchor-size() / position-try-fallbacks 翻转避让</li>
+        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — popover/dialog 首次出现入场动画</li>
+        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值生成器</a> — auto/min-content/max-content 关键字过渡</li>
+        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — DOM 结构变化过渡</li>
+        <li><a href="/container">CSS 容器查询生成器</a> — @container 组件级响应式</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* position-area 工具页专属样式（pa- 前缀） */
+  .pa-tool {
+    margin: 1.5rem 0;
+  }
+
+  /* 预设按钮组 */
+  .pa-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .pa-presets-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .pa-preset-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .pa-preset-btn {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .pa-preset-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+  }
+
+  /* 主布局：左右两栏 */
+  .pa-main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  /* 左栏：配置面板 */
+  .pa-config {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .pa-fieldset {
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    padding: 0.875rem;
+    background: var(--surface);
+  }
+  .pa-fieldset legend {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary);
+    padding: 0 0.5rem;
+  }
+  .pa-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+  .pa-field:last-child {
+    margin-bottom: 0;
+  }
+  .pa-field-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .pa-input {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.8125rem;
+    font-family: var(--font-mono);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .pa-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  .pa-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .pa-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .pa-checkbox input {
+    cursor: pointer;
+  }
+  .pa-field-row {
+    flex-direction: row;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .pa-value-out {
+    padding: 0.3rem 0.5rem;
+    background: var(--bg);
+    border-radius: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--primary);
+    align-self: flex-start;
+  }
+
+  /* 分段按钮组 */
+  .pa-seg-group {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--surface-alt);
+    border-radius: 0.5rem;
+  }
+  .pa-seg-btn {
+    flex: 1;
+    padding: 0.35rem 0.4rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+  .pa-seg-btn.is-active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* 右栏输出区 */
+  .pa-output {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .pa-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* 3x3 交互网格 */
+  .pa-grid-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .pa-grid-tip {
+    margin: 0 0 0.75rem;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+  .pa-grid-interactive {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 64px);
+    gap: 6px;
+    max-width: 360px;
+  }
+  .pa-grid-btn {
+    border: 1px dashed var(--border);
+    border-radius: 0.375rem;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pa-grid-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  .pa-grid-btn.is-center {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    border-style: solid;
+    font-weight: 600;
+  }
+  .pa-grid-btn.is-selected {
+    background: var(--text);
+    color: var(--surface);
+    border-color: var(--text);
+    border-style: solid;
+  }
+  .pa-grid-btn.is-center.is-selected {
+    background: color-mix(in srgb, var(--primary) 70%, var(--text));
+  }
+
+  /* iframe 预览 */
+  .pa-preview-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .pa-preview-iframe {
+    width: 100%;
+    height: 360px;
+    border: none;
+    border-radius: 0.5rem;
+    background: #f5f5f7;
+  }
+
+  /* 原理说明 */
+  .pa-explain-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .pa-explain-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .pa-explain-list li {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .pa-explain-list :global(code) {
+    padding: 0.1rem 0.3rem;
+    background: var(--bg);
+    border-radius: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--primary);
+  }
+
+  /* 代码输出 */
+  .pa-code-section {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .pa-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .pa-code-header .pa-section-title {
+    margin: 0;
+  }
+  .pa-copy-btn {
+    padding: 0.35rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .pa-copy-btn:hover {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+  .pa-copy-btn.is-copied {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .pa-code-block {
+    margin: 0;
+    padding: 0.875rem;
+    background: var(--bg);
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .pa-code-block code {
+    font-family: inherit;
+    white-space: pre;
+  }
+
+  /* 相关工具链接 */
+  .related-tools {
+    margin-top: 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    background: var(--surface);
+  }
+  .related-tools h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .related-tools-list {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .related-tools-list a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  .related-tools-list a:hover {
+    text-decoration: underline;
+  }
+  .related-tools-list li {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+  }
+
+  /* 响应式：768px 平板 */
+  @media (max-width: 768px) {
+    .pa-main {
+      grid-template-columns: 1fr;
+    }
+    .pa-grid-interactive {
+      margin: 0 auto;
+    }
+  }
+
+  /* 响应式：414px 手机 */
+  @media (max-width: 414px) {
+    .pa-preview-iframe {
+      height: 280px;
+    }
+    .pa-presets {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .pa-grid-interactive {
+      grid-template-rows: repeat(3, 56px);
+    }
+    .pa-field-row {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme='dark']) .pa-preview-iframe {
+    background: #1a1a1f;
+  }
+</style>
