@@ -1,6 +1,6 @@
 ---
 title: "HTML 格式化与压缩原理：从解析模型到 minify 算法"
-description: "深入解析 HTML 格式化与压缩背后的原理：HTML5 解析模型与容错规则、空白语义、void elements 与可选闭合标签、rawtext 元素特殊处理、递归缩进美化算法、压缩 minify 算法、属性序列化规则、常见校验问题。涵盖 DOMParser 使用、纯原生 TypeScript 实现要点、与 HTML 实体工具与 Markdown 工具的联动方案。"
+description: "深入解析 HTML 格式化与压缩原理：HTML5 解析模型与容错规则、空白语义、void elements 与 rawtext 元素、递归缩进美化与 minify 算法，附原生 TypeScript 实现要点。"
 pubDate: 2026-07-07
 tags: ["HTML", "格式化", "压缩", "minify", "DOMParser", "解析器", "void elements", "工具矩阵", "前端", "性能"]
 relatedTool: "/html-formatter"

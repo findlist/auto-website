@@ -1,6 +1,6 @@
 ---
 title: "HTTP 状态码全景：1xx / 2xx / 3xx / 4xx / 5xx 含义与处理"
-description: "系统讲解 HTTP 状态码五大类：1xx 信息响应、2xx 成功、3xx 重定向、4xx 客户端错误、5xx 服务端错误。覆盖 60+ 常见状态码含义、缓存语义、浏览器行为、前后端处理建议、SEO 影响（301 vs 302 vs 307 vs 308、410 永久删除）、API 设计规范。配套可交互工具矩阵，帮你彻底搞懂 HTTP 状态码。"
+description: "系统讲解 HTTP 状态码五大类：1xx/2xx/3xx/4xx/5xx 含义、60+ 常见状态码、缓存语义、浏览器行为、SEO 重定向策略（301/302/307/308/410）、API 设计规范，附工具矩阵。"
 pubDate: 2026-07-04
 tags: ["HTTP", "后端", "网络", "状态码", "Web API"]
 relatedTool: "/http-status"

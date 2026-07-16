@@ -1,6 +1,6 @@
 ---
 title: "文本对比算法：LCS 与 Myers diff 的工程实践"
-description: "系统讲解文本对比（diff）背后的两大算法：LCS（最长公共子序列）动态规划与 Myers diff 差异算法。从朴素 O(m×n) 到 Git 用的 O((m+n)·D) 优化，覆盖行级 vs 字符级 diff、统一 vs 分屏视图、相似度计算、超大文本性能边界等工程实践。结合在线文本对比工具实操，帮你理解 git diff 的底层逻辑。"
+description: "系统讲解文本对比两大算法：LCS 动态规划与 Myers diff 差异算法，从朴素 O(m×n) 到 Git 用的 O((m+n)·D) 优化，覆盖行级与字符级 diff、相似度计算，附对比工具实操。"
 pubDate: 2026-07-05
 tags: ["diff", "算法", "LCS", "文本对比", "工具矩阵"]
 relatedTool: "/diff"

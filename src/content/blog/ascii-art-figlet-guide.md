@@ -1,6 +1,6 @@
 ---
 title: "ASCII Art 与 FIGlet 字体：从终端横幅到纯原生 TypeScript 实现"
-description: "深入解析 ASCII Art 文本横幅的渲染原理：FIGlet 程序与 FIGfont 字体格式、字符多行表示与横向拼接算法、字符间距与等宽对齐、字体高度与基线设计。对比 Block/Banner/Small 三种字体的视觉差异，涵盖 GitHub README 标题、终端启动横幅、CLI 签名等应用场景，并附纯原生 TypeScript 零依赖实现要点。"
+description: "深入解析 ASCII Art 文本横幅渲染原理：FIGlet 程序与 FIGfont 字体格式、字符多行表示与横向拼接算法、字体高度与基线设计，对比 Block/Banner/Small 三种字体，附原生实现要点。"
 pubDate: 2026-07-07
 tags: ["ASCII Art", "FIGlet", "FIGfont", "终端", "README", "CLI", "工具矩阵", "文本处理", "前端", "设计"]
 relatedTool: "/ascii-art"

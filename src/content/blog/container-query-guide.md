@@ -1,6 +1,6 @@
 ---
 title: 'CSS @container 容器查询完全指南：组件级响应式设计、container-type 与 @media 对比'
-description: '深入解析 CSS @container 容器查询：container-type 与 container-name 容器声明、@container 查询语法、与 @media 媒体查询的本质区别、组件级响应式设计模式、命名容器与匿名容器、查询优先级与层叠规则、浏览器兼容性与性能优化。附卡片三栏自适应、字号自适应、紧凑/宽松切换等实战示例。'
+description: '深入解析 CSS @container 容器查询：container-type 与 container-name 声明、@container 查询语法、与 @media 媒体查询的本质区别、组件级响应式设计，附卡片三栏自适应实战示例。'
 pubDate: 2026-07-14
 tags: ['CSS', 'container', '容器查询', '@container', 'container-type', 'container-name', 'inline-size', 'size', '响应式设计', '组件级响应式', 'min-width', 'max-width', '前端开发', '设计工具']
 relatedTool: '/container'

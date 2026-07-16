@@ -1,6 +1,6 @@
 ---
 title: "JavaScript 格式化与压缩原理：从词法分析到智能缩进"
-description: "深入解析 JavaScript 格式化与压缩背后的原理：JS 词法结构、手写 tokenizer 逐字符扫描、正则字面量与除法区分、模板字符串与注释处理、基于括号深度的智能缩进算法、压缩 minify 与 ASI 陷阱、校验未闭合括号。涵盖箭头函数、类、多字符运算符、纯原生 TypeScript 实现要点、与 HTML/CSS 格式化工具的联动方案。"
+description: "深入解析 JavaScript 格式化与压缩原理：手写 tokenizer 词法扫描、正则字面量与除法区分、模板字符串与注释处理、括号深度智能缩进与 ASI 陷阱，附原生实现要点。"
 pubDate: 2026-07-07
 tags: ["JavaScript", "格式化", "压缩", "minify", "词法分析", "tokenizer", "解析器", "工具矩阵", "前端", "性能"]
 relatedTool: "/js-formatter"
