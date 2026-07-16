@@ -1,6 +1,6 @@
 ---
 title: 'CSS transition 过渡完全指南：四大子属性、cubic-bezier 曲线、steps 阶跃与回弹效果'
-description: '深入解析 CSS transition 过渡系统：transition-property/duration/timing-function/delay 四大子属性、cubic-bezier 三次贝塞尔曲线的数学原理与可视化编辑、y 轴超出 [0,1] 实现回弹（overshoot）效果、steps() 阶跃函数与 jump-start/jump-end 区别、可过渡属性清单与 all 的风险、transition 与 animation 选型对比、GPU 合成层性能优化实践。'
+description: '深入解析 CSS transition 过渡系统：四大子属性、cubic-bezier 曲线数学原理、steps 阶跃函数、可过渡属性清单与 GPU 合成层优化实践。'
 pubDate: 2026-07-13
 tags: ['CSS', 'transition', '过渡', 'cubic-bezier', '贝塞尔曲线', 'timing-function', 'steps', '回弹', '缓动函数', '前端开发', '设计工具']
 relatedTool: '/transition'

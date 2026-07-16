@@ -1,6 +1,6 @@
 ---
 title: "Markdown 实战指南：GFM 语法速查 + 解析原理 + XSS 防护"
-description: "系统讲解 Markdown 与 GFM（GitHub Flavored Markdown）子集语法：标题、段落、粗体斜体、删除线、行内代码与代码块、链接图片、列表与任务列表、引用、表格、水平线。深入解析行内元素与块级元素的解析顺序（为什么粗体必须在斜体之前）、XSS 防护策略（默认 HTML 转义 + URL 协议白名单）、写作技巧与常见陷阱。配套可交互 Markdown 预览器，实时渲染 + 工具栏快捷插入 + HTML 导出。"
+description: "系统讲解 Markdown 与 GFM 语法：标题、列表、表格、代码块等块级与行内元素解析顺序，XSS 防护策略与写作陷阱，附预览器实操。"
 pubDate: 2026-07-04
 tags: ["Markdown", "前端", "文档", "XSS", "GFM"]
 relatedTool: "/markdown"

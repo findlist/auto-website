@@ -1,6 +1,6 @@
 ---
 title: 'CSS light-dark() 暗色模式完全指南：双主题颜色函数、color-scheme 与渐进降级'
-description: '深入解析 CSS light-dark() 颜色函数（CSS Color Module Level 5）：语法与用法、必须配合 color-scheme 声明的原理、与 @media (prefers-color-scheme) 的对比与选型、CSS 变量组织双主题的最佳实践、浏览器兼容性（Chrome 123+ / Safari 17.5+ / Firefox 120+）与渐进降级策略、完整双主题设计系统实战案例。附常见陷阱与最佳实践。'
+description: '深入解析 CSS light-dark() 颜色函数：配合 color-scheme 声明原理、与 prefers-color-scheme 对比、CSS 变量双主题组织与渐进降级，附实战案例。'
 pubDate: 2026-07-15
 tags: ['CSS', 'light-dark', '暗色模式', '深色模式', '双主题', 'color-scheme', 'prefers-color-scheme', 'CSS 变量', '设计系统', '前端开发', '渐进增强', '设计工具']
 relatedTool: '/light-dark'

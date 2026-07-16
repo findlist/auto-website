@@ -1,6 +1,6 @@
 ---
 title: "调色板生成与色彩系统设计：从和谐配色到 WCAG 可访问性"
-description: "深度解析调色板生成的核心算法：6 种和谐配色方案（互补 / 类似 / 三角 / 分割互补 / 四角 / 单色阶）、Tailwind 与 Material 设计系统色阶生成算法、明度色调（Tints / Shades / Tones）、WCAG 2.1 对比度计算、三种色盲模拟（红色盲 / 绿色盲 / 蓝色盲）的线性 RGB 矩阵变换原理、黄金角度随机配色、6 种格式导出（CSS / Tailwind / SCSS / JSON / Android / iOS）。配套在线调色板生成器实操演练。"
+description: "深度解析调色板生成算法：6 种和谐配色方案、Tailwind/Material 色阶生成、WCAG 对比度计算与三种色盲模拟，附调色板生成器实操。"
 pubDate: 2026-07-08
 tags: ["颜色", "调色板", "色彩理论", "设计系统", "Tailwind", "Material", "WCAG", "无障碍", "色盲", "CSS 变量", "工具矩阵", "前端", "设计"]
 relatedTool: "/color-palette"

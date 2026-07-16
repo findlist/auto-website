@@ -1,6 +1,6 @@
 ---
 title: 'CSS subgrid 子网格完全指南：嵌套网格轨道继承与对齐最佳实践'
-description: '深入解析 CSS subgrid 子网格特性：grid-template-columns/rows: subgrid 双向轨道继承机制、none/columns/rows/both 四种方向选型、跨列跨行与继承轨道数关系、gap 自动继承、浏览器兼容性（Chrome 117+/Firefox 71+/Safari 16+）与渐进降级策略。附卡片墙列对齐、表单标签对齐、杂志嵌套排版等实战示例，以及与 Grid 父网格、Flexbox、@container 的协同方案。'
+description: '深入解析 CSS subgrid 子网格：双向轨道继承机制、四种方向选型、gap 自动继承与浏览器兼容性，附卡片墙与表单对齐实战示例。'
 pubDate: 2026-07-15
 tags: ['CSS', 'subgrid', '子网格', '嵌套网格', 'grid', 'grid-template-columns', 'grid-template-rows', '轨道继承', '对齐', '布局', '前端开发', '设计工具', '渐进增强', 'Chrome 117', 'Firefox 71', 'Safari 16']
 relatedTool: '/subgrid'

@@ -1,6 +1,6 @@
 ---
 title: 'CSS position-area 完全指南：3x3 网格定位区域与锚点定位的协同'
-description: '深入解析 CSS position-area 定位区域属性：3x3 网格划分原理、物理/逻辑/坐标三套关键字体系、span-left/span-right/span-top/span-bottom/span-all 跨格定位、默认对齐行为、popover margin/inset 重置陷阱、与 anchor() 函数的选型对比。涵盖 tooltip / dropdown / popover / 居中覆盖 / 底部通栏 / RTL 适配等实战案例，浏览器兼容性与渐进降级方案。'
+description: '深入解析 CSS position-area 定位区域：3x3 网格划分、三套关键字体系、span 跨格定位、popover 重置陷阱与 anchor() 选型对比，附实战案例。'
 pubDate: 2026-07-16
 tags: ['CSS', 'position-area', '定位区域', '3x3 网格', 'span-left', 'span-right', 'span-top', 'span-bottom', 'span-all', 'anchor-positioning', '锚点定位', 'position-anchor', 'anchor-name', 'block-start', 'inline-start', 'y-start', 'x-start', 'tooltip', 'popover', 'dropdown', 'RTL', '逻辑关键字', '渐进增强', '前端开发', 'CSS Anchor Positioning']
 relatedTool: '/position-area'

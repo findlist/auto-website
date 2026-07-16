@@ -1,6 +1,6 @@
 ---
 title: 'CSS 锚点定位完全指南：anchor-positioning、anchor() 函数与 tooltip 自动避让'
-description: '深入解析 CSS 锚点定位（anchor-positioning）：anchor-name 声明锚点、position-anchor 引用锚点、anchor() 函数按锚点边定位、anchor-size() 函数引用锚点尺寸、position-try-fallbacks 翻转策略自动避让视口。对比 JavaScript 定位方案（Popper.js / Floating UI）的优势、浏览器兼容性与渐进增强、tooltip / popover / dropdown 实战案例。'
+description: '深入解析 CSS 锚点定位：anchor-name 与 position-anchor 绑定、anchor() 与 anchor-size() 函数、position-try-fallbacks 翻转避让，附 tooltip 实战。'
 pubDate: 2026-07-16
 tags: ['CSS', 'anchor-positioning', '锚点定位', 'anchor()', 'anchor-size()', 'position-anchor', 'anchor-name', 'position-try-fallbacks', 'flip-block', 'flip-inline', 'tooltip', 'popover', 'dropdown', '前端开发', 'CSS Positioned Layout Module Level 3', '设计工具', '渐进增强']
 relatedTool: '/anchor-positioning'
