@@ -1,6 +1,6 @@
 ---
 title: "JWT 安全进阶：Refresh Token、黑名单、算法选择与漏洞防御"
-description: "深入讲解 JWT 生产环境安全实践：双令牌刷新机制（access token + refresh token）、JWT 黑名单与吊销方案（Redis/数据库/内存）、HS256/RS256/ES256 算法选择决策树、alg=none 攻击与密钥混淆漏洞防御、Token 存储位置对比、CSRF 与 JWT 关系。配套在线 JWT 解码工具实操演练。"
+description: "深入讲解 JWT 生产环境安全实践：双令牌刷新机制、黑名单与吊销方案、HS256/RS256/ES256 算法选择决策树、alg=none 攻击与密钥混淆漏洞防御、Token 存储位置与 CSRF 关系，附 JWT 解码工具实操。"
 pubDate: 2026-07-04
 tags: ["安全", "JWT", "后端", "认证", "刷新令牌", "黑名单", "算法选择"]
 relatedTool: "/jwt"

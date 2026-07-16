@@ -1,6 +1,6 @@
 ---
 title: "国际化域名 IDN 与 Punycode：从 RFC 3492 到中文域名实战"
-description: "深入解析国际化域名（IDN）与 Punycode 编码原理：Bootstring 算法、ACE 前缀 xn--、bias 自适应、码点升序编码、标签级处理与长度校验。涵盖 RFC 3492/5890/5891 标准演进、中文域名注册流程、Emoji 域名、IDN 同形字钓鱼风险与防御，并附纯原生 TypeScript 实现要点。"
+description: "深入解析国际化域名 IDN 与 Punycode 编码原理：Bootstring 算法、ACE 前缀 xn--、bias 自适应与码点升序编码、标签级处理与长度校验、RFC 3492/5890/5891 演进、IDN 同形字钓鱼防御，附原生 TypeScript 实现要点。"
 pubDate: 2026-07-07
 tags: ["Punycode", "IDN", "国际化域名", "ACE", "RFC 3492", "Bootstring", "DNS", "安全", "工具矩阵", "编码"]
 relatedTool: "/punycode"

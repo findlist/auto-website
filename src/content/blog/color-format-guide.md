@@ -1,6 +1,6 @@
 ---
 title: "颜色格式与色彩理论入门：HEX / RGB / HSL / HSV / CMYK 原理与配色方案"
-description: "系统讲解五种主流颜色格式：HEX 十六进制、RGB 加色模型、HSL 色相饱和度亮度、HSV 色相饱和度明度、CMYK 印刷四色。深入剖析 HSL 与 HSV 的关键差异、RGB 与 CMYK 色域不匹配问题、五种和谐配色方案（互补 / 类似 / 三角 / 分割互补 / 四角）的生成原理与适用场景。配套在线颜色转换工具实操演练。"
+description: "系统讲解五种主流颜色格式：HEX/RGB/HSL/HSV/CMYK 原理，深入剖析 HSL 与 HSV 关键差异、RGB 与 CMYK 色域不匹配、五种和谐配色方案生成原理，附颜色转换工具实操。"
 pubDate: 2026-07-04
 tags: ["颜色", "CSS", "设计", "Web API", "JavaScript"]
 relatedTool: "/color"

@@ -1,6 +1,6 @@
 ---
 title: 'CSS scroll-snap 滚动捕捉完全指南：轮播、全屏滚动、分页导航与捕捉策略'
-description: '深入解析 CSS scroll-snap 滚动捕捉：scroll-snap-type 轴与严格度、scroll-snap-align 对齐方式、scroll-snap-stop 防跳过、scroll-padding 与 scroll-margin 间距控制、mandatory 与 proximity 选型。附横向轮播、全屏滚动、图片画廊、分页导航实战示例与性能优化建议。'
+description: '深入解析 CSS scroll-snap 滚动捕捉：scroll-snap-type 轴与严格度、scroll-snap-align 对齐、scroll-snap-stop 防跳过、scroll-padding/margin 间距控制、mandatory 与 proximity 选型，附轮播与全屏滚动实战。'
 pubDate: 2026-07-14
 tags: ['CSS', 'scroll-snap', '滚动捕捉', 'scroll-snap-type', 'scroll-snap-align', 'mandatory', 'proximity', '轮播', '全屏滚动', '分页', '前端开发', '设计工具']
 relatedTool: '/scroll-snap'

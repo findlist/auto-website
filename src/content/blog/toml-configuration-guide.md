@@ -1,6 +1,6 @@
 ---
 title: "TOML 配置文件实战指南：语法详解、日期时间类型与 Cargo / pyproject 案例"
-description: "系统讲解 TOML v1.0.0 语法：表、数组表、点号键、内联表、4 种字符串、4 种日期时间类型、整数精度陷阱。结合 Rust Cargo.toml 与 Python pyproject.toml 真实案例，讲清 TOML 与 JSON 互转时的类型丢失问题。配套在线 TOML/JSON 互转工具实操演练，帮你写好现代配置文件。"
+description: "系统讲解 TOML v1.0.0 语法：表、数组表、点号键、内联表、4 种字符串与 4 种日期时间类型、整数精度陷阱，结合 Cargo.toml 与 pyproject.toml 案例讲清 TOML/JSON 互转类型丢失，附互转工具实操。"
 pubDate: 2026-07-05
 tags: ["TOML", "配置文件", "Rust", "Python", "Cargo", "pyproject", "格式转换", "前端"]
 relatedTool: "/toml"

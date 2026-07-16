@@ -1,6 +1,6 @@
 ---
 title: "前端安全实战：CSP、XSS、CSRF 防护全景指南"
-description: "系统讲解前端三大安全威胁：XSS（跨站脚本攻击）、CSRF（跨站请求伪造）、CSP（内容安全策略）。覆盖三种 XSS 类型与载荷、CSRF 与 XSS 的本质区别、SameSite Cookie 与 CSRF Token 防御、CSP 指令与 nonce/hash 用法、上下文相关编码策略。配套可交互工具矩阵，帮你一图搞清该用哪种防御手段。"
+description: "系统讲解前端三大安全威胁：XSS 三种类型与载荷、CSRF 与 XSS 本质区别、SameSite Cookie 与 CSRF Token 防御、CSP 指令与 nonce/hash 用法、上下文相关编码策略，附防御手段工具矩阵。"
 pubDate: 2026-07-04
 tags: ["安全", "前端", "XSS", "CSP", "CSRF"]
 relatedTool: "/html-entities"

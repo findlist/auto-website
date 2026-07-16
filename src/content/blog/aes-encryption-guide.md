@@ -1,6 +1,6 @@
 ---
 title: "AES 加密实战：从 GCM 认证加密到 PBKDF2 密钥派生的完整指南"
-description: "系统讲解 AES 对称加密：GCM/CBC/CTR 三种工作模式对比、认证加密原理、padding oracle 攻击防御、IV/Nonce 管理最佳实践、PBKDF2 密码派生、密钥长度选择、Web Crypto API 加解密实现、加密-然后-MAC 方案、Node.js/Python/Java 服务端代码示例。配套在线 AES 加解密工具实操演练。"
+description: "系统讲解 AES 对称加密：GCM/CBC/CTR 三种工作模式、认证加密原理、padding oracle 防御、IV/Nonce 管理与 PBKDF2 密码派生、Web Crypto API 实现与服务端代码示例，附加解密工具实操。"
 pubDate: 2026-07-08
 tags: ["AES", "加密", "对称加密", "AES-GCM", "AES-CBC", "AES-CTR", "PBKDF2", "Web Crypto API", "认证加密", "安全", "密码学", "IV"]
 relatedTool: "/aes"
