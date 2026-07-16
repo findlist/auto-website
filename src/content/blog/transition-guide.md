@@ -6,8 +6,6 @@ tags: ['CSS', 'transition', '过渡', 'cubic-bezier', '贝塞尔曲线', 'timing
 relatedTool: '/transition'
 ---
 
-# CSS transition 过渡完全指南
-
 CSS `transition` 是前端交互动效的基础能力，它在属性值变化时自动产生平滑过渡。与 `animation` 的主动驱动不同，`transition` 是被动触发——仅在 `:hover`、`:focus`、class 切换等场景下播放一次。本文系统解析 transition 的四大子属性、cubic-bezier 曲线原理、steps 阶跃函数与回弹效果实现。
 
 ## 一、transition 属性概览与四大子属性

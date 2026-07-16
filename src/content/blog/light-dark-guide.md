@@ -6,8 +6,6 @@ tags: ['CSS', 'light-dark', '暗色模式', '深色模式', '双主题', 'color-
 relatedTool: '/light-dark'
 ---
 
-# CSS light-dark() 暗色模式完全指南
-
 CSS `light-dark()` 是 CSS Color Module Level 5 引入的颜色函数，2024 年起在 Chrome 123+、Safari 17.5+、Firefox 120+ 全主流浏览器原生支持。它把双主题（浅色/深色）颜色**内联到一条声明**，浏览器根据用户系统偏好自动选择，无需写 `@media (prefers-color-scheme)` 查询，也无需 JS 切换。这一特性让暗色模式实现从"两份代码 + 媒体查询"升级为"一行声明 + 浏览器自动处理"，大幅降低维护成本。本文系统解析 `light-dark()` 的语法、`color-scheme` 协同、CSS 变量组织、兼容性降级与实战案例。
 
 ## 一、诞生背景与核心价值

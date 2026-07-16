@@ -6,8 +6,6 @@ tags: ['CSS', '@starting-style', '入场动画', 'transition', 'transition-behav
 relatedTool: '/starting-style'
 ---
 
-# CSS @starting-style 入场动画完全指南
-
 在 CSS 动画领域，有一个长期痛点：`transition` 只能在属性值变化时触发过渡，无法捕获元素"首次出现"的场景——动态插入 DOM、`display: none → block` 切换、popover 显示时，元素直接跳到最终样式，没有过渡动画。开发者不得不借助 JavaScript（如 `requestAnimationFrame` 强制重排）或改用 `animation` 来模拟。CSS Transitions Level 2 引入的 `@starting-style` 规则填补了这一空白，让开发者用纯 CSS 声明元素首次出现时的起始样式，浏览器自动从起始样式过渡到最终样式。本文系统解析 `@starting-style` 的语法、三种触发场景、与 `allow-discrete` 的协同、对比选型与实战案例。
 
 ## 一、诞生背景与核心价值

@@ -6,8 +6,6 @@ tags: ['CSS', 'scroll-driven', '滚动驱动动画', 'animation-timeline', 'scro
 relatedTool: '/scroll-driven'
 ---
 
-# CSS scroll-driven 动画完全指南
-
 CSS scroll-driven 动画（Scroll-driven Animations）是 2023 年正式落地、2024-2025 年逐步普及的原生 CSS 特性，允许开发者用**滚动位置或元素可见性**代替**时间**来驱动 `@keyframes` 关键帧进度。这一特性让滚动交互动画从"监听 scroll 事件写 JS"升级为"纯 CSS 声明"，彻底解决了滚动动画性能差、代码复杂、难以同步等核心痛点。本文系统解析 scroll() 与 view() 两种时间线、animation-range 范围控制、命名时间线、浏览器兼容性与渐进增强等实战场景。
 
 ## 一、诞生背景与核心价值

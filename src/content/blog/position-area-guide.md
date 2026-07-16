@@ -6,8 +6,6 @@ tags: ['CSS', 'position-area', '定位区域', '3x3 网格', 'span-left', 'span-
 relatedTool: '/position-area'
 ---
 
-# CSS position-area 完全指南
-
 锚点定位（anchor-positioning）的 `anchor()` 函数虽然强大，但为每个方向单独写 `top: anchor(bottom); left: anchor(left);` 仍显繁琐。CSS 锚点定位模块引入了 `position-area` 属性（原名 `inset-area`，Chrome 125+ 2024 年起支持），它把锚点周围的可用空间划分为一个 3x3 网格，锚点占据中心格，定位元素只需声明"放入哪个格子"即可完成定位。一行 `position-area: top center` 就能替代多行 `anchor()` 函数组合，语义更直观、代码更简洁。本文系统解析 position-area 的网格模型、三套关键字体系、span 跨格、默认对齐行为、popover 陷阱与实战案例。
 
 ## 一、3x3 网格模型：锚点为中心

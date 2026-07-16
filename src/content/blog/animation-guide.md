@@ -6,8 +6,6 @@ tags: ['CSS', 'animation', '动画', 'keyframes', '关键帧', 'timing-function'
 relatedTool: '/animation'
 ---
 
-# CSS animation 动画完全指南
-
 CSS `animation` 是前端动效的核心能力，它通过 `@keyframes` 定义关键帧序列，由浏览器自动插值产生平滑动画。与 `transition` 的被动触发不同，`animation` 可主动循环播放、控制方向、定义任意中间帧。本文系统解析 animation 的八大子属性、关键帧语义、缓动函数与性能优化，并提供实用选型建议。
 
 ## 一、animation 属性概览与八大子属性

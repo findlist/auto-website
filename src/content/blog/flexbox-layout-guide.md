@@ -6,8 +6,6 @@ tags: ['CSS', 'Flexbox', 'flex 布局', '弹性盒子', 'justify-content', 'alig
 relatedTool: '/flexbox'
 ---
 
-# CSS Flexbox 弹性盒子布局完全指南
-
 CSS Flexbox（Flexible Box Layout）是 CSS3 引入的一维布局模型，专为沿单一方向（横向或纵向）排列元素而设计。它解决了传统 float / inline-block 布局的痛点：垂直居中、等高列、自适应分配空间等问题在 flexbox 中都变得直观可解。本文系统解析 flexbox 的核心概念、容器与项属性、典型布局模式与实战注意事项。
 
 ## 一、核心概念：主轴与交叉轴

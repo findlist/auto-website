@@ -6,8 +6,6 @@ tags: ['CSS', 'subgrid', '子网格', '嵌套网格', 'grid', 'grid-template-col
 relatedTool: '/subgrid'
 ---
 
-# CSS subgrid 子网格完全指南
-
 CSS subgrid 是 CSS Grid Layout Module Level 2 引入的子网格特性（Chrome 117+ 2023 年 9 月、Firefox 71+ 2019 年、Safari 16+ 2022 年全主流浏览器支持），允许嵌套的 grid 容器**继承父网格的轨道定义**——通过将子网格的 `grid-template-columns` 或 `grid-template-rows` 设为 `subgrid`，子网格直接复用父网格对应方向的轨道，实现嵌套元素的轨道级精确对齐。这一特性让"嵌套网格无法对齐父网格轨道"这一长期痛点从"百分比硬凑或放弃嵌套"升级为"原生轨道继承"，在保持嵌套语义的同时实现对齐。本文系统解析 subgrid 的语法、四种方向、跨列跨行、gap 继承、兼容性与实战案例。
 
 ## 一、诞生背景与核心价值

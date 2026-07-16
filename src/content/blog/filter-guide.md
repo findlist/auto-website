@@ -6,8 +6,6 @@ tags: ['CSS', 'filter', '滤镜', 'blur', 'brightness', 'contrast', 'drop-shadow
 relatedTool: '/filter'
 ---
 
-# CSS filter 滤镜完全指南
-
 CSS `filter` 属性是前端视觉特效的核心能力之一，它能在不修改 DOM 结构的前提下对元素及其子元素应用图像处理效果。本文系统解析 10 种滤镜函数的原理、组合规则与性能特性，并提供实用选型建议。
 
 ## 一、filter 属性概览与 10 种滤镜函数

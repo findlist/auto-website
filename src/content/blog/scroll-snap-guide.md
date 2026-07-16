@@ -6,8 +6,6 @@ tags: ['CSS', 'scroll-snap', '滚动捕捉', 'scroll-snap-type', 'scroll-snap-al
 relatedTool: '/scroll-snap'
 ---
 
-# CSS scroll-snap 滚动捕捉完全指南
-
 CSS scroll-snap 是现代 CSS 的滚动捕捉模块，让滚动容器在滚动停止时自动吸附到指定位置。它以纯 CSS 实现轮播、分页、全屏滚动等效果，零 JavaScript、高性能、丝滑流畅。本文系统解析 scroll-snap 的容器属性、子项属性、选型策略与典型布局模式。
 
 ## 一、scroll-snap 核心概念与解决痛点

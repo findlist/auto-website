@@ -6,8 +6,6 @@ tags: ['CSS', 'view-transition', '视图过渡', 'View Transitions API', 'startV
 relatedTool: '/view-transition'
 ---
 
-# CSS view-transition 视图过渡完全指南
-
 CSS view-transition（视图过渡，View Transitions API）是 2023-2024 年逐步落地的主流浏览器原生特性，允许开发者通过**自动捕获新旧 DOM 快照**并在伪元素树上播放交叉淡入，实现状态切换与页面跳转间的平滑过渡，无需手动编写过渡动画。这一特性让"状态切换的动画一致性"这一前端老大难问题从"框架过渡组件或手写 JS 动画"升级为"浏览器原生快照机制"，彻底解决了新旧位置难以对齐、动画与 DOM 变更难以同步等核心痛点。本文系统解析同文档与跨文档两种过渡模式、view-transition-name 命名元素、伪元素树结构与动画覆盖、浏览器兼容性与渐进增强等实战场景。
 
 ## 一、诞生背景与核心价值

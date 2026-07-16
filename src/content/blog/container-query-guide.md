@@ -6,8 +6,6 @@ tags: ['CSS', 'container', '容器查询', '@container', 'container-type', 'cont
 relatedTool: '/container'
 ---
 
-# CSS @container 容器查询完全指南
-
 CSS `@container` 容器查询是 2023 年正式落地的现代响应式特性，让组件根据其父容器尺寸应用不同样式，而非视口尺寸。这一突破解决了长期困扰前端开发的"组件级响应式"难题——同一组件放在侧栏 200px 与主区 800px 时可自动应用不同布局，与组件在页面中的位置无关。本文系统解析 container-type 容器声明、@container 查询语法、与 @media 媒体查询的本质区别、命名容器、查询优先级、浏览器兼容性与性能优化。
 
 ## 一、容器查询的诞生背景与核心价值

@@ -6,8 +6,6 @@ tags: ['CSS', 'Grid', '网格布局', 'grid-template-columns', 'fr 单位', 'gri
 relatedTool: '/grid'
 ---
 
-# CSS Grid 网格布局完全指南
-
 CSS Grid Layout 是 CSS 史上最强大的布局系统，它将 CSS 从"勉强能布局"提升到"原生二维布局语言"。与 Flexbox 的一维模型不同，Grid 可同时控制行与列两个方向，使页面主布局、卡片墙、仪表盘、杂志式排版等复杂二维结构变得直观可解。本文系统解析 Grid 的核心概念、容器与项属性、典型布局模式与实战注意事项。
 
 ## 一、核心概念：轨道、单元格、网格线

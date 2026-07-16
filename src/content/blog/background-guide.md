@@ -6,8 +6,6 @@ tags: ['CSS', 'background', '背景', '多层背景', 'background-clip', '文字
 relatedTool: '/background'
 ---
 
-# CSS background 复合属性完全指南
-
 CSS `background` 是前端开发中最复杂、最灵活的复合属性之一。它由 8 个子属性组成，支持多层叠加、渐变与图片混合、文字裁剪特效、视差固定背景等高级能力。本文系统解析 background 的简写语法、多层叠加机制、文字裁剪原理与视差效果陷阱。
 
 ## 一、background 属性概览与 8 个子属性

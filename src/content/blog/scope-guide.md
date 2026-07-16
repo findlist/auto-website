@@ -6,8 +6,6 @@ tags: ['CSS', '@scope', '作用域', 'CSS 作用域', '甜甜圈作用域', 'don
 relatedTool: '/scope'
 ---
 
-# CSS @scope 作用域完全指南
-
 CSS @scope（作用域，CSS Scoping Module Level 1）是 2024 年正式落地的原生 CSS 特性，允许开发者把样式规则的作用范围限制在某个 DOM 子树内，而无需依赖 Shadow DOM 或 BEM 命名约定。这一特性让样式隔离从"命名约定"或"真实边界"升级为"轻量级作用域声明"，彻底解决了组件样式冲突、第三方内容嵌入污染、BEM 类名冗长等核心痛点。本文系统解析 @scope 的基本语法、下边界与甜甜圈作用域、:scope 伪类、与 Shadow DOM 的选型差异，以及避免选择器冲突的实战场景。
 
 ## 一、@scope 的诞生背景与核心价值

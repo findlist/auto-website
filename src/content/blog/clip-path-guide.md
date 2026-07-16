@@ -6,8 +6,6 @@ tags: ['CSS', 'clip-path', '路径裁剪', 'polygon', 'circle', 'ellipse', 'inse
 relatedTool: '/clip-path'
 ---
 
-# CSS clip-path 路径裁剪完全指南
-
 CSS `clip-path` 是实现创意异形元素的核心属性，它允许开发者按任意路径裁剪元素的可视区域——三角形、星形、心形、对话气泡等。相比 `border-radius` 只能圆角化、`overflow: hidden` 只能矩形裁剪，`clip-path` 提供了完整的自由形状裁剪能力。本文系统解析四类裁剪函数的原理与实现。
 
 ## 一、clip-path 属性概览与四类函数

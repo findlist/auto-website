@@ -6,8 +6,6 @@ tags: ['CSS', 'text-wrap', 'balance', 'pretty', '排版优化', '文本换行', 
 relatedTool: '/text-wrap'
 ---
 
-# CSS text-wrap 文本换行排版优化完全指南
-
 CSS `text-wrap` 是 CSS Text Module Level 4 引入的文本换行控制属性，2023-2024 年在 Chrome 114+、Firefox 121+、Safari 17.5+ 逐步落地。它提供 `balance`（平衡换行）、`pretty`（优化换行）、`stable`（稳定换行）等智能换行策略，解决传统 `wrap` 换行的标题参差不齐、段落孤行、编辑跳动三大痛点。一行 CSS 即可显著提升排版质量，且支持渐进增强——旧浏览器自动回退为默认换行，不影响可用性。本文系统解析 `text-wrap` 的五种值、算法原理、兼容性降级与实战案例。
 
 ## 一、诞生背景与核心价值

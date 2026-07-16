@@ -6,8 +6,6 @@ tags: ['CSS', 'anchor-positioning', '锚点定位', 'anchor()', 'anchor-size()',
 relatedTool: '/anchor-positioning'
 ---
 
-# CSS 锚点定位完全指南
-
 在前端开发中，实现一个 tooltip / popover / dropdown 看似简单，实则暗藏复杂逻辑：元素要相对触发按钮定位、滚动时保持跟随、靠近视口边缘时自动翻转避免被裁剪。传统方案依赖 JavaScript 库（Popper.js / Floating UI）监听 scroll/resize 事件、实时计算坐标、处理视口边界翻转，代码量大且有性能开销与闪烁问题。CSS 2024 年引入的锚点定位（anchor-positioning）把"相对定位"交给浏览器原生处理——声明锚点、用 `anchor()` 函数引用锚点边、用 `position-try-fallbacks` 自动翻转避让，全程零 JavaScript。本文系统解析锚点定位的语法、函数、翻转策略与实战案例。
 
 ## 一、诞生背景与核心价值

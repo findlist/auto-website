@@ -6,8 +6,6 @@ tags: ['CSS', 'contain', 'content-visibility', '渲染隔离', '性能优化', '
 relatedTool: '/contain'
 ---
 
-# CSS contain 与 content-visibility 性能优化完全指南
-
 现代 Web 页面越来越复杂，单页可能包含成百上千个 DOM 节点。任意一处布局变化都可能触发整页重排重绘，导致滚动卡顿、交互迟滞。CSS Containment Module 引入了 `contain` 与 `content-visibility` 两大属性，让开发者声明元素的渲染隔离边界与渲染策略，浏览器据此跳过不必要的计算与渲染。一行 CSS 即可显著提升长列表、卡片网格、长文档的滚动性能，且天然支持渐进增强——旧浏览器忽略声明，元素正常渲染。本文系统解析两者的原理、值、协同与实战案例。
 
 ## 一、诞生背景与核心价值
