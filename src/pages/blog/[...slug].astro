@@ -191,12 +191,52 @@ const meta: SiteMeta = {
     margin: 36px 0 14px;
     font-weight: 600;
     letter-spacing: -0.01em;
+    /* 二级标题左侧主色渐变细条，增强章节识别与锚点定位视觉反馈 */
+    position: relative;
+    padding-left: 12px;
   }
 
+  .blog-article__content h2::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+  }
+
+  /* h3 使用更轻量的下划线装饰，与 h2 形成层次差异 */
   .blog-article__content h3 {
     font-size: 18px;
     margin: 28px 0 10px;
     font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--color-border);
+  }
+
+  /* h4 使用主色小圆点前缀，与 prose 全局风格一致，避免长文章中 h4 视觉过重 */
+  .blog-article__content h4 {
+    font-size: 15.5px;
+    margin: 22px 0 8px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    position: relative;
+    padding-left: 14px;
+  }
+
+  .blog-article__content h4::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    opacity: 0.7;
   }
 
   .blog-article__content p {
@@ -241,6 +281,22 @@ const meta: SiteMeta = {
     padding: 0;
     color: var(--color-text);
     font-size: inherit;
+  }
+
+  /* 图片：圆角 + 边框 + 阴影，避免裸图突兀，与 prose 全局样式保持一致 */
+  .blog-article__content img {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    margin: 8px 0 16px;
+  }
+
+  /* 水平分割线：柔化默认 hr 样式 */
+  .blog-article__content hr {
+    border: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+    margin: 32px 0;
   }
 
   .blog-article__content table {
