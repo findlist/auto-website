@@ -133,11 +133,13 @@ function buildCss(config: PositionAreaConfig): string {
   // 可选 inset 偏移（相对网格区域的偏移）
   if (config.insetOffset !== 0) {
     lines.push(`  inset: ${config.insetOffset}px;`);
+  } else if (config.resetMargin) {
+    // popover 场景需重置默认 inset；仅当未显式设置偏移时才写 inset: auto，避免覆盖上面的偏移值
+    lines.push(`  inset: auto;`);
   }
-  // popover 场景需重置默认 margin/inset，避免与 position-area 冲突
+  // popover 场景需重置默认 margin，避免与 position-area 冲突
   if (config.resetMargin) {
     lines.push(`  margin: 0;`);
-    lines.push(`  inset: auto;`);
   }
   lines.push(`}`);
 
@@ -165,6 +167,16 @@ function buildPreviewHtml(config: PositionAreaConfig): string {
         .join('')
     )
     .join('');
+  // 从选择器提取首个类名或 id，附加到 demo 元素，使生成的 CSS（anchor-name / position-area）实际作用于预览节点
+  // 否则用户选择器（如 .anchor）与 demo 元素类名（anchor-demo）不匹配，预览无法体现定位效果
+  const anchorCls = config.anchorSelector.match(/^\.([\w-]+)/)?.[1] || '';
+  const anchorId = config.anchorSelector.match(/^#([\w-]+)/)?.[1] || '';
+  const targetCls = config.targetSelector.match(/^\.([\w-]+)/)?.[1] || '';
+  const targetId = config.targetSelector.match(/^#([\w-]+)/)?.[1] || '';
+  const anchorClassAttr = `anchor-demo${anchorCls ? ` ${anchorCls}` : ''}`;
+  const anchorIdAttr = anchorId ? ` id="${anchorId}"` : '';
+  const targetClassAttr = `target-demo${targetCls ? ` ${targetCls}` : ''}`;
+  const targetIdAttr = targetId ? ` id="${targetId}"` : '';
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -181,8 +193,8 @@ function buildPreviewHtml(config: PositionAreaConfig): string {
   .pa-grid-cell.is-center.is-selected { background: #1d4ed8; }
   /* 锚点与定位元素真实演示 */
   .demo-wrap { position: relative; }
-  ${config.anchorSelector.replace(/^([.#]?-?[\w-]+)/, '.$1').replace(/[^.\w-]/g, '')}, .anchor-demo { padding: 10px 22px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
-  ${config.targetSelector.replace(/^([.#]?-?[\w-]+)/, '.$1').replace(/[^.\w-]/g, '')}, .target-demo { padding: 8px 14px; background: #1f2937; color: #fff; border-radius: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); min-width: 80px; text-align: center; }
+  .anchor-demo { padding: 10px 22px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  .target-demo { padding: 8px 14px; background: #1f2937; color: #fff; border-radius: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.18); min-width: 80px; text-align: center; }
   ${css}
 </style>
 </head>
@@ -190,8 +202,8 @@ function buildPreviewHtml(config: PositionAreaConfig): string {
   <div class="stage">
     <div class="pa-grid-vis">${gridHtml}</div>
     <div class="demo-wrap">
-      <button class="anchor-demo" type="button">锚点</button>
-      <div class="target-demo">定位元素</div>
+      <button class="${anchorClassAttr}"${anchorIdAttr} type="button">锚点</button>
+      <div class="${targetClassAttr}"${targetIdAttr}>定位元素</div>
     </div>
   </div>
 </body>

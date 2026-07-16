@@ -162,8 +162,16 @@ function buildCss(config: AnchorPositionConfig): string {
 /** 生成 iframe 预览 HTML（沙箱内真实渲染锚点与定位元素关系） */
 function buildPreviewHtml(config: AnchorPositionConfig): string {
   const css = buildCss(config);
-  // 预览区：锚点按钮居中，定位元素按配置定位
-  // 用 data 属性而非类名引用，避免与用户选择器冲突
+  // 从选择器提取首个类名或 id，附加到 demo 元素，使生成的 CSS（anchor-name / position-anchor / anchor()）实际作用于预览节点
+  // 否则用户选择器（如 .anchor）与 demo 元素类名（anchor-demo）不匹配，预览无法体现定位效果
+  const anchorCls = config.anchorSelector.match(/^\.([\w-]+)/)?.[1] || '';
+  const anchorId = config.anchorSelector.match(/^#([\w-]+)/)?.[1] || '';
+  const targetCls = config.targetSelector.match(/^\.([\w-]+)/)?.[1] || '';
+  const targetId = config.targetSelector.match(/^#([\w-]+)/)?.[1] || '';
+  const anchorClassAttr = `anchor-demo${anchorCls ? ` ${anchorCls}` : ''}`;
+  const anchorIdAttr = anchorId ? ` id="${anchorId}"` : '';
+  const targetClassAttr = `target-demo${targetCls ? ` ${targetCls}` : ''}`;
+  const targetIdAttr = targetId ? ` id="${targetId}"` : '';
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -172,15 +180,15 @@ function buildPreviewHtml(config: AnchorPositionConfig): string {
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { min-height: 100%; padding: 80px 40px; font-family: system-ui, -apple-system, "PingFang SC", sans-serif; background: #f5f5f7; }
   .stage { position: relative; min-height: 360px; display: flex; align-items: center; justify-content: center; background: repeating-linear-gradient(45deg, #fff, #fff 10px, #f0f0f3 10px, #f0f0f3 20px); border-radius: 8px; border: 1px dashed #d0d0d8; }
-  ${config.anchorSelector.replace(/^([.#]?-?[\w-]+)/, '.$1').replace(/[^.\w-]/g, '')}, .anchor-demo { padding: 10px 18px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
-  ${config.targetSelector.replace(/^([.#]?-?[\w-]+)/, '.$1').replace(/[^.\w-]/g, '')}, .target-demo { padding: 8px 12px; background: #1f2937; color: #fff; border-radius: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 240px; }
+  .anchor-demo { padding: 10px 18px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  .target-demo { padding: 8px 12px; background: #1f2937; color: #fff; border-radius: 6px; font-size: 13px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 240px; }
   ${css}
 </style>
 </head>
 <body>
   <div class="stage">
-    <button class="anchor-demo" type="button">锚点按钮</button>
-    <div class="target-demo">定位元素（tooltip / popover）</div>
+    <button class="${anchorClassAttr}"${anchorIdAttr} type="button">锚点按钮</button>
+    <div class="${targetClassAttr}"${targetIdAttr}>定位元素（tooltip / popover）</div>
   </div>
 </body>
 </html>`;
