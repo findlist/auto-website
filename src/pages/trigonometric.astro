@@ -1,0 +1,666 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TrigonometricTool from '../components/TrigonometricTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 三角函数生成器 - sin/cos/tan/atan2 极坐标与圆形布局',
+  description:
+    '在线 CSS 三角函数生成器：可视化编辑 sin/cos/tan/atan2/hypot/pi 等 10 个数学函数，内置圆形布局、波浪动画、极坐标、玫瑰曲线等 8 组预设与 iframe 沙箱预览。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 三角函数生成器',
+    description: '在线 CSS 三角函数可视化生成器，支持 sin/cos/tan/atan2/hypot/pi 等 10 个函数与 8 组预设场景，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 三角函数生成器</h1>
+      <p>
+        可视化生成 CSS 三角函数（<code>sin</code> / <code>cos</code> / <code>tan</code> /
+        <code>asin</code> / <code>acos</code> / <code>atan</code> / <code>atan2</code> /
+        <code>hypot</code> / <code>pi</code> / <code>e</code>，CSS Values Module Level 4，
+        Chrome 111+ / Firefox 118+ / Safari 15.4+ 起支持，Baseline 2023）。
+        内置<strong>8 组预设场景</strong>：圆形布局、波浪动画、极坐标 atan2、旋转时钟、
+        螺旋线、玫瑰曲线、震动效果、简单 sin 波——参数实时调节，iframe 沙箱预览真实渲染。
+        附带<strong>三角函数速查表</strong>：语法、参数范围、返回值、浏览器支持一目了然。
+        适用于圆周布局、波浪与振荡动画、极坐标转笛卡尔、朝向计算、距离计算等现代 CSS 场景。
+        所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <TrigonometricTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS 三角函数？解决了什么问题？</summary>
+        <p>
+          <strong>CSS 三角函数</strong>是 CSS Values Module Level 4 引入的数学函数集，包含
+          <code>sin()</code> / <code>cos()</code> / <code>tan()</code> / <code>asin()</code> /
+          <code>acos()</code> / <code>atan()</code> / <code>atan2()</code> / <code>hypot()</code>
+          及常量 <code>pi()</code> / <code>e()</code>。它解决了 CSS 中三大痛点：<br />
+          一是<strong>圆周布局</strong>，过去需要 JavaScript 计算每个元素的
+          <code>translate(cos(θ)*r, sin(θ)*r)</code>，现在直接用 CSS 表达式；<br />
+          二是<strong>振荡动画</strong>，过去需用关键帧模拟 sin 波，现在可用
+          <code>calc(sin(t) * amplitude)</code> 直接计算；<br />
+          三是<strong>朝向与距离</strong>，<code>atan2(y, x)</code> 计算指针朝向鼠标，
+          <code>hypot(a, b)</code> 计算两点距离，原本必须用 JS。<br />
+          这些函数从 Chrome 111+ / Firefox 118+ / Safari 15.4+ 起原生支持，已进入 Baseline 2023，
+          生产环境可放心使用。
+        </p>
+      </details>
+      <details>
+        <summary>CSS 三角函数的参数单位是弧度还是角度？</summary>
+        <p>
+          <strong>参数单位是弧度（rad）</strong>，但 CSS 容许使用 <code>deg</code> 后缀的角度值，
+          浏览器会自动转换为弧度。例如：<br />
+          - <code>sin(60deg)</code> 与 <code>sin(1.0472rad)</code> 等价，都返回 <code>0.866</code><br />
+          - <code>cos(0deg)</code> = <code>1</code>，<code>cos(90deg)</code> = <code>0</code>，<code>cos(180deg)</code> = <code>-1</code><br />
+          - <code>tan(45deg)</code> = <code>1</code>（45° 是正切值 1 的特殊角）<br />
+          <strong>返回值</strong>：<code>sin</code> / <code>cos</code> 返回 <strong>无单位</strong>数值 [-1, 1]；
+          <code>tan</code> 返回无单位数值 (-∞, +∞)；<code>asin</code> / <code>acos</code> / <code>atan</code> /
+          <code>atan2</code> 返回<strong>弧度</strong>值，需用 <code>calc(... * 1rad)</code> 才能用于
+          <code>rotate()</code> 等 CSS 属性。
+        </p>
+      </details>
+      <details>
+        <summary>sin() 与 cos() 在圆周布局中怎么用？</summary>
+        <p>
+          <strong>核心公式</strong>：圆周上某点的坐标为 <code>(r*cos(θ), r*sin(θ))</code>，
+          其中 <code>θ</code> 是角度，<code>r</code> 是半径。<br />
+          <strong>CSS 写法</strong>：用 <code>calc()</code> 嵌套 <code>cos()</code> / <code>sin()</code>
+          计算位移：<br />
+          <code>.dot:nth-child(1) &#123; transform: translate(calc(cos(0deg) * 100px), calc(sin(0deg) * 100px)); &#125;</code><br />
+          <code>.dot:nth-child(2) &#123; transform: translate(calc(cos(45deg) * 100px), calc(sin(45deg) * 100px)); &#125;</code><br />
+          <strong>均分 N 个元素</strong>：每个元素角度 = <code>360deg / N * i</code>，
+          例如 8 个元素每 45° 一个。<br />
+          <strong>优势</strong>：相比 JavaScript 计算并写入 transform，纯 CSS 表达式无需 JS，
+          响应式调整半径只需改一个变量，性能更好。<br />
+          本工具的"圆形布局"预设演示了完整代码，可调节元素数与半径实时预览。
+        </p>
+      </details>
+      <details>
+        <summary>atan2(y, x) 与 atan(x) 有什么区别？怎么用于朝向鼠标？</summary>
+        <p>
+          <strong>区别</strong>：<code>atan(x)</code> 只接受单个值，返回 (-π/2, π/2) 弧度，
+          无法区分象限；<code>atan2(y, x)</code> 接受两个参数，根据 y 和 x 的符号确定象限，
+          返回 (-π, π] 完整范围。<br />
+          <strong>典型场景</strong>：计算指针朝向鼠标。<br />
+          1. 用 JS 监听 <code>mousemove</code>，将鼠标相对指针中心的偏移量写入自定义属性：<br />
+          <code>element.style.setProperty('--mx', dx)</code>；
+          <code>element.style.setProperty('--my', dy)</code><br />
+          2. CSS 用 <code>atan2</code> 计算角度并旋转：<br />
+          <code>.pointer &#123; transform: rotate(calc(atan2(var(--my), var(--mx)) * 1rad)); &#125;</code><br />
+          <strong>关键点</strong>：<code>atan2</code> 返回弧度，<code>rotate()</code> 接受度数，
+          因此需 <code>calc(... * 1rad)</code> 把弧度数值标记为弧度单位。
+          本工具的"极坐标 atan2"预设演示了完整代码。
+        </p>
+      </details>
+      <details>
+        <summary>hypot() 函数有什么用？怎么计算两点距离？</summary>
+        <p>
+          <strong><code>hypot(a, b, c, ...)</code></strong> 计算 √(a² + b² + c² + ...)，
+          即欧几里得距离（向量的模长）。<br />
+          <strong>双参数场景</strong>：计算二维平面上两点 (x₁,y₁) 与 (x₂,y₂) 的距离：<br />
+          <code>distance = hypot(x₂ - x₁, y₂ - y₁)</code><br />
+          <strong>多参数场景</strong>：三维空间距离 <code>hypot(dx, dy, dz)</code>，
+          或更高维度。<br />
+          <strong>优势</strong>：相比手写 <code>sqrt(pow(a,2) + pow(b,2))</code>，
+          <code>hypot</code> 语法简洁，且数值稳定性更好（避免大数平方溢出，避免小数平方下溢）。<br />
+          <strong>典型用途</strong>：游戏开发中计算角色与目标距离、动画中根据距离调整缩放、
+          物理模拟中的速度合成等。CSS 中常配合自定义属性由 JS 设置坐标差值。
+        </p>
+      </details>
+      <details>
+        <summary>pi() 与 e() 常量函数怎么用？</summary>
+        <p>
+          <strong><code>pi()</code></strong> 返回圆周率 3.14159...，
+          <strong><code>e()</code></strong> 返回自然常数 2.71828...。
+          它们<strong>必须带括号调用</strong>（不能写作 <code>pi</code> 或 <code>e</code>，
+          否则会被识别为无效值）。<br />
+          <strong>pi() 用途</strong>：<br />
+          - 完整圆周的角度转换：<code>360deg = 2 * pi() * 1rad</code><br />
+          - 黄金角计算：<code>calc(180deg * pi() * (3 - sqrt(5)) / 2)</code> ≈ 137.508°，
+          用于向日葵种子分布（见本工具"螺旋线"预设）<br />
+          - 弧度与度数互转：<code>1rad = 180deg / pi()</code><br />
+          <strong>e() 用途</strong>：指数增长动画、对数尺度等。例如指数衰减：
+          <code>calc(exp(-1 * var(--t)) * 100%)</code>。<br />
+          两者常与 <code>calc</code> 配合，构造需要数学常量的表达式。
+        </p>
+      </details>
+      <details>
+        <summary>怎么实现 sin() 波浪动画？关键帧怎么写？</summary>
+        <p>
+          <strong>思路</strong>：把 0°–360° 的 sin 值用 4 个关键帧采样——
+          <code>sin(0°)=0</code>、<code>sin(90°)=1</code>、<code>sin(180°)=0</code>、
+          <code>sin(270°)=-1</code>、<code>sin(360°)=0</code>。<br />
+          <strong>CSS 写法</strong>：<br />
+          <code>@keyframes bob &#123;</code><br />
+          &nbsp;&nbsp;<code>0%   &#123; transform: translateY(calc(sin(0deg) * 40px));   &#125;</code><br />
+          &nbsp;&nbsp;<code>25%  &#123; transform: translateY(calc(sin(90deg) * 40px));  &#125;</code><br />
+          &nbsp;&nbsp;<code>50%  &#123; transform: translateY(calc(sin(180deg) * 40px)); &#125;</code><br />
+          &nbsp;&nbsp;<code>75%  &#123; transform: translateY(calc(sin(270deg) * 40px)); &#125;</code><br />
+          &nbsp;&nbsp;<code>100% &#123; transform: translateY(calc(sin(360deg) * 40px)); &#125;</code><br />
+          <code>&#125;</code><br />
+          <strong>关键点</strong>：<br />
+          1. <code>sin(0deg)</code> 是 0，<code>sin(90deg)</code> 是 1，乘以振幅得到实际位移；<br />
+          2. 4 个关键帧足够平滑（浏览器会自动插值中间帧）；<br />
+          3. 多元素波浪效果：用 <code>animation-delay</code> 错开相位，每个元素延迟
+          <code>duration / count * i</code>。<br />
+          本工具的"波浪动画"和"简单 sin 波"预设演示了完整代码。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 预设切换、参数调节、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，HTML 与 CSS 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox="allow-same-origin"</code> 属性限制能力，
+            预览内容无法执行脚本、提交表单或访问父页面（不含 <code>allow-scripts</code>）。<br />
+          - 生成的 CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          - 不读取 <code>navigator</code> 等浏览器信息，不写入 Cookie，无任何追踪行为。<br />
+          无需注册、无需登录、无广告，适合处理任何 CSS 三角函数与生产场景。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/animation">CSS animation 动画生成器</a> — 时间驱动动画，与 sin/cos 振荡动画互补</li>
+        <li><a href="/transform">CSS transform 生成器</a> — translate/rotate/scale，三角函数常用于 transform 计算</li>
+        <li><a href="/anchor-positioning">CSS anchor-positioning 锚点定位生成器</a> — 元素定位，与极坐标互补</li>
+        <li><a href="/css-if">CSS if() 条件函数生成器</a> — 条件值函数，与三角函数同属 CSS 数学函数</li>
+        <li><a href="/scroll-driven">CSS scroll-driven 滚动驱动动画</a> — 滚动时间线，可与 sin 波组合</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：tr 命名空间（trigonometric） */
+
+  /* 预设按钮组 */
+  .tr__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .tr__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .tr__main {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .tr__editor,
+  .tr__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .tr__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .tr__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tr__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tr__panel-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 当前场景面板 */
+  .tr__scene-name {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .tr__scene-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .tr__scene-funcs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tr__func-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    font-size: 11px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-weight: 600;
+  }
+
+  /* 参数调节 */
+  .tr__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tr__field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tr__field-value {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .tr__field input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.08));
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .tr__field input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .tr__field input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .tr__field input[type="range"]:focus-visible {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 4px;
+  }
+
+  .tr__field-range {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  /* 三角函数速查表 */
+  .tr__ref-body {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .tr__ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .tr__ref-table thead th {
+    padding: 8px 10px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted, #6b7280);
+    border-bottom: 1px solid var(--color-border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tr__ref-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .tr__ref-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .tr__ref-table tbody tr:hover td {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .tr__ref-name {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .tr__ref-syntax {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .tr__ref-range {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 11px;
+  }
+
+  .tr__ref-tip {
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    border-top: 1px solid var(--color-border);
+  }
+
+  .tr__ref-tip code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    background: var(--color-bg, #fff);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  /* iframe 预览 */
+  .tr__preview {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .tr__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tr__preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tr__preview-hint {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .tr__iframe {
+    display: block;
+    width: 100%;
+    height: 480px;
+    border: 0;
+    background: #fff;
+  }
+
+  /* 代码输出 */
+  .tr__code {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .tr__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tr__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .tr__code-pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 380px;
+    overflow: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .tr__code-pre code {
+    font-family: inherit;
+  }
+
+  /* 按钮 */
+  .tr__btn {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .tr__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+  }
+
+  .tr__btn--preset {
+    font-size: 12px;
+  }
+
+  .tr__btn--active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .tr__btn--active:hover {
+    background: #1d4ed8;
+  }
+
+  .tr__btn--copy {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .tr__btn--copy:hover {
+    background: #1d4ed8;
+  }
+
+  .tr__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 响应式：768px 以下单列 */
+  @media (max-width: 768px) {
+    .tr__main {
+      grid-template-columns: 1fr;
+    }
+
+    .tr__iframe {
+      height: 380px;
+    }
+
+    .tr__ref-table {
+      font-size: 11px;
+    }
+
+    .tr__ref-table thead th,
+    .tr__ref-table tbody td {
+      padding: 6px 8px;
+    }
+  }
+
+  /* 414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .tr__presets {
+      padding: 10px;
+    }
+
+    .tr__panel-body {
+      padding: 10px;
+    }
+
+    .tr__iframe {
+      height: 320px;
+    }
+
+    .tr__code-pre {
+      font-size: 11px;
+      padding: 10px;
+    }
+
+    /* 速查表在小屏改为纵向卡片式 */
+    .tr__ref-table thead {
+      display: none;
+    }
+
+    .tr__ref-table,
+    .tr__ref-table tbody,
+    .tr__ref-table tr,
+    .tr__ref-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .tr__ref-table tr {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .tr__ref-table td {
+      border-bottom: 0;
+      padding: 2px 0;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .tr__iframe,
+  :global(.dark) .tr__iframe {
+    background: #1a1a1a;
+  }
+
+  :global([data-theme="dark"]) .tr__func-chip {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .tr__field-value {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .tr__btn--active,
+  :global([data-theme="dark"]) .tr__btn--copy {
+    background: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  :global([data-theme="dark"]) .tr__ref-name {
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .tr__field input[type="range"] {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .tr__field input[type="range"]::-webkit-slider-thumb {
+    background: #3b82f6;
+    border-color: #1a1a1a;
+  }
+
+  :global([data-theme="dark"]) .tr__field input[type="range"]::-moz-range-thumb {
+    background: #3b82f6;
+    border-color: #1a1a1a;
+  }
+</style>
