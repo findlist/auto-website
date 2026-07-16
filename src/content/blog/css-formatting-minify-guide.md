@@ -1,6 +1,6 @@
 ---
 title: "CSS 格式化与压缩原理：从词法分析到 minify 算法"
-description: "深入解析 CSS 格式化与压缩背后的原理：CSS 词法结构、手写 tokenizer 逐字符扫描、递归下降 parser 构建 AST、向前探测区分规则与声明、美化序列化算法、压缩 minify 算法与末尾分号省略、校验常见问题。涵盖嵌套 at-rule、@keyframes、字符串字面量处理、纯原生 TypeScript 实现要点、与 HTML 格式化工具与颜色工具的联动方案。"
+description: "深入解析 CSS 格式化与压缩原理：手写 tokenizer 词法扫描、递归下降 parser 构建 AST、美化序列化与 minify 算法、嵌套 at-rule 与 @keyframes 处理，附原生 TypeScript 实现要点。"
 pubDate: 2026-07-07
 tags: ["CSS", "格式化", "压缩", "minify", "词法分析", "解析器", "工具矩阵", "前端", "性能", "at-rule"]
 relatedTool: "/css-formatter"

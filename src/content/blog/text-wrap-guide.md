@@ -1,6 +1,6 @@
 ---
 title: 'CSS text-wrap 文本换行排版优化完全指南：balance 平衡换行、pretty 优化换行与渐进降级'
-description: '深入解析 CSS text-wrap 属性（CSS Text Module Level 4）：五种值（wrap / nowrap / balance / pretty / stable）详解、balance 平衡换行算法原理与 10 行限制、pretty 孤行优化策略、text-wrap 与 white-space 的关系与选型、浏览器兼容性（Chrome 114+ / Firefox 121+ / Safari 17.5+）与渐进降级、实战案例与最佳实践。'
+description: '深入解析 CSS text-wrap 文本换行属性：wrap/nowrap/balance/pretty/stable 五种值、balance 平衡换行算法与 10 行限制、pretty 孤行优化策略，附渐进降级实战。'
 pubDate: 2026-07-15
 tags: ['CSS', 'text-wrap', 'balance', 'pretty', '排版优化', '文本换行', '孤行', '渐进增强', '前端开发', 'CSS Text Module', '设计工具', 'nowrap', 'stable']
 relatedTool: '/text-wrap'

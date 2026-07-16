@@ -1,6 +1,6 @@
 ---
 title: 'CSS @starting-style 入场动画完全指南：元素首次出现过渡、display 切换与 popover 弹层动画'
-description: '深入解析 CSS @starting-style 规则：语法与使用方式（嵌套语法 vs 独立语法）、三种触发场景（首次渲染/display 切换/popover 显示）、transition-behavior allow-discrete 与 display 离散过渡、@starting-style vs animation vs transition 对比选型、浏览器兼容性与渐进增强、折叠面板与弹层入场实战案例。'
+description: '深入解析 CSS @starting-style 入场动画规则：嵌套与独立语法、首次渲染/display 切换/popover 三种触发场景、allow-discrete 离散过渡、与 animation/transition 对比选型，附实战案例。'
 pubDate: 2026-07-15
 tags: ['CSS', '@starting-style', '入场动画', 'transition', 'transition-behavior', 'allow-discrete', 'display 切换', 'popover', '首次渲染', '前端开发', 'CSS Transitions Level 2', '设计工具', '渐进增强']
 relatedTool: '/starting-style'

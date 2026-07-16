@@ -1,6 +1,6 @@
 ---
 title: 'CSS background 复合属性完全指南：多层背景叠加、简写语法、文字裁剪与视差效果'
-description: '深入解析 CSS background 复合属性：8 个子属性详解、简写语法与 position/size 斜杠规则、多层背景叠加顺序、background-clip: text 文字裁剪特效、cover 与 contain 区别、background-attachment: fixed 视差效果与移动端陷阱、background-origin 与 background-clip 区别。附多层背景实战示例与性能优化建议。'
+description: '深入解析 CSS background 复合属性：8 个子属性、简写语法与斜杠规则、多层背景叠加、background-clip: text 文字裁剪、cover 与 contain 区别、fixed 视差陷阱，附实战示例。'
 pubDate: 2026-07-14
 tags: ['CSS', 'background', '背景', '多层背景', 'background-clip', '文字裁剪', 'cover', 'contain', 'background-attachment', '视差', 'background-origin', '前端开发', '设计工具']
 relatedTool: '/background'

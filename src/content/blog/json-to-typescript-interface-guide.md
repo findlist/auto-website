@@ -1,6 +1,6 @@
 ---
 title: "JSON 转 TypeScript 接口原理：类型推断、联合合并与 interface 去重"
-description: "深入解析 JSON 转 TypeScript 接口生成器背后的原理：递归类型推断算法、TypeInfo 树设计、数组元素类型合并、联合类型去重排序、可选字段检测、嵌套对象提取为独立 interface、结构签名去重策略、键名合法性处理。涵盖纯原生 TypeScript 实现要点、与 JSON / JSONPath / JSON Schema 工具的联动方案、常见陷阱与最佳实践。"
+description: "深入解析 JSON 转 TypeScript 接口原理：递归类型推断算法、数组元素类型合并、联合类型去重排序、可选字段检测、嵌套对象提取为独立 interface，附原生实现要点。"
 pubDate: 2026-07-07
 tags: ["JSON", "TypeScript", "interface", "类型推断", "联合类型", "可选字段", "去重", "工具矩阵", "前端", "数据校验"]
 relatedTool: "/json-to-ts"

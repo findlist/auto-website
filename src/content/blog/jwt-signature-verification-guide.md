@@ -1,6 +1,6 @@
 ---
 title: "JWT 验签实战：从签名校验到声明合规的完整指南"
-description: "系统讲解 JWT 签名验证的完整流程：三类算法（HMAC/RSA/ECDSA）的验签密钥模型、Web Crypto API 验签实现、alg=none 攻击与算法白名单防御、exp/nbf/iat 时间声明校验、iss/aud/jti 业务声明合规、常量时间比较防时序攻击、JWKS 与密钥轮换、Node.js/Python/Java 服务端验签代码示例。配套在线 JWT 验签工具实操演练。"
+description: "系统讲解 JWT 签名验证完整流程：HMAC/RSA/ECDSA 三类算法验签、alg=none 攻击防御、exp/nbf/iat 时间声明校验、iss/aud/jti 业务声明合规、JWKS 密钥轮换，附服务端代码示例。"
 pubDate: 2026-07-08
 tags: ["JWT", "验签", "签名验证", "HMAC", "RSA", "ECDSA", "Web Crypto API", "安全", "认证", "JWKS", "时序攻击"]
 relatedTool: "/jwt-verify"
