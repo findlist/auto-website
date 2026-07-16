@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **94 个在线开发工具** + **89 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **95 个在线开发工具** + **90 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -57,7 +57,7 @@
 - 🚀 **零广告、零追踪** — 靠爱发电 / 捐赠驱动，不含任何广告联盟代码
 - 🔒 **全本地处理** — 所有工具纯前端计算，数据不离开您的浏览器，打开浏览器开发者工具即可审计
 - 📱 **移动端友好** — 375px / 768px / 1280px 三档响应式 + 暗色模式 + 复制即用
-- 📝 **配套博客** — 89 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
+- 📝 **配套博客** — 90 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
 - 🎨 **色彩设计** — 调色板 / 色值转换 / 对比度检测 / 配色灵感
 - 🔧 **编码转换** — Base64/32、URL、Hex、Punycode、HTML 实体、CSV/JSON/YAML/TOML/XML 互转
 - 🔐 **加密哈希** — AES / JWT 签名与验证 / JWE / 各类 Hash（SHA 系列）/ 强密码生成
@@ -70,7 +70,7 @@
 
 ---
 
-## 工具一览（94 个）
+## 工具一览（95 个）
 
 ### 编码转换
 `Base64` · `Base64 图片` · `图片压缩` · `EXIF 信息查看器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
@@ -88,7 +88,7 @@
 `Unix 时间戳` · `时间单位转换` · `时区转换` · `Cron 表达式`
 
 ### 网络与系统
-`IP 子网计算` · `HTTP 状态码`
+`IP 子网计算` · `HTTP 状态码` · `HTTP Header 解析与生成`
 
 ### 色彩与设计
 `颜色值转换` · `调色板工具` · `色彩对比度检测（WCAG）` · `CSS 盒阴影生成器` · `CSS 渐变生成器` · `CSS 文字阴影生成器` · `CSS border-radius 生成器` · `CSS transform 可视化工具` · `CSS 滤镜生成器` · `CSS clip-path 路径裁剪生成器` · `CSS Flexbox 可视化生成器` · `CSS Grid 可视化生成器` · `CSS subgrid 子网格生成器` · `CSS animation 动画生成器` · `CSS transition 过渡生成器` · `CSS background 复合属性生成器` · `CSS scroll-snap 滚动捕捉生成器` · `CSS writing-mode 书写模式生成器` · `CSS @container 容器查询生成器` · `CSS Nesting 原生嵌套生成器` · `CSS @layer 层叠层生成器` · `CSS @scope 作用域生成器` · `CSS scroll-driven 动画生成器` · `CSS light-dark() 暗色模式生成器` · `CSS text-wrap 文本换行排版优化器` · `CSS contain 性能优化生成器` · `CSS view-transition 视图过渡生成器` · `CSS @starting-style 入场动画生成器` · `CSS interpolate-size 尺寸插值动画生成器` · `CSS 锚点定位生成器` · `CSS position-area 定位区域生成器` · `CSS if() 条件函数生成器`
@@ -103,7 +103,7 @@
 | 层级 | 技术方案 | 说明 |
 | --- | --- | --- |
 | 静态站点生成 | **Astro 5** | SSG `output: static`，仅输出可部署的 HTML/CSS/JS |
-| 交互层 | React 18 + TypeScript 5.7 | 94 个 React 工具组件（`@astrojs/react`） |
+| 交互层 | React 18 + TypeScript 5.7 | 95 个 React 工具组件（`@astrojs/react`） |
 | 内容 | Astro Content Collections | MD 博客 + 230+ 个标签合集 |
 | SEO | `@astrojs/sitemap` | 自动生成 sitemap |
 | 部署 | Vercel / Cloudflare Pages / Netlify | 纯静态，零服务器 |
@@ -158,8 +158,8 @@ auto-website/
 │   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
-│   ├── components/                # 94 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 89 篇技术博客（.md）
+│   ├── components/                # 95 个 React 工具组件（AesTool / Base64Tool / …）
+│   ├── content/blog/              # 90 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -168,7 +168,7 @@ auto-website/
 │   │   ├── privacy.astro          # 隐私政策
 │   │   ├── rss.xml.ts             # RSS 订阅源
 │   │   ├── blog/                  # 博客列表/详情/标签 页（Astro Content Collections）
-│   │   └── [94 个工具页].astro    # 独立工具页（每页独立 SEO）
+│   │   └── [95 个工具页].astro    # 独立工具页（每页独立 SEO）
 │   ├── styles/
 │   │   └── global.css             # 全局样式
 │   └── utils/                     # 26 个纯逻辑工具模块（前端独立运算）
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 683 页（含 89 篇博客 + 300+ 个标签筛选页 + 94 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量 693 页（含 90 篇博客 + 300+ 个标签筛选页 + 95 个工具页及其它）。
 
 ---
 
-## 博客主题速览（89 篇）
+## 博客主题速览（90 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -200,6 +200,7 @@ auto-website/
 - `punycode-idn-guide` 国际化域名与 Punycode
 - `qr-code-design-guide` 二维码设计
 - `http-status-codes-overview` HTTP 状态码速查
+- `http-headers-guide` HTTP Header 完全指南（请求头/响应头/CORS/安全/缓存）
 - `text-analysis-word-count-guide` 文本统计分析与字数统计
 - `number-base-conversion-guide` 进制转换与 BigInt 精度
 - `text-case-conversion-guide` 文本大小写与命名风格转换
@@ -247,7 +248,7 @@ auto-website/
 - `anchor-positioning-guide` CSS 锚点定位：anchor-name/position-anchor 锚点绑定、anchor()/anchor-size() 函数、position-try-fallbacks 翻转避让
 - `position-area-guide` CSS position-area 定位区域：3x3 网格模型、物理/逻辑/坐标三套关键字、span 跨格、popover 重置、默认对齐行为
 - `css-if-guide` CSS if() 条件函数：style/media/supports 三类条件、多分支短路求值、嵌套与逻辑运算、降级实践
-- ……（共 89 篇，300+ 个标签）
+- ……（共 90 篇，300+ 个标签）
 
 ---
 

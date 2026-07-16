@@ -1,0 +1,869 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HttpHeadersTool from '../components/HttpHeadersTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'HTTP Header 解析与生成工具 - 请求头/响应头速查表',
+  description:
+    '在线 HTTP Header 工具：内置 40+ 常用请求头/响应头/CORS/安全/缓存头速查表，支持解析原始报文与 cURL -H 风格、生成等效 cURL 命令与 fetch 代码。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'HTTP Header 解析与生成工具',
+    description: '在线 HTTP Header 工具：40+ 常用 Header 速查表 + 原始报文解析 + cURL/fetch 代码生成，覆盖请求头/响应头/CORS/安全/缓存 7 大类。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>HTTP Header 解析与生成工具</h1>
+      <p>
+        一站式 HTTP Header 工具集，覆盖 <strong>RFC 9110</strong> 核心字段。内置
+        <strong>40+ 常用 Header 速查表</strong>（请求头/响应头/通用头/表示头/CORS/安全/缓存 7 大类），
+        每条含语法、示例、详细说明与易错点；<strong>解析器</strong>支持粘贴原始报文或
+        <code>curl -H</code> 风格文本，自动转换为键值对表格并标记格式警告；
+        <strong>生成器</strong>根据 URL + 方法 + Header + Body 一键生成等效
+        <code>curl</code> 命令与 JavaScript <code>fetch</code> 代码。
+        适用于调试跨域 CORS、设计缓存策略、配置安全响应头（CSP/HSTS）、生成 API 调用示例、
+        学习 HTTP 协议等场景，所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <HttpHeadersTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>HTTP Header 是什么？名称大小写敏感吗？</summary>
+        <p>
+          HTTP Header（HTTP 头字段）是 HTTP 请求与响应中<strong>键值对形式的元数据</strong>，
+          描述报文的发送方、接收方、主体内容、缓存策略、安全策略等信息。格式为
+          <code>name: value</code>（冒号后空格可选）。<br />
+          <strong>名称大小写不敏感</strong>：<code>Content-Type</code>、<code>content-type</code>、
+          <code>CONTENT-TYPE</code> 在 HTTP 协议层完全等价。RFC 9110 仅约定首字母大写习惯，
+          实际由各框架/服务器自行规范。但<strong>值是大小写敏感的</strong>（如 MIME 类型
+          <code>application/json</code> 必须小写）。<br />
+          名称字符集限制：RFC 9110 仅允许<strong>可见 ASCII（0x21-0x7e）</strong>，且不含冒号。
+          值可包含任意字符（含中文、Emoji），但需符合 obs-text 规范。生产环境建议 Header 值用 ASCII，
+          非 ASCII 内容放入主体。
+        </p>
+      </details>
+      <details>
+        <summary>请求头、响应头、通用头有什么区别？怎么分类？</summary>
+        <p>
+          HTTP Header 按出现位置分四大类：<br />
+          <strong>1. 请求头（Request Headers）</strong>：仅出现在 HTTP 请求中，描述客户端信息与期望。
+          典型：<code>Host</code>、<code>User-Agent</code>、<code>Accept</code>、<code>Authorization</code>、
+          <code>Cookie</code>、<code>Referer</code>、<code>Origin</code>。<br />
+          <strong>2. 响应头（Response Headers）</strong>：仅出现在 HTTP 响应中，描述服务器与响应信息。
+          典型：<code>Server</code>、<code>Set-Cookie</code>、<code>Location</code>、<code>WWW-Authenticate</code>、
+          <code>ETag</code>、<code>Content-Disposition</code>。<br />
+          <strong>3. 通用头（General Headers）</strong>：请求与响应都可出现，描述报文整体。
+          典型：<code>Date</code>、<code>Connection</code>、<code>Via</code>、<code>Transfer-Encoding</code>。<br />
+          <strong>4. 表示头（Representation Headers）</strong>：描述主体内容（HTTP/1.1 概念，HTTP/2+ 已合并）。
+          典型：<code>Content-Type</code>、<code>Content-Length</code>、<code>Content-Encoding</code>。
+          本工具额外划分 <strong>CORS</strong>（跨域）、<strong>安全</strong>（CSP/HSTS 等）、
+          <strong>缓存</strong>（Cache-Control/ETag 等）三个语义子类，便于查找。
+        </p>
+      </details>
+      <details>
+        <summary>Cookie 和 Set-Cookie 有什么区别？SameSite 怎么选？</summary>
+        <p>
+          <strong>Cookie</strong> 是请求头，浏览器自动携带同域 Cookie 到服务端，格式
+          <code>Cookie: name1=value1; name2=value2</code>（分号空格分隔）。<br />
+          <strong>Set-Cookie</strong> 是响应头，服务端设置 Cookie，<strong>一个响应可含多条 Set-Cookie</strong>
+          （其他 Header 通常合并为逗号分隔，但 Set-Cookie 例外）。属性：
+          <code>Path</code>（路径）、<code>Domain</code>（域）、<code>Max-Age</code>（秒，优先于 Expires）、
+          <code>HttpOnly</code>（防 JS 读取，防 XSS 窃取）、<code>Secure</code>（仅 HTTPS）、
+          <code>SameSite</code>（防 CSRF）。<br />
+          <strong>SameSite 三个值的选择</strong>：<br />
+          - <code>Lax</code>（默认，推荐）：跨站 GET 携带，POST/PUT/DELETE 不携带。平衡安全与体验，适合大多数站点。<br />
+          - <code>Strict</code>：完全不跨站携带。最安全，但从外站跳转过来会丢登录态。<br />
+          - <code>None</code>：跨站全部携带。需同时设 <code>Secure</code>。仅第三方 Cookie 场景使用（如嵌入式广告），
+          Chrome 已逐步淘汰第三方 Cookie，建议避免。<br />
+          生产环境：会话 Cookie 用 <code>HttpOnly; Secure; SameSite=Lax</code>，跨子域共享时加
+          <code>Domain=.example.com</code>。
+        </p>
+      </details>
+      <details>
+        <summary>CORS 跨域怎么配置？为什么用了 * 还是报错？</summary>
+        <p>
+          <strong>CORS</strong>（跨域资源共享）通过响应头控制浏览器跨域访问。核心头：
+          <code>Access-Control-Allow-Origin</code>（允许的源）、<code>Access-Control-Allow-Methods</code>（允许的方法）、
+          <code>Access-Control-Allow-Headers</code>（允许的自定义头）、<code>Access-Control-Allow-Credentials</code>（允许携带凭证）、
+          <code>Access-Control-Max-Age</code>（预检缓存时长）。<br />
+          <strong>"用了 * 还是报错"的三大常见原因</strong>：<br />
+          1. <strong>携带凭证时不能用 *</strong>：当前端 <code>fetch(url, &#123; credentials: "include" &#125;)</code>
+          或 <code>XMLHttpRequest.withCredentials = true</code> 时，服务端
+          <code>Access-Control-Allow-Origin</code> 必须是<strong>具体源</strong>（如
+          <code>https://example.com</code>），不能是 <code>*</code>。否则浏览器报错
+          "The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*'..."。<br />
+          2. <strong>预检请求未通过</strong>：复杂请求（如自定义头、PUT/DELETE、Content-Type: application/json）
+          会先发 OPTIONS 预检。预检响应必须正确返回 Allow-Methods、Allow-Headers、Allow-Credentials，
+          否则实际请求被拦截。<br />
+          3. <strong>缺少 Vary: Origin</strong>：若 Allow-Origin 动态返回（多源白名单），必须配合
+          <code>Vary: Origin</code>，否则 CDN 缓存会串内容（A 站命中后缓存给 B 站）。<br />
+          推荐配置：<code>Access-Control-Allow-Origin: https://your-frontend.com</code>
+          + <code>Vary: Origin</code> + <code>Access-Control-Allow-Credentials: true</code>（如需凭证）。
+        </p>
+      </details>
+      <details>
+        <summary>Cache-Control 怎么配置缓存策略？max-age 和 s-maxage 有什么区别？</summary>
+        <p>
+          <strong>Cache-Control</strong> 是 HTTP/1.1 缓存策略核心字段，常用指令：
+          <code>max-age</code>（浏览器缓存秒数）、<code>s-maxage</code>（CDN/共享缓存秒数，覆盖 max-age）、
+          <code>public</code>（可被中间缓存）、<code>private</code>（仅浏览器缓存，不能 CDN）、
+          <code>no-cache</code>（强制验证，每次发条件请求）、<code>no-store</code>（完全不缓存）、
+          <code>immutable</code>（永不变，永久缓存）、<code>stale-while-revalidate</code>（接受过期同时异步重验证）、
+          <code>must-revalidate</code>（过期后必须验证）。<br />
+          <strong>max-age vs s-maxage</strong>：<code>max-age=3600</code> 仅控制浏览器缓存 1 小时；
+          <code>s-maxage=86400</code> 控制 CDN 缓存 1 天。两者并存时，CDN 用 s-maxage，浏览器用 max-age。
+          典型配置：<code>Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400</code>。<br />
+          <strong>常用策略</strong>：<br />
+          - <strong>带 hash 的静态资源</strong>（如 <code>/_app/main.a1b2c3.js</code>）：
+          <code>Cache-Control: public, max-age=31536000, immutable</code>（一年永久缓存，永不变）。<br />
+          - <strong>HTML 文档</strong>：<code>Cache-Control: no-cache</code>（强制验证，配合 ETag）。<br />
+          - <strong>API 响应</strong>：<code>Cache-Control: private, max-age=0, no-cache</code>
+          或 <code>no-store</code>（敏感数据）。<br />
+          - <strong>用户特定数据</strong>：<code>Cache-Control: private, no-cache</code>（不能 CDN）。
+        </p>
+      </details>
+      <details>
+        <summary>Content-Security-Policy 怎么写？为什么我的页面突然样式错乱？</summary>
+        <p>
+          <strong>Content-Security-Policy</strong>（CSP）是防御 XSS 的最强工具，限制资源加载来源。语法
+          <code>directive source1 source2; directive source1 source2</code>。常用指令：<code>default-src</code>
+          （兜底）、<code>script-src</code>（脚本）、<code>style-src</code>（样式）、<code>img-src</code>（图片）、
+          <code>font-src</code>（字体）、<code>connect-src</code>（fetch/XHR/WebSocket）、<code>frame-src</code>
+          （iframe）、<code>object-src</code>（Flash/Plugin）。<br />
+          <strong>常见 source 值</strong>：<code>'self'</code>（同源）、<code>'none'</code>（完全禁止）、
+          <code>'unsafe-inline'</code>（允许内联，弱化 CSP）、<code>'unsafe-eval'</code>（允许 eval，弱化）、
+          <code>https:</code>（任意 HTTPS）、<code>https://cdn.example.com</code>（具体源）、
+          <code>'sha256-...'</code>（脚本哈希白名单）、<code>'nonce-RANDOM'</code>（一次性 nonce）。<br />
+          <strong>"样式错乱"通常是 CSP 拦截了样式</strong>：检查浏览器控制台是否报
+          "Refused to apply inline style..."，常见原因：<br />
+          1. <code>&lt;style&gt;</code> 标签或 <code>style="..."</code> 属性被 <code>style-src 'self'</code>
+          拦截。修复：加 <code>'unsafe-inline'</code> 或用 nonce/hash。<br />
+          2. 外部 CDN 样式（如 Tailwind CDN）被拦截。修复：<code>style-src 'self' https://cdn.tailwindcss.com</code>。<br />
+          3. <code>@font-face</code> 字体被拦截。修复：<code>font-src 'self' https://fonts.gstatic.com</code>。<br />
+          <strong>推荐做法</strong>：先用 <code>Content-Security-Policy-Report-Only</code> 仅上报不拦截，
+          观察一段时间再切换到强制 CSP。本站点的 CSP 配置可以参考响应头中的实际值。
+        </p>
+      </details>
+      <details>
+        <summary>Host、Origin、Referer 三个头有什么区别？什么场景下用哪个？</summary>
+        <p>
+          三者都涉及"目标/来源"信息，但语义与场景不同：<br />
+          <strong>Host</strong>（请求头）：请求<strong>目标主机</strong>，格式 <code>Host: api.example.com:443</code>。
+          HTTP/1.1 必需，服务端据此做虚拟主机路由（一台 IP 多个域名）。HTTP/2 改为 <code>:authority</code> 伪头。<br />
+          <strong>Origin</strong>（请求头）：请求<strong>来源源</strong>，格式 <code>Origin: https://www.example.com</code>。
+          仅含协议+域+端口（不含路径与查询）。<strong>仅在跨域请求与 POST 时发送</strong>，用于 CORS 判断。
+          同源 GET 通常不发 Origin。<br />
+          <strong>Referer</strong>（请求头）：请求<strong>来源完整 URL</strong>，格式
+          <code>Referer: https://www.example.com/page?query=1</code>。注意拼写是历史遗留（应为 Referrer）。
+          <strong>同源与跨域都发送</strong>（受 Referrer-Policy 控制），用于防盗链、统计来源。<br />
+          <strong>使用场景</strong>：<br />
+          - CORS 跨域校验：用 <code>Origin</code>（更简洁，仅源）。<br />
+          - 防盗链（如图片/视频只允许自家页面引用）：用 <code>Referer</code>（带路径，可细分）。<br />
+          - 统计搜索来源（如 Google 来的关键词）：用 <code>Referer</code>（含 query）。<br />
+          - 虚拟主机路由：用 <code>Host</code>。<br />
+          <strong>安全提示</strong>：<code>Referer</code> 可能泄露敏感 query 参数（如 token、session id），
+          建议设置 <code>Referrer-Policy: strict-origin-when-cross-origin</code>（默认值），跨域仅发源不发 query。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会上传我的 Header 数据吗？安全吗？</summary>
+        <p>
+          <strong>完全本地处理，零上传</strong>：<br />
+          - 速查表数据内置在页面 JS 包中，不发起任何网络请求。<br />
+          - 解析器：你粘贴的 Header 文本仅在浏览器内存中处理，生成键值对表格，<strong>不发送到任何服务器</strong>。<br />
+          - 生成器：URL、方法、Header、Body 全部本地处理，生成的 cURL/fetch 代码仅在你本地浏览器中显示，
+          点击复制按钮才会写入剪贴板。<br />
+          - 无 Cookie 追踪、无第三方统计、无广告，适合处理含 <code>Authorization</code>、
+          <code>Cookie</code> 等敏感字段的 Header。<br />
+          <strong>注意</strong>：本工具<strong>仅生成代码不发起请求</strong>——生成的 cURL 命令需你复制到终端执行，
+          生成的 fetch 代码需你复制到项目运行。本工具不会主动调用你输入的 URL。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/http-status">HTTP 状态码查询工具</a> — 查询 1xx-5xx 状态码含义与本工具的 Header 配合使用</li>
+        <li><a href="/jwt">JWT 解码工具</a> — 解码 Authorization 头中的 Bearer JWT 令牌</li>
+        <li><a href="/jwt-verify">JWT 签名验证工具</a> — 验证 Authorization 头中 JWT 的签名有效性</li>
+        <li><a href="/mime">MIME 类型查询工具</a> — Content-Type 头对应的 MIME 类型完整对照表</li>
+        <li><a href="/url">URL 解析与编码工具</a> — 解析 Origin/Referer/Host 头中的 URL 结构</li>
+        <li><a href="/ip">IP 子网计算器</a> — X-Forwarded-For 头中 IP 与子网划分计算</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：hh 命名空间（http-headers） */
+
+  /* 容器与标签页 */
+  .hh__container {
+    margin: 24px 0;
+  }
+
+  .hh__tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 16px;
+  }
+
+  .hh__tab {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .hh__tab:hover {
+    color: var(--color-text);
+  }
+
+  .hh__tab.is-active {
+    color: var(--color-accent, #2563eb);
+    border-bottom-color: var(--color-accent, #2563eb);
+    font-weight: 600;
+  }
+
+  /* 通用控件 */
+  .hh__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .hh__input,
+  .hh__select,
+  .hh__textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .hh__textarea {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    resize: vertical;
+    line-height: 1.6;
+    width: 100%;
+  }
+
+  .hh__search {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .hh__input:focus,
+  .hh__select:focus,
+  .hh__textarea:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 分类筛选 chips */
+  .hh__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hh__chip {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hh__chip:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted, #6b7280);
+  }
+
+  .hh__chip.is-active {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 按钮 */
+  .hh__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hh__btn--ghost {
+    background: transparent;
+  }
+
+  .hh__btn--ghost:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .hh__btn--primary {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .hh__btn--primary:hover {
+    opacity: 0.9;
+  }
+
+  /* 空状态 */
+  .hh__empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 14px;
+  }
+
+  .hh__empty p {
+    margin: 0 0 8px;
+  }
+
+  .hh__hint {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    margin-top: 6px;
+  }
+
+  /* ============== 速查表面板 ============== */
+  .hh__ref-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .hh__ref-list {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+  }
+
+  .hh__ref-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hh__ref-item {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hh__ref-item:last-child {
+    border-bottom: none;
+  }
+
+  .hh__ref-btn {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 2px 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .hh__ref-btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .hh__ref-item.is-active .hh__ref-btn {
+    background: var(--color-bg-soft, rgba(37, 99, 235, 0.08));
+  }
+
+  .hh__ref-name {
+    grid-row: 1;
+    grid-column: 1;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .hh__ref-cat {
+    grid-row: 1;
+    grid-column: 2;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .hh__ref-summary {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 详情面板 */
+  .hh__ref-detail {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    padding: 18px 20px;
+    background: var(--color-bg);
+    min-height: 200px;
+  }
+
+  .hh__ref-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .hh__ref-title {
+    margin: 0;
+    font-size: 18px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text);
+  }
+
+  .hh__badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-text-muted, #6b7280);
+  }
+
+  .hh__badge--req {
+    background: #2563eb;
+  }
+
+  .hh__badge--resp {
+    background: #16a34a;
+  }
+
+  .hh__ref-summary-lg {
+    font-size: 14px;
+    color: var(--color-text);
+    margin: 0 0 16px;
+  }
+
+  .hh__field {
+    margin-bottom: 14px;
+  }
+
+  .hh__field h4 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hh__ref-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text);
+  }
+
+  /* 代码块 */
+  .hh__code {
+    position: relative;
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .hh__code--lg {
+    font-size: 13px;
+    padding: 14px 16px;
+    min-height: 200px;
+  }
+
+  .hh__copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #6b7280);
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .hh__code:hover .hh__copy-btn {
+    opacity: 1;
+  }
+
+  .hh__copy-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted, #6b7280);
+  }
+
+  /* ============== 解析器面板 ============== */
+  .hh__parser-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .hh__parser-input,
+  .hh__parser-output {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .hh__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hh__panel-head h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .hh__count {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-text-muted, #6b7280);
+    margin-left: 6px;
+  }
+
+  .hh__warn-count {
+    color: #dc2626;
+  }
+
+  .hh__panel-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .hh__parser-input .hh__textarea {
+    border: none;
+    border-radius: 0;
+    padding: 12px 14px;
+  }
+
+  .hh__parser-input .hh__hint {
+    padding: 8px 14px;
+    margin: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .hh__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .hh__table thead th {
+    padding: 8px 10px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hh__table tbody tr {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hh__table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .hh__table tbody tr:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .hh__table td {
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+
+  .hh__table tr.is-warning {
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .hh__td-line {
+    color: var(--color-text-muted, #6b7280);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    width: 36px;
+  }
+
+  .hh__td-name {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-weight: 600;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  .hh__td-value {
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  .hh__td-status {
+    width: 32px;
+    text-align: center;
+  }
+
+  .hh__ok {
+    color: #16a34a;
+  }
+
+  .hh__warn {
+    color: #dc2626;
+  }
+
+  .hh__muted {
+    color: var(--color-text-muted, #6b7280);
+    font-style: italic;
+  }
+
+  .hh__warn-list {
+    padding: 12px 14px;
+    border-top: 1px solid var(--color-border);
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .hh__warn-list h4 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: #dc2626;
+  }
+
+  .hh__warn-list ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+
+  /* ============== 生成器面板 ============== */
+  .hh__gen-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .hh__gen-config,
+  .hh__gen-output {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg);
+    padding: 14px 16px;
+  }
+
+  .hh__field-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .hh__field-row--col {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .hh__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .hh__textarea--sm {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .hh__output-tabs {
+    display: flex;
+    gap: 2px;
+  }
+
+  .hh__output-tab {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .hh__output-tab.is-active {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .hh__gen-output .hh__panel-head {
+    margin: -14px -16px 12px;
+    padding: 10px 14px;
+  }
+
+  /* ============== 响应式适配 ============== */
+  @media (max-width: 768px) {
+    .hh__ref-layout,
+    .hh__parser-layout,
+    .hh__gen-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .hh__ref-list {
+      max-height: 300px;
+    }
+
+    .hh__tab {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .hh__controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .hh__search {
+      min-width: 0;
+    }
+
+    .hh__chips {
+      justify-content: center;
+    }
+
+    .hh__code--lg {
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .hh__ref-btn {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+    }
+
+    .hh__ref-cat {
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    .hh__ref-summary {
+      grid-row: 3;
+      grid-column: 1;
+    }
+
+    .hh__field-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .hh__table {
+      font-size: 11px;
+    }
+
+    .hh__table td,
+    .hh__table th {
+      padding: 6px 6px;
+    }
+  }
+
+  /* ============== 暗色模式 ============== */
+  @media (prefers-color-scheme: dark) {
+    .hh__btn--primary:hover {
+      opacity: 0.85;
+    }
+
+    .hh__code {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hh__ref-item.is-active .hh__ref-btn {
+      background: rgba(37, 99, 235, 0.15);
+    }
+
+    .hh__table tr.is-warning {
+      background: rgba(220, 38, 38, 0.08);
+    }
+
+    .hh__warn-list {
+      background: rgba(220, 38, 38, 0.08);
+    }
+  }
+</style>
