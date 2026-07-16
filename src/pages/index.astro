@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 95 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 96 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -572,6 +572,15 @@ const tools = [
     keywords: 'http header 请求头 响应头 cors 跨域 cookie set-cookie authorization content-type cache-control etag csp hsts security 安全 缓存 curl fetch',
   },
   {
+    href: '/user-agent',
+    title: 'User-Agent 解析与识别',
+    desc: '在线 User-Agent 解析工具：支持识别 60+ 浏览器（Chrome/Edge/Safari/Firefox/微信/QQ/UC/360/Opera 等）、主流操作系统（Windows/macOS/iOS/Android/Linux/HarmonyOS）、设备类型（桌面/手机/平板）、渲染引擎（Blink/WebKit/Gecko）与爬虫机器人（Googlebot/Bingbot/百度爬虫/cURL 等）。内置 60+ 浏览器速查表、真实 UA 示例库与跨标签页载入解析。适用于调试移动端适配、识别爬虫访问、统计分析访问来源、设计自适应布局等场景，全本地处理零上传。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'user-agent ua 浏览器 解析 识别 设备 移动端 爬虫 googlebot bingbot 百度 微信 qq uc 360 edge opera chrome safari firefox blink webkit gecko webview 移动 平板 桌面',
+  },
+  {
     href: '/jsonpath',
     title: 'JSONPath 查询工具',
     desc: '在线 JSONPath 查询工具：基于 RFC 9535 标准实现的三阶段解析器（词法 / 语法 / 求值），支持 $ 根、.name 子节点、..name 递归下降、[*] 通配符、[index] 索引（含负索引）、[?(filter)] 过滤表达式（==/!=/>/>=/</<=/=~ 与 &&/||/! 组合），内置 12 个预设示例与电商订单 / 用户列表示例数据，查询结果展示索引、类型标签与单条复制，零依赖纯函数实现，适用于 API 响应提取、JSON 数据探查、配置筛选、自动化测试断言等场景。',
@@ -939,7 +948,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 95 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 96 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>

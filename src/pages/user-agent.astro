@@ -1,0 +1,700 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import UserAgentTool from '../components/UserAgentTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'User-Agent 解析与识别工具 - 浏览器/系统/设备/爬虫检测',
+  description:
+    '在线 User-Agent 解析工具：支持识别 60+ 浏览器（Chrome/Edge/Safari/Firefox/微信/QQ/UC 等）、主流操作系统、设备类型（桌面/手机/平板）、渲染引擎与爬虫机器人。内置速查表与真实 UA 示例库，可一键载入解析。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'User-Agent 解析与识别工具',
+    description: '在线 User-Agent 解析工具：识别 60+ 浏览器、操作系统、设备类型、渲染引擎与爬虫机器人，内置速查表与真实 UA 示例库，全本地处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>User-Agent 解析与识别工具</h1>
+      <p>
+        一站式 User-Agent 字符串解析工具，覆盖 <strong>RFC 9110</strong> 定义的 UA 头字段。
+        <strong>解析器</strong>实时识别浏览器名称与版本、操作系统、设备类型（桌面/手机/平板）、
+        渲染引擎（Blink/WebKit/Gecko）与爬虫机器人（Googlebot/Bingbot/cURL 等）；
+        <strong>速查表</strong>内置 60+ 浏览器、主流操作系统、4 大渲染引擎与常见爬虫的中文参考；
+        <strong>示例库</strong>提供桌面/移动/应用内 WebView/爬虫 4 大类真实 UA 样本，点击「载入」
+        一键填入解析器。适用于调试移动端适配、识别爬虫访问、统计分析访问来源、设计自适应布局、
+        排查浏览器兼容性等场景，所有解析在浏览器本地完成。
+      </p>
+    </div>
+
+    <UserAgentTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>User-Agent 是什么？为什么浏览器要发送这个字符串？</summary>
+        <p>
+          <strong>User-Agent</strong>（简称 UA）是 HTTP 请求头中的一个字段，格式
+          <code>User-Agent: &lt;产品&gt; / &lt;版本&gt; (&lt;系统信息&gt;) &lt;扩展信息&gt;</code>，
+          由浏览器在每次 HTTP 请求中自动携带，向服务器标识自己。<br />
+          UA 字符串的设计初衷是<strong>让服务器根据客户端能力返回合适内容</strong>（如移动端返回精简版页面、
+          老浏览器返回降级资源）。但由于历史原因，UA 字符串<strong>长期被滥用于浏览器嗅探</strong>
+          （Browser Sniffing）：一些网站仅根据 UA 中是否含 "Chrome" 判断能力，导致新浏览器伪装成 Chrome 才能正常访问。<br />
+          <strong>典型 UA 结构</strong>（以 Chrome 120 为例）：
+          <code>Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36</code>。
+          其中 <code>Mozilla/5.0</code> 是历史兼容标记，<code>Windows NT 10.0</code> 是操作系统，
+          <code>AppleWebKit/537.36</code> 是渲染引擎版本，<code>Chrome/120.0.0.0</code> 是真实浏览器与版本，
+          <code>Safari/537.36</code> 是历史兼容标记（Chrome 为了被识别为 Safari 才能访问某些站点）。
+        </p>
+      </details>
+      <details>
+        <summary>UA-CH（User-Agent Client Hints）是什么？为什么要替代传统 UA？</summary>
+        <p>
+          <strong>UA-CH</strong>（User-Agent Client Hints）是 Chrome 团队提出的 UA 替代方案，
+          通过结构化的 <code>Sec-CH-UA</code> 系列响应头/请求头传递客户端信息，避免传统 UA 字符串的
+          <strong>三个核心问题</strong>：<br />
+          1. <strong>隐私泄露</strong>：传统 UA 字符串含精细版本号、CPU 架构、设备型号，组合后可作为
+          指纹追踪用户。UA-CH 默认只发品牌列表与主版本号，精细字段需服务器主动请求（
+          <code>Accept-CH: Sec-CH-UA-Platform, Sec-CH-UA-Mobile</code>）。<br />
+          2. <strong>兼容性陷阱</strong>：传统 UA 字符串被大量网站用于嗅探，浏览器一旦改 UA 就会破坏
+          现有网站。Chrome 自 92 起采用 <strong>UA 冻结（UA Freezing）</strong>：逐步把精细信息替换为固定值，
+          仅保留主版本号，迫使用户改用 UA-CH。<br />
+          3. <strong>字符串解析脆弱</strong>：UA 字符串无固定结构，正则解析易出错。UA-CH 用结构化键值对
+          （<code>Sec-CH-UA: "Chromium";v="120", "Not(A:Brand";v="24", "Google Chrome";v="120"</code>）
+          避免解析歧义。<br />
+          <strong>浏览器支持</strong>：Chrome 89+ / Edge 89+ 已支持，Firefox 与 Safari 暂未实现（截至 2024）。
+          生产环境推荐<strong>优先使用 UA-CH，降级使用传统 UA</strong>，避免依赖精细版本号。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 Edge、Opera、Chrome 的 UA 都包含 "Chrome"？怎么区分？</summary>
+        <p>
+          这是浏览器历史兼容的产物：基于 Chromium 内核的浏览器（Edge、Opera、Brave、Vivaldi、360、QQ、UC 等）
+          为了访问仅识别 Chrome 的网站，<strong>在 UA 中保留 <code>Chrome/x.x.x.x</code> 标记</strong>，
+          同时再附加自己的品牌标记。所以解析时<strong>必须按特异性顺序匹配</strong>，先匹配更具体的品牌，
+          再回退到 Chrome：<br />
+          - <strong>Edge</strong>：UA 含 <code>Edg/x.x.x.x</code>（注意是 Edg 不是 Edge，避免与 IE 区分），<strong>必须在 Chrome 之前匹配</strong>。<br />
+          - <strong>Opera</strong>：UA 含 <code>OPR/x.x.x.x</code> 或老版本 <code>Opera/x.x.x.x</code>。<br />
+          - <strong>Brave</strong>：UA 与 Chrome 完全相同，<strong>无法通过 UA 区分</strong>，需检测
+          <code>navigator.brave</code> API。<br />
+          - <strong>360 浏览器</strong>：UA 含 <code>QIHU 360SE</code> 或 <code>360SE</code>。<br />
+          - <strong>QQ 浏览器</strong>：UA 含 <code>QQBrowser</code> 或 <code>QQ/</code>。<br />
+          - <strong>UC 浏览器</strong>：UA 含 <code>UCBrowser</code> 或 <code>UCWEB</code>。<br />
+          - <strong>微信 WebView</strong>：UA 含 <code>MicroMessenger/x.x.x.x</code>，在 Chrome 之前匹配。<br />
+          - <strong>QQ 内置浏览器</strong>：UA 含 <code>QQ/</code>（注意与 QQ 浏览器不同）。<br />
+          <strong>本工具的解析顺序</strong>：国产/应用内 WebView 浏览器优先 → Chromium 衍生浏览器（Edge/Opera）
+          → 主流国际浏览器（Chrome/Safari/Firefox）→ 其他。这是识别准确率的关键。
+        </p>
+      </details>
+      <details>
+        <summary>如何识别爬虫/机器人？怎么区分正常用户和 Googlebot？</summary>
+        <p>
+          爬虫识别主要靠<strong>UA 字符串中的特定标识</strong>，主流搜索引擎爬虫都会在 UA 中明确标识自己：<br />
+          - <strong>Googlebot</strong>：<code>Googlebot/2.1 (+http://www.google.com/bot.html)</code><br />
+          - <strong>Bingbot</strong>：<code>Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)</code><br />
+          - <strong>百度爬虫</strong>：<code>Baiduspider+(+http://www.baidu.com/search/spider.htm)</code>，
+          另有 Baiduspider-render（渲染爬虫）、Baiduspider-image（图片爬虫）等子类<br />
+          - <strong>搜狗爬虫</strong>：<code>Sogou web spider/4.0</code><br />
+          - <strong>360 搜索爬虫</strong>：<code>360Spider</code><br />
+          - <strong>神马爬虫</strong>：<code>YisouSpider</code><br />
+          - <strong>HTTP 库</strong>：cURL (<code>curl/x.x.x</code>)、Python Requests (<code>python-requests/x.x.x</code>)、
+          axios (<code>axios/x.x.x</code>)、Go http (<code>Go-http-client/x.x</code>)、Java (<code>Java/x.x.x</code>)<br />
+          - <strong>社交媒体爬虫</strong>：Twitterbot、Facebook External Hit、LinkedInBot、TelegramBot<br />
+          <strong>识别要点</strong>：含 <code>bot</code>、<code>spider</code>、<code>crawler</code>、
+          <code>slurp</code>、<code>archive</code> 等关键字的通常为爬虫。但<strong>UA 可被伪造</strong>——
+          恶意爬虫可伪装成正常浏览器 UA，仅靠 UA 识别有局限。生产环境识别恶意爬虫需结合 IP 信誉库、
+          访问频率、行为特征等综合判断。Googlebot 真实性可通过反向 DNS 查询（<code>*.googlebot.com</code>）+ 正向 DNS 验证。
+        </p>
+      </details>
+      <details>
+        <summary>怎么从 UA 区分手机、平板、桌面？iPad 为什么有时被识别为桌面？</summary>
+        <p>
+          <strong>设备类型识别</strong>主要靠 UA 中的关键字：<br />
+          - <strong>手机</strong>：含 <code>Mobile</code> 或 <code>iPhone</code> 或 <code>Android</code>（含 Mobile）。
+          典型：<code>Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ... Mobile/15E148 Safari/604.1</code>。<br />
+          - <strong>平板</strong>：含 <code>iPad</code> 或 <code>Android</code>（不含 Mobile）或 <code>Tablet</code>。
+          典型：<code>Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) ... Mobile/15E148 Safari/604.1</code>。<br />
+          - <strong>桌面</strong>：含 <code>Windows NT</code>、<code>Macintosh</code>、<code>X11</code>、<code>Linux</code>（无 Mobile）。<br />
+          <strong>iPad 桌面陷阱</strong>：自 iPadOS 13 起，Apple 默认把 iPad 的 UA 设为<strong>桌面 Safari</strong>
+          （请求桌面版网站），UA 中不再含 <code>iPad</code>，而是 <code>Macintosh</code> + <code>Mac OS X</code>。
+          这导致纯 UA 解析会误判 iPad 为 Mac。<strong>区分方法</strong>：<br />
+          1. <strong>检测触屏</strong>：<code>navigator.maxTouchPoints &gt; 1</code> + UA 含 <code>Macintosh</code>，
+          极可能是 iPad。<br />
+          2. <strong>UA-CH</strong>：<code>Sec-CH-UA-Platform</code> 会返回 "iPadOS"。<br />
+          3. <strong>用户手动切换</strong>：iPadOS 13+ 设置中可切换"请求移动网站"，UA 会变回含 <code>iPad</code>。<br />
+          本工具的示例库含 iPad 桌面版与移动版两组 UA，方便对比测试。
+        </p>
+      </details>
+      <details>
+        <summary>应用内 WebView（微信/QQ/微博）的 UA 长什么样？怎么识别？</summary>
+        <p>
+          <strong>WebView</strong> 是 App 内嵌的浏览器组件（基于系统内核或自带内核），UA 通常在系统浏览器 UA
+          基础上<strong>追加 App 标识</strong>。常见模式：<br />
+          - <strong>微信</strong>：UA 含 <code>MicroMessenger/x.x.x.x</code>，例：
+          <code>Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) ... Mobile/15E148 Safari/604.1 MicroMessenger/8.0.40</code>。
+          版本号 &lt; 6.0.2 无法调用微信 JSSDK，&gt;= 7.0.0 才支持小程序 webview。<br />
+          - <strong>QQ（手机 QQ）</strong>：UA 含 <code>QQ/x.x.x.x</code>，注意与 QQ 浏览器（<code>QQBrowser</code>）不同。<br />
+          - <strong>QQ 浏览器</strong>：UA 含 <code>QQBrowser</code> 或老版本 <code>QQBrowserLite</code>。<br />
+          - <strong>微博</strong>：UA 含 <code>Weibo</code> 或 <code>__weibo</code>。<br />
+          - <strong>支付宝</strong>：UA 含 <code>AlipayClient</code>。<br />
+          - <strong>钉钉</strong>：UA 含 <code>DingTalk</code>。<br />
+          - <strong>飞书</strong>：UA 含 <code>Lark</code> 或 <code>Feishu</code>。<br />
+          - <strong>抖音/今日头条</strong>：UA 含 <code>aweme</code>、<code>ByteLocale</code>、<code>newsarticle</code> 等。<br />
+          <strong>识别要点</strong>：WebView UA 通常<strong>以系统浏览器 UA 为前缀 + 追加 App 标识</strong>，
+          所以解析时必须先匹配 App 标识（更特异），再回退到系统浏览器。本工具的解析顺序已对 WebView 做特异优先处理。
+        </p>
+      </details>
+      <details>
+        <summary>UA 会被伪造吗？为什么不能完全信任 UA？</summary>
+        <p>
+          <strong>UA 字符串完全可以被任意伪造</strong>，因为它只是 HTTP 请求头的一个字段，浏览器扩展、命令行工具、
+          任何 HTTP 客户端都可以设置任意 UA。常见场景：<br />
+          1. <strong>开发调试</strong>：浏览器开发者工具可切换设备模拟（修改 UA 测试移动端）。
+          cURL 通过 <code>-A</code> 参数指定 UA：<code>curl -A "Mozilla/5.0 ..." https://example.com</code>。<br />
+          2. <strong>爬虫伪装</strong>：恶意爬虫伪造 Chrome UA 绕过反爬。Python Requests 默认 UA 是
+          <code>python-requests/x.x.x</code>，最简单的反爬直接 ban 这个 UA，所以爬虫会改成 Chrome UA。<br />
+          3. <strong>用户主动修改</strong>：某些扩展（如 User-Agent Switcher）允许用户切换 UA，访问仅限移动端的页面。<br />
+          4. <strong>浏览器内核切换</strong>：国产浏览器（如 360、搜狗）有"兼容模式/极速模式"，切换内核时 UA 会变。<br />
+          <strong>所以 UA 不能作为信任依据</strong>：<br />
+          - <strong>安全场景</strong>：识别用户身份必须用 Cookie/Token/JWT，绝不能依赖 UA。<br />
+          - <strong>反爬场景</strong>：仅靠 UA 识别爬虫易被绕过，需配合 IP 频率、行为特征、验证码等多层防护。<br />
+          - <strong>统计场景</strong>：UA 统计结果仅供参考，可能存在伪造偏差。<br />
+          - <strong>能力检测场景</strong>：判断浏览器是否支持某特性应使用<strong>特性检测</strong>
+          （<code>if ('serviceWorker' in navigator) &#123; ... &#125;</code>），而非 UA 嗅探。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会上传我的 UA 字符串吗？数据安全吗？</summary>
+        <p>
+          <strong>完全本地处理，零上传</strong>：<br />
+          - 解析器：你粘贴或输入的 UA 字符串仅在浏览器内存中处理，<strong>不发送到任何服务器</strong>。
+          所有解析逻辑（60+ 浏览器模式、操作系统识别、设备类型判断、爬虫检测）都在浏览器本地执行。<br />
+          - 速查表与示例库：数据内置在页面 JS 包中，<strong>不发起任何网络请求</strong>。
+          示例库中的真实 UA 均为公开数据，不含任何用户隐私信息。<br />
+          - 复制功能：点击「复制」按钮把解析结果或示例 UA 写入剪贴板，全程本地操作。<br />
+          - 无 Cookie 追踪、无第三方统计、无广告，适合处理含敏感信息的 UA 字符串（虽然 UA 本身不含个人身份信息，
+          但部分用户可能不想暴露自己的 UA）。<br />
+          <strong>关于"获取我的 UA"功能</strong>：本工具<strong>不主动读取</strong>
+          <code>navigator.userAgent</code>，避免在不知情下泄露用户 UA。用户需手动复制粘贴或从示例库选择，
+          保持透明可控。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/http-headers">HTTP Header 解析与生成</a> — User-Agent 是 HTTP 请求头的一部分，搭配速查表学习完整 Header 体系</li>
+        <li><a href="/http-status">HTTP 状态码查询</a> — 根据 UA 识别后搭配状态码分析访问日志</li>
+        <li><a href="/ip">IP 子网计算器</a> — 与 User-Agent 一起用于访问日志分析与爬虫识别</li>
+        <li><a href="/url">URL 解析与编码</a> — Referer 头与请求 URL 结构解析</li>
+        <li><a href="/mime">MIME 类型查询</a> — Accept 请求头中的 MIME 类型完整对照表</li>
+        <li><a href="/jwt">JWT 解码工具</a> — Authorization 头中的 Bearer JWT 令牌解析</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：ua 命名空间（user-agent） */
+
+  /* 容器与主标签页 */
+  .ua__container {
+    margin: 24px 0;
+  }
+
+  .ua__tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--color-border);
+    margin-bottom: 16px;
+  }
+
+  .ua__tab {
+    padding: 8px 18px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .ua__tab:hover {
+    color: var(--color-text);
+  }
+
+  .ua__tab.is-active {
+    color: var(--color-accent, #2563eb);
+    border-bottom-color: var(--color-accent, #2563eb);
+    font-weight: 600;
+  }
+
+  /* 通用按钮 */
+  .ua__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .ua__btn--sm {
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+
+  .ua__btn--ghost {
+    background: transparent;
+    border-color: var(--color-border);
+  }
+
+  .ua__btn--ghost:hover {
+    background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    border-color: var(--color-text-muted, #6b7280);
+  }
+
+  .ua__btn--primary {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ua__btn--primary:hover {
+    filter: brightness(0.92);
+  }
+
+  /* 面板头部：标题 + 操作按钮 */
+  .ua__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .ua__panel-head h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .ua__panel-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 解析器：左右两栏布局 */
+  .ua__parser-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .ua__parser-input,
+  .ua__parser-output {
+    min-width: 0;
+  }
+
+  .ua__textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+
+  .ua__textarea:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ua__hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 解析结果：摘要 + 信息卡组 + 原始数据 */
+  .ua__empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-text-muted, #6b7280);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+  }
+
+  .ua__empty p {
+    margin: 0;
+  }
+
+  .ua__empty-sub {
+    margin-top: 6px !important;
+    font-size: 12px;
+  }
+
+  .ua__summary {
+    padding: 10px 12px;
+    background: var(--color-bg-hover, rgba(37, 99, 235, 0.06));
+    border-left: 3px solid var(--color-accent, #2563eb);
+    border-radius: var(--radius-sm, 6px);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .ua__bot-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-sm, 6px);
+    margin-bottom: 14px;
+  }
+
+  .ua__bot-icon {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .ua__bot-banner strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .ua__bot-cat {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ua__info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .ua__info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+  }
+
+  .ua__info-card--hl {
+    background: rgba(37, 99, 235, 0.04);
+    border-color: rgba(37, 99, 235, 0.3);
+  }
+
+  .ua__info-label {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ua__info-value {
+    font-size: 14px;
+    font-weight: 500;
+    word-break: break-all;
+  }
+
+  .ua__raw {
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .ua__raw summary {
+    cursor: pointer;
+    color: var(--color-text-muted, #6b7280);
+    padding: 4px 0;
+  }
+
+  .ua__raw-ua {
+    display: block;
+    padding: 8px 10px;
+    margin-top: 8px;
+    background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-sm, 6px);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+
+  .ua__raw-json {
+    padding: 10px;
+    margin-top: 8px;
+    background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-sm, 6px);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 11px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* 速查表：四子标签 + 卡片网格 */
+  .ua__ref-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .ua__ref-tab {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #6b7280);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .ua__ref-tab:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted, #6b7280);
+  }
+
+  .ua__ref-tab.is-active {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .ua__ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .ua__ref-item {
+    padding: 12px 14px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+  }
+
+  .ua__ref-item header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .ua__ref-item h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .ua__ref-item p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .ua__tag {
+    display: inline-block;
+    padding: 1px 8px;
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--color-accent, #2563eb);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .ua__tag--muted {
+    background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  /* 示例库 */
+  .ua__samples-tip {
+    padding: 10px 12px;
+    background: rgba(37, 99, 235, 0.04);
+    border-left: 3px solid var(--color-accent, #2563eb);
+    border-radius: var(--radius-sm, 6px);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .ua__sample-group {
+    margin-bottom: 24px;
+  }
+
+  .ua__sample-group h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ua__sample-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+  }
+
+  .ua__sample-item {
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+  }
+
+  .ua__sample-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+
+  .ua__sample-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .ua__sample-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .ua__sample-ua {
+    display: block;
+    padding: 6px 8px;
+    background: var(--color-bg-hover, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-sm, 6px);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    word-break: break-all;
+    white-space: pre-wrap;
+    margin: 6px 0;
+  }
+
+  .ua__sample-note {
+    margin: 0;
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    line-height: 1.5;
+  }
+
+  /* 响应式：768px 单列布局 */
+  @media (max-width: 768px) {
+    .ua__parser-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .ua__info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .ua__ref-grid,
+    .ua__sample-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 响应式：414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .ua__tab {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .ua__panel-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .ua__panel-actions {
+      width: 100%;
+    }
+
+    .ua__btn {
+      flex: 1;
+    }
+
+    .ua__summary {
+      font-size: 13px;
+    }
+
+    .ua__bot-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .ua__btn--primary {
+      color: #fff;
+    }
+
+    .ua__summary {
+      background: rgba(37, 99, 235, 0.12);
+    }
+
+    .ua__info-card--hl {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: rgba(37, 99, 235, 0.4);
+    }
+
+    .ua__bot-banner {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.04));
+    }
+
+    .ua__raw-ua,
+    .ua__raw-json,
+    .ua__sample-ua {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .ua__tag {
+      background: rgba(96, 165, 250, 0.15);
+      color: #93c5fd;
+    }
+
+    .ua__tag--muted {
+      background: rgba(255, 255, 255, 0.06);
+      color: #9ca3af;
+    }
+  }
+</style>
