@@ -24,3 +24,32 @@ export function getSiteUrl(site: URL | undefined): string {
   }
   return site.toString().replace(/\/$/, '');
 }
+
+/**
+ * 规范化 URL 尾部斜杠：与 Astro 静态生成的目录形式（/foo/index.html）保持一致
+ *
+ * 处理规则：
+ * - 根路径 `/` 保持原样
+ * - 已含尾部斜杠的保持原样
+ * - 文件形式 URL（含扩展名如 .xml / .png）不处理
+ * - 其余目录形式路径追加尾部斜杠
+ *
+ * 用于全站 canonical / prev-next / JSON-LD url 字段统一，
+ * 避免搜索引擎将 /foo 与 /foo/ 识别为重复页面。
+ *
+ * @param url - 待规范化的绝对或相对 URL
+ * @returns 规范化后的 URL；解析失败时原样返回
+ */
+export function normalizeUrlTrailingSlash(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.pathname === '/' || u.pathname.endsWith('/') || /\.[a-z0-9]+$/i.test(u.pathname)) {
+      return url;
+    }
+    return u.origin + u.pathname + '/' + u.search + u.hash;
+  } catch {
+    // 非标准 URL（如相对路径）保持原样
+    return url;
+  }
+}
+

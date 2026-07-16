@@ -1,7 +1,7 @@
 ---
 // 引入全局样式：Astro 会自动打包并注入，避免外部 link 在构建后 404
 import '../styles/global.css';
-import { getSiteUrl } from '../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../utils/site';
 
 // 站点元数据与全局 SEO 配置
 export interface SiteMeta {
@@ -32,7 +32,13 @@ const { meta } = Astro.props;
 const fullTitle = meta.title.includes(SITE_NAME)
   ? meta.title
   : `${meta.title} - ${SITE_NAME}`;
-const canonical = meta.canonical ?? new URL(Astro.url.pathname, SITE_URL).toString();
+// canonical 规范化：目录形式页面统一含尾部斜杠，与 Astro 静态生成结构一致
+// 同时规范化分页 prev/next 信号，避免 /foo 与 /foo/ 被识别为重复页面
+const canonical = normalizeUrlTrailingSlash(
+  meta.canonical ?? new URL(Astro.url.pathname, SITE_URL).toString()
+);
+const prevUrl = meta.prevUrl ? normalizeUrlTrailingSlash(meta.prevUrl) : undefined;
+const nextUrl = meta.nextUrl ? normalizeUrlTrailingSlash(meta.nextUrl) : undefined;
 const ogImage = meta.ogImage ?? new URL('/og-image.png', SITE_URL).toString();
 const indexable = meta.indexable ?? true;
 
@@ -76,8 +82,8 @@ const allLd = [siteLd, ...normalizedPageLd];
     <title>{fullTitle}</title>
     <meta name="description" content={meta.description} />
     <link rel="canonical" href={canonical} />
-    {meta.prevUrl && <link rel="prev" href={meta.prevUrl} />}
-    {meta.nextUrl && <link rel="next" href={meta.nextUrl} />}
+    {prevUrl && <link rel="prev" href={prevUrl} />}
+    {nextUrl && <link rel="next" href={nextUrl} />}
     {!indexable && <meta name="robots" content="noindex, nofollow" />}
 
     <!-- Open Graph -->

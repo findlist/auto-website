@@ -1,15 +1,17 @@
 ---
 import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import CsvMarkdownTool from '../components/CsvMarkdownTool.tsx';
-import { getSiteUrl } from '../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../utils/site';
 
 const SITE_URL = getSiteUrl(Astro.site);
+// 规范化尾部斜杠，与目录形式静态输出一致
+const pageUrl = normalizeUrlTrailingSlash(`${SITE_URL}/csv-markdown`);
 
 const meta: SiteMeta = {
   title: 'CSV 与 Markdown 表格互转工具 - GFM 管道表格双向转换',
   description:
     '在线 CSV 与 Markdown 表格互转工具：支持 GFM 管道表格双向转换、引号包裹与字段内换行解析、列对齐与自定义分隔符。全本地处理，零广告零追踪。',
-  canonical: `${SITE_URL}/csv-markdown`,
+  canonical: pageUrl,
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -19,7 +21,7 @@ const meta: SiteMeta = {
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
-    url: `${SITE_URL}/csv-markdown`,
+    url: pageUrl,
     offers: {
       '@type': 'Offer',
       price: '0',

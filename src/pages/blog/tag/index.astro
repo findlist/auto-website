@@ -2,7 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../../../utils/tags';
-import { getSiteUrl } from '../../../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../../../utils/site';
 
 // 获取所有文章
 const posts = await getCollection('blog');
@@ -29,11 +29,14 @@ const tags = Array.from(tagStats.values()).sort((a, b) => {
 
 // 站点绝对 URL：集中化获取，未配置时构建报错
 const SITE_URL = getSiteUrl(Astro.site);
+// 规范化尾部斜杠，与目录形式静态输出一致
+const tagIndexUrl = normalizeUrlTrailingSlash(`${SITE_URL}/blog/tag`);
+const blogUrl = normalizeUrlTrailingSlash(`${SITE_URL}/blog`);
 
 const meta: SiteMeta = {
   title: '全部标签 - 技术博客',
   description: `浏览工具盒子技术博客的全部 ${tags.length} 个标签，按文章数量排序。通过标签快速找到感兴趣的技术主题：JSON、UUID、Base64、Hash、时间戳、URL 等开发者工具相关内容。`,
-  canonical: `${SITE_URL}/blog/tag`,
+  canonical: tagIndexUrl,
   // 同时声明集合页类型与面包屑结构化数据，帮助搜索引擎理解页面层级
   jsonLd: [
     {
@@ -41,11 +44,11 @@ const meta: SiteMeta = {
       '@type': 'CollectionPage',
       name: '全部标签 - 工具盒子技术博客',
       description: '技术博客全部标签索引，按文章数量排序',
-      url: `${SITE_URL}/blog/tag`,
+      url: tagIndexUrl,
       isPartOf: {
         '@type': 'Blog',
         name: '工具盒子技术博客',
-        url: `${SITE_URL}/blog`,
+        url: blogUrl,
       },
     },
     {
@@ -53,8 +56,8 @@ const meta: SiteMeta = {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
-        { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
-        { '@type': 'ListItem', position: 3, name: '全部标签', item: `${SITE_URL}/blog/tag` },
+        { '@type': 'ListItem', position: 2, name: '技术博客', item: blogUrl },
+        { '@type': 'ListItem', position: 3, name: '全部标签', item: tagIndexUrl },
       ],
     },
   ],

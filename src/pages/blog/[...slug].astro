@@ -32,7 +32,8 @@ const formatDate = (date: Date) =>
 // 文章 URL（用于 JSON-LD 与 canonical）
 // 站点绝对 URL：集中化获取，未配置时构建报错
 const SITE_URL = getSiteUrl(Astro.site);
-const articleUrl = `${SITE_URL}/blog/${post.id}`;
+// 尾部斜杠与 Astro 静态生成的目录形式（/blog/<id>/index.html）保持一致
+const articleUrl = `${SITE_URL}/blog/${post.id}/`;
 
 // 文章字数：中文按字符数近似（行业惯例），取 markdown 原始正文字符长度
 const wordCount = post.body?.length ?? 0;
@@ -67,7 +68,7 @@ const meta: SiteMeta = {
     isPartOf: {
       '@type': 'Blog',
       name: '工具盒子技术博客',
-      url: `${SITE_URL}/blog`,
+      url: `${SITE_URL}/blog/`,
     },
     // 首标签作为文章栏目，帮助搜索引擎归类内容主题
     articleSection: post.data.tags[0] ?? undefined,

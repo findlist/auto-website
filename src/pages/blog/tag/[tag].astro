@@ -2,7 +2,7 @@
 import BaseLayout, { type SiteMeta } from '../../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug, collectTags } from '../../../utils/tags';
-import { getSiteUrl } from '../../../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../../../utils/site';
 
 // 为每个标签 slug 生成一个静态筛选页，对齐 tagToSlug 体系，避免链接 404
 export async function getStaticPaths() {
@@ -44,7 +44,9 @@ const formatDate = (date: Date) =>
 
 // 站点绝对 URL：集中化获取，未配置时构建报错
 const SITE_URL = getSiteUrl(Astro.site);
-const tagUrl = `${SITE_URL}/blog/tag/${tagSlug}`;
+// 规范化尾部斜杠，与目录形式静态输出一致
+const tagUrl = normalizeUrlTrailingSlash(`${SITE_URL}/blog/tag/${tagSlug}`);
+const blogUrl = normalizeUrlTrailingSlash(`${SITE_URL}/blog`);
 
 const meta: SiteMeta = {
   title: `标签「${tagName}」的文章 - 技术博客`,
@@ -61,7 +63,7 @@ const meta: SiteMeta = {
       isPartOf: {
         '@type': 'Blog',
         name: '工具盒子技术博客',
-        url: `${SITE_URL}/blog`,
+        url: blogUrl,
       },
       // 以 ItemList 形式列出该标签下的全部文章，便于搜索引擎抓取文章集合
       mainEntity: {
@@ -71,7 +73,7 @@ const meta: SiteMeta = {
           '@type': 'ListItem',
           position: index + 1,
           name: post.data.title,
-          url: `${SITE_URL}/blog/${post.id}`,
+          url: normalizeUrlTrailingSlash(`${SITE_URL}/blog/${post.id}`),
         })),
       },
     },
@@ -80,7 +82,7 @@ const meta: SiteMeta = {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: '首页', item: SITE_URL },
-        { '@type': 'ListItem', position: 2, name: '技术博客', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 2, name: '技术博客', item: blogUrl },
         { '@type': 'ListItem', position: 3, name: `标签：${tagName}`, item: tagUrl },
       ],
     },

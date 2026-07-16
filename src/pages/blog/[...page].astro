@@ -3,7 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import BaseLayout, { type SiteMeta } from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { tagToSlug } from '../../utils/tags';
-import { getSiteUrl } from '../../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../../utils/site';
 
 // 每页显示的文章数量：12 篇平衡浏览体验与页面数量
 
@@ -26,7 +26,8 @@ const { page } = Astro.props;
 // 当前页文章列表
 const posts = page.data;
 
-// canonical 绝对 URL：第 1 页为 /blog，后续页为 /blog/N
+// canonical 绝对 URL：第 1 页为 /blog/，后续页为 /blog/N/
+// BaseLayout 会统一规范化尾部斜杠，此处保持原始 page.url.current 即可
 const canonical = new URL(page.url.current, SITE_URL).toString();
 // 分页 SEO 信号：转为绝对 URL 供 <link rel="prev/next"> 使用
 const prevUrl = page.url.prev ? new URL(page.url.prev, SITE_URL).toString() : undefined;
@@ -62,7 +63,7 @@ const meta: SiteMeta = {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     name: '工具盒子技术博客',
-    url: `${SITE_URL}/blog`,
+    url: normalizeUrlTrailingSlash(`${SITE_URL}/blog`),
     description: '开发者工具的技术原理与最佳实践深度解析',
     publisher: orgEntity,
     author: orgEntity,
@@ -71,7 +72,7 @@ const meta: SiteMeta = {
       headline: post.data.title,
       description: post.data.description,
       datePublished: post.data.pubDate.toISOString(),
-      url: `${SITE_URL}/blog/${post.id}`,
+      url: normalizeUrlTrailingSlash(`${SITE_URL}/blog/${post.id}`),
       keywords: post.data.tags.join(', '),
     })),
   },

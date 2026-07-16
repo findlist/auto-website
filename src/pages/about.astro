@@ -1,9 +1,11 @@
 ---
 import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
-import { getSiteUrl } from '../utils/site';
+import { getSiteUrl, normalizeUrlTrailingSlash } from '../utils/site';
 
 // 站点绝对 URL：用于结构化数据中的 url 字段（集中化获取，未配置时构建报错）
 const SITE_URL = getSiteUrl(Astro.site);
+// 规范化尾部斜杠，与目录形式静态输出一致
+const aboutUrl = normalizeUrlTrailingSlash(`${SITE_URL}/about`);
 
 // AboutPage 结构化数据：明确告知搜索引擎本页为「关于页」，
 // mainEntity 关联站点 Organization 实体，建立品牌识别
@@ -11,7 +13,7 @@ const aboutLd = {
   '@context': 'https://schema.org',
   '@type': 'AboutPage',
   name: '关于工具盒子',
-  url: `${SITE_URL}/about`,
+  url: aboutUrl,
   description:
     '工具盒子是一个面向中文开发者的现代化在线工具集，主打零广告、零追踪、全本地处理。',
   mainEntity: {
