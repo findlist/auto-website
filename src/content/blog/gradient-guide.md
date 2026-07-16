@@ -1,5 +1,5 @@
 ---
-title: "CSS 渐变深度指南：linear-gradient、radial-gradient、conic-gradient 与颜色停止点"
+title: 'CSS 渐变指南：linear/radial/conic-gradient 与颜色停止点'
 description: "系统讲解 CSS 渐变的核心语法：线性渐变角度计算、径向渐变形状与中心位置、圆锥渐变起始角度与饼图色轮实现、颜色停止点管理、多色渐变与硬渐变条纹、渐变叠加技巧与浏览器兼容性。帮助前端开发者掌握渐变设计的核心原理与最佳实践。"
 pubDate: 2026-07-12
 tags: ["CSS", "渐变", "linear-gradient", "radial-gradient", "conic-gradient", "圆锥渐变", "饼图", "色轮", "前端设计", "工具矩阵"]

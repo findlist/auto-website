@@ -1,5 +1,5 @@
 ---
-title: "前端编码全景：encodeURI / encodeURIComponent / btoa / Base64 / HTML 实体 该用哪个？"
+title: '前端编码全景：encodeURI/encodeURIComponent/Base64 该用哪个？'
 description: "系统对比前端开发中常见的编码方式：URL 编码（encodeURI / encodeURIComponent）、Base64（btoa / atob + TextEncoder）、HTML 实体（命名 / 数字实体）的原理、应用场景、上下文边界与常见误用。配套可交互工具矩阵，帮你一图搞清该用哪个。"
 pubDate: 2026-07-04
 tags: ["编码", "前端", "JavaScript", "Web API", "HTML"]

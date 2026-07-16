@@ -1,5 +1,5 @@
 ---
-title: 'CSS clip-path 路径裁剪完全指南：polygon、circle、ellipse、inset 四类函数原理与应用'
+title: 'CSS clip-path 路径裁剪指南：polygon/circle/ellipse/inset 函数'
 description: '深入解析 CSS clip-path 四类裁剪函数：polygon 多边形交互式顶点编辑、circle 圆形、ellipse 椭圆、inset 内嵌矩形，含 inset round 圆角语法与动画顶点插值，附实战示例。'
 pubDate: 2026-07-13
 tags: ['CSS', 'clip-path', '路径裁剪', 'polygon', 'circle', 'ellipse', 'inset', '多边形', '形状裁剪', '前端开发', '设计工具']

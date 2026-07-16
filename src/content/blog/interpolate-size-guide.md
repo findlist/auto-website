@@ -1,5 +1,5 @@
 ---
-title: 'CSS interpolate-size 尺寸插值动画完全指南：auto 高度过渡、calc-size() 与折叠面板展开'
+title: 'CSS interpolate-size 尺寸插值指南：auto 过渡与 calc-size()'
 description: '深入解析 CSS interpolate-size 尺寸插值属性：allow-keywords 取值、auto 等尺寸关键字插值原理、calc-size() 函数计算、与 max-height 技巧对比，附折叠面板实战案例。'
 pubDate: 2026-07-15
 tags: ['CSS', 'interpolate-size', 'auto 高度过渡', 'calc-size', '尺寸关键字', '折叠面板', 'transition', 'allow-keywords', 'numeric-only', 'min-content', 'max-content', 'fit-content', '前端开发', 'CSS Values and Units Module Level 5', '设计工具', '渐进增强']

@@ -1,5 +1,5 @@
 ---
-title: 'CSS transition 过渡完全指南：四大子属性、cubic-bezier 曲线、steps 阶跃与回弹效果'
+title: 'CSS transition 过渡指南：cubic-bezier 曲线与 steps 阶跃'
 description: '深入解析 CSS transition 过渡系统：四大子属性、cubic-bezier 曲线数学原理、steps 阶跃函数、可过渡属性清单与 GPU 合成层优化实践。'
 pubDate: 2026-07-13
 tags: ['CSS', 'transition', '过渡', 'cubic-bezier', '贝塞尔曲线', 'timing-function', 'steps', '回弹', '缓动函数', '前端开发', '设计工具']

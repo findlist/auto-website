@@ -1,5 +1,5 @@
 ---
-title: 'CSS scroll-driven 动画完全指南：scroll() 与 view() 时间线、animation-range 与渐进增强'
+title: 'CSS scroll-driven 动画：scroll()/view() 时间线'
 description: '深入解析 CSS scroll-driven 滚动驱动动画：scroll() 与 view() 时间线选型、animation-range 范围控制、命名时间线与渐进增强，附实战示例。'
 pubDate: 2026-07-15
 tags: ['CSS', 'scroll-driven', '滚动驱动动画', 'animation-timeline', 'scroll()', 'view()', 'animation-range', '视差滚动', '入场动画', '进度条', '前端开发', '设计工具', '渐进增强']

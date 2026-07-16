@@ -1,5 +1,5 @@
 ---
-title: "CRON 表达式与定时任务调度：从 POSIX cron 到 Kubernetes CronJob 的工程实践"
+title: 'CRON 表达式与定时任务：POSIX cron 与 Kubernetes CronJob'
 description: "系统讲解 CRON 表达式 5 字段语法、L/W/# 扩展字符、POSIX/Quartz/Spring 三大变体对比、dayOfMonth 与 dayOfWeek 的 AND/OR 陷阱、时区与夏令时问题，附解析器实操。"
 pubDate: 2026-07-05
 tags: ["cron", "定时任务", "调度", "crontab", "工具矩阵"]

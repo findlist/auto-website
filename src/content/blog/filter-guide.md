@@ -1,5 +1,5 @@
 ---
-title: 'CSS filter 滤镜完全指南：blur、brightness、contrast 等 10 种函数原理与组合应用'
+title: 'CSS filter 滤镜指南：blur/contrast 等 10 种函数原理'
 description: '深入解析 CSS filter 滤镜属性：blur/brightness/contrast 等 10 种函数原理、滤镜组合顺序、GPU 合成层优化、drop-shadow 与 box-shadow 区别、backdrop-filter 毛玻璃效果实战。'
 pubDate: 2026-07-13
 tags: ['CSS', 'filter', '滤镜', 'blur', 'brightness', 'contrast', 'drop-shadow', 'hue-rotate', '视觉特效', '前端开发', '设计工具']
