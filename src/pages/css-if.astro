@@ -1,0 +1,618 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import IfFunctionTool from '../components/IfFunctionTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS if() 条件函数生成器 - 在线多分支条件值可视化工具',
+  description:
+    '在线 CSS if() 条件函数生成器：可视化编辑 style() / media() / supports() 三类条件分支，多分支管理与 iframe 沙箱预览，实时生成 CSS 代码。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS if() 条件函数生成器',
+    description: '在线 CSS if() 条件函数生成器，支持 style/media/supports 三类条件与多分支管理，一键复制条件值 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS if() 条件函数生成器</h1>
+      <p>
+        可视化生成 CSS 条件值函数（<code>if()</code>，CSS Values Module Level 5，
+        Chrome 137+ 起实验性支持）：完整支持 <code>style()</code> 样式查询、
+        <code>media()</code> 媒体查询、<code>supports()</code> 特性查询三种条件类型与
+        <code>else</code> 默认值；多分支动态增删，按顺序求值，第一个为 true 的分支返回其值。
+        内置<strong>原理说明面板</strong>——实时展示求值顺序与当前环境命中分支。
+        iframe 沙箱预览支持<strong>自定义属性输入</strong>验证 <code>style()</code> 条件命中。
+        内置暗色模式切换、响应式宽度、特性检测降级、多主题切换、打印样式等 8 组预设。
+        适用于基于自定义属性的主题切换、单属性响应式适配、特性检测降级、替代多重
+        <code>@media</code> / <code>@supports</code> 查询等现代前端开发场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <IfFunctionTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS if() 条件函数？它解决了什么问题？</summary>
+        <p>
+          <strong>if()</strong> 是 CSS Values Module Level 5 引入的条件值函数，语法为
+          <code>if(&lt;条件&gt; : &lt;值&gt;; &lt;条件&gt; : &lt;值&gt;; else : &lt;值&gt;)</code>——
+          浏览器<strong>按顺序</strong>求值各条件，第一个为 true 的分支返回其值；全为 false 时返回
+          <code>else</code> 值。<br />
+          它解决了 CSS 条件样式的三大痛点：一是<strong>单属性条件化</strong>，过去要根据条件改变一个属性值
+          必须写完整的 <code>@media</code> 或 <code>@supports</code> 规则块，代码分散；二是
+          <strong>组件级条件难</strong>，全局 at-rule 无法精确针对单个元素的自定义属性做条件；
+          三是<strong>多分支冗长</strong>，多重媒体查询需要嵌套或重复定义。<code>if()</code> 把条件判断
+          <strong>内联到一条属性声明</strong>，按顺序短路求值，组件级可控，代码集中。
+        </p>
+      </details>
+      <details>
+        <summary>if() 支持哪三种条件类型？分别用在什么场景？</summary>
+        <p>
+          <code>if()</code> 支持三种条件类型，覆盖 CSS 中所有条件查询场景：<br />
+          <strong>1. style() 样式查询</strong>：测试元素自身的<strong>自定义属性</strong>值，语法
+          <code>style(--theme: dark)</code>。适用于基于 CSS 变量的主题切换、组件状态切换、设计令牌驱动等。
+          注意：目前<strong>仅支持自定义属性</strong>，不支持普通 CSS 属性查询。<br />
+          <strong>2. media() 媒体查询</strong>：测试媒体特性，语法 <code>media(min-width: 768px)</code> 或
+          <code>media(prefers-color-scheme: dark)</code>。适用于单属性的响应式适配、暗色模式、打印样式等，
+          替代写整个 <code>@media</code> 规则块。<br />
+          <strong>3. supports() 特性查询</strong>：测试浏览器是否支持某属性值，语法
+          <code>supports(color: lch(0 0 0))</code>。适用于渐进增强、新特性降级、
+          浏览器兼容性检测等场景。<br />
+          三类条件可<strong>混合使用</strong>于同一个 <code>if()</code> 中，按顺序短路求值。
+        </p>
+      </details>
+      <details>
+        <summary>if() 的语法有哪些关键规则与易错点？</summary>
+        <p>
+          <code>if()</code> 语法有四个关键规则与易错点：<br />
+          <strong>1. if 与 ( 之间不能有空格</strong>：写成 <code>if (...)</code> 会使整个声明无效，
+          必须紧贴写作 <code>if(...)</code>。这是最常见的语法错误。<br />
+          <strong>2. 条件与值用冒号分隔</strong>：每个分支格式为 <code>&lt;条件&gt; : &lt;值&gt;</code>，
+          冒号两侧可有空格。<br />
+          <strong>3. 分支之间用分号分隔</strong>：多个分支用 <code>;</code> 分隔，最后一个分支的分号可选。<br />
+          <strong>4. else 是关键字不是函数</strong>：<code>else</code> 是始终为 true 的兜底条件，
+          写作 <code>else : &lt;值&gt;</code>，不能写作 <code>else()</code>。<br />
+          此外，单个条件或值无效<strong>不会</strong>使整个 <code>if()</code> 失效，解析器会跳过该分支继续求值。
+          若所有分支都无效，<code>if()</code> 返回 <code>guaranteed-invalid</code>，属性回退到 <code>initial</code>。
+        </p>
+      </details>
+      <details>
+        <summary>if() 的浏览器兼容性如何？旧浏览器怎么降级？</summary>
+        <p>
+          <strong>兼容性</strong>：<code>if()</code> 自 Chrome 137+（2025 年）起实验性支持，
+          目前<strong>尚未进入 Baseline</strong>，Safari 与 Firefox 暂未稳定支持。
+          生产环境使用前请确认目标浏览器，或做好降级。<br />
+          <strong>降级策略</strong>：<code>if()</code> <strong>不会优雅降级</strong>——不支持的浏览器会
+          整个声明无效，必须显式提供回退。推荐写法：<br />
+          1. 先写静态回退声明：<code>.demo &#123; color: #1a1a1a; &#125;</code><br />
+          2. 再用 <code>if()</code> 覆盖：<code>.demo &#123; color: if(style(--theme: dark) : #e5e5e5; else : #1a1a1a); &#125;</code><br />
+          旧浏览器停留在 <code>#1a1a1a</code>，新浏览器按条件求值覆盖。<br />
+          也可用 <code>@supports (color: if(1 : red; else : blue))</code> 做特性检测，
+          仅在支持时应用 <code>if()</code>。本工具生成的代码已自动包含静态回退声明（可在面板中开关）。
+        </p>
+      </details>
+      <details>
+        <summary>if() 与 @media / @supports / @container 有什么区别？</summary>
+        <p>
+          四者都是 CSS 条件机制，但作用域与粒度不同，<strong>互补而非替代</strong>：<br />
+          <strong>@media</strong>：作用于整个规则块，基于媒体特性（视口宽度、暗色模式等）切换多组样式。
+          适合<strong>整体布局切换</strong>。<br />
+          <strong>@supports</strong>：作用于整个规则块，基于浏览器特性支持切换多组样式。
+          适合<strong>渐进增强整体方案</strong>。<br />
+          <strong>@container</strong>：作用于整个规则块，基于容器尺寸或样式查询切换多组样式。
+          适合<strong>组件容器响应式</strong>。<br />
+          <strong>if()</strong>：作用于<strong>单个属性值</strong>，把条件判断内联到一条声明中。
+          适合<strong>单属性条件化</strong>——只改一个值时无需写完整规则块。<br />
+          经验：需要切换<strong>多个属性</strong>用 at-rule；只切换<strong>单个属性</strong>用 <code>if()</code>。
+          <code>if()</code> 的 <code>style()</code> 条件相比 <code>@container style()</code> 查询，
+          可直接作用于元素自身，无需查找容器父级。
+        </p>
+      </details>
+      <details>
+        <summary>if() 中的 style() 查询能测试普通 CSS 属性吗？</summary>
+        <p>
+          <strong>不能</strong>。当前 <code>style()</code> 条件<strong>仅支持自定义属性</strong>
+          （CSS 变量，如 <code>--theme</code>、<code>--size</code>），不支持普通 CSS 属性查询。<br />
+          例如 <code>style(display: flex)</code> <strong>不会工作</strong>，
+          但 <code>style(--layout: flex)</code> 可以。<br />
+          这是规范现状的限制，未来版本可能扩展支持普通属性。变通做法是：
+          把要查询的状态用自定义属性"代理"——在元素上设置 <code>--state: active</code>，
+          然后用 <code>style(--state: active)</code> 查询。<br />
+          本工具的 <code>style()</code> 分支默认提示输入自定义属性表达式（如 <code>--theme: dark</code>），
+          预览区提供"自定义属性输入"框，可手动设置 <code>--theme: dark</code> 等值实时验证条件命中。
+        </p>
+      </details>
+      <details>
+        <summary>if() 能嵌套使用吗？支持 and / or / not 逻辑吗？</summary>
+        <p>
+          <strong>可以嵌套</strong>。<code>if()</code> 函数的值部分可以再嵌套 <code>if()</code>，
+          实现多层条件判断。例如：<br />
+          <code>color: if(style(--theme: dark) : if(style(--variant: muted) : #888; else : #fff); else : #1a1a1a);</code><br />
+          外层判断主题，内层在暗色主题下再判断变体。<br />
+          <strong>逻辑运算符</strong>：三类条件内部都支持 <code>and</code> / <code>or</code> / <code>not</code> 逻辑组合。
+          例如：<br />
+          - <code>style(--theme: dark and --variant: muted)</code>（同时满足）<br />
+          - <code>media(min-width: 768px and prefers-color-scheme: dark)</code>（视口与暗色同时满足）<br />
+          - <code>supports(not (color: lch(0 0 0)))</code>（不支持 lch 时降级）<br />
+          嵌套与逻辑组合可结合使用，但建议<strong>适度</strong>，过深的嵌套会降低可读性。
+          复杂条件建议拆分为多个声明或使用 at-rule。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 条件分支编辑、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，样式与 HTML 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox="allow-same-origin"</code> 属性限制能力，
+            预览内容无法执行脚本、提交表单或访问父页面。<br />
+          - 生成的 if() CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          无需注册、无需登录、无 Cookie 追踪、无广告，适合处理任何 CSS 条件值与生产场景。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/light-dark">CSS light-dark() 暗色模式颜色函数生成器</a> — 双主题颜色函数，与 if() style() 条件互补</li>
+        <li><a href="/anchor-positioning">CSS anchor-positioning 锚点定位生成器</a> — 元素锚点定位，if() 可条件化锚点值</li>
+        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值生成器</a> — display 切换的尺寸动画，if() 可条件化尺寸值</li>
+        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — 元素首次出现的入场过渡，与 if() 协同</li>
+        <li><a href="/container">CSS container 容器查询生成器</a> — 容器响应式，if() media/style 条件的另一选择</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：cif 命名空间（css-if） */
+
+  /* 预设按钮组 */
+  .cif__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .cif__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .cif__main {
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .cif__editor,
+  .cif__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .cif__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .cif__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cif__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cif__branch-stats {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .cif__panel-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cif__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 表单字段 */
+  .cif__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cif__field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .cif__field--check {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .cif__field-input,
+  .cif__field-select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .cif__field-input:focus,
+  .cif__field-select:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* 全局配置行 */
+  .cif__config-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* 条件分支卡片 */
+  .cif__branch {
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .cif__branch-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .cif__branch-idx {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cif__branch-type {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .cif__branch-expr {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .cif__branch-expr:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .cif__branch-hint {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    margin-bottom: 8px;
+  }
+
+  .cif__branch-value-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cif__branch-value-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    flex-shrink: 0;
+  }
+
+  .cif__branch-value {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  .cif__branch-value:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* else 分支特殊样式 */
+  .cif__branch--else {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  /* 按钮 */
+  .cif__btn {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .cif__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+  }
+
+  .cif__btn--preset {
+    font-size: 12px;
+  }
+
+  .cif__btn--add {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .cif__btn--add:hover {
+    background: var(--color-accent-hover, #1d4ed8);
+  }
+
+  .cif__btn--del {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    line-height: 1;
+    color: var(--color-text-muted, #6b7280);
+    border-color: transparent;
+  }
+
+  .cif__btn--del:hover:not(:disabled) {
+    color: #dc2626;
+    border-color: var(--color-border);
+  }
+
+  .cif__btn--del:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .cif__btn--copy {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .cif__btn--copy:hover {
+    background: var(--color-accent-hover, #1d4ed8);
+  }
+
+  /* 原理说明 */
+  .cif__panel--explain {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .cif__explain {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .cif__explain code {
+    padding: 1px 5px;
+    background: var(--color-bg, #fff);
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  /* 自定义属性输入 */
+  .cif__custom-prop {
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* iframe 预览 */
+  .cif__preview {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .cif__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cif__preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .cif__preview-hint {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .cif__iframe {
+    display: block;
+    width: 100%;
+    height: 480px;
+    border: 0;
+    background: #fff;
+  }
+
+  /* 代码输出 */
+  .cif__code {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .cif__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cif__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .cif__code-pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 360px;
+    overflow: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .cif__code-pre code {
+    font-family: inherit;
+  }
+
+  /* 响应式：768px 以下单列 */
+  @media (max-width: 768px) {
+    .cif__main {
+      grid-template-columns: 1fr;
+    }
+
+    .cif__config-row {
+      grid-template-columns: 1fr;
+    }
+
+    .cif__iframe {
+      height: 380px;
+    }
+  }
+
+  /* 414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .cif__presets {
+      padding: 10px;
+    }
+
+    .cif__panel-body {
+      padding: 10px;
+    }
+
+    .cif__branch {
+      padding: 8px;
+    }
+
+    .cif__iframe {
+      height: 320px;
+    }
+
+    .cif__code-pre {
+      font-size: 11px;
+      padding: 10px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .cif__iframe,
+  :global(.dark) .cif__iframe {
+    background: #1a1a1a;
+  }
+</style>
