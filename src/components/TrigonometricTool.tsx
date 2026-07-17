@@ -210,8 +210,9 @@ ${Array.from({ length: v.count }, (_, i) => {
   margin: 0 0 0 -2px;
   background: #2563eb;
   transform-origin: top center;
-  /* atan2(y, x) 返回弧度，需用 calc 转换为度数后再旋转 */
-  transform: rotate(calc(atan2(var(--mouse-y), var(--mouse-x)) * 1rad));
+  /* atan2(y, x) 返回弧度，需用 calc 转换为度数后再旋转；
+     指针默认指向下方（南），atan2 从正 X 轴（东）起算，因此需减 90deg 校正方向 */
+  transform: rotate(calc(atan2(var(--mouse-y), var(--mouse-x)) * 1rad - 90deg));
 }
 .pointer::after {
   content: '';
