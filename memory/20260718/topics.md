@@ -1235,3 +1235,135 @@
 - 部署本轮新增代码（已 push commit 5a05623，Cloudflare Pages 自动触发部署）
 - 接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代
 - （可选）在 Chrome 93+ 或 Safari 16.4+ 浏览器访问 /image-crop 体验完整 AVIF 导出能力
+
+# 第 80 轮 · 图片裁剪工具体验增强（预设尺寸 + 圆形/圆角裁剪 + 批量处理）
+
+## 上下文恢复
+- 承接第 79 轮（新增图片裁剪工具页 + 配套博客，commit 5a05623 → 沉淀 5a05623）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：105 工具 + 100 博客 + 843 页面（本轮不增工具，仅增强 image-crop）
+- 工作树状态：第 79 轮 commit 5a05623 已 push，工作树清洁
+
+## 本轮聚焦方向
+**图片裁剪工具体验增强：预设尺寸 + 圆形/圆角裁剪 + 批量处理（承接第 79 轮建议第 4、5、6 项）**
+
+承接第 79 轮建议：
+- 第 4 项：image-crop 新增预设尺寸按钮（社交媒体封面）
+- 第 5 项：image-crop 支持批量裁剪（多文件 + 统一比例 + 顺序处理 + 内存释放）
+- 第 6 项：image-crop 支持圆形裁剪（头像场景）与圆角矩形裁剪
+
+本轮将三项合并为一轮深度打磨，理由：
+- **三项功能互相关联**：预设尺寸主要服务社交媒体场景，圆形/圆角裁剪主要服务头像场景，批量处理主要服务多图场景，三者共同提升 image-crop 的实用性
+- **预设尺寸 + 形状联动**：点击预设时联动比例 + 填充目标尺寸；圆形裁剪时自动锁定 1:1 比例，二者可在同一面板协同
+- **批量处理复用单图核心算法**：cropImage 函数已被验证可靠，cropBatch 顺序调用 + 进度回调 + 错误隔离即可，无需重写
+- **样式统一性**：BEM 命名空间 imcrop__ 一次性扩展，避免分多轮反复调整样式
+
+## 完成任务
+
+### 单元 1：imageCrop.ts 新增预设尺寸、形状类型与批量处理函数
+- 新增类型 `OutputShape = 'rect' | 'circle' | 'rounded'`
+- 新增接口 `OutputShapeMeta` + 常量 `OUTPUT_SHAPES`（3 项：矩形 / 圆形 / 圆角矩形）
+- 新增接口 `PresetSizeMeta` + 常量 `PRESET_SIZES`（15 项社交媒体预设）
+  - 国内：微信头像 640×640 / 朋友圈封面 1080×1920 / 微博头像 180×180 / 抖音封面 1080×1920 / B 站封面 1146×717
+  - 海外：YouTube 缩略图 1280×720 / Twitter 头像 400×400 / Twitter 封面 1500×500 / Facebook 头像 170×170 / Facebook 封面 820×312 / IG 方形 1080×1080 / IG 竖版 1080×1350 / IG Story 1080×1920 / LinkedIn 头像 400×400 / LinkedIn 封面 1584×396
+- `CropOptions` 新增 `shape` 字段；`DEFAULT_CROP_OPTIONS` 默认 `shape: 'rect'`
+- 新增辅助函数 `drawRoundedRectPath(ctx, x, y, w, h, r)`：兼容性降级方案，避免老浏览器不支持 `ctx.roundRect`
+- `cropImage` 函数增强：
+  - 形状为 `circle` 时：以裁剪框中心为圆心，较短边一半为半径，`ctx.arc` + `clip` 实现圆形遮罩
+  - 形状为 `rounded` 时：圆角半径取较短边的 1/4，调用 `drawRoundedRectPath` + `clip` 实现圆角遮罩
+  - 实现方式：`ctx.save()` + `ctx.clip()` + `drawImage` + `ctx.restore()`，保证透明区域不被填充
+- 新增接口 `BatchCropItem`（含 `file` / `result?` / `error?`）
+- 新增函数 `cropBatch(files, options, ratio, onProgress?)`：
+  - 顺序处理（不并行，避免内存堆积）
+  - 每张图按比例自动居中裁剪（复用 `computeInitialRect`）
+  - 单张失败不影响其他，错误信息记录到 `item.error`
+  - 每张处理完立即 `revokeObjectURL` 释放源 URL
+  - 通过 `onProgress(index, total, item)` 回调实时报告进度
+- 新增函数 `downloadBatch(items)`：200ms 间隔逐个触发下载，规避浏览器多文件下载策略
+  - Chrome 5+ 弹授权、Firefox 默认阻止、Safari 仅触发首个
+  - 顺序触发 + 间隔延迟可稳定下载全部文件
+
+### 单元 2：ImageCropTool.tsx 新增预设尺寸、形状选择、批量模式 UI
+- 新增 state：`mode`（'single' | 'batch'）/ `batchFiles` / `batchItems` / `batchProcessing` / `batchProgress` / `batchDownloading` / `activePreset` / `batchFileInputRef`
+- 新增函数：
+  - `applyPreset(preset)`：一键切换比例 + 填充 maxWidth/maxHeight + 高亮预设
+  - `handleAspectChangeWithPreset(code)`：手动切换比例时清除预设高亮
+  - `handleShapeChange(shape)`：切换形状，圆形时自动锁定 1:1 比例
+  - `handleBatchFiles(fileList)`：批量文件选择 + 类型过滤 + 上限截断 + 旧结果清理
+  - `removeBatchFile(index)`：移除指定文件
+  - `runBatchCrop()`：执行批量裁剪，调用 cropBatch + 进度回调
+  - `downloadAllBatch()`：调用 downloadBatch 逐个下载
+  - `clearBatch()`：清空全部文件与结果，释放 URL
+  - `onBatchDragOver` / `onBatchDragLeave` / `onBatchDrop`：批量拖拽事件
+- 单图模式新增 UI：
+  - 预设尺寸网格（2 列）：点击按钮一键应用
+  - 输出形状选择（3 列）：矩形 ▭ / 圆形 ◯ / 圆角 ▢，含图标 + 文字
+  - 形状提示文案：圆形/圆角时说明透明通道处理方式
+- 批量模式新增完整 UI：
+  - 上传区（与单图共享 dropzone 样式）
+  - 配置摘要（4 列网格）：文件数 / 裁剪比例 / 输出形状 / 导出格式 / 目标尺寸（可选）
+  - 操作按钮组：开始批量裁剪 / 全部下载 / 清空 / 添加文件
+  - 处理进度条：渐变填充 + 居中文字
+  - 文件列表：每项含文件名 + 元信息 + 缩略图（处理完显示）+ 下载按钮 + 状态标签
+  - 提示文案：批量模式按比例自动居中裁剪，建议切换单图模式精调
+- cleanup useEffect 扩展：卸载时同时清理单图 + 批量 URL
+
+### 单元 3：image-crop.astro 新增批量模式与形状选择样式
+- 新增 `.imcrop__mode-tabs` + `.imcrop__mode-tab` + `.imcrop__mode-tab--active`：顶部 Tab 切换样式（带 hover + 阴影 + 蓝色高亮）
+- 新增 `.imcrop__batch` 容器（flex column + gap 16px）
+- 新增 `.imcrop__batch-summary`（4 列网格）+ `.imcrop__batch-summary-item` + `.imcrop__batch-summary-label` + `.imcrop__batch-summary-value`：配置摘要样式，标签大写小字 + 值加粗
+- 新增 `.imcrop__batch-actions`：操作按钮组（flex + wrap）
+- 新增 `.imcrop__batch-progress` + `.imcrop__batch-progress-bar` + `.imcrop__batch-progress-text`：进度条样式（渐变填充 + 居中文字 + 阴影）
+- 新增 `.imcrop__batch-list`：文件列表容器（max-height 480px + 滚动）
+- 新增 `.imcrop__batch-item` + `.imcrop__batch-item-info` + `.imcrop__batch-item-name` + `.imcrop__batch-item-meta`：列表项样式（hover 蓝色边框 + 文件名省略号）
+- 新增 `.imcrop__batch-item-actions` + `.imcrop__batch-item-thumb`：操作区与缩略图（40×40 cover）
+- 新增 `.imcrop__batch-item-status` + `.imcrop__batch-item-status--error`：状态标签（默认灰底 / 错误红色）
+- 响应式断点扩展：
+  - 768px：batch-summary 4 → 2 列，缩略图 40 → 32px
+  - 414px：mode-tab 紧凑内边距，batch-summary 单列堆叠，batch-actions 每按钮 50% 宽，batch-item 信息与操作纵向排列
+- 暗色模式扩展：
+  - mode-tabs 背景半透明白
+  - mode-tab--active 浅蓝文字 + 半透明白背景
+  - batch-progress-bar 渐变蓝色
+  - batch-item-status--error 浅红文字 + 红色半透明背景
+
+### 单元 4：类型检查 + 构建 + Git 提交推送
+- npm run check：0 errors / 0 warnings / 4 历史遗留 hints（seo-audit.mjs 未使用变量 ×3 + clipboard.ts execCommand 弃用警告，与本轮无关）
+- npm run build：843 page(s) built in 25.24s（页面数与第 79 轮一致，本轮不新增工具/博客，仅增强 image-crop）
+- git add 仅本轮 3 个文件（src/utils/imageCrop.ts / src/components/ImageCropTool.tsx / src/pages/image-crop.astro）
+- git commit：feat: 图片裁剪工具新增预设尺寸、圆形/圆角裁剪与批量处理能力
+- git push origin HEAD：commit f3af258，5a05623..f3af258 HEAD -> main
+
+## 验证结果
+- 构建成功：843 page(s) built in 25.24s（页面数与第 79 轮一致，符合预期）
+- 类型检查：0 errors / 0 warnings / 4 历史遗留 hints（与本轮修改无关）
+- Git push ✅ commit f3af258 已推送到 origin/main
+- 工作树清洁（本轮仅提交 3 个交付文件，topics.md 单独提交）
+
+## 数据洞察
+- **预设尺寸是高频刚需**：15 项预设覆盖国内外主流社交平台（微信 / 微博 / 抖音 / B 站 / YouTube / Twitter / Facebook / IG / LinkedIn），用户点击即用，无需手动查询尺寸
+- **预设与比例联动是关键**：点击预设同时切换比例 + 填充目标尺寸，避免用户两步操作；手动改比例或尺寸时清除高亮，避免 UI 状态不一致
+- **圆形裁剪的核心是 clip**：`ctx.save()` + `ctx.arc(cx, cy, r, 0, Math.PI * 2)` + `ctx.clip()` + `drawImage` + `ctx.restore()`，圆外区域保持透明（PNG/WebP/AVIF）或填充背景色（JPEG）
+- **ctx.roundRect 兼容性**：Baseline 2023，部分老浏览器不支持，提供 `drawRoundedRectPath` 手动绘制路径作为降级方案
+- **批量处理顺序执行**：不并行（避免内存堆积），每张处理完立即 `revokeObjectURL` 释放源 URL，单张失败不影响其他
+- **多文件下载浏览器策略**：Chrome 5+ 弹授权、Firefox 默认阻止、Safari 仅触发首个，200ms 间隔逐个触发可稳定下载
+- **Tab 切换设计**：单图精细裁剪 / 批量统一裁剪两种模式独立互斥，避免界面信息过载
+- **配置摘要的价值**：批量模式下用户无法逐张调整，配置摘要（文件数 / 比例 / 形状 / 格式 / 目标尺寸）让用户在执行前确认配置，避免误操作
+
+## 遗留问题
+- 无（工作树清洁，本轮仅提交 3 个交付文件，topics.md 单独提交）
+- 注：本轮 topics.md 沉淀为单独提交（docs: 沉淀第 80 轮进度记录），避免与交付文件混在一起
+
+## 下一轮建议
+- （1）image-crop 批量模式可考虑增加「下载为 ZIP」选项（使用客户端 JSZip，避免逐个下载的体验问题）
+- （2）image-crop 单图模式可考虑增加「撤销 / 重做」历史栈（最近 10 步操作）
+- （3）image-crop 可考虑增加「九宫格构图辅助线」开关（摄影构图常用）
+- （4）图像类工具继续补充 EXIF 编辑 / 图片旋转 / 图片缩放 / 图片拼接（拼图）
+- （5）网络类工具继续扩充 HTTP 请求模拟器增强版（GraphQL/WebSocket/SSE）
+- （6）编码转换长尾 Slug/HTMLEscape 增强
+- （7）接入统计工具进入真正的数据驱动迭代
+
+## 需用户操作
+- 部署本轮新增代码（已 push commit f3af258，Cloudflare Pages 自动触发部署）
+- 接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代
+- （可选）在 /image-crop 切换「批量统一裁剪」模式体验多文件处理能力
