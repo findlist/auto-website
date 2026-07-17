@@ -564,12 +564,14 @@ button {
   line-height: 1.7;
 }
 
-/* 行内代码：主色文字 + 浅灰背景，与博客详情页 code 风格保持一致 */
+/* 行内代码：主色文字 + 浅灰背景 + 细边框，与博客详情页 code 风格保持一致。
+   细边框增强边界识别，避免在浅色背景上代码块"漂浮"感 */
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--color-bg-code);
-  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  padding: 1px 6px;
   border-radius: 4px;
   color: var(--color-primary);
   word-break: break-word;
@@ -587,8 +589,10 @@ button {
   line-height: 1.65;
 }
 
+/* 代码块内的行内代码：去除边框与背景，避免与外层 pre 视觉冲突 */
 .prose pre code {
   background: none;
+  border: 0;
   padding: 0;
   color: var(--color-text);
   font-size: inherit;
@@ -805,6 +809,13 @@ button {
   transition: background-color var(--transition-fast);
 }
 
+/* summary 显式焦点环：键盘 Tab 导航时使用 inset box-shadow，避免与浮动 +/− 指示器冲突 */
+.json-faq summary:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+  border-radius: var(--radius-md);
+}
+
 .json-faq summary:hover {
   background: var(--color-bg-soft);
 }
@@ -841,7 +852,8 @@ button {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: var(--color-bg-code);
-  padding: 1px 5px;
+  border: 1px solid var(--color-border);
+  padding: 0 5px;
   border-radius: 4px;
   color: var(--color-primary);
 }
@@ -896,6 +908,81 @@ button {
   box-shadow: var(--focus-ring);
 }
 
+/* ============ 范围滑块统一基础样式 ============ */
+/* 各工具页的 .xxxtool__range 仅声明 accent-color，跨浏览器原生外观差异明显。
+   此处为基础容器提供统一的最小高度与手柄样式，各工具页仍可覆盖 */
+.pwtool__range,
+.qrtool__range {
+  height: 24px;
+}
+
+/* WebKit / Blink：自定义轨道与手柄，与主色调一致 */
+.pwtool__range::-webkit-slider-runnable-track,
+.qrtool__range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-bg-code);
+  border: 1px solid var(--color-border);
+}
+
+.pwtool__range::-webkit-slider-thumb,
+.qrtool__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 1px 4px rgba(20, 25, 35, 0.2);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pwtool__range::-webkit-slider-thumb:hover,
+.qrtool__range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px var(--color-primary-ring);
+}
+
+.pwtool__range:focus-visible::-webkit-slider-thumb,
+.qrtool__range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--color-primary-ring), 0 1px 4px rgba(20, 25, 35, 0.2);
+}
+
+/* Firefox：使用 ::-moz-range-* 系列 */
+.pwtool__range::-moz-range-track,
+.qrtool__range::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-bg-code);
+  border: 1px solid var(--color-border);
+}
+
+.pwtool__range::-moz-range-thumb,
+.qrtool__range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 1px 4px rgba(20, 25, 35, 0.2);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pwtool__range::-moz-range-thumb:hover,
+.qrtool__range::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px var(--color-primary-ring);
+}
+
+.pwtool__range:focus-visible::-moz-range-thumb,
+.qrtool__range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--color-primary-ring), 0 1px 4px rgba(20, 25, 35, 0.2);
+}
+
 /* ============ 自定义滚动条 ============ */
 /* 仅在支持 webkit 滚动条的浏览器生效，Firefox 用 scrollbar-color */
 * {
@@ -948,5 +1035,116 @@ main#main {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ============ 代码区选区颜色 ============ */
+/* 代码块与等宽内容区使用主色半透明选区，与正文 ::selection 形成层次差异，
+   便于用户识别"正在选中代码"状态 */
+.prose pre ::selection,
+.blog-article__content pre ::selection,
+.jsontool__textarea::selection,
+.difftool__textarea::selection,
+.regextool__pattern-input::selection,
+.hashtool__output ::selection {
+  background: var(--color-primary-ring);
+  color: inherit;
+}
+
+/* ============ 打印样式 ============ */
+/* 博客详情页与 prose 长文章优化打印输出：去除交互元素、保留正文排版 */
+@media print {
+  /* 强制白色背景与黑色文字，避免暗色模式打印成黑底 */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* 隐藏顶部导航、底部、跳转链接等非内容元素 */
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .json-faq,
+  .blog-article__cta,
+  .post-nav,
+  .pagination,
+  .blog-tags-entry,
+  .hero__cta,
+  .tools__toolbar,
+  .btn {
+    display: none !important;
+  }
+
+  /* 移除 sticky 与 backdrop-filter，避免打印时叠加层 */
+  .site-header {
+    position: static !important;
+  }
+
+  /* 容器去除内边距限制，让内容填满打印页面 */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* hero 区简化为正文标题，去除渐变背景与装饰 */
+  .hero,
+  .page-hero,
+  .page-hero--tool {
+    padding: 0 0 8px !important;
+    background: none !important;
+    text-align: left !important;
+  }
+
+  .hero::after,
+  .page-hero::after,
+  .page-hero--tool h1::after {
+    display: none !important;
+  }
+
+  /* 博客文章与 prose 内容：去除最大宽度限制，使用打印友好的行高与字号 */
+  .blog-article,
+  .prose {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .blog-article__header {
+    border-bottom: 1px solid #000 !important;
+  }
+
+  /* 链接：在打印中显示 URL，便于纸质阅读时识别目标地址 */
+  .blog-article__content a[href^="http"]::after,
+  .prose a[href^="http"]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    color: #555;
+    word-break: break-all;
+  }
+
+  /* 代码块：保留边框与背景，避免打印时丢失代码块边界 */
+  .prose pre,
+  .blog-article__content pre {
+    background: #f7f7f7 !important;
+    border: 1px solid #ccc !important;
+    color: #000 !important;
+    page-break-inside: avoid;
+  }
+
+  /* 行内代码：去除主色，使用黑色文字 + 灰底，保证打印可读性 */
+  .prose code,
+  .blog-article__content code {
+    color: #000 !important;
+    background: #f0f0f0 !important;
+    border-color: #ccc !important;
+  }
+
+  /* 标题与段落：避免页内断裂 */
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+
+  pre, blockquote, table, figure {
+    page-break-inside: avoid;
   }
 }
