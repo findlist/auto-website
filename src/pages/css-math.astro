@@ -1,0 +1,680 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import MathFunctionsTool from '../components/MathFunctionsTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'CSS 数学函数生成器 - exp/log/sqrt/pow/round 在线可视化工具',
+  description:
+    '在线 CSS 数学函数生成器：可视化编辑 exp / log / sqrt / pow / abs / sign / mod / rem / round 等 9 个数学函数，内置指数缩放、对数刻度、平方根渐变、幂律缓动、绝对值镜像、模运算条纹、取整对齐、rem 与 mod 对比等 8 组预设与 iframe 沙箱预览。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'CSS 数学函数生成器',
+    description: '在线 CSS 数学函数可视化生成器，支持 exp/log/sqrt/pow/abs/sign/mod/rem/round 等 9 个函数与 8 组预设场景，一键复制 CSS。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>CSS 数学函数生成器</h1>
+      <p>
+        可视化生成 CSS 数学函数（<code>exp</code> / <code>log</code> /
+        <code>sqrt</code> / <code>pow</code> / <code>abs</code> /
+        <code>sign</code> / <code>mod</code> / <code>rem</code> /
+        <code>round</code>，CSS Values Module Level 4，
+        Chrome 128+ / Firefox 128+ / Safari 16.4+ 起支持，Baseline 2024）。
+        内置<strong>8 组预设场景</strong>：指数缩放、对数刻度、平方根渐变、幂律缓动、
+        绝对值镜像、模运算条纹、取整对齐、rem 与 mod 对比——参数实时调节，iframe 沙箱预览真实渲染。
+        附带<strong>函数速查表</strong>：语法、参数范围、返回值、浏览器支持一目了然。
+        适用于指数增长字号、对数刻度进度条、平方根径向渐变、幂律缓动曲线、镜像对称布局、
+        模运算循环条纹、网格步长对齐等现代 CSS 场景。所有处理在浏览器本地完成。
+      </p>
+    </div>
+
+    <MathFunctionsTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>什么是 CSS 数学函数？它包含哪些函数？</summary>
+        <p>
+          <strong>CSS 数学函数</strong>是 CSS Values Module Level 4 引入的一组数学运算函数，
+          与 <code>calc()</code> 配合使用，把原本需要 JavaScript 的数学计算下沉到 CSS。
+          主要分为四类：<br />
+          - <strong>指数对数</strong>：<code>exp(x)</code>（e 的 x 次方）、<code>log(x, base?)</code>（对数）、
+          <code>sqrt(x)</code>（平方根）、<code>pow(x, y)</code>（x 的 y 次方）<br />
+          - <strong>符号处理</strong>：<code>abs(x)</code>（绝对值）、<code>sign(x)</code>（符号函数）<br />
+          - <strong>余数运算</strong>：<code>mod(x, y)</code>（模运算，符号同 y）、
+          <code>rem(x, y)</code>（余数，符号同 x）<br />
+          - <strong>取整运算</strong>：<code>round(策略, x, step?)</code>，策略含 nearest / to-zero / up / down<br />
+          这些函数从 Chrome 128+ / Firefox 128+ / Safari 16.4+ 起原生支持，已进入 Baseline 2024。
+          配合三角函数（<code>sin</code> / <code>cos</code> / <code>atan2</code> 等），
+          构成完整的 CSS 数学函数体系。
+        </p>
+      </details>
+      <details>
+        <summary>CSS 数学函数的参数与返回值是什么类型？怎么用于带单位的属性？</summary>
+        <p>
+          <strong>参数与返回值都是无单位数值</strong>（<code>&lt;number&gt;</code>），
+          不能直接传入带单位的值（如 <code>exp(10px)</code> 无效），需要先在
+          <code>calc()</code> 中处理单位：<br />
+          - <strong>错误写法</strong>：<code>width: exp(10px);</code>（参数不接受长度）<br />
+          - <strong>正确写法</strong>：<code>width: calc(exp(2) * 10px);</code>
+          （exp(2) ≈ 7.389，再乘以 10px 得 73.89px）<br />
+          <strong>与带单位的值做运算</strong>：通常用 <code>calc()</code> 把无单位结果乘以单位，
+          或先除以单位转换为数值：<br />
+          - 计算百分比进度：<code>width: calc(log(var(--v)) / log(var(--max)) * 100%);</code><br />
+          - 计算带单位的位移：<code>transform: translateX(calc(pow(var(--t), 2) * 200px));</code><br />
+          <strong>易错点</strong>：<code>round()</code> 的第三个参数 <code>step</code> 也必须是无单位数值，
+          若要对带单位的值取整，需在 <code>calc</code> 外层处理，或用
+          <code>round(nearest, calc(var(--w) / 1px), 8) * 1px</code> 这种写法。
+        </p>
+      </details>
+      <details>
+        <summary>exp() 与 pow() 有什么区别？怎么选择？</summary>
+        <p>
+          <strong>关系</strong>：<code>exp(x)</code> 等价于 <code>pow(e(), x)</code>，
+          即固定以自然常数 e 为底。两者返回值完全相同：<br />
+          - <code>exp(2)</code> = <code>pow(e(), 2)</code> ≈ 7.389<br />
+          - <code>exp(0)</code> = <code>pow(e(), 0)</code> = 1<br />
+          <strong>选择标准</strong>：<br />
+          - 底数固定为 e（自然指数场景）：<strong>用 <code>exp()</code></strong>，
+          语义更清晰，例如指数衰减 <code>exp(-1 * var(--t))</code>、指数增长
+          <code>exp(var(--step) * 3)</code>；<br />
+          - 底数是其他值（如 2、10）：<strong>必须用 <code>pow()</code></strong>，
+          例如平方 <code>pow(x, 2)</code>、立方 <code>pow(x, 3)</code>、
+          常用对数近似 <code>pow(10, var(--n))</code>；<br />
+          - 等价于平方根：<code>sqrt(x)</code> 比 <code>pow(x, 0.5)</code> 更直观，优先用 <code>sqrt</code>。<br />
+          <strong>性能</strong>：浏览器实现中 <code>exp</code> 通常有专门优化，比通用 <code>pow</code> 略快，
+          但 CSS 中差异可忽略。
+        </p>
+      </details>
+      <details>
+        <summary>log() 函数的 base 参数怎么用？怎么计算常用对数？</summary>
+        <p>
+          <strong>语法</strong>：<code>log(x, base?)</code>，第二个参数 <code>base</code> 可省略。<br />
+          - <strong>省略 base</strong>：默认以 e 为底，即<strong>自然对数 ln</strong>。
+          <code>log(e())</code> = 1，<code>log(10)</code> ≈ 2.303<br />
+          - <strong>指定 base</strong>：计算以 base 为底的对数。例如
+          <code>log(1000, 10)</code> = 3（常用对数 lg），
+          <code>log(8, 2)</code> = 3（以 2 为底）<br />
+          <strong>常用对数（lg）</strong>：<code>log(x, 10)</code><br />
+          <strong>二进制对数（lb）</strong>：<code>log(x, 2)</code><br />
+          <strong>典型用途</strong>：<br />
+          1. <strong>对数刻度进度条</strong>：把 1..max 的值压缩到 0..100%，
+          <code>width: calc(log(var(--v), 10) / log(var(--max), 10) * 100%)</code>；<br />
+          2. <strong>分贝计算</strong>：<code>10 * log(power / refPower, 10)</code>；<br />
+          3. <strong>数据可视化</strong>：把指数增长的数据线性化，便于在屏幕中展示。
+        </p>
+      </details>
+      <details>
+        <summary>mod() 与 rem() 在负数场景下有什么区别？</summary>
+        <p>
+          两者都计算余数，但<strong>结果符号不同</strong>，这是数学定义的差异：<br />
+          - <code>rem(x, y)</code> 结果符号与 <strong>x 相同</strong>，定义为
+          <code>x - y * trunc(x / y)</code>（trunc 向零取整）<br />
+          - <code>mod(x, y)</code> 结果符号与 <strong>y 相同</strong>，定义为
+          <code>x - y * floor(x / y)</code>（floor 向负无穷取整）<br />
+          <strong>正数场景两者结果相同</strong>：<code>mod(7, 3)</code> = <code>rem(7, 3)</code> = 1<br />
+          <strong>负数场景差异明显</strong>：<br />
+          - <code>mod(-7, 3)</code> = 2（符号同 y=3，正）<br />
+          - <code>rem(-7, 3)</code> = -1（符号同 x=-7，负）<br />
+          <strong>选择建议</strong>：<br />
+          - 需要<strong>循环周期</strong>语义（如条纹、角度循环）：<strong>用 <code>mod</code></strong>，
+          结果总是 [0, |y|) 范围，循环连续；<br />
+          - 需要<strong>截断余数</strong>语义（保留被除数符号方向）：<strong>用 <code>rem</code></strong>，
+          与 JavaScript <code>%</code> 行为一致。<br />
+          本工具的"rem 与 mod 对比"预设可实时调节 x、y 观察差异。
+        </p>
+      </details>
+      <details>
+        <summary>round() 函数的四种策略是什么？分别用在什么场景？</summary>
+        <p>
+          <strong>语法</strong>：<code>round(&lt;策略&gt;, &lt;value&gt;, &lt;step&gt;?)</code>，
+          step 省略时默认为 1。<br />
+          <strong>四种策略</strong>：<br />
+          - <strong>nearest</strong>：四舍五入到最近的 step 整数倍。例如
+          <code>round(nearest, 17, 8)</code> = 16（17 离 16 vs 24 更近）<br />
+          - <strong>to-zero</strong>：向零方向取整到 step 整数倍。例如
+          <code>round(to-zero, 17, 8)</code> = 16，<code>round(to-zero, -17, 8)</code> = -16<br />
+          - <strong>up</strong>：向上取整（向正无穷方向）。例如
+          <code>round(up, 17, 8)</code> = 24，<code>round(up, -17, 8)</code> = -16<br />
+          - <strong>down</strong>：向下取整（向负无穷方向）。例如
+          <code>round(down, 17, 8)</code> = 16，<code>round(down, -17, 8)</code> = -24<br />
+          <strong>典型场景</strong>：<br />
+          - <strong>网格对齐</strong>：<code>round(nearest, var(--w), 8px)</code> 让任意宽度吸附到 8px 网格；<br />
+          - <strong>键盘焦点步进</strong>：用 <code>round(up, var(--t), 0.1)</code> 强制时间到下一刻度；<br />
+          - <strong>响应式断点</strong>：把视口宽度吸附到预设断点，避免微小变化触发响应式切换。<br />
+          注意：<code>step</code> 必须是无单位数值，若要处理带单位的值需在 <code>calc</code> 中转换单位。
+        </p>
+      </details>
+      <details>
+        <summary>CSS 数学函数的浏览器兼容性如何？旧浏览器怎么降级？</summary>
+        <p>
+          <strong>兼容性</strong>（截至 2026 年）：exp / log / sqrt / pow / abs / sign / mod / rem / round
+          从 Chrome 128+ / Firefox 128+ / Safari 16.4+ 起支持，<strong>已进入 Baseline 2024</strong>，
+          主流浏览器最新版本均已覆盖，生产环境可放心使用。<br />
+          <strong>降级策略</strong>：与所有 CSS 数学函数一样，不支持的浏览器会把整个声明视为无效，
+          需要<strong>显式提供回退</strong>：<br />
+          1. 先写静态回退声明：<code>.demo &#123; width: 80%; &#125;</code><br />
+          2. 再用数学函数覆盖：<code>.demo &#123; width: calc(log(var(--v)) / log(var(--max)) * 100%); &#125;</code><br />
+          旧浏览器停留在 80%，新浏览器按对数计算。<br />
+          也可用 <code>@supports (width: calc(log(10) * 1px))</code> 做特性检测，
+          仅在支持时应用复杂逻辑。<br />
+          <strong>渐进增强建议</strong>：对于装饰性效果（如指数增长字号、对数刻度进度条），
+          降级到固定值不影响核心功能；对于功能性计算（如网格对齐），
+          可用 <code>@supports</code> 检测后切换布局策略。
+        </p>
+      </details>
+      <details>
+        <summary>这个工具的预览安全吗？数据会上传吗？</summary>
+        <p>
+          完全安全，零数据上传。本工具的所有操作在浏览器本地完成：<br />
+          - 预设切换、参数调节、CSS 代码生成、预览渲染全部在浏览器内存中完成，不发起任何网络请求。<br />
+          - 预览区使用 iframe 的 <code>srcdoc</code> 属性渲染，HTML 与 CSS 完全隔离在 iframe 内，
+            不会影响主页面样式，也不会被主页面样式污染。<br />
+          - iframe 设置了 <code>sandbox="allow-same-origin"</code> 属性限制能力，
+            预览内容无法执行脚本、提交表单或访问父页面（不含 <code>allow-scripts</code>）。<br />
+          - 生成的 CSS 代码仅在你本地浏览器中，点击复制按钮才会写入剪贴板。<br />
+          - 不读取 <code>navigator</code> 等浏览器信息，不写入 Cookie，无任何追踪行为。<br />
+          无需注册、无需登录、无广告，适合处理任何 CSS 数学函数与生产场景。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/trigonometric">CSS 三角函数生成器</a> — sin/cos/atan2 等，与本工具构成完整 CSS 数学函数体系</li>
+        <li><a href="/animation">CSS animation 动画生成器</a> — 时间驱动动画，pow 缓动与 @property 时间变量相关</li>
+        <li><a href="/gradient">CSS gradient 渐变生成器</a> — 多层径向渐变，sqrt 半径递增相关</li>
+        <li><a href="/css-if">CSS if() 条件函数生成器</a> — 条件值函数，同为 CSS Values Module Level 5 新特性</li>
+        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值生成器</a> — display 切换动画，与 @property 自定义属性相关</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：mf 命名空间（css-math-functions） */
+
+  /* 预设按钮组 */
+  .mf__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0 16px;
+    padding: 12px 16px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mf__presets-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 主布局：左右两栏 */
+  .mf__main {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .mf__editor,
+  .mf__output {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 面板 */
+  .mf__panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .mf__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mf__panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .mf__panel-body {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 当前场景面板 */
+  .mf__scene-name {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .mf__scene-desc {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .mf__scene-funcs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mf__func-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    font-size: 11px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-weight: 600;
+  }
+
+  /* 参数调节 */
+  .mf__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mf__field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .mf__field-value {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .mf__field input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.08));
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .mf__field input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .mf__field input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+
+  .mf__field input[type="range"]:focus-visible {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 4px;
+  }
+
+  .mf__field-range {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+
+  /* 函数速查表 */
+  .mf__ref-body {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .mf__ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .mf__ref-table thead th {
+    padding: 8px 10px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted, #6b7280);
+    border-bottom: 1px solid var(--color-border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .mf__ref-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .mf__ref-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .mf__ref-table tbody tr:hover td {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .mf__ref-name {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .mf__ref-syntax {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .mf__ref-range {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    color: var(--color-text-muted, #6b7280);
+    font-size: 11px;
+  }
+
+  .mf__ref-tip {
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text-muted, #6b7280);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    border-top: 1px solid var(--color-border);
+  }
+
+  .mf__ref-tip code {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    background: var(--color-bg, #fff);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  /* iframe 预览 */
+  .mf__preview {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .mf__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mf__preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .mf__preview-hint {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .mf__iframe {
+    display: block;
+    width: 100%;
+    height: 480px;
+    border: 0;
+    background: #fff;
+  }
+
+  /* 代码输出 */
+  .mf__code {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .mf__code-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mf__code-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .mf__code-pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 380px;
+    overflow: auto;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .mf__code-pre code {
+    font-family: inherit;
+  }
+
+  /* 按钮 */
+  .mf__btn {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+
+  .mf__btn:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.06));
+  }
+
+  .mf__btn--preset {
+    font-size: 12px;
+  }
+
+  .mf__btn--active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .mf__btn--active:hover {
+    background: #1d4ed8;
+  }
+
+  .mf__btn--copy {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .mf__btn--copy:hover {
+    background: #1d4ed8;
+  }
+
+  .mf__empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 13px;
+    color: var(--color-text-muted, #6b7280);
+    text-align: center;
+  }
+
+  /* 响应式：768px 以下单列 */
+  @media (max-width: 768px) {
+    .mf__main {
+      grid-template-columns: 1fr;
+    }
+
+    .mf__iframe {
+      height: 380px;
+    }
+
+    .mf__ref-table {
+      font-size: 11px;
+    }
+
+    .mf__ref-table thead th,
+    .mf__ref-table tbody td {
+      padding: 6px 8px;
+    }
+  }
+
+  /* 414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .mf__presets {
+      padding: 10px;
+    }
+
+    .mf__panel-body {
+      padding: 10px;
+    }
+
+    .mf__iframe {
+      height: 320px;
+    }
+
+    .mf__code-pre {
+      font-size: 11px;
+      padding: 10px;
+    }
+
+    /* 速查表在小屏改为纵向卡片式 */
+    .mf__ref-table thead {
+      display: none;
+    }
+
+    .mf__ref-table,
+    .mf__ref-table tbody,
+    .mf__ref-table tr,
+    .mf__ref-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .mf__ref-table tr {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .mf__ref-table td {
+      border-bottom: 0;
+      padding: 2px 0;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .mf__iframe,
+  :global(.dark) .mf__iframe {
+    background: #1a1a1a;
+  }
+
+  :global([data-theme="dark"]) .mf__func-chip {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .mf__field-value {
+    background: rgba(96, 165, 250, 0.15);
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .mf__btn--active,
+  :global([data-theme="dark"]) .mf__btn--copy {
+    background: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  :global([data-theme="dark"]) .mf__ref-name {
+    color: #93c5fd;
+  }
+
+  :global([data-theme="dark"]) .mf__field input[type="range"] {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .mf__field input[type="range"]::-webkit-slider-thumb {
+    background: #3b82f6;
+    border-color: #1a1a1a;
+  }
+
+  :global([data-theme="dark"]) .mf__field input[type="range"]::-moz-range-thumb {
+    background: #3b82f6;
+    border-color: #1a1a1a;
+  }
+</style>

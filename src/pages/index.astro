@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 97 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 98 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -895,6 +895,15 @@ const tools = [
     category: 'CSS 设计',
     keywords: 'css 三角函数 sin cos tan asin acos atan atan2 hypot pi e 极坐标 圆形布局 玫瑰曲线 向日葵螺旋 黄金角 波浪动画 震动 时钟 弧度 角度 baseline 2023 css values level 4 chrome 111 firefox 118 safari 15.4 渐进增强 生成器',
   },
+  {
+    href: '/css-math',
+    title: 'CSS 数学函数生成器',
+    desc: '在线 CSS 数学函数生成器：可视化编辑 exp / log / sqrt / pow / abs / sign / mod / rem / round 等 9 个 CSS Values Level 4 数学函数，参数实时调节，iframe 沙箱预览真实渲染效果。内置指数缩放、对数刻度、平方根渐变、幂律缓动、绝对值镜像、模运算条纹、取整对齐、rem 与 mod 符号差异对比等 8 组预设场景，每组建模常见前端数值计算问题。函数速查表面板解析各函数的语法、参数与返回值类型（无单位数值）、四舍五入策略（nearest / to-zero / up / down）与浏览器兼容性。实时生成浏览器原生支持的 CSS 数学函数代码（Chrome 128+ / Firefox 128+ / Safari 16.4+，Baseline 2024），一键复制。适用于指数增长字号、对数刻度进度条、平方根径向渐变、幂律缓动曲线、镜像对称布局、模运算循环条纹、网格步长对齐等现代 CSS 场景。全本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: 'CSS 设计',
+    keywords: 'css 数学函数 exp log sqrt pow abs sign mod rem round 对数刻度 指数增长 幂律 缓动 镜像 网格对齐 取整 余数 模运算 abs sign css values level 4 baseline 2024 chrome 128 firefox 128 safari 16.4 渐进增强 生成器',
+  },
 ];
 
 // 工具分类列表（去重），用于分类筛选按钮
@@ -957,7 +966,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 97 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 98 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
