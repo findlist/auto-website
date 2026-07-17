@@ -1367,3 +1367,117 @@
 - 部署本轮新增代码（已 push commit f3af258，Cloudflare Pages 自动触发部署）
 - 接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代
 - （可选）在 /image-crop 切换「批量统一裁剪」模式体验多文件处理能力
+
+---
+
+# 第 81 轮 · 图片裁剪工具体验增强（撤销/重做 + 九宫格 + ZIP 打包）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），处于阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 80 轮（commit f3af258）：图片裁剪工具新增预设尺寸 + 圆形/圆角裁剪 + 批量处理
+- 第 80 轮下轮建议前 3 项明确指向本轮方向：ZIP 打包、撤销/重做、九宫格辅助线
+
+## 本轮聚焦方向
+- 单一方向：image-crop 工具深度体验增强
+- 拆解为 5 个最小可验证单元：
+  1. 在 `imageCrop.ts` 中实现 ZIP 打包器（STORE 模式，纯前端二进制构造）
+  2. 在 `imageCrop.ts` 中实现 `HistoryStack<T>` 历史栈（最大 30 步）
+  3. 在 `ImageCropTool.tsx` 中集成撤销/重做 + 九宫格辅助线（含键盘快捷键 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y）
+  4. 在批量模式中新增「下载为 ZIP」按钮，与「逐个下载」并列
+  5. 在 `image-crop.astro` 中补充配套样式（响应式 + 暗色模式）与 3 条 FAQ
+
+## 完成任务
+
+### 单元 1：ZIP 打包器（imageCrop.ts）
+- 新增 `ZipEntry` 接口与 `createZipFile` 函数
+- 完整实现 ZIP STORE 二进制格式：
+  - Local File Header（30 字节 + 文件名）：签名 0x04034b50、版本 20、UTF-8 标志 0x0800、方法 0（STORE）
+  - 文件数据原样写入
+  - Central Directory（46 字节 + 文件名）：签名 0x02014b50
+  - EOCD（22 字节）：签名 0x06054b50
+- 内置 CRC32 算法（256 项预计算查找表）
+- 新增 `downloadBatchAsZip` 包装函数，使用 `buildCropFilename` 生成条目名
+
+### 单元 2：HistoryStack 泛型类（imageCrop.ts）
+- `HistoryStack<T>` 支持 push / undo / redo / canUndo / canRedo / reset / clear
+- 默认容量 30，超出自动丢弃最早记录
+- 线性历史模型（past + future 数组），redo 后再 push 自动清空 future
+
+### 单元 3：撤销/重做 + 九宫格集成（ImageCropTool.tsx）
+- 新增状态：`historyRef`（HistoryStack<CropRect>）、`rectRef`（最新 rect 同步）、`historyVersion`（触发重渲染）、`showGrid`（默认 true）
+- `setRectWithHistory` 回调：先推入历史栈再设置新 rect
+- `undoRect` / `redoRect` 回调：从历史栈取出状态，不记录历史
+- 拖拽结束 `onUp` 中读取 `rectRef.current` 推入历史（保证一次完整拖拽 = 一个原子操作，避免中间状态污染历史）
+- 键盘快捷键 useEffect：Ctrl+Z 撤销、Ctrl+Shift+Z / Ctrl+Y 重做（Mac 自动映射为 Cmd）
+- 九宫格辅助线：3×3 等分（33.333% / 66.666%），2 条竖线 + 2 条横线，纯视觉不参与裁剪计算
+- 工具栏：↶ 撤销、↷ 重做、▦ 网格切换 3 个图标按钮，disabled 状态联动 historyState
+
+### 单元 4：批量 ZIP 下载按钮（ImageCropTool.tsx）
+- 原「全部下载」改名为「逐个下载」
+- 新增「下载为 ZIP」按钮，调用 `downloadBatchAsZip`
+- ZIP 文件名带时间戳：`cropped-YYYYMMDD-HHMM.zip`
+- 处理中状态 `batchZipping` 防重复点击
+
+### 单元 5：样式与 SEO（image-crop.astro）
+- 新增样式：`.imcrop__grid` / `.imcrop__grid-line` / `.imcrop__grid-line--v` / `.imcrop__grid-line--h` / `.imcrop__canvas-toolbar` / `.imcrop__icon-btn` / `.imcrop__icon-btn--active`
+- 414px 响应式：canvas-header flex-wrap、canvas-meta 隐藏
+- 暗色模式：网格线变浅色、图标按钮背景与边框适配
+- meta title/description 同步更新，突出撤销/重做、九宫格、ZIP 打包
+- hero 文案更新，强调新特性
+- 新增 3 条 FAQ：
+  1. 撤销/重做支持与快捷键
+  2. 九宫格构图辅助线用法（三分法构图）
+  3. 批量裁剪 ZIP 打包下载说明（STORE 模式原理）
+
+## 验收结果
+- TypeScript 类型检查：0 errors / 0 warnings / 4 historical hints（与本次改动无关）
+- Astro 构建：843 pages built in 25.85s
+- 移动端 375px / 平板 768px / 桌面 1280px 三档适配正常
+- 暗色模式样式无破损
+- 撤销/重做按钮 disabled 状态正确联动历史栈
+- 九宫格辅助线开关可切换，不影响裁剪计算
+- 键盘快捷键 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 工作正常
+- Git push ✅ commit 87a05cd 已推送到 origin/main
+- 工作树清洁（本轮仅提交 3 个交付文件，topics.md 单独提交）
+
+## 修改文件清单
+- `src/utils/imageCrop.ts`：新增 `HistoryStack<T>` 类、`ZipEntry` 接口、`createZipFile` 函数、`downloadBatchAsZip` 函数
+- `src/components/ImageCropTool.tsx`：集成历史栈、撤销/重做、九宫格、键盘快捷键、ZIP 下载按钮
+- `src/pages/image-crop.astro`：更新 meta/hero/FAQ，新增配套样式（响应式 + 暗色模式）
+
+## 问题与发现
+- **ZIP STORE 模式的选型依据**：图片本身已是压缩格式（PNG/JPEG/WebP/AVIF），二次 DEFLATE 压缩收益极小但 CPU 开销显著，STORE 模式仅做打包不做压缩，速度最快
+- **CRC32 算法实现**：使用 256 项预计算查找表（多项式 0xedb88320），单次遍历计算，避免重复运算
+- **DataView + Uint8Array 构造二进制**：相比 `Buffer`（Node 专属），DataView 是浏览器原生 API，符合「纯前端零依赖」约束
+- **React 状态同步陷阱**：`setRect((prev) => { 副作用; return prev; })` 是反模式（updater 内不应有副作用），通过 `rectRef`（useRef）+ useEffect 同步最新值，在 `onUp` 中直接读取 `rectRef.current` 推入历史栈
+- **拖拽原子性**：拖拽过程中不记录历史（避免历史栈被中间状态淹没），仅在 mouseup 时记录一次完整操作
+- **历史栈容量选择**：30 步覆盖绝大多数撤销需求，同时避免内存堆积（每个 CropRect 仅 4 个 number，30 步内存占用可忽略）
+- **九宫格辅助线仅视觉辅助**：3×3 等分线对应摄影三分法构图，4 个交叉点是视觉焦点位置，但辅助线不参与裁剪计算，关闭后不影响裁剪结果
+- **ZIP 文件名 UTF-8 标志**：General Purpose Bit Flag 第 11 位（0x0800）置 1，确保中文文件名在解压时正确识别
+
+## 下轮建议
+- （1）图像类工具继续补充 EXIF 编辑 / 图片旋转 / 图片缩放 / 图片拼接（拼图）
+- （2）网络类工具继续扩充 HTTP 请求模拟器增强版（GraphQL/WebSocket/SSE）
+- （3）编码转换长尾 Slug/HTMLEscape 增强
+- （4）接入统计工具进入真正的数据驱动迭代（Google Analytics / Cloudflare Web Analytics / Umami）
+- （5）图片裁剪工具可考虑增加「旋转/翻转」操作（90° / 180° / 270° / 水平翻转 / 垂直翻转）
+- （6）图片裁剪工具可考虑增加「导出尺寸预设」（社交媒体常用尺寸一键应用输出尺寸，区别于本轮的裁剪框尺寸预设）
+- （7）考虑给历史栈增加「历史面板」可视化（显示最近 N 步操作摘要，便于跳转）
+
+## 需用户操作
+- 部署本轮新增代码（已 push commit 87a05cd，Cloudflare Pages 自动触发部署）
+- 接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代
+- （可选）在 /image-crop 体验撤销/重做（Ctrl+Z）、九宫格辅助线（▦ 按钮）、批量 ZIP 下载
+
+## 本次迭代摘要（按规范第十节模板）
+- **轮次**：第 81 轮
+- **阶段**：阶段二 · 数据驱动迭代
+- **聚焦方向**：图片裁剪工具深度体验增强（撤销/重做 + 九宫格 + ZIP 打包）
+- **完成单元**：5 个（ZIP 打包器 / HistoryStack / 撤销重做+九宫格集成 / ZIP 下载按钮 / 样式与 SEO）
+- **修改文件**：3 个（imageCrop.ts / ImageCropTool.tsx / image-crop.astro）
+- **新增代码**：约 350 行（含 CRC32 表、ZIP 二进制构造、HistoryStack、键盘快捷键、九宫格 DOM）
+- **验收结果**：构建 0 错误 0 警告，843 页面生成，移动/平板/桌面三档适配正常，暗色模式无破损
+- **Git 提交**：commit 87a05cd（已推送 origin/main），topics.md 单独提交
+- **核心价值**：补齐图片裁剪工具的最后一块体验短板——误操作可回退（30 步历史）、构图有辅助（九宫格）、批量下载无拦截（ZIP 打包），工具成熟度达到生产级
+- **技术亮点**：纯前端零依赖实现 ZIP STORE 二进制格式（DataView + Uint8Array + CRC32 查找表），符合项目「不引入重型框架」约束
+- **下轮方向**：图像类工具继续扩充（EXIF 编辑 / 旋转 / 缩放 / 拼图）或接入统计工具进入真正数据驱动迭代
