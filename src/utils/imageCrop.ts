@@ -627,3 +627,227 @@ export async function downloadBatch(
     }
   }
 }
+
+/**
+ * 通用历史栈：支持撤销 / 重做，最大容量限制避免内存膨胀
+ * - 用于单图裁剪的 rect 历史，让用户能回退误操作
+ * - 当 push 后又撤销，再次 push 新状态时丢弃被撤销的分支（线性历史模型）
+ */
+export class HistoryStack<T> {
+  private past: T[] = [];
+  private future: T[] = [];
+  constructor(private readonly limit = 30) {}
+
+  /** 记录新状态：清空 future 分支（线性历史） */
+  push(state: T): void {
+    this.past.push(state);
+    // 超出容量时丢弃最旧记录
+    if (this.past.length > this.limit) {
+      this.past.shift();
+    }
+    this.future = [];
+  }
+
+  /** 撤销：返回上一个状态，当前状态进入 future 栈 */
+  undo(): T | null {
+    if (this.past.length <= 1) return null;
+    const current = this.past.pop()!;
+    this.future.push(current);
+    return this.past[this.past.length - 1] ?? null;
+  }
+
+  /** 重做：从 future 栈取回一个状态 */
+  redo(): T | null {
+    if (this.future.length === 0) return null;
+    const next = this.future.pop()!;
+    this.past.push(next);
+    return next;
+  }
+
+  canUndo(): boolean {
+    return this.past.length > 1;
+  }
+
+  canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  /** 重置整个历史栈，仅保留初始状态 */
+  reset(state: T): void {
+    this.past = [state];
+    this.future = [];
+  }
+
+  /** 清空所有历史 */
+  clear(): void {
+    this.past = [];
+    this.future = [];
+  }
+}
+
+/** ZIP 打包单项输入 */
+export interface ZipEntry {
+  /** 文件名（含扩展名，不含路径） */
+  name: string;
+  /** 文件二进制内容 */
+  blob: Blob;
+}
+
+/**
+ * 将多个文件打包为单个 ZIP 文件（STORE 模式，无压缩）
+ *
+ * 实现说明：
+ *  - 采用 ZIP STORE 模式（compression method = 0），不压缩文件内容
+ *  - 浏览器与系统原生支持解压 STORE 模式的 ZIP，兼容性最佳
+ *  - 输出结构：Local File Header + 文件数据 + Central Directory + EOCD
+ *  - 完全在浏览器本地构造 Blob，零网络请求
+ *
+ * 性能说明：
+ *  - STORE 模式比 DEFLATE 模式快 5-10 倍，但输出体积 = 文件总和 + 元数据开销
+ *  - 图片本身已是压缩格式（PNG/JPEG/WebP/AVIF），二次压缩收益极小
+ *  - 适合本工具批量裁剪结果打包下载的场景
+ *
+ * 兼容性：基于 DataView + Uint8Array，所有现代浏览器（Chrome/Firefox/Safari/Edge）支持
+ */
+export async function createZipFile(entries: ZipEntry[], zipName = 'cropped-images.zip'): Promise<void> {
+  if (entries.length === 0) return;
+
+  // 累计总字节数：每个 entry 的 Local Header (30 + nameLen) + 数据 + Central Header (46 + nameLen) + EOCD (22)
+  const encoder = new TextEncoder();
+  const nameBytes = entries.map((e) => encoder.encode(e.name));
+  const blobBuffers = await Promise.all(entries.map((e) => e.blob.arrayBuffer()));
+  const fileDataList = blobBuffers.map((b) => new Uint8Array(b));
+
+  // CRC32 表（预计算 256 项）
+  const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) {
+        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      }
+      table[i] = c >>> 0;
+    }
+    return table;
+  })();
+
+  // 计算单个文件的 CRC32
+  const crc32 = (data: Uint8Array): number => {
+    let crc = 0xffffffff;
+    for (let i = 0; i < data.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xff];
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  };
+
+  // 总字节数
+  let totalSize = 0;
+  for (let i = 0; i < entries.length; i++) {
+    totalSize += 30 + nameBytes[i].length + fileDataList[i].length; // Local Header + 数据
+    totalSize += 46 + nameBytes[i].length; // Central Header
+  }
+  totalSize += 22; // EOCD
+
+  const buffer = new ArrayBuffer(totalSize);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  let offset = 0;
+  const centralEntries: {
+    name: Uint8Array;
+    crc: number;
+    size: number;
+    localOffset: number;
+  }[] = [];
+
+  // 写入 Local File Header + 文件数据
+  for (let i = 0; i < entries.length; i++) {
+    const name = nameBytes[i];
+    const data = fileDataList[i];
+    const crc = crc32(data);
+    const localOffset = offset;
+
+    // Local File Header（30 字节固定 + 文件名）
+    view.setUint32(offset, 0x04034b50, true); // 签名
+    view.setUint16(offset + 4, 20, true); // 需要的最低版本（2.0 = 支持 ZIP）
+    view.setUint16(offset + 6, 0x0800, true); // 通用位标志 bit 11 = UTF-8 文件名
+    view.setUint16(offset + 8, 0, true); // 压缩方法（0 = STORE）
+    view.setUint16(offset + 10, 0, true); // 文件最后修改时间
+    view.setUint16(offset + 12, 0, true); // 文件最后修改日期
+    view.setUint32(offset + 14, crc, true); // CRC-32
+    view.setUint32(offset + 18, data.length, true); // 压缩后大小
+    view.setUint32(offset + 22, data.length, true); // 原始大小
+    view.setUint16(offset + 26, name.length, true); // 文件名长度
+    view.setUint16(offset + 28, 0, true); // 额外字段长度
+    bytes.set(name, offset + 30);
+    offset += 30 + name.length;
+
+    // 文件数据
+    bytes.set(data, offset);
+    offset += data.length;
+
+    centralEntries.push({ name, crc, size: data.length, localOffset });
+  }
+
+  // 写入 Central Directory
+  const centralStart = offset;
+  for (const entry of centralEntries) {
+    view.setUint32(offset, 0x02014b50, true); // 签名
+    view.setUint16(offset + 4, 20, true); // 制作版本
+    view.setUint16(offset + 6, 20, true); // 需要的最低版本
+    view.setUint16(offset + 8, 0x0800, true); // 通用位标志 bit 11 = UTF-8 文件名
+    view.setUint16(offset + 10, 0, true); // 压缩方法（0 = STORE）
+    view.setUint16(offset + 12, 0, true); // 文件最后修改时间
+    view.setUint16(offset + 14, 0, true); // 文件最后修改日期
+    view.setUint32(offset + 16, entry.crc, true); // CRC-32
+    view.setUint32(offset + 20, entry.size, true); // 压缩后大小
+    view.setUint32(offset + 24, entry.size, true); // 原始大小
+    view.setUint16(offset + 28, entry.name.length, true); // 文件名长度
+    view.setUint16(offset + 30, 0, true); // 额外字段长度
+    view.setUint16(offset + 32, 0, true); // 文件注释长度
+    view.setUint16(offset + 34, 0, true); // 文件开始位置磁盘编号
+    view.setUint16(offset + 36, 0, true); // 内部文件属性
+    view.setUint32(offset + 38, 0, true); // 外部文件属性
+    view.setUint32(offset + 42, entry.localOffset, true); // 本地文件头相对偏移
+    bytes.set(entry.name, offset + 46);
+    offset += 46 + entry.name.length;
+  }
+
+  // 写入 End of Central Directory Record（EOCD）
+  view.setUint32(offset, 0x06054b50, true); // 签名
+  view.setUint16(offset + 4, 0, true); // 当前磁盘编号
+  view.setUint16(offset + 6, 0, true); // Central Directory 开始磁盘编号
+  view.setUint16(offset + 8, entries.length, true); // 本磁盘上的 Central Directory 记录数
+  view.setUint16(offset + 10, entries.length, true); // 总 Central Directory 记录数
+  view.setUint32(offset + 12, offset - centralStart, true); // Central Directory 大小
+  view.setUint32(offset + 16, centralStart, true); // Central Directory 开始偏移
+  view.setUint16(offset + 20, 0, true); // 注释长度
+
+  // 触发下载
+  const zipBlob = new Blob([buffer], { type: 'application/zip' });
+  const zipUrl = URL.createObjectURL(zipBlob);
+  downloadBlob(zipUrl, zipName);
+  // 延迟释放，避免下载未完成就回收 URL
+  setTimeout(() => URL.revokeObjectURL(zipUrl), 5000);
+}
+
+/**
+ * 批量打包为 ZIP 下载
+ * - 仅打包成功裁剪的项，跳过失败项
+ * - 文件名使用 buildCropFilename 生成（追加 -cropped 后缀 + 替换扩展名）
+ */
+export async function downloadBatchAsZip(
+  items: BatchCropItem[],
+  zipName = 'cropped-images.zip',
+): Promise<void> {
+  const entries: ZipEntry[] = [];
+  for (const item of items) {
+    if (item.result) {
+      entries.push({
+        name: buildCropFilename(item.name, item.result.mime),
+        blob: item.result.blob,
+      });
+    }
+  }
+  if (entries.length === 0) return;
+  await createZipFile(entries, zipName);
+}

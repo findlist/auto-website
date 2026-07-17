@@ -8,6 +8,7 @@ import {
   type CropResult,
   type OutputShape,
   type BatchCropItem,
+  HistoryStack,
   ASPECT_RATIOS,
   HANDLES,
   OUTPUT_FORMATS,
@@ -20,6 +21,7 @@ import {
   cropImage,
   cropBatch,
   downloadBatch,
+  downloadBatchAsZip,
   detectAllEncodeSupport,
   formatBytes,
   downloadBlob,
@@ -82,12 +84,70 @@ export default function ImageCropTool() {
   const [batchProcessing, setBatchProcessing] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [batchDownloading, setBatchDownloading] = useState(false);
+  const [batchZipping, setBatchZipping] = useState(false);
   const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   /** 显示尺寸（容器内实际渲染宽高） */
   const [displaySize, setDisplaySize] = useState({ width: 0, height: 0 });
+
+  /** 裁剪矩形历史栈：用于撤销 / 重做，最大 30 步 */
+  const historyRef = useRef<HistoryStack<CropRect>>(new HistoryStack<CropRect>(30));
+  /** 同步跟踪最新 rect，便于在事件回调中读取（避免 setRect 副作用） */
+  const rectRef = useRef<CropRect>({ x: 0, y: 0, width: 0, height: 0 });
+  const [historyVersion, setHistoryVersion] = useState(0);
+  /** 历史栈可操作状态（基于 historyVersion 触发重渲染） */
+  const historyState = useMemo(() => ({
+    canUndo: historyRef.current.canUndo(),
+    canRedo: historyRef.current.canRedo(),
+  }), [historyVersion]);
+
+  /** 是否显示九宫格构图辅助线（仅影响视觉，不参与裁剪计算） */
+  const [showGrid, setShowGrid] = useState(true);
+
+  /**
+   * 记录历史并设置新 rect：用户主动操作时使用
+   * - 先把「当前 rect」推入历史栈，再设置新 rect
+   * - 内部状态联动（如 applyAspectRatio）使用 setRect 不记录历史
+   */
+  const setRectWithHistory = useCallback((next: CropRect | ((prev: CropRect) => CropRect)) => {
+    setRect((prev) => {
+      const resolved = typeof next === 'function' ? (next as (p: CropRect) => CropRect)(prev) : next;
+      historyRef.current.push(resolved);
+      rectRef.current = resolved;
+      setHistoryVersion((v) => v + 1);
+      return resolved;
+    });
+    setResult(null);
+  }, []);
+
+  /** 撤销：从历史栈取上一个状态，不记录历史 */
+  const undoRect = useCallback(() => {
+    const prev = historyRef.current.undo();
+    if (prev) {
+      rectRef.current = prev;
+      setRect(prev);
+      setResult(null);
+      setHistoryVersion((v) => v + 1);
+    }
+  }, []);
+
+  /** 重做：从历史栈取下一个状态，不记录历史 */
+  const redoRect = useCallback(() => {
+    const next = historyRef.current.redo();
+    if (next) {
+      rectRef.current = next;
+      setRect(next);
+      setResult(null);
+      setHistoryVersion((v) => v + 1);
+    }
+  }, []);
+
+  /** 同步 rect 到 rectRef，便于事件回调读取最新值 */
+  useEffect(() => {
+    rectRef.current = rect;
+  }, [rect]);
 
   /** 组件挂载时探测浏览器编码支持 */
   useEffect(() => {
@@ -155,10 +215,9 @@ export default function ImageCropTool() {
         ratio = meta?.ratio ?? null;
       }
       const initial = computeInitialRect(source.width, source.height, ratio);
-      setRect(initial);
-      setResult(null);
+      setRectWithHistory(initial);
     },
-    [source, customRatioW, customRatioH],
+    [source, customRatioW, customRatioH, setRectWithHistory],
   );
 
   /** 自定义比例变化时同步重置裁剪框 */
@@ -171,11 +230,10 @@ export default function ImageCropTool() {
       if (aspectCode === 'custom' && source) {
         const ratio = h > 0 ? w / h : null;
         const initial = computeInitialRect(source.width, source.height, ratio);
-        setRect(initial);
-        setResult(null);
+        setRectWithHistory(initial);
       }
     },
-    [aspectCode, source, customRatioW, customRatioH],
+    [aspectCode, source, customRatioW, customRatioH, setRectWithHistory],
   );
 
   /** 当前选中的预设尺寸代码（用于高亮，null 表示未选） */
@@ -196,12 +254,11 @@ export default function ImageCropTool() {
       const meta = ASPECT_RATIOS.find((r) => r.code === preset.aspect);
       const ratio = meta?.ratio ?? null;
       const initial = computeInitialRect(source.width, source.height, ratio);
-      setRect(initial);
+      setRectWithHistory(initial);
       // 填充等比缩放目标尺寸
       setExportCfg((p) => ({ ...p, maxWidth: preset.width, maxHeight: preset.height }));
-      setResult(null);
     },
-    [source],
+    [source, setRectWithHistory],
   );
 
   /** 用户手动切换比例时清除预设高亮 */
@@ -225,11 +282,12 @@ export default function ImageCropTool() {
         setActivePreset(null);
         setAspectCode('1:1');
         const initial = computeInitialRect(source.width, source.height, 1);
-        setRect(initial);
+        setRectWithHistory(initial);
+      } else {
+        setResult(null);
       }
-      setResult(null);
     },
-    [aspectCode, source],
+    [aspectCode, source, setRectWithHistory],
   );
 
   /**
@@ -350,6 +408,10 @@ export default function ImageCropTool() {
       const src = await loadImage(file);
       setSource(src);
       const initial = computeInitialRect(src.width, src.height, null);
+      // 新图片载入：重置历史栈，仅保留初始状态
+      historyRef.current.reset(initial);
+      rectRef.current = initial;
+      setHistoryVersion((v) => v + 1);
       setRect(initial);
       setResult(null);
     } catch (e) {
@@ -439,6 +501,10 @@ export default function ImageCropTool() {
     const onUp = () => {
       setDragMode(null);
       setDragStart(null);
+      // 拖拽结束：把当前 rect 推入历史栈（一次拖拽作为一个原子操作）
+      // rectRef 已在 useEffect 中同步为最新值
+      historyRef.current.push(rectRef.current);
+      setHistoryVersion((v) => v + 1);
       setResult(null);
     };
     window.addEventListener('mousemove', onMove);
@@ -454,41 +520,41 @@ export default function ImageCropTool() {
     (key: keyof CropRect, raw: number) => {
       if (!source) return;
       const value = Math.max(0, Math.round(raw));
-      const next = { ...rect, [key]: value };
-      setRect(clampRect(next, source.width, source.height));
-      if (currentRatio) {
-        setRect((r) => applyAspectRatio(r, currentRatio, source.width, source.height));
-      }
-      setResult(null);
+      const next = clampRect({ ...rect, [key]: value }, source.width, source.height);
+      const finalNext = currentRatio
+        ? applyAspectRatio(next, currentRatio, source.width, source.height)
+        : next;
+      setRectWithHistory(finalNext);
     },
-    [source, rect, currentRatio],
+    [source, rect, currentRatio, setRectWithHistory],
   );
 
   /** 快捷操作：居中、重置、全图 */
   const centerRect = useCallback(() => {
     if (!source) return;
-    const next = {
-      x: Math.round((source.width - rect.width) / 2),
-      y: Math.round((source.height - rect.height) / 2),
-      width: rect.width,
-      height: rect.height,
-    };
-    setRect(clampRect(next, source.width, source.height));
-    setResult(null);
-  }, [source, rect]);
+    const next = clampRect(
+      {
+        x: Math.round((source.width - rect.width) / 2),
+        y: Math.round((source.height - rect.height) / 2),
+        width: rect.width,
+        height: rect.height,
+      },
+      source.width,
+      source.height,
+    );
+    setRectWithHistory(next);
+  }, [source, rect, setRectWithHistory]);
 
   const resetRect = useCallback(() => {
     if (!source) return;
     const initial = computeInitialRect(source.width, source.height, currentRatio);
-    setRect(initial);
-    setResult(null);
-  }, [source, currentRatio]);
+    setRectWithHistory(initial);
+  }, [source, currentRatio, setRectWithHistory]);
 
   const selectAll = useCallback(() => {
     if (!source) return;
-    setRect({ x: 0, y: 0, width: source.width, height: source.height });
-    setResult(null);
-  }, [source]);
+    setRectWithHistory({ x: 0, y: 0, width: source.width, height: source.height });
+  }, [source, setRectWithHistory]);
 
   /** 执行裁剪并生成结果 */
   const runCrop = useCallback(async () => {
@@ -518,9 +584,43 @@ export default function ImageCropTool() {
     setSource(null);
     setResult(null);
     setRect({ x: 0, y: 0, width: 0, height: 0 });
+    rectRef.current = { x: 0, y: 0, width: 0, height: 0 };
+    historyRef.current.clear();
+    setHistoryVersion((v) => v + 1);
     setError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [source, result]);
+
+  /** 批量模式：打包为 ZIP 下载 */
+  const downloadAllAsZip = useCallback(async () => {
+    if (batchItems.length === 0) return;
+    setBatchZipping(true);
+    try {
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+      await downloadBatchAsZip(batchItems, `cropped-${ts}.zip`);
+    } finally {
+      setBatchZipping(false);
+    }
+  }, [batchItems]);
+
+  /** 键盘快捷键：Ctrl/Cmd + Z 撤销，Ctrl/Cmd + Shift + Z 或 Ctrl+Y 重做 */
+  useEffect(() => {
+    if (!source || mode !== 'single') return;
+    const onKey = (e: KeyboardEvent) => {
+      const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z');
+      const isRedo = (e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y' || ((e.shiftKey) && (e.key === 'z' || e.key === 'Z')));
+      if (isUndo) {
+        e.preventDefault();
+        undoRect();
+      } else if (isRedo) {
+        e.preventDefault();
+        redoRect();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [source, mode, undoRect, redoRect]);
 
   /** 卸载时清理所有 URL（单图 + 批量） */
   useEffect(() => {
@@ -605,9 +705,41 @@ export default function ImageCropTool() {
           <div className="imcrop__canvas-wrap">
             <div className="imcrop__canvas-header">
               <span className="imcrop__canvas-title">原图与裁剪框</span>
-              <span className="imcrop__canvas-meta">
-                {source.width}×{source.height}px · {formatBytes(source.file.size)}
-              </span>
+              <div className="imcrop__canvas-toolbar">
+                <button
+                  type="button"
+                  className="imcrop__icon-btn"
+                  onClick={undoRect}
+                  disabled={!historyState.canUndo}
+                  title="撤销 (Ctrl+Z)"
+                  aria-label="撤销"
+                >
+                  ↶
+                </button>
+                <button
+                  type="button"
+                  className="imcrop__icon-btn"
+                  onClick={redoRect}
+                  disabled={!historyState.canRedo}
+                  title="重做 (Ctrl+Shift+Z)"
+                  aria-label="重做"
+                >
+                  ↷
+                </button>
+                <button
+                  type="button"
+                  className={`imcrop__icon-btn${showGrid ? ' imcrop__icon-btn--active' : ''}`}
+                  onClick={() => setShowGrid((v) => !v)}
+                  title="九宫格构图辅助线"
+                  aria-label="切换九宫格辅助线"
+                  aria-pressed={showGrid}
+                >
+                  ▦
+                </button>
+                <span className="imcrop__canvas-meta">
+                  {source.width}×{source.height}px · {formatBytes(source.file.size)}
+                </span>
+              </div>
             </div>
             <div ref={imageContainerRef} className={`imcrop__canvas${draggingClass}`}>
               <img
@@ -631,6 +763,15 @@ export default function ImageCropTool() {
                 }}
                 onMouseDown={startDrag('move')}
               >
+                {/* 九宫格构图辅助线：3×3 等分线，摄影构图常用 */}
+                {showGrid && (
+                  <div className="imcrop__grid" aria-hidden="true">
+                    <div className="imcrop__grid-line imcrop__grid-line--v" style={{ left: '33.333%' }} />
+                    <div className="imcrop__grid-line imcrop__grid-line--v" style={{ left: '66.666%' }} />
+                    <div className="imcrop__grid-line imcrop__grid-line--h" style={{ top: '33.333%' }} />
+                    <div className="imcrop__grid-line imcrop__grid-line--h" style={{ top: '66.666%' }} />
+                  </div>
+                )}
                 {/* 8 个调整手柄 */}
                 {HANDLES.map((h) => (
                   <div
@@ -1071,20 +1212,31 @@ export default function ImageCropTool() {
                   {batchProcessing ? `处理中 ${batchProgress.current}/${batchProgress.total}` : '开始批量裁剪'}
                 </button>
                 {batchItems.some((it) => it.result) && (
-                  <button
-                    type="button"
-                    className="imcrop__btn imcrop__btn--ghost"
-                    onClick={downloadAllBatch}
-                    disabled={batchDownloading}
-                  >
-                    {batchDownloading ? '下载中...' : '全部下载'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="imcrop__btn imcrop__btn--ghost"
+                      onClick={downloadAllBatch}
+                      disabled={batchDownloading || batchZipping}
+                    >
+                      {batchDownloading ? '下载中...' : '逐个下载'}
+                    </button>
+                    <button
+                      type="button"
+                      className="imcrop__btn imcrop__btn--ghost"
+                      onClick={downloadAllAsZip}
+                      disabled={batchDownloading || batchZipping}
+                      title="打包为 ZIP 文件下载，避免浏览器多文件下载拦截"
+                    >
+                      {batchZipping ? '打包中...' : '下载为 ZIP'}
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
                   className="imcrop__btn imcrop__btn--ghost"
                   onClick={clearBatch}
-                  disabled={batchProcessing || batchDownloading}
+                  disabled={batchProcessing || batchDownloading || batchZipping}
                 >
                   清空
                 </button>
@@ -1092,7 +1244,7 @@ export default function ImageCropTool() {
                   type="button"
                   className="imcrop__btn imcrop__btn--ghost"
                   onClick={() => batchFileInputRef.current?.click()}
-                  disabled={batchProcessing || batchDownloading}
+                  disabled={batchProcessing || batchDownloading || batchZipping}
                 >
                   添加文件
                 </button>

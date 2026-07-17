@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ImageCropTool from '../components/ImageCropTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片裁剪工具 - 在线可视化裁剪 1:1/4:3/16:9 多比例',
+  title: '图片裁剪工具 - 在线可视化裁剪 1:1/4:3/16:9 多比例 + 撤销重做 + 九宫格构图',
   description:
-    '在线图片裁剪工具：支持自由裁剪与 1:1 / 4:3 / 3:4 / 16:9 / 9:16 / 3:2 / 2:3 / 自定义共 9 种比例，提供 8 个调整手柄的可视化裁剪框，可拖动可调整大小，支持精确数值输入（X/Y/宽/高）与居中、重置、全图快捷操作，导出 PNG / JPEG / WebP / AVIF 格式。基于 Canvas API drawImage 源矩形参数全本地处理，零上传零追踪，适用于头像裁剪、社交媒体封面、视频缩略图、电商主图、证件照等场景。',
+    '在线图片裁剪工具：支持自由裁剪与 1:1 / 4:3 / 3:4 / 16:9 / 9:16 / 3:2 / 2:3 / 自定义共 9 种比例，提供 8 个调整手柄的可视化裁剪框，可拖动可调整大小，支持精确数值输入（X/Y/宽/高）与居中、重置、全图快捷操作。内置撤销/重做历史栈（最多 30 步，支持 Ctrl+Z / Ctrl+Shift+Z 快捷键）、九宫格构图辅助线（三分法构图）、批量裁剪与 ZIP 打包下载。导出 PNG / JPEG / WebP / AVIF 格式。基于 Canvas API drawImage 源矩形参数全本地处理，零上传零追踪，适用于头像裁剪、社交媒体封面、视频缩略图、电商主图、证件照等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片裁剪工具',
-    description: '在线图片裁剪工具，支持自由裁剪与 8 种预设比例、可视化裁剪框、8 手柄调整、精确数值输入、多格式导出，全本地 Canvas API 处理。',
+    description: '在线图片裁剪工具，支持自由裁剪与 8 种预设比例、可视化裁剪框、8 手柄调整、精确数值输入、撤销/重做、九宫格构图辅助线、批量裁剪与 ZIP 打包下载，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -31,8 +31,10 @@ const meta: SiteMeta = {
         <strong>自由裁剪与 1:1 / 4:3 / 3:4 / 16:9 / 9:16 / 3:2 / 2:3 / 自定义</strong>共 9 种比例。
         提供<strong>可视化裁剪框 + 8 个调整手柄</strong>，可拖动可调整大小，支持
         <strong>精确数值输入</strong>（X / Y / 宽 / 高）与居中、重置、全图快捷操作。
-        基于 Canvas API 的 <code>drawImage</code> 源矩形参数在浏览器本地完成裁剪，
-        <strong>零上传、零追踪、可离线使用</strong>。
+        内置<strong>撤销 / 重做历史栈</strong>（最多 30 步，支持 Ctrl+Z 快捷键）与
+        <strong>九宫格构图辅助线</strong>（三分法构图）；批量模式支持
+        <strong>ZIP 打包下载</strong>。基于 Canvas API 的 <code>drawImage</code> 源矩形参数
+        在浏览器本地完成裁剪，<strong>零上传、零追踪、可离线使用</strong>。
       </p>
     </div>
 
@@ -128,6 +130,42 @@ const meta: SiteMeta = {
           导出格式仅作为输出选项<br />
           如需<strong>裁剪 + 转格式</strong>：在本工具直接选目标格式即可（已支持 PNG / JPEG / WebP / AVIF），
           无需二次转换。如需<strong>裁剪 + 加水印</strong>：先用本工具裁剪，再用水印工具（<a href="/image-watermark">/image-watermark</a>）加水印。
+        </p>
+      </details>
+      <details>
+        <summary>支持撤销/重做吗？误操作能回退吗？</summary>
+        <p>
+          支持。本工具内置<strong>历史栈</strong>，记录所有裁剪框变更（拖拽、调整手柄、数值输入、比例切换、预设应用、居中、重置、全图等），最多保留 30 步。<br />
+          - <strong>撤销</strong>：点击画布头部的 ↶ 按钮，或按 <code>Ctrl+Z</code>（Mac 为 <code>Cmd+Z</code>）<br />
+          - <strong>重做</strong>：点击 ↷ 按钮，或按 <code>Ctrl+Shift+Z</code> / <code>Ctrl+Y</code>（Mac 为 <code>Cmd+Shift+Z</code>）<br />
+          - <strong>新图片载入</strong>会重置历史栈，仅保留初始状态<br />
+          - 拖拽过程中的中间状态不记录历史，一次完整拖拽仅作为一个原子操作
+        </p>
+      </details>
+      <details>
+        <summary>九宫格构图辅助线是什么？怎么用？</summary>
+        <p>
+          九宫格辅助线是摄影与平面构图常用的辅助工具，将裁剪框<strong>横向三等分</strong>与<strong>纵向三等分</strong>，
+          形成 4 条线与 4 个交叉点。<br />
+          - <strong>启用方式</strong>：点击画布头部的 ▦ 按钮切换显示，默认开启<br />
+          - <strong>构图原则</strong>：将主体放在 4 个交叉点之一（三分法构图），或将地平线/水平线放在上下 1/3 线上，
+          比居中构图更有张力<br />
+          - <strong>仅视觉辅助</strong>：辅助线不参与裁剪计算，仅帮助用户判断构图，关闭后不影响裁剪结果<br />
+          - 适用于<strong>人像、风景、建筑、产品摄影</strong>等需要构图考究的场景
+        </p>
+      </details>
+      <details>
+        <summary>批量裁剪结果怎么下载？支持 ZIP 打包吗？</summary>
+        <p>
+          支持两种批量下载方式：<br />
+          - <strong>逐个下载</strong>：浏览器逐个触发下载，间隔 200ms 避免拦截。
+          Chrome 会弹授权、Firefox 默认阻止、Safari 仅触发首个，需手动允许<br />
+          - <strong>下载为 ZIP</strong>：将所有裁剪结果<strong>在浏览器本地打包为单个 ZIP 文件</strong>（STORE 模式，无压缩），
+          一次性下载，<strong>避免浏览器多文件下载拦截</strong>，体验更佳<br />
+          ZIP 打包采用纯前端实现（DataView + Uint8Array 构造 ZIP 二进制结构），
+          包含完整的 Local File Header + Central Directory + EOCD，
+          文件名使用 <code>原文件名-cropped.扩展名</code> 格式，ZIP 文件名带时间戳（如 <code>cropped-20260718-1430.zip</code>）。
+          图片本身已是压缩格式（PNG/JPEG/WebP/AVIF），二次压缩收益极小，故采用 STORE 模式以追求最快打包速度。
         </p>
       </details>
     </section>
@@ -347,6 +385,74 @@ const meta: SiteMeta = {
   .imcrop__handle--s { bottom: -6px; left: 50%; margin-left: -6px; }
   .imcrop__handle--sw { bottom: -6px; left: -6px; }
   .imcrop__handle--w { top: 50%; left: -6px; margin-top: -6px; }
+
+  /* 九宫格构图辅助线：3×3 等分线，摄影构图常用 */
+  .imcrop__grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .imcrop__grid-line {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.45);
+  }
+
+  .imcrop__grid-line--v {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-0.5px);
+  }
+
+  .imcrop__grid-line--h {
+    left: 0;
+    right: 0;
+    height: 1px;
+    transform: translateY(-0.5px);
+  }
+
+  /* 画布头部工具栏：撤销 / 重做 / 九宫格开关 */
+  .imcrop__canvas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .imcrop__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imcrop__icon-btn:hover:not(:disabled) {
+    border-color: #2b6cff;
+    color: #2b6cff;
+  }
+
+  .imcrop__icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .imcrop__icon-btn--active {
+    border-color: #2b6cff;
+    background: rgba(43, 108, 255, 0.1);
+    color: #2b6cff;
+  }
 
   /* 半透明遮罩（4 块） */
   .imcrop__mask {
@@ -945,6 +1051,14 @@ const meta: SiteMeta = {
       padding: 8px 10px;
       font-size: 13px;
     }
+    /* 画布头部：标题与工具栏换行堆叠 */
+    .imcrop__canvas-header {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .imcrop__canvas-meta {
+      display: none;
+    }
     /* 批量摘要：单列堆叠，便于阅读 */
     .imcrop__batch-summary {
       grid-template-columns: 1fr;
@@ -1032,5 +1146,25 @@ const meta: SiteMeta = {
   :global([data-theme='dark']) .imcrop__batch-item-status--error {
     color: #f87171;
     background: rgba(220, 38, 38, 0.18);
+  }
+  /* 暗色模式：九宫格辅助线（白色变浅蓝，阴影变深） */
+  :global([data-theme='dark']) .imcrop__grid-line {
+    background: rgba(180, 200, 255, 0.45);
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.7);
+  }
+  /* 暗色模式：画布头部图标按钮 */
+  :global([data-theme='dark']) .imcrop__icon-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--color-text-soft);
+  }
+  :global([data-theme='dark']) .imcrop__icon-btn:hover:not(:disabled) {
+    border-color: #4f8aff;
+    color: #8ab4ff;
+  }
+  :global([data-theme='dark']) .imcrop__icon-btn--active {
+    border-color: #4f8aff;
+    background: rgba(79, 138, 255, 0.18);
+    color: #8ab4ff;
   }
 </style>
