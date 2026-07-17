@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 100 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 101 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -599,6 +599,15 @@ const tools = [
     keywords: 'dns 查询 doh dnsoverhttps cloudflare 1.1.1.1 google dns sb 解析 a aaaa cname mx txt ns soa ptr caa srv ds dnskey tlsa https svcb naptr dnssec ad cd ttl dig 域名 反向解析 spf dkim dmarc http/3 ech 邮件 证书 ca 授权',
   },
   {
+    href: '/tls',
+    title: 'TLS 证书解析工具',
+    desc: '在线 TLS/SSL 证书解析工具：纯浏览器本地解析 PEM 格式 X.509 证书，提取版本、序列号、签发者、有效期、主体、公钥、SAN、扩展、签名值等全部字段，自动计算 SHA-1 与 SHA-256 指纹，支持证书链解析（多 PEM 块）、OpenSSL 风格文本导出、识别 CA 证书、自签证书、过期状态、CRL/OCSP/AIA 端点、证书透明度（SCT）。零上传零追踪，证书内容不离开本机。适用于 HTTPS 证书调试、Let\'s Encrypt 续期验证、自签证书生成检查、证书链构造、PKI 学习、安全研究等场景。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'tls ssl x509 pem der asn1 证书 解析 解析器 链 ca 自签 let\'s encrypt rsa ecdsa ed25519 san cn ocsp crl sct 证书透明度 公钥 私钥 签名 算法 指纹 sha1 sha256 openssl 浏览器 https pkcs trust',
+  },
+  {
     href: '/jsonpath',
     title: 'JSONPath 查询工具',
     desc: '在线 JSONPath 查询工具：基于 RFC 9535 标准实现的三阶段解析器（词法 / 语法 / 求值），支持 $ 根、.name 子节点、..name 递归下降、[*] 通配符、[index] 索引（含负索引）、[?(filter)] 过滤表达式（==/!=/>/>=/</<=/=~ 与 &&/||/! 组合），内置 12 个预设示例与电商订单 / 用户列表示例数据，查询结果展示索引、类型标签与单条复制，零依赖纯函数实现，适用于 API 响应提取、JSON 数据探查、配置筛选、自动化测试断言等场景。',
@@ -984,7 +993,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 100 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 101 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>

@@ -1,0 +1,663 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import TlsTool from '../components/TlsTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'TLS 证书解析工具 - 在线 X.509 PEM 解析与字段查看器',
+  description:
+    '在线 TLS/SSL 证书解析工具：纯浏览器本地解析 PEM 格式 X.509 证书，提取版本、序列号、签发者、有效期、主体、公钥、SAN、扩展、签名值等全部字段，自动计算 SHA-1 与 SHA-256 指纹，支持证书链解析、OpenSSL 风格文本导出。零上传零追踪，证书内容不离开本机。适用于 HTTPS 证书调试、自签证书生成验证、证书过期监控、CA 链分析、证书透明度（SCT）研究、PKI 学习等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'TLS 证书解析工具',
+    description: '在线 TLS/SSL 证书解析工具，纯浏览器本地解析 PEM 格式 X.509 证书，提取全部字段并计算指纹，支持证书链与 OpenSSL 文本导出。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>TLS 证书解析工具</h1>
+      <p>
+        纯浏览器本地解析 <strong>PEM 格式 X.509 证书</strong>，提取版本、序列号、
+        签发者、有效期、主体、公钥、<strong>SAN</strong>、扩展、签名值等全部字段，
+        自动计算 <strong>SHA-1 与 SHA-256 指纹</strong>。支持
+        <strong>证书链解析</strong>（多 PEM 块）、<strong>OpenSSL 风格文本导出</strong>、
+        识别 CA 证书、自签证书、过期状态、CRL/OCSP/AIA 端点、证书透明度（SCT）。
+        所有解析在本机完成，<strong>不发送任何网络请求</strong>，证书内容不离开浏览器。
+        适用于 HTTPS 证书调试、Let's Encrypt 续期验证、自签证书生成检查、
+        证书链构造、PKI 学习、安全研究等场景。
+      </p>
+    </div>
+
+    <TlsTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>证书解析是真的在本地完成吗？会上传证书内容吗？</summary>
+        <p>
+          <strong>是的，全部解析在浏览器本地完成，零网络请求零上传</strong>。<br />
+          - 用户粘贴 PEM 文本后，JavaScript 在浏览器内执行 ASN.1 DER 解析与 X.509 字段提取<br />
+          - 指纹计算使用浏览器原生 <code>crypto.subtle.digest</code> API，同样在本机完成<br />
+          - 不向本站服务器、CDN、第三方 API 发送任何证书数据<br />
+          - 没有 Cookie 追踪、没有统计代码、没有广告<br />
+          <strong>隐私建议</strong>：即使是公网证书，本工具也不会上传。生产环境证书、
+          内网测试证书、未公开的私有 CA 证书都可放心粘贴。
+          如需更高保障，可在断网环境下使用（断网后解析功能依然完全可用）。
+        </p>
+      </details>
+      <details>
+        <summary>PEM、DER、CRT、CER 这些格式有什么区别？</summary>
+        <p>
+          - <strong>PEM（Privacy-Enhanced Mail）</strong>：Base64 编码 + 头尾标记
+          （<code>-----BEGIN CERTIFICATE-----</code>），文本格式便于阅读与复制，是
+          Linux/Mac 与 Nginx/Apache 默认格式，文件后缀常为 <code>.pem</code>、<code>.crt</code>、<code>.key</code><br />
+          - <strong>DER（Distinguished Encoding Rules）</strong>：二进制 ASN.1 编码，
+          紧凑但不可读，是 Windows 与 Java 默认格式，文件后缀常为 <code>.der</code>、<code>.cer</code>、<code>.crt</code><br />
+          - <strong>CRT</strong>：通用证书文件后缀，内容可能是 PEM 也可能是 DER，
+          需查看文件头是否含 <code>-----BEGIN</code> 判断<br />
+          - <strong>CER</strong>：Windows 惯用证书后缀，通常是 DER 格式<br />
+          <strong>本工具支持</strong>：PEM 格式（含 <code>-----BEGIN CERTIFICATE-----</code> 头）、
+          裸 Base64、纯 hex 字符串三种输入。DER 二进制暂不支持直接粘贴
+          （可先用 <code>openssl x509 -in cert.cer -out cert.pem</code> 转换为 PEM）。
+        </p>
+      </details>
+      <details>
+        <summary>X.509 证书包含哪些核心字段？分别有什么用？</summary>
+        <p>
+          RFC 5280 定义的 X.509 v3 证书核心字段：<br />
+          - <strong>版本（Version）</strong>：v1 / v2 / v3，v3 才支持扩展字段，现代证书都是 v3<br />
+          - <strong>序列号（Serial Number）</strong>：CA 签发的唯一编号，用于撤销列表（CRL）定位<br />
+          - <strong>签名算法（Signature Algorithm）</strong>：如 sha256WithRSAEncryption、ecdsa-with-SHA256<br />
+          - <strong>签发者（Issuer）</strong>：CA 的可分辨名称（DN），如 <code>C=US, O=Let's Encrypt, CN=R3</code><br />
+          - <strong>有效期（Validity）</strong>：<code>notBefore</code> 生效时间与 <code>notAfter</code> 过期时间<br />
+          - <strong>主体（Subject）</strong>：证书持有者的 DN，自签证书 subject == issuer<br />
+          - <strong>公钥（SubjectPublicKeyInfo）</strong>：算法 + 公钥数据（RSA 模数指数 / EC 曲线点 / EdDSA 公钥）<br />
+          - <strong>扩展（Extensions）</strong>：v3 关键能力，含 SAN、EKU、basicConstraints、AKI/SKI 等<br />
+          - <strong>签名值（Signature Value）</strong>：CA 对 tbsCertificate 的数字签名<br />
+          <strong>本工具展示</strong>：上述全部字段，并对扩展做结构化解析（如 SAN 拆分为 DNS/IP/URI 列表）。
+        </p>
+      </details>
+      <details>
+        <summary>SAN 是什么？为什么现代证书不再使用 CN 字段？</summary>
+        <p>
+          <strong>SAN（Subject Alternative Name，主体可选名称）</strong>是 X.509 v3 扩展，
+          用于声明证书覆盖的多个域名/IP/邮箱。<br />
+          - <strong>历史原因</strong>：早期证书用 CN（Common Name）字段存放域名，
+          但只能放一个，且语义不清（CN 也常用于人名/公司名）<br />
+          - <strong>现代标准</strong>：RFC 6125 明确要求<strong>客户端优先校验 SAN</strong>，
+          CN 字段仅作向后兼容。Chrome 自 2017 年起忽略 CN，仅校验 SAN<br />
+          - <strong>通配符与多域名</strong>：一张证书可通过 SAN 同时保护
+          <code>*.example.com</code>、<code>example.org</code>、<code>www.example.net</code> 等多个域名<br />
+          - <strong>Let's Encrypt</strong>：单次签发最多 100 个 SAN 域名<br />
+          <strong>本工具</strong>：在「字段详情」Tab 中将 SAN 拆分为 DNS / IP / URI / email 等类型，
+          每项单独展示，便于核对证书覆盖范围。
+        </p>
+      </details>
+      <details>
+        <summary>如何判断证书是否过期？剩余有效期多久？</summary>
+        <p>
+          <strong>本工具自动计算有效期状态</strong>：<br />
+          - <strong>有效（valid）</strong>：当前时间在 <code>notBefore</code> 与 <code>notAfter</code> 之间，
+          状态条显示绿色，剩余天数大于 30 天显示「证书有效」<br />
+          - <strong>即将过期</strong>：剩余天数小于 30 天，状态条显示黄色「即将过期」<br />
+          - <strong>已过期（expired）</strong>：当前时间晚于 <code>notAfter</code>，状态条显示红色，
+          浏览器会拒绝该证书<br />
+          - <strong>未生效（not_yet_valid）</strong>：当前时间早于 <code>notBefore</code>，
+          通常因服务器时钟不准导致<br />
+          <strong>运维建议</strong>：证书剩余 <strong>14 天</strong>时应当立即续期，
+          Let's Encrypt 建议在到期前 30 天续期（自动续期脚本会在剩余 30 天时触发）。
+          监控系统应基于 <code>notAfter</code> 字段提前告警，避免临时发现过期。
+        </p>
+      </details>
+      <details>
+        <summary>什么是证书链？为什么浏览器需要完整的证书链？</summary>
+        <p>
+          <strong>证书链（Certificate Chain）</strong>是从终端证书到根 CA 的信任路径，
+          通常包含 3 层：<br />
+          1. <strong>根 CA（Root CA）</strong>：自签证书，预置在操作系统/浏览器信任库中<br />
+          2. <strong>中间 CA（Intermediate CA）</strong>：由根 CA 签发，负责签发终端证书，
+          如 Let's Encrypt 的 R3 / E1 / R10 / R11<br />
+          3. <strong>终端证书（End-Entity Certificate）</strong>：服务器实际使用的证书，
+          由中间 CA 签发<br />
+          <strong>服务器配置要求</strong>：HTTPS 服务器必须发送「终端证书 + 中间证书」
+          （根证书可选，客户端已有）。若只发终端证书，浏览器会报
+          <code>unable to get local issuer certificate</code> 或
+          <code>NET::ERR_CERT_AUTHORITY_INVALID</code>。<br />
+          <strong>本工具</strong>：粘贴多个 PEM 块（证书链）时，顶部会出现证书切换器，
+          分别展示链上每张证书的字段。可通过 subject == issuer 判断是否为根 CA，
+          通过 AKI（权威密钥标识）与 SKI（主体密钥标识）匹配构造链路关系。
+        </p>
+      </details>
+      <details>
+        <summary>OCSP 和 CRL 是什么？证书透明度（SCT）又是什么？</summary>
+        <p>
+          - <strong>CRL（Certificate Revocation List，证书撤销列表）</strong>：
+          CA 定期发布的已撤销证书列表，本工具展示 CRL 分发点 URL，可手动查询<br />
+          - <strong>OCSP（Online Certificate Status Protocol，在线证书状态协议）</strong>：
+          实时查询某证书是否被撤销，比 CRL 更轻量。本工具展示 OCSP URL，
+          可用 <code>openssl ocsp -issuer chain.pem -cert leaf.pem -url OCSP_URL -resp_text</code> 查询<br />
+          - <strong>AIA（Authority Information Access）</strong>：包含 OCSP URL 与 CA Issuers URL，
+          后者可下载签发者证书，用于补全证书链<br />
+          - <strong>SCT（Signed Certificate Timestamp，签名证书时间戳）</strong>：
+          证书透明度（RFC 6962）的核心，CA 在签发证书时将签发记录提交到
+          公开日志服务器，日志返回 SCT 签名时间戳，嵌入证书扩展中。<br />
+          - <strong>SCT 验证</strong>：浏览器检查证书是否包含至少 2 个来自不同日志的 SCT
+          （Chrome 要求 2025 年 1 月后新证书含 3 个 SCT），防止 CA 私自签发未公开证书<br />
+          <strong>本工具</strong>：自动识别 SCT 扩展（OID 1.3.6.1.4.1.11129.2.4.2），
+          展示其字节数；CRL/OCSP/AIA URL 在「字段详情」Tab 的对应分组中列出，可直接点击访问。
+        </p>
+      </details>
+      <details>
+        <summary>本工具支持哪些密钥算法？RSA、ECDSA、Ed25519 有什么区别？</summary>
+        <p>
+          <strong>本工具支持</strong>：RSA（PKCS#1）、ECDSA（含 P-256/P-384/P-521/secp256k1）、
+          Ed25519 / Ed448、X25519 / X448。<br />
+          - <strong>RSA</strong>：传统主流算法，密钥长度 2048/3072/4096，签名慢，
+          兼容性最好。推荐 2048 起步，新部署建议 3072 或切换到 ECDSA<br />
+          - <strong>ECDSA</strong>：基于椭圆曲线，密钥短、签名快。P-256（prime256v1）
+          兼容性最好，P-384 安全性更高。是 Let's Encrypt 与现代浏览器首选<br />
+          - <strong>Ed25519</strong>：Edwards 曲线 EdDSA 算法，性能最优、安全性最高、
+          抗侧信道攻击。但部分旧客户端（如 Android 7 以下）不支持<br />
+          <strong>选型建议</strong>：新部署优先 <strong>ECDSA P-256</strong>；
+          需要兼容老设备选 RSA 2048；高性能场景用 Ed25519（前提是客户端都支持）。
+          本工具会展示密钥长度、RSA 模数与指数、EC 曲线名、EdDSA 算法名。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools__list">
+        <li><a href="/dns">DNS 查询工具</a> —— 域名解析链路排查，与 TLS 证书共同构成 HTTPS 调试</li>
+        <li><a href="/http-headers">HTTP Header 解析</a> —— 查看服务器响应头中的 Strict-Transport-Security 等</li>
+        <li><a href="/http-status">HTTP 状态码</a> —— 与证书错误对应的 HTTP 错误排查</li>
+        <li><a href="/http-request">HTTP 请求代码生成器</a> —— 生成多语言 HTTP 客户端代码</li>
+        <li><a href="/jwt">JWT 解码</a> —— 与 X.509 同属 ASN.1/JSON 编码体系</li>
+        <li><a href="/hash">哈希计算</a> —— 计算任意数据的 SHA-1/SHA-256 指纹</li>
+      </ul>
+    </section>
+  </section>
+
+  <style>
+    /* === TLS 工具命名空间样式 === */
+    .tls__container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .tls__toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      border-radius: var(--radius-md, 8px);
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border: 1px solid var(--color-border, #e5e7eb);
+    }
+
+    .tls__btn {
+      padding: 8px 16px;
+      border: 1px solid var(--color-border, #d1d5db);
+      border-radius: var(--radius-sm, 6px);
+      background: var(--color-bg, #fff);
+      color: var(--color-text, #111827);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tls__btn:hover:not(:disabled) {
+      border-color: var(--color-accent, #2563eb);
+      color: var(--color-accent, #2563eb);
+    }
+
+    .tls__btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .tls__btn--primary {
+      background: var(--color-accent, #2563eb);
+      color: #fff;
+      border-color: var(--color-accent, #2563eb);
+    }
+
+    .tls__btn--primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+      color: #fff;
+    }
+
+    .tls__btn--file {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .tls__btn--file input[type='file'] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .tls__main {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.4fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .tls__input-panel,
+    .tls__result-panel {
+      padding: 16px;
+      border-radius: var(--radius-md, 8px);
+      background: var(--color-bg, #fff);
+      border: 1px solid var(--color-border, #e5e7eb);
+    }
+
+    .tls__label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-muted, #6b7280);
+      margin-bottom: 6px;
+    }
+
+    .tls__textarea {
+      width: 100%;
+      min-height: 280px;
+      padding: 12px;
+      font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+      font-size: 12px;
+      line-height: 1.6;
+      border: 1px solid var(--color-border, #d1d5db);
+      border-radius: var(--radius-sm, 6px);
+      background: var(--color-bg-soft, #fafafa);
+      color: var(--color-text, #111827);
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .tls__textarea:focus {
+      outline: 2px solid var(--color-accent, #2563eb);
+      outline-offset: -1px;
+      border-color: var(--color-accent, #2563eb);
+    }
+
+    .tls__error {
+      margin: 8px 0 0;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm, 6px);
+      background: #fee2e2;
+      color: #991b1b;
+      font-size: 13px;
+      border-left: 4px solid #dc2626;
+    }
+
+    .tls__privacy-note {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: var(--color-text-muted, #6b7280);
+      line-height: 1.5;
+    }
+
+    .tls__loading,
+    .tls__empty {
+      padding: 48px 16px;
+      text-align: center;
+      color: var(--color-text-muted, #6b7280);
+    }
+
+    .tls__loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tls__empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 6px;
+      color: var(--color-text, #111827);
+    }
+
+    .tls__empty-desc {
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .tls__spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--color-border, #e5e7eb);
+      border-top-color: var(--color-accent, #2563eb);
+      border-radius: 50%;
+      animation: tls-spin 0.8s linear infinite;
+    }
+
+    @keyframes tls-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 证书链切换器 */
+    .tls__cert-switcher {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+    }
+
+    .tls__cert-tab {
+      padding: 6px 12px;
+      border: 1px solid var(--color-border, #d1d5db);
+      border-radius: var(--radius-sm, 6px);
+      background: var(--color-bg, #fff);
+      color: var(--color-text-muted, #6b7280);
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .tls__cert-tab.is-active {
+      border-color: var(--color-accent, #2563eb);
+      color: var(--color-accent, #2563eb);
+      background: rgba(37, 99, 235, 0.08);
+    }
+
+    .tls__cert-tab-name {
+      font-size: 10px;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Tab 切换栏 */
+    .tls__tab-bar {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+    }
+
+    .tls__tab {
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      color: var(--color-text-muted, #6b7280);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: var(--radius-sm, 6px);
+      transition: all 0.15s ease;
+    }
+
+    .tls__tab:hover {
+      color: var(--color-text, #111827);
+    }
+
+    .tls__tab.is-active {
+      background: var(--color-accent, #2563eb);
+      color: #fff;
+    }
+
+    .tls__copy-btn {
+      margin-left: auto;
+      padding: 6px 12px;
+      border: 1px solid var(--color-border, #d1d5db);
+      background: var(--color-bg, #fff);
+      color: var(--color-text, #111827);
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: var(--radius-sm, 6px);
+    }
+
+    .tls__copy-btn:hover {
+      border-color: var(--color-accent, #2563eb);
+      color: var(--color-accent, #2563eb);
+    }
+
+    /* 状态摘要条 */
+    .tls__summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm, 6px);
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+      border-left: 4px solid var(--color-accent, #2563eb);
+      margin-bottom: 12px;
+    }
+
+    .tls__summary--valid { border-left-color: #16a34a; }
+    .tls__summary--expired { border-left-color: #dc2626; }
+    .tls__summary--not_yet_valid { border-left-color: #d97706; }
+
+    .tls__summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .tls__summary-label {
+      font-size: 11px;
+      color: var(--color-text-muted, #6b7280);
+    }
+
+    .tls__summary-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text, #111827);
+    }
+
+    .tls__summary-value--valid { color: #16a34a; }
+    .tls__summary-value--expired { color: #dc2626; }
+    .tls__summary-value--not_yet_valid { color: #d97706; }
+
+    /* 字段详情：分组卡片 */
+    .tls__details {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tls__group {
+      padding: 12px;
+      border-radius: var(--radius-sm, 6px);
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+      border: 1px solid var(--color-border, #f3f4f6);
+    }
+
+    .tls__group-title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-accent, #2563eb);
+      border-bottom: 1px dashed var(--color-border, #e5e7eb);
+      padding-bottom: 6px;
+    }
+
+    .tls__fields {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 6px 12px;
+    }
+
+    .tls__field {
+      display: contents;
+    }
+
+    .tls__field-label {
+      font-size: 12px;
+      color: var(--color-text-muted, #6b7280);
+      align-self: start;
+      padding-top: 2px;
+    }
+
+    .tls__field-value {
+      margin: 0;
+      font-size: 13px;
+      color: var(--color-text, #111827);
+      word-break: break-all;
+    }
+
+    .tls__field.is-mono .tls__field-value {
+      font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+      font-size: 11px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+      padding: 6px 8px;
+      border-radius: var(--radius-sm, 4px);
+    }
+
+    .tls__field-value a {
+      color: var(--color-accent, #2563eb);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .tls__field-value a:hover {
+      text-decoration: underline;
+    }
+
+    /* 代码输出区（OpenSSL 文本 / 原始 PEM） */
+    .tls__code-output {
+      margin: 0;
+      padding: 12px;
+      font-family: var(--font-mono, 'SFMono-Regular', Consolas, monospace);
+      font-size: 11px;
+      line-height: 1.55;
+      background: var(--color-bg-soft, #1e1e1e);
+      color: var(--color-text, #d4d4d4);
+      border-radius: var(--radius-sm, 6px);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    /* 暗色模式适配 */
+    :global(.dark) .tls__btn {
+      background: #1f2937;
+      color: #e5e7eb;
+      border-color: #374151;
+    }
+
+    :global(.dark) .tls__btn--primary {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    :global(.dark) .tls__input-panel,
+    :global(.dark) .tls__result-panel,
+    :global(.dark) .tls__group {
+      background: #1f2937;
+      border-color: #374151;
+    }
+
+    :global(.dark) .tls__textarea {
+      background: #111827;
+      color: #e5e7eb;
+      border-color: #374151;
+    }
+
+    :global(.dark) .tls__field-value a {
+      color: #60a5fa;
+    }
+
+    :global(.dark) .tls__group-title {
+      color: #60a5fa;
+      border-bottom-color: #374151;
+    }
+
+    :global(.dark) .tls__field.is-mono .tls__field-value {
+      background: #111827;
+    }
+
+    :global(.dark) .tls__code-output {
+      background: #111827;
+      color: #e5e7eb;
+    }
+
+    :global(.dark) .tls__toolbar,
+    :global(.dark) .tls__summary {
+      background: #1f2937;
+      border-color: #374151;
+    }
+
+    :global(.dark) .tls__error {
+      background: #7f1d1d;
+      color: #fee2e2;
+    }
+
+    /* 响应式：768px 平板单列堆叠 */
+    @media (max-width: 768px) {
+      .tls__main {
+        grid-template-columns: 1fr;
+      }
+
+      .tls__textarea {
+        min-height: 200px;
+      }
+
+      .tls__summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tls__fields {
+        grid-template-columns: 110px 1fr;
+      }
+    }
+
+    /* 响应式：414px 紧凑布局 */
+    @media (max-width: 414px) {
+      .tls__toolbar {
+        flex-direction: column;
+      }
+
+      .tls__btn {
+        width: 100%;
+      }
+
+      .tls__summary {
+        grid-template-columns: 1fr;
+      }
+
+      .tls__fields {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .tls__field-label {
+        padding-top: 0;
+      }
+    }
+  </style>
+</BaseLayout>
