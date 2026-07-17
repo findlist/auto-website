@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **103 个在线开发工具** + **98 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **104 个在线开发工具** + **99 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -57,7 +57,7 @@
 - 🚀 **零广告、零追踪** — 靠爱发电 / 捐赠驱动，不含任何广告联盟代码
 - 🔒 **全本地处理** — 所有工具纯前端计算，数据不离开您的浏览器，打开浏览器开发者工具即可审计
 - 📱 **移动端友好** — 375px / 768px / 1280px 三档响应式 + 暗色模式 + 复制即用
-- 📝 **配套博客** — 98 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
+- 📝 **配套博客** — 99 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
 - 🎨 **色彩设计** — 调色板 / 色值转换 / 对比度检测 / 配色灵感
 - 🔧 **编码转换** — Base64/32、URL、Hex、Punycode、HTML 实体、CSV/JSON/YAML/TOML/XML 互转
 - 🔐 **加密哈希** — AES / JWT 签名与验证 / JWE / 各类 Hash（SHA 系列）/ 强密码生成
@@ -70,10 +70,10 @@
 
 ---
 
-## 工具一览（103 个）
+## 工具一览（104 个）
 
 ### 编码转换
-`Base64` · `Base64 图片` · `图片压缩` · `图片格式转换` · `EXIF 信息查看器` · `SVG 优化器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
+`Base64` · `Base64 图片` · `图片压缩` · `图片格式转换` · `图片水印` · `EXIF 信息查看器` · `SVG 优化器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
 
 ### 加密与安全
 `AES 加解密` · `Hash 计算` · `JWT 解码 / 签名 / 验证` · `JWE` · `强密码生成` · `密码哈希（bcrypt / PBKDF2）` · `UUID 生成`
@@ -103,7 +103,7 @@
 | 层级 | 技术方案 | 说明 |
 | --- | --- | --- |
 | 静态站点生成 | **Astro 5** | SSG `output: static`，仅输出可部署的 HTML/CSS/JS |
-| 交互层 | React 18 + TypeScript 5.7 | 103 个 React 工具组件（`@astrojs/react`） |
+| 交互层 | React 18 + TypeScript 5.7 | 104 个 React 工具组件（`@astrojs/react`） |
 | 内容 | Astro Content Collections | MD 博客 + 230+ 个标签合集 |
 | SEO | `@astrojs/sitemap` | 自动生成 sitemap |
 | 部署 | Vercel / Cloudflare Pages / Netlify | 纯静态，零服务器 |
@@ -158,8 +158,8 @@ auto-website/
 │   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
-│   ├── components/                # 103 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 98 篇技术博客（.md）
+│   ├── components/                # 104 个 React 工具组件（AesTool / Base64Tool / …）
+│   ├── content/blog/              # 99 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -168,7 +168,7 @@ auto-website/
 │   │   ├── privacy.astro          # 隐私政策
 │   │   ├── rss.xml.ts             # RSS 订阅源
 │   │   ├── blog/                  # 博客列表/详情/标签 页（Astro Content Collections）
-│   │   └── [103 个工具页].astro    # 独立工具页（每页独立 SEO）
+│   │   └── [104 个工具页].astro    # 独立工具页（每页独立 SEO）
 │   ├── styles/
 │   │   └── global.css             # 全局样式
 │   └── utils/                     # 26 个纯逻辑工具模块（前端独立运算）
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 820 页（含 98 篇博客 + 300+ 个标签筛选页 + 103 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 827 页（含 99 篇博客 + 300+ 个标签筛选页 + 104 个工具页及其它）。
 
 ---
 
-## 博客主题速览（98 篇）
+## 博客主题速览（99 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -207,6 +207,7 @@ auto-website/
 - `tls-certificate-parsing-guide` TLS 证书深度解析（从 PEM 编码到 X.509 字段与 PKI 信任链）
 - `svg-optimization-guide` SVG 优化深度指南（从编辑器残留到极致压缩的完整方案）
 - `image-format-conversion-guide` 图片格式转换实战（PNG / JPEG / WebP / AVIF 选型与批量互转完全指南）
+- `image-watermark-guide` 图片水印实战（Canvas API 文字/图片水印、九宫格定位、平铺布局、旋转防盗图与批量处理）
 - `text-analysis-word-count-guide` 文本统计分析与字数统计
 - `number-base-conversion-guide` 进制转换与 BigInt 精度
 - `text-case-conversion-guide` 文本大小写与命名风格转换
@@ -256,7 +257,7 @@ auto-website/
 - `css-if-guide` CSS if() 条件函数：style/media/supports 三类条件、多分支短路求值、嵌套与逻辑运算、降级实践
 - `trigonometric-guide` CSS 三角函数：sin/cos/tan/atan2/hypot 与 pi()/e() 常量，弧度角度、圆周布局、振荡动画、玫瑰曲线与向日葵螺旋实战
 - `css-math-functions-guide` CSS 数学函数：exp/log/sqrt/pow/abs/sign/mod/rem/round，对数刻度、幂律缓动、镜像布局、网格对齐与 mod/rem 符号差异实战
-- ……（共 93 篇，300+ 个标签）
+- ……（共 94 篇，300+ 个标签）
 
 ---
 

@@ -1,0 +1,817 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ImageWatermarkTool from '../components/ImageWatermarkTool.tsx';
+
+const meta: SiteMeta = {
+  title: '图片水印工具 - 在线文字/图片水印批量添加器',
+  description:
+    '在线图片水印工具：支持文字水印与图片水印两种类型，内置九宫格位置 + 全图平铺共 10 种布局，可调节旋转角度、不透明度、字号、描边、缩放比例，批量处理最多 20 张底图，导出 PNG / JPEG / WebP / AVIF 格式。基于 Canvas API 全本地处理，零上传零追踪，适用于版权保护、截图署名、文档防伪、品牌水印等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '图片水印工具',
+    description: '在线图片水印工具，支持文字/图片水印、九宫格+平铺布局、旋转、批量处理，全本地 Canvas API 处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>图片水印工具</h1>
+      <p>
+        纯本地处理的<strong>在线图片水印工具</strong>，支持
+        <strong>文字水印</strong>与<strong>图片水印</strong>两种类型。
+        内置<strong>九宫格位置 + 全图平铺</strong>共 10 种布局，可调节
+        <strong>旋转角度、不透明度、字号、描边、缩放比例</strong>，
+        支持<strong>批量处理最多 20 张底图</strong>，导出 PNG / JPEG / WebP / AVIF 格式。
+        基于 Canvas API 在浏览器本地完成水印绘制，<strong>零上传、零追踪、可离线使用</strong>。
+      </p>
+    </div>
+
+    <ImageWatermarkTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>图片水印是否在本地处理？会上传图片吗？</summary>
+        <p>
+          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。
+          水印绘制由浏览器原生 Canvas API 执行：底图通过 <code>createImageBitmap</code> 读取为 ImageBitmap，
+          水印通过 <code>ctx.fillText()</code> 或 <code>ctx.drawImage()</code> 绘制到 Canvas，
+          最终通过 <code>canvas.toBlob()</code> 在内存中生成目标格式的二进制数据。
+          全程零网络请求，可在浏览器开发者工具 Network 面板确认。
+        </p>
+      </details>
+      <details>
+        <summary>文字水印和图片水印有什么区别？应该怎么选？</summary>
+        <p>
+          两种水印各有适用场景：<br />
+          - <strong>文字水印</strong>：用文字内容（如「版权所有 © XXX」）作为水印，可自定义字体、字号、颜色、描边。
+          适合<strong>版权声明、署名、禁止转载提示</strong>等纯文本场景，体积小、渲染快<br />
+          - <strong>图片水印</strong>：用一张图片（如 Logo、印章、二维码）作为水印，可调节缩放比例与不透明度。
+          适合<strong>品牌 Logo、公司印章、防伪标识</strong>等需要图形元素的场景<br />
+          <strong>选择建议</strong>：纯文本声明用文字水印，品牌识别用图片水印。两者均支持九宫格位置、平铺、旋转。
+        </p>
+      </details>
+      <details>
+        <summary>九宫格位置和平铺模式分别适合什么场景？</summary>
+        <p>
+          本工具提供 10 种位置布局：<br />
+          - <strong>九宫格（9 种）</strong>：左上 / 顶部居中 / 右上 / 左侧居中 / 正中 / 右侧居中 / 左下 / 底部居中 / 右下。
+          适合<strong>单点水印</strong>场景，如右下角署名、正中防伪。可自定义与画面边的距离<br />
+          - <strong>平铺模式</strong>：按指定间距在全图网格化重复绘制水印，每个水印独立旋转。
+          适合<strong>防盗图、防截图</strong>场景，水印覆盖全图难以裁剪去除。可自定义水平 / 垂直间距<br />
+          <strong>防盗图建议</strong>：用平铺 + 旋转 30° + 不透明度 30-50%，既可见又不严重影响观感。
+        </p>
+      </details>
+      <details>
+        <summary>旋转角度对水印有什么影响？平铺模式下旋转效果如何？</summary>
+        <p>
+          旋转角度（-180° ~ 180°）以水印自身中心为旋转中心：<br />
+          - <strong>九宫格模式</strong>：单个水印原地旋转，如右下角署名旋转 -30° 形成斜向签名效果<br />
+          - <strong>平铺模式</strong>：每个水印独立旋转，形成全图斜向网格效果，是防盗图的常见做法
+          （旋转 0° 的平铺水印易被线性裁剪去除，斜向水印更难消除）<br />
+          旋转中心始终是水印自身中心，不会因旋转而偏离锚定位置。
+          常见角度：0°（正向）、-30° / 30°（轻微倾斜，防盗图常用）、-45° / 45°（对角线）、90°（垂直）。
+        </p>
+      </details>
+      <details>
+        <summary>为什么导出 JPEG 后透明区域变白色？</summary>
+        <p>
+          这是由格式特性决定的：<br />
+          - <strong>JPEG 不支持透明通道</strong>，转换时透明区域会被填充为指定背景色（默认白色 #ffffff）<br />
+          - <strong>PNG / WebP / AVIF 支持透明</strong>，可保留底图的透明区域<br />
+          本工具提供<strong>背景色选择器</strong>，可根据场景自定义（如黑色背景、浅灰背景匹配页面）。
+          如需保留透明效果，请选择 PNG / WebP / AVIF 输出格式。
+          注意：大多数照片类底图本身不透明，此问题仅影响含透明区域的 PNG / WebP 底图。
+        </p>
+      </details>
+      <details>
+        <summary>文字水印的描边有什么用？什么时候需要开启？</summary>
+        <p>
+          描边（stroke）是在文字外缘绘制一圈对比色，提升文字与底图的对度：<br />
+          - <strong>浅色文字 + 深色描边</strong>：在浅色背景上仍可辨识（如白字黑边）<br />
+          - <strong>深色文字 + 浅色描边</strong>：在深色背景上仍可辨识（如黑字白边）<br />
+          <strong>开启建议</strong>：底图颜色复杂或明暗不均时（如照片），开启 1-3px 描边可确保水印在任何位置都清晰可辨。
+          底图颜色单一时（如纯色背景、文档截图），可关闭描边保持简洁。
+          描边颜色默认黑色，可与文字颜色形成强对比。
+        </p>
+      </details>
+      <details>
+        <summary>批量加水印最多支持多少张图片？</summary>
+        <p>
+          单次最多 <strong>20 张</strong>，单文件最大 <strong>20MB</strong>。
+          限制原因：<br />
+          - <strong>内存压力</strong>：每张图片在 Canvas 处理时占用原始尺寸 × 4 字节内存
+          （4000×3000 像素约 48MB），20 张接近浏览器内存上限<br />
+          - <strong>处理耗时</strong>：AVIF 编码比 JPEG 慢 5-10 倍，批量过大可能触发浏览器卡顿<br />
+          所有底图统一使用同一套水印配置（相同的位置、旋转、文字 / 图片），适合批量加版权声明。
+          如需为不同图片加不同水印，请分批处理。批量结果会逐个触发下载（间隔 200ms）。
+        </p>
+      </details>
+      <details>
+        <summary>与图片格式转换工具有什么区别？</summary>
+        <p>
+          两者定位不同，互补使用：<br />
+          - <strong>图片格式转换工具</strong>（<a href="/image-convert">/image-convert</a>）：
+          专注<strong>格式转换与体积对比</strong>，不绘制水印<br />
+          - <strong>本水印工具</strong>：专注<strong>水印绘制</strong>（文字 / 图片、九宫格 + 平铺、旋转），
+          导出格式仅作为结果输出选项<br />
+          如需<strong>加水印同时转格式</strong>：先用本工具加水印导出，再用格式转换工具二次处理；
+          或直接在本工具的导出格式中选择目标格式（已支持 PNG / JPEG / WebP / AVIF）。
+          日常加水印用本工具即可，无需二次转换。
+        </p>
+      </details>
+    </section>
+
+    <!-- 相关工具内链：提升站内导航与 SEO 内链结构 -->
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools__list">
+        <li><a href="/image-compress">图片压缩</a> —— 单文件位图压缩与质量调优</li>
+        <li><a href="/image-convert">图片格式转换</a> —— PNG/JPEG/WebP/AVIF 批量互转与体积对比</li>
+        <li><a href="/exif">EXIF 查看</a> —— 图片元数据解析（相机参数、GPS）</li>
+        <li><a href="/base64-image">Base64 图片互转</a> —— 图片与 data URL 互转</li>
+        <li><a href="/svg-optimizer">SVG 优化器</a> —— 矢量图压缩与编辑器残留清理</li>
+        <li><a href="/color">颜色转换</a> —— HEX/RGB/HSL 互转</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 图片水印工具专属样式：imwm 命名空间 */
+  .imwm {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 拖拽上传区 */
+  .imwm__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+    text-align: center;
+  }
+
+  .imwm__dropzone:hover,
+  .imwm__dropzone--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imwm__dropzone-icon {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  .imwm__dropzone-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imwm__dropzone-hint {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 错误提示 */
+  .imwm__error {
+    padding: 12px 16px;
+    border-left: 4px solid #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 14px;
+  }
+
+  /* 工作区：左右两栏 */
+  .imwm__workspace {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* 配置面板 */
+  .imwm__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  /* 类型 Tab 切换 */
+  .imwm__type-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-elevated, rgba(0, 0, 0, 0.05));
+    border-radius: var(--radius-md);
+  }
+
+  .imwm__type-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s);
+  }
+
+  .imwm__type-tab--active {
+    background: var(--color-bg, #fff);
+    color: var(--color-primary, #2b6cff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 字段组 */
+  .imwm__field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .imwm__field-group--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .imwm__field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .imwm__field-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .imwm__field-value {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: normal;
+  }
+
+  .imwm__field-unit {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 输入框 */
+  .imwm__text-input,
+  .imwm__number-input,
+  .imwm__select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+  }
+
+  .imwm__text-input {
+    width: 100%;
+  }
+
+  .imwm__number-input {
+    width: 80px;
+  }
+
+  .imwm__select {
+    min-width: 120px;
+  }
+
+  .imwm__color-input {
+    width: 40px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+  }
+
+  .imwm__slider {
+    width: 120px;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 位置选择网格 */
+  .imwm__position-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .imwm__position-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    font-size: 12px;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+  }
+
+  .imwm__position-item:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .imwm__position-item--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.08));
+    color: var(--color-primary, #2b6cff);
+    font-weight: 600;
+  }
+
+  .imwm__position-item input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 格式选项 */
+  .imwm__format-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+
+  .imwm__format-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    font-size: 13px;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+  }
+
+  .imwm__format-item:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .imwm__format-item--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.08));
+    color: var(--color-primary, #2b6cff);
+    font-weight: 600;
+  }
+
+  .imwm__format-item input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 水印图片预览 */
+  .imwm__wm-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .imwm__wm-preview img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  /* 右侧主区：预览 + 文件列表 */
+  .imwm__main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  /* 实时预览 */
+  .imwm__preview-wrap {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg, #fff);
+    overflow: hidden;
+  }
+
+  .imwm__preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imwm__preview-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imwm__preview-status {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imwm__preview-canvas {
+    min-height: 320px;
+    max-height: 520px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background:
+      linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .imwm__preview-canvas img {
+    max-width: 100%;
+    max-height: 488px;
+    object-fit: contain;
+  }
+
+  .imwm__preview-empty {
+    color: var(--color-text-soft);
+    font-size: 14px;
+  }
+
+  /* 文件列表 */
+  .imwm__file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .imwm__file-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .imwm__file-count {
+    font-size: 14px;
+    color: var(--color-text-soft);
+  }
+
+  .imwm__file-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* 文件卡片 */
+  .imwm__cards {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .imwm__card {
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg, #fff);
+  }
+
+  .imwm__card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .imwm__card-name {
+    flex: 1;
+    min-width: 120px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imwm__card-meta {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imwm__card-remove {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .imwm__card-remove:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+  }
+
+  .imwm__card-loading,
+  .imwm__card-error {
+    margin-top: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .imwm__card-loading {
+    color: var(--color-text-soft);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imwm__card-error {
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.08);
+  }
+
+  /* 结果卡片 */
+  .imwm__card-result {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .imwm__card-result-preview {
+    width: 80px;
+    height: 80px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    overflow: hidden;
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  .imwm__card-result-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .imwm__card-result-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  .imwm__card-result-size {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 徽标 */
+  .imwm__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.1));
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .imwm__badge--image-png {
+    background: rgba(168, 85, 247, 0.1);
+    color: #9333ea;
+  }
+
+  .imwm__badge--image-jpeg {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+  }
+
+  .imwm__badge--image-webp {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  .imwm__badge--image-avif {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+  }
+
+  /* 按钮 */
+  .imwm__btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .imwm__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .imwm__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .imwm__btn--primary {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .imwm__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-dark, #1e54d9);
+    color: #fff;
+  }
+
+  .imwm__btn--ghost {
+    background: transparent;
+  }
+
+  .imwm__btn--small {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .imwm__download-all {
+    align-self: flex-start;
+  }
+
+  /* 响应式：768px 单列 */
+  @media (max-width: 768px) {
+    .imwm__workspace {
+      grid-template-columns: 1fr;
+    }
+
+    .imwm__position-grid {
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .imwm__preview-canvas {
+      min-height: 240px;
+    }
+
+    .imwm__preview-canvas img {
+      max-height: 360px;
+    }
+  }
+
+  /* 响应式：414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .imwm__dropzone {
+      padding: 32px 16px;
+    }
+
+    .imwm__panel {
+      padding: 14px;
+    }
+
+    .imwm__type-tab {
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+
+    .imwm__position-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+    }
+
+    .imwm__position-item {
+      padding: 6px 2px;
+      font-size: 11px;
+    }
+
+    .imwm__field-group--row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .imwm__slider {
+      width: 100px;
+    }
+
+    .imwm__card-result {
+      grid-template-columns: 64px 1fr;
+    }
+
+    .imwm__card-result-preview {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global(.dark) .imwm__dropzone {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imwm__panel {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imwm__card {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imwm__format-item,
+  :global(.dark) .imwm__position-item,
+  :global(.dark) .imwm__text-input,
+  :global(.dark) .imwm__number-input,
+  :global(.dark) .imwm__select {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.dark) .imwm__type-tab--active {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-primary, #6b8eff);
+  }
+
+  :global(.dark) .imwm__preview-wrap {
+    background: rgba(255, 255, 255, 0.03);
+  }
+</style>
