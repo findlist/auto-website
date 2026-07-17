@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 106 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 107 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -462,6 +462,15 @@ const tools = [
     available: true,
     category: '图片处理',
     keywords: '图片缩放 在线缩放 图片放大 图片缩小 image resize canvas drawImage 重采样 双三次插值 等比缩放 缩略图 720p 1080p 2k 4k 壁纸 社交媒体 批量缩放 zip 打包',
+  },
+  {
+    href: '/exif-editor',
+    title: 'EXIF 元数据编辑器',
+    desc: '在线 EXIF 元数据编辑器：支持删除 GPS 定位、相机型号、拍摄参数、软件信息、MakerNote、缩略图等 7 种编辑操作，可选修改拍摄时间，提供编辑前后元数据对比视图。自实现 JPEG 二进制结构解析（SOI/APP1/TIFF/IFD）与原地修改策略（零写 tag 字段 + 修正 IFD count），无第三方解析库依赖。基于浏览器本地 Uint8Array 处理，零上传零追踪，适用于照片分享前隐私清理、元数据脱敏、批量处理等场景。',
+    badge: '可用',
+    available: true,
+    category: '图片处理',
+    keywords: 'exif 编辑 元数据 删除 gps 相机信息 拍摄时间 隐私 jpeg tiff ifd 字节序 二进制结构 makernote 缩略图 app1',
   },
   {
     href: '/lorem',
@@ -1038,7 +1047,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 106 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 107 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>

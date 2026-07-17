@@ -1,0 +1,733 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ExifEditorTool from '../components/ExifEditorTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'EXIF 元数据编辑器 - 在线删除 GPS / 个人信息 / 修改拍摄时间',
+  description:
+    '在线 EXIF 元数据编辑器：删除 GPS 定位 / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间，一键清除全部 EXIF。直接操作 JPEG 二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'EXIF 元数据编辑器',
+    description: '在线 EXIF 元数据编辑工具，支持删除 GPS、个人信息、MakerNote、缩略图，修改拍摄时间，全本地处理 JPEG 二进制结构。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>EXIF 元数据编辑器</h1>
+      <p>
+        纯本地处理的<strong>在线 EXIF 元数据编辑器</strong>，直接操作 JPEG 二进制结构。
+        支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
+        <strong>删除 MakerNote</strong>、<strong>删除缩略图</strong>、<strong>删除软件信息</strong>、
+        <strong>修改拍摄时间</strong>、<strong>一键清除全部 EXIF</strong>。
+        不修改图像压缩数据（SOS..EOI），<strong>保证图像质量无损</strong>。
+        编辑前后元数据可视化对比，一目了然。在浏览器本地完成全部操作，<strong>零上传、零追踪、可离线使用</strong>。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证拖拽与文件选择交互即时可用 -->
+    <ExifEditorTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>EXIF 编辑是否在本地处理？会上传图片吗？</summary>
+        <p>
+          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。本工具自主实现 JPEG
+          二进制结构解析与重建：文件通过 <code>FileReader.arrayBuffer()</code> 读取为字节，
+          按 JPEG 标记（marker）顺序遍历段结构，定位 APP1 EXIF 段，解析 TIFF / IFD 字段树，
+          按编辑操作修改字节并修正 IFD 条目计数，最后重建 JPEG 字节流。
+          全程零网络请求，可在浏览器开发者工具 Network 面板确认。
+        </p>
+      </details>
+      <details>
+        <summary>EXIF 编辑会损失图像质量吗？</summary>
+        <p>
+          <strong>不会</strong>。本工具仅修改 JPEG 的元数据段（APP1 EXIF 段），不触碰图像压缩数据
+          （SOS 扫描数据段到 EOI 之间的压缩字节流）。JPEG 的图像质量由 DCT 量化与哈夫曼编码决定，
+          这些数据完整保留。编辑后的图像与原图在像素级别完全一致，仅元数据字段被删除或修改。
+          可以理解为"换了个文件头"，图像本体不变。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些编辑操作？分别删除什么字段？</summary>
+        <p>
+          本工具支持 7 种编辑操作：<br />
+          - <strong>删除 GPS 定位</strong>：移除 IFD0 中的 GPSIFDPointer（0x8825）与整个 GPSIFD，
+            包括 GPSLatitude / GPSLongitude / GPSAltitude / GPSImgDirection 等所有 GPS 标签<br />
+          - <strong>删除个人信息</strong>：移除 Artist / Copyright / BodySerialNumber /
+            CameraOwnerName / LensSerialNumber 等身份相关字段<br />
+          - <strong>删除 MakerNote</strong>：移除 ExifIFD 中的 MakerNote（0x927C），
+            厂商原始数据块通常体积较大，删除可显著减小文件<br />
+          - <strong>删除缩略图</strong>：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
+            将 IFD0 的 nextIfdPointer 置 0<br />
+          - <strong>删除软件信息</strong>：移除 Software 标签（0x0131），
+            如 "Adobe Photoshop CC 2024" 等编辑器痕迹<br />
+          - <strong>修改拍摄时间</strong>：同步修改 DateTime / DateTimeOriginal / DateTimeDigitized
+            三个时间字段为指定值（格式 YYYY:MM:DD HH:MM:SS）<br />
+          - <strong>清除全部 EXIF</strong>：直接移除整个 APP1 EXIF 段，仅保留图像压缩数据
+        </p>
+      </details>
+      <details>
+        <summary>修改拍摄时间支持哪些格式？</summary>
+        <p>
+          <strong>EXIF 时间标准格式为 <code>YYYY:MM:DD HH:MM:SS</code></strong>（注意是冒号分隔日期）。
+          本工具同时支持以下输入格式：<br />
+          - <code>2026:07:18 14:30:00</code>（标准 EXIF 格式）<br />
+          - <code>2026-07-18 14:30:00</code>（ISO 风格分隔符）<br />
+          - <code>2026-07-18T14:30:00</code>（ISO 8601 风格）<br />
+          修改会同步写入 IFD0.DateTime（0x0132）、ExifIFD.DateTimeOriginal（0x9003）、
+          ExifIFD.DateTimeDigitized（0x9004）三个字段，确保各查看器显示一致。
+        </p>
+      </details>
+      <details>
+        <summary>为什么只支持 JPEG？PNG / WebP / TIFF 不能编辑吗？</summary>
+        <p>
+          <strong>EXIF 主要载体是 JPEG</strong>。虽然 PNG / WebP / TIFF 也可以嵌入 EXIF，
+          但它们的容器格式与 JPEG 不同：<br />
+          - <strong>PNG</strong>：通过 eXIf 块嵌入 EXIF（PNG 1.5 扩展），实际使用率极低<br />
+          - <strong>WebP</strong>：通过 RIFF 容器的 EXIF chunk 嵌入，结构复杂<br />
+          - <strong>TIFF</strong>：本身就是 TIFF 容器，EXIF 直接作为 IFD，编辑逻辑与 JPEG 不同<br />
+          - <strong>HEIC</strong>：苹果主推格式，EXIF 嵌入 HEIF 容器，浏览器端解析困难<br />
+          本工具聚焦 JPEG（市占率最高的 EXIF 载体），其他格式建议先用 <a href="/image-convert">图片格式转换工具</a>
+          转为 JPEG 再编辑。
+        </p>
+      </details>
+      <details>
+        <summary>"清除全部 EXIF" 与单独勾选所有删除操作有什么区别？</summary>
+        <p>
+          两者效果相近但实现不同：<br />
+          - <strong>清除全部 EXIF</strong>：直接移除整个 APP1 EXIF 段（marker + length + payload），
+            最彻底，体积节省最大。但会同时丢失 IFD0 中可能想保留的 Orientation（方向）等基础字段，
+            可能导致部分图片显示方向异常。<br />
+          - <strong>单独勾选删除操作</strong>：保留 APP1 段结构，仅置零被删除条目的 tag 并修正计数，
+            可选择性删除敏感字段而保留 Orientation 等基础字段，更精细。<br />
+          <strong>建议</strong>：日常使用优先勾选"删除 GPS + 个人信息 + MakerNote"组合，
+          既保护隐私又保留图像基础元数据；需要彻底清除时再选"清除全部 EXIF"。
+        </p>
+      </details>
+      <details>
+        <summary>编辑后的 JPEG 兼容性如何？所有看图软件都能正常打开吗？</summary>
+        <p>
+          <strong>兼容性良好</strong>。本工具采用"原地修改"策略：保留 JPEG 段顺序、保留 IFD 字节结构、
+          仅置零被删除条目的 tag 字段并修正 IFD 计数。这是 EXIF 规范允许的处理方式，
+          所有主流看图软件（Windows 照片、macOS 预览、Adobe 系列、Google Photos、各手机相册）
+          均能正确识别与跳过空条目。<br />
+          极少数老旧或非标准的 EXIF 读取器可能仍尝试解析置零的条目（虽然 tag=0 应被跳过），
+          若遇到兼容问题，建议改用"清除全部 EXIF"直接移除整个 APP1 段。
+        </p>
+      </details>
+      <details>
+        <summary>与 EXIF 信息查看器有什么区别？应该怎么协同使用？</summary>
+        <p>
+          两个工具互补：<br />
+          - <strong><a href="/exif">EXIF 信息查看器</a></strong>：基于 exifr 库只读解析，
+            支持 JPEG / PNG / WebP / TIFF / HEIC 多格式，查看完整 EXIF / IPTC / XMP / ICC 元数据，
+            用于"看看这张图有哪些元数据"<br />
+          - <strong>EXIF 元数据编辑器（本工具）</strong>：自主实现 JPEG 结构操作，
+            仅支持 JPEG，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
+          <strong>典型工作流</strong>：先用 EXIF 查看器确认图片含哪些元数据 → 用本工具按需删除
+          GPS / 个人信息 / MakerNote → 下载编辑后的图片 → 再次用查看器验证删除结果。
+        </p>
+      </details>
+    </section>
+
+    <!-- 相关工具：内链提升 SEO 与工具矩阵协同 -->
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/exif">EXIF 信息查看器</a> · 查看图片元数据（只读）</li>
+        <li><a href="/image-compress">图片压缩工具</a> · 压缩 JPEG / PNG / WebP / AVIF</li>
+        <li><a href="/image-convert">图片格式转换</a> · PNG / JPEG / WebP / AVIF 互转</li>
+        <li><a href="/image-watermark">图片水印工具</a> · 文字 / 图片水印批量添加</li>
+        <li><a href="/image-crop">图片裁剪工具</a> · 多比例可视化裁剪</li>
+        <li><a href="/base64-image">Base64 图片互转</a> · 图片与 Base64 字符串互转</li>
+      </ul>
+    </section>
+  </section>
+
+</BaseLayout>
+
+<style>
+  /* ============================================================
+     EXIF 编辑器工具页样式（exifedit__ 命名空间）
+     ============================================================ */
+  .exifedit__container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  /* 拖拽上传区 */
+  .exifedit__dropzone {
+    border: 2px dashed var(--color-border, #d1d5db);
+    border-radius: var(--radius-md, 8px);
+    padding: 32px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .exifedit__dropzone:hover,
+  .exifedit__dropzone--drag {
+    border-color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .exifedit__dropzone--drag {
+    transform: scale(1.005);
+  }
+
+  .exifedit__file-input {
+    display: none;
+  }
+
+  .exifedit__dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .exifedit__dropzone-icon {
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .exifedit__dropzone-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 15px;
+    color: var(--color-text);
+  }
+
+  .exifedit__dropzone-text strong {
+    font-weight: 600;
+  }
+
+  .exifedit__file-meta {
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  /* 错误提示 */
+  .exifedit__error {
+    padding: 10px 14px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: var(--radius-sm, 4px);
+    color: #b91c1c;
+    font-size: 13px;
+  }
+
+  /* 主体布局 */
+  .exifedit__main {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 16px;
+  }
+
+  .exifedit__left,
+  .exifedit__right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .exifedit__section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .exifedit__subsection-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 12px 0 6px 0;
+  }
+
+  .exifedit__hint {
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+    padding: 8px 0;
+  }
+
+  /* 预览区 */
+  .exifedit__preview-imgs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .exifedit__preview-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .exifedit__preview-label {
+    font-size: 11px;
+    color: var(--color-text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .exifedit__preview-item img {
+    width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-soft, #f9fafb);
+  }
+
+  /* 编辑操作列表 */
+  .exifedit__ops {
+    padding: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__op-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .exifedit__op {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .exifedit__op:hover:not(.exifedit__op--disabled) {
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .exifedit__op--checked {
+    border-color: var(--color-primary, #2563eb);
+    background: rgba(37, 99, 235, 0.04);
+  }
+
+  .exifedit__op--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .exifedit__op input[type='checkbox'] {
+    margin-top: 2px;
+    cursor: pointer;
+  }
+
+  .exifedit__op-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .exifedit__op-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .exifedit__op-desc {
+    font-size: 11px;
+    color: var(--color-text-soft, #6b7280);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* 时间修改子选项 */
+  .exifedit__datetime {
+    margin-top: 8px;
+    padding: 8px;
+    background: var(--color-bg-soft, #f9fafb);
+    border-radius: var(--radius-sm, 4px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .exifedit__datetime-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .exifedit__datetime-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+  }
+
+  /* 操作按钮组 */
+  .exifedit__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .exifedit__btn {
+    padding: 8px 14px;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .exifedit__btn:hover:not(:disabled) {
+    background: var(--color-bg-soft, #f9fafb);
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .exifedit__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .exifedit__btn--primary {
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    border-color: var(--color-primary, #2563eb);
+  }
+
+  .exifedit__btn--primary:hover:not(:disabled) {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+
+  .exifedit__btn--download {
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  /* 结果摘要 */
+  .exifedit__result {
+    padding: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .exifedit__summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: var(--color-bg-soft, #f9fafb);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .exifedit__summary-label {
+    font-size: 10px;
+    color: var(--color-text-soft, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .exifedit__summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .exifedit__summary-value--good {
+    color: #059669;
+  }
+
+  /* 已执行操作 */
+  .exifedit__applied-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .exifedit__applied-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text);
+  }
+
+  .exifedit__applied-icon {
+    color: #059669;
+    font-weight: bold;
+  }
+
+  .exifedit__applied-detail {
+    color: var(--color-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  /* 字段列表 */
+  .exifedit__field-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .exifedit__field-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .exifedit__field-item--removed {
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+  }
+
+  .exifedit__field-item--modified {
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+  }
+
+  .exifedit__field-ifd {
+    opacity: 0.7;
+    font-size: 10px;
+  }
+
+  /* 元数据对比 */
+  .exifedit__compare {
+    padding: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .exifedit__compare-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .exifedit__compare-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    margin: 0;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed var(--color-border, #e5e7eb);
+  }
+
+  /* 元数据快照 */
+  .exifedit__snap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .exifedit__snap-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .exifedit__snap-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+    margin: 6px 0 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .exifedit__snap-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+  }
+
+  .exifedit__snap-field {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 6px;
+    font-size: 11px;
+    padding: 2px 0;
+  }
+
+  .exifedit__snap-field dt {
+    color: var(--color-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .exifedit__snap-field dd {
+    margin: 0;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  /* ============================================================
+     响应式：768px 单列堆叠
+     ============================================================ */
+  @media (max-width: 768px) {
+    .exifedit__main {
+      grid-template-columns: 1fr;
+    }
+
+    .exifedit__summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .exifedit__compare-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .exifedit__preview-imgs {
+      grid-template-columns: 1fr;
+    }
+
+    .exifedit__preview-item img {
+      max-height: 200px;
+    }
+  }
+
+  /* ============================================================
+     响应式：414px 紧凑布局
+     ============================================================ */
+  @media (max-width: 414px) {
+    .exifedit__dropzone {
+      padding: 20px 12px;
+    }
+
+    .exifedit__dropzone-icon {
+      font-size: 28px;
+    }
+
+    .exifedit__summary {
+      grid-template-columns: 1fr;
+    }
+
+    .exifedit__summary-item {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .exifedit__snap-field {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+
+    .exifedit__actions .exifedit__btn {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  /* ============================================================
+     暗色模式适配
+     ============================================================ */
+  @media (prefers-color-scheme: dark) {
+    .exifedit__dropzone {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .exifedit__ops,
+    .exifedit__result,
+    .exifedit__compare {
+      background: #1f2937;
+    }
+
+    .exifedit__datetime {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .exifedit__summary-item {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .exifedit__field-item--removed {
+      background: rgba(248, 113, 113, 0.15);
+      color: #fca5a5;
+    }
+
+    .exifedit__field-item--modified {
+      background: rgba(96, 165, 250, 0.15);
+      color: #93c5fd;
+    }
+
+    .exifedit__applied-icon {
+      color: #34d399;
+    }
+
+    .exifedit__summary-value--good {
+      color: #34d399;
+    }
+
+    .exifedit__btn--primary {
+      background: #1d4ed8;
+    }
+
+    .exifedit__btn--primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+  }
+</style>

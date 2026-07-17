@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **106 个在线开发工具** + **101 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **107 个在线开发工具** + **102 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -70,10 +70,10 @@
 
 ---
 
-## 工具一览（106 个）
+## 工具一览（107 个）
 
 ### 编码转换
-`Base64` · `Base64 图片` · `图片压缩` · `图片格式转换` · `图片水印` · `图片裁剪` · `图片缩放` · `EXIF 信息查看器` · `SVG 优化器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
+`Base64` · `Base64 图片` · `图片压缩` · `图片格式转换` · `图片水印` · `图片裁剪` · `图片缩放` · `EXIF 信息查看器` · `EXIF 元数据编辑器` · `SVG 优化器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
 
 ### 加密与安全
 `AES 加解密` · `Hash 计算` · `JWT 解码 / 签名 / 验证` · `JWE` · `强密码生成` · `密码哈希（bcrypt / PBKDF2）` · `UUID 生成`
@@ -103,7 +103,7 @@
 | 层级 | 技术方案 | 说明 |
 | --- | --- | --- |
 | 静态站点生成 | **Astro 5** | SSG `output: static`，仅输出可部署的 HTML/CSS/JS |
-| 交互层 | React 18 + TypeScript 5.7 | 106 个 React 工具组件（`@astrojs/react`） |
+| 交互层 | React 18 + TypeScript 5.7 | 107 个 React 工具组件（`@astrojs/react`） |
 | 内容 | Astro Content Collections | MD 博客 + 230+ 个标签合集 |
 | SEO | `@astrojs/sitemap` | 自动生成 sitemap |
 | 部署 | Vercel / Cloudflare Pages / Netlify | 纯静态，零服务器 |
@@ -158,8 +158,8 @@ auto-website/
 │   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
-│   ├── components/                # 106 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 101 篇技术博客（.md）
+│   ├── components/                # 107 个 React 工具组件（AesTool / Base64Tool / …）
+│   ├── content/blog/              # 102 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -168,7 +168,7 @@ auto-website/
 │   │   ├── privacy.astro          # 隐私政策
 │   │   ├── rss.xml.ts             # RSS 订阅源
 │   │   ├── blog/                  # 博客列表/详情/标签 页（Astro Content Collections）
-│   │   └── [106 个工具页].astro    # 独立工具页（每页独立 SEO）
+│   │   └── [107 个工具页].astro    # 独立工具页（每页独立 SEO）
 │   ├── styles/
 │   │   └── global.css             # 全局样式
 │   └── utils/                     # 26 个纯逻辑工具模块（前端独立运算）
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 860 页（含 101 篇博客 + 300+ 个标签筛选页 + 106 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 870 页（含 102 篇博客 + 300+ 个标签筛选页 + 107 个工具页及其它）。
 
 ---
 
-## 博客主题速览（101 篇）
+## 博客主题速览（102 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -209,6 +209,7 @@ auto-website/
 - `image-format-conversion-guide` 图片格式转换实战（PNG / JPEG / WebP / AVIF 选型与批量互转完全指南）
 - `image-watermark-guide` 图片水印实战（Canvas API 文字/图片水印、九宫格定位、平铺布局、旋转防盗图与批量处理）
 - `image-resize-guide` 图片缩放完全指南（5 种缩放模式、长边等比算法、双三次重采样、放大控制与 ZIP 批量打包原理）
+- `exif-editing-guide` EXIF 元数据编辑实战（JPEG 二进制结构、APP1/TIFF/IFD 解析、原地修改策略与隐私清理）
 - `text-analysis-word-count-guide` 文本统计分析与字数统计
 - `number-base-conversion-guide` 进制转换与 BigInt 精度
 - `text-case-conversion-guide` 文本大小写与命名风格转换
