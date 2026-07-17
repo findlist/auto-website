@@ -3,15 +3,15 @@
 
 /**
  * 把标签转为 URL 友好的 slug
- * 规则：小写 + 空格转连字符 + 移除 Windows 文件系统非法字符 + 保留中文字符与字母数字
- * 示例："Web API" → "web-api"，"SHA-256" → "sha-256"，"编码" → "编码"，":scope" → "scope"
+ * 规则：小写 + 空格转连字符 + 移除 Windows 文件系统非法字符与路径分隔符 + 保留中文字符与字母数字
+ * 示例："Web API" → "web-api"，"SHA-256" → "sha-256"，"编码" → "编码"，":scope" → "scope"，"HTTP/3" → "http3"
  */
 export function tagToSlug(tag: string): string {
   return tag
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[<>:"|?*]/g, '');
+    .replace(/[<>:"|?*/\\]/g, '');
 }
 
 /**

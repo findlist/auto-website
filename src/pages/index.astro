@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 99 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 100 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -590,6 +590,15 @@ const tools = [
     keywords: 'http 请求 代码生成 curl fetch axios python requests go 多语言 互转 转换 认证 basic bearer token api key jwt json form urlencoded multipart 表单 文件上传 超时 重定向 ssl postman sdk',
   },
   {
+    href: '/dns',
+    title: 'DNS 查询工具',
+    desc: '在线 DNS 查询工具：基于 DNS over HTTPS（DoH）协议直连 Cloudflare / Google / DNS.SB 公共服务器，支持 16 种记录类型查询（A / AAAA / CNAME / MX / TXT / NS / SOA / PTR / CAA / SRV / DS / DNSKEY / TLSA / HTTPS / SVCB / NAPTR），含 DNSSEC 验证状态解读（AD / CD 字段）、TTL 人类可读格式化、dig 风格文本导出与原始 JSON 查看。浏览器直连 DoH 服务器，查询不经本站服务器，不记录任何查询内容。适用于域名解析排查、CDN 切换验证、邮件 MX/SPF/DKIM 调试、DNSSEC 部署验证、HTTP/3 升级提示分析、安全研究等场景。内置 10 个高频预设示例（IPv4/IPv6 解析、CDN 别名、邮件服务器、SPF 文本、权威 NS、CA 授权、HTTPS 记录、DNSSEC 公钥、DS 签名）与最多 10 条历史查询记录。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'dns 查询 doh dnsoverhttps cloudflare 1.1.1.1 google dns sb 解析 a aaaa cname mx txt ns soa ptr caa srv ds dnskey tlsa https svcb naptr dnssec ad cd ttl dig 域名 反向解析 spf dkim dmarc http/3 ech 邮件 证书 ca 授权',
+  },
+  {
     href: '/jsonpath',
     title: 'JSONPath 查询工具',
     desc: '在线 JSONPath 查询工具：基于 RFC 9535 标准实现的三阶段解析器（词法 / 语法 / 求值），支持 $ 根、.name 子节点、..name 递归下降、[*] 通配符、[index] 索引（含负索引）、[?(filter)] 过滤表达式（==/!=/>/>=/</<=/=~ 与 &&/||/! 组合），内置 12 个预设示例与电商订单 / 用户列表示例数据，查询结果展示索引、类型标签与单条复制，零依赖纯函数实现，适用于 API 响应提取、JSON 数据探查、配置筛选、自动化测试断言等场景。',
@@ -975,7 +984,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 99 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 100 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
