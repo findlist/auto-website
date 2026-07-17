@@ -1,0 +1,823 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ImageConvertTool from '../components/ImageConvertTool.tsx';
+
+const meta: SiteMeta = {
+  title: '图片格式转换工具 - 在线 PNG/JPEG/WebP/AVIF 批量互转',
+  description:
+    '在线图片格式转换工具：支持 PNG / JPEG / WebP / AVIF 四种格式批量互转，自动检测浏览器编码能力，内置全格式体积对比模式（一键生成四种格式结果并标记最小体积），可选质量调节、等比缩放、不透明格式背景色。基于 Canvas API 全本地处理，零上传零追踪，适用于 Web 性能优化、AVIF 迁移、图片格式选型对比等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '图片格式转换工具',
+    description: '在线图片格式转换工具，支持 PNG/JPEG/WebP/AVIF 批量互转与全格式体积对比，全本地 Canvas API 处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+
+// 6 个相关工具内链：图像处理 + 配色 + 二维码 + Base64 图片（在 HTML 中直接渲染）
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>图片格式转换工具</h1>
+      <p>
+        纯本地处理的<strong>在线图片格式转换工具</strong>，支持
+        <strong> PNG / JPEG / WebP / AVIF </strong>四种格式批量互转。提供两种工作模式：
+        <strong>单格式批量转换</strong>（多图统一转同一格式）与
+        <strong>全格式体积对比</strong>（一键生成四种格式结果，自动标记最小体积，便于格式选型）。
+        自动检测浏览器编码能力（AVIF 编码支持因浏览器而异），
+        可选<strong>质量调节（1-100）</strong>、<strong>等比缩放</strong>、<strong>不透明格式背景色</strong>。
+        基于 Canvas API 在浏览器本地完成转换，<strong>零上传、零追踪、可离线使用</strong>。
+      </p>
+    </div>
+
+    <ImageConvertTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>图片格式转换是否在本地处理？会上传图片吗？</summary>
+        <p>
+          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。
+          转换逻辑由浏览器原生 Canvas API 执行，<code>canvas.toBlob()</code> 在内存中生成目标格式的二进制数据，
+          文件上传通过 FileReader / createImageBitmap 读取为 ImageBitmap，
+          预览通过 <code>URL.createObjectURL()</code> 创建本地 URL。
+          全程零网络请求，可离线使用。可在浏览器开发者工具 Network 面板确认无任何请求。
+        </p>
+      </details>
+      <details>
+        <summary>AVIF / WebP / JPEG / PNG 四种格式有什么区别？应该怎么选？</summary>
+        <p>
+          四种格式各有特点：<br />
+          - <strong>AVIF</strong>：基于 AV1 视频编码，<strong>体积最小</strong>（比 JPEG 小 50%+），
+          支持有损 / 无损 / 透明 / 动图。Chrome 85+ / Firefox 86+ / Safari 16+ 解码，
+          <strong>编码支持仅 Chrome 93+ / Safari 16.4+（部分版本）</strong>。推荐用于现代浏览器为主的 Web 场景<br />
+          - <strong>WebP</strong>：基于 VP8 编码，体积次小（比 JPEG 小 25-35%），
+          同样支持有损 / 无损 / 透明 / 动图。<strong>全浏览器支持</strong>（Chrome 32+ / Firefox 65+ / Safari 14+），
+          <strong>编码支持广泛</strong>。推荐用于兼容性优先的 Web 场景<br />
+          - <strong>JPEG</strong>：有损格式，<strong>兼容性最好</strong>（含 IE6 / 老旧设备），
+          不支持透明通道与动图。适合照片类图片、需要最大兼容性的场景<br />
+          - <strong>PNG</strong>：无损压缩，支持透明通道，<strong>体积最大</strong>。
+          适合图标、截图、需要透明背景或无损保真的场景<br />
+          <strong>一般建议</strong>：现代 Web 用 AVIF + WebP 渐进增强，
+          兼容老浏览器用 JPEG 兜底，图标截图用 PNG。
+        </p>
+      </details>
+      <details>
+        <summary>全格式体积对比模式有什么用？</summary>
+        <p>
+          全格式对比模式会对第一张图片同时生成<strong>所有可编码格式</strong>的结果
+          （AVIF / WebP / JPEG / PNG，受浏览器编码能力限制），
+          横向展示各格式的体积与节省比例，并自动<strong>标记最小体积格式</strong>。
+          适用于：<br />
+          - <strong>格式选型决策</strong>：实际数据对比 AVIF vs WebP vs JPEG 体积差异，
+          避免凭直觉选择<br />
+          - <strong>渐进增强策略</strong>：确定 AVIF 主选 + WebP / JPEG 兜底的体积预算<br />
+          - <strong>性能审计</strong>：评估现有图片资产改为现代格式的收益空间<br />
+          多张图片同时对比意义不大（每张图片的最优格式可能不同），故仅对第一张执行。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 AVIF 选项有时不可用或灰色？</summary>
+        <p>
+          AVIF 编码（<code>canvas.toBlob(cb, 'image/avif', quality)</code>）
+          的浏览器支持差异较大：<br />
+          - <strong>Chrome 93+</strong>：支持 AVIF 编码<br />
+          - <strong>Firefox</strong>：截至 2024 年仍未完整支持 toBlob AVIF 编码<br />
+          - <strong>Safari 16.4+</strong>：较新版本支持<br />
+          本工具会在加载时自动探测当前浏览器的编码能力，<strong>仅显示支持的格式选项</strong>。
+          如需使用 AVIF 转换，请使用 Chrome 93+ 或 Safari 16.4+。
+          解码（读取 AVIF 图片）与编码（生成 AVIF）是两回事，
+          Firefox 86+ 可解码 AVIF 但不能编码。
+        </p>
+      </details>
+      <details>
+        <summary>转换时透明区域怎么处理？为什么 JPEG 转换后背景是白色？</summary>
+        <p>
+          不同格式对透明通道的支持不同：<br />
+          - <strong>支持透明</strong>：PNG / WebP / AVIF，转换时透明通道完整保留<br />
+          - <strong>不支持透明</strong>：JPEG，转换时透明区域会被填充为指定背景色<br />
+          本工具提供<strong>背景色选择器</strong>（默认白色 #ffffff），
+          可根据场景自定义（如 #000000 黑色背景、#f5f5f5 浅灰背景匹配页面背景）。
+          如需保留透明效果，请选择 PNG / WebP / AVIF 输出格式。
+        </p>
+      </details>
+      <details>
+        <summary>批量转换最多支持多少张图片？</summary>
+        <p>
+          单次最多 <strong>20 张</strong>，单文件最大 <strong>20MB</strong>。
+          限制原因：<br />
+          - <strong>内存压力</strong>：每张图片在 Canvas 处理时会占用原始尺寸 × 4 字节的内存
+          （4000×3000 像素约 48MB），20 张接近浏览器内存上限<br />
+          - <strong>处理耗时</strong>：AVIF 编码比 JPEG 慢 5-10 倍，批量过大可能触发浏览器卡顿警告<br />
+          如需处理更多图片，建议分批转换。批量结果会逐个触发下载（间隔 200ms），
+          部分浏览器可能弹出多文件下载授权提示。
+        </p>
+      </details>
+      <details>
+        <summary>质量参数（1-100）对哪些格式生效？</summary>
+        <p>
+          质量参数仅对<strong>有损格式</strong>（AVIF / WebP / JPEG）生效，
+          PNG 为无损格式不受影响。<br />
+          数值越高质量越好、体积越大；数值越低体积越小、画质损失越明显。<br />
+          推荐范围：<br />
+          - <strong>80-90</strong>：网页展示常用，肉眼几乎无差异<br />
+          - <strong>60-80</strong>：追求极致体积，适合缩略图、列表图<br />
+          - <strong>90-100</strong>：高保真场景，体积收益有限<br />
+          - <strong>低于 50</strong>：可能出现明显的块状伪影、色带<br />
+          AVIF 在低质量参数下（如 30-50）仍能保持较好观感，是极致压缩的首选。
+        </p>
+      </details>
+      <details>
+        <summary>与图片压缩工具有什么区别？</summary>
+        <p>
+          两者定位不同，互补使用：<br />
+          - <strong>图片压缩工具</strong>（<a href="/image-compress">/image-compress</a>）：
+          <strong>单文件</strong>处理，专注 WebP / JPEG / PNG 三格式压缩，
+          实时预览压缩前后效果，质量滑块实时响应，适合单图精细调优<br />
+          - <strong>本格式转换工具</strong>：<strong>多文件批量</strong>处理，
+          支持 AVIF（图片压缩工具不支持），提供<strong>全格式体积对比</strong>模式，
+          可自定义背景色与缩放，适合批量转换与格式选型决策<br />
+          日常单图优化用图片压缩工具，批量格式转换或 AVIF 场景用本工具。
+        </p>
+      </details>
+    </section>
+
+    <!-- 相关工具内链：提升站内导航与 SEO 内链结构 -->
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools__list">
+        <li><a href="/image-compress">图片压缩</a> —— 单文件位图压缩与质量调优</li>
+        <li><a href="/exif">EXIF 查看</a> —— 图片元数据解析（相机参数、GPS、IPTC/XMP）</li>
+        <li><a href="/base64-image">Base64 图片互转</a> —— 图片与 data URL 互转</li>
+        <li><a href="/svg-optimizer">SVG 优化器</a> —— 矢量图压缩与编辑器残留清理</li>
+        <li><a href="/color">颜色转换</a> —— HEX/RGB/HSL 互转</li>
+        <li><a href="/qr">二维码生成</a> —— 在线二维码生成器</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 图片格式转换工具专属样式：imgconv 命名空间 */
+  .imgconv {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 拖拽上传区 */
+  .imgconv__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+    text-align: center;
+  }
+
+  .imgconv__dropzone:hover,
+  .imgconv__dropzone--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imgconv__dropzone-icon {
+    font-size: 48px;
+    line-height: 1;
+  }
+
+  .imgconv__dropzone-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgconv__dropzone-hint {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 错误提示 */
+  .imgconv__error {
+    padding: 12px 16px;
+    border-left: 4px solid #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 14px;
+  }
+
+  /* 配置面板 */
+  .imgconv__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  /* 模式 Tab 切换 */
+  .imgconv__mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-elevated, rgba(0, 0, 0, 0.05));
+    border-radius: var(--radius-md);
+  }
+
+  .imgconv__mode-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), color var(--transition-fast, 0.15s);
+  }
+
+  .imgconv__mode-tab--active {
+    background: var(--color-bg, #fff);
+    color: var(--color-primary, #2b6cff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 提示框 */
+  .imgconv__hint-box {
+    padding: 12px 16px;
+    border-left: 4px solid var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+    color: var(--color-text);
+    font-size: 13px;
+    border-radius: var(--radius-sm, 4px);
+    line-height: 1.6;
+  }
+
+  .imgconv__hint-warn {
+    display: block;
+    margin-top: 6px;
+    color: #b45309;
+    font-weight: 500;
+  }
+
+  /* 字段组 */
+  .imgconv__field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .imgconv__field-group--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .imgconv__field-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .imgconv__field-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .imgconv__field-value {
+    font-size: 13px;
+    color: var(--color-text-soft);
+    font-weight: normal;
+  }
+
+  .imgconv__field-hint {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-weight: normal;
+  }
+
+  /* 格式选项卡片 */
+  .imgconv__format-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .imgconv__format-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+  }
+
+  .imgconv__format-item:hover {
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .imgconv__format-item--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.08));
+  }
+
+  .imgconv__format-item input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .imgconv__format-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgconv__format-desc {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 滑块 */
+  .imgconv__slider {
+    width: 100%;
+    accent-color: var(--color-primary, #2b6cff);
+  }
+
+  /* 输入框 */
+  .imgconv__number-input {
+    width: 80px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+  }
+
+  .imgconv__color-input {
+    width: 40px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+  }
+
+  .imgconv__field-unit {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 文件列表 */
+  .imgconv__file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .imgconv__file-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .imgconv__file-count {
+    font-size: 14px;
+    color: var(--color-text-soft);
+  }
+
+  .imgconv__file-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* 文件卡片 */
+  .imgconv__cards {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .imgconv__card {
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg, #fff);
+  }
+
+  .imgconv__card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .imgconv__card-name {
+    flex: 1;
+    min-width: 120px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imgconv__card-meta {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgconv__card-remove {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .imgconv__card-remove:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+  }
+
+  .imgconv__card-loading {
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .imgconv__card-error {
+    margin-top: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.08);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  /* 单格式结果卡片 */
+  .imgconv__card-result {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 14px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .imgconv__card-result-preview {
+    width: 100px;
+    height: 100px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    overflow: hidden;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    /* 棋盘格背景：凸显透明区域 */
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  .imgconv__card-result-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .imgconv__card-result-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  .imgconv__card-result-size {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgconv__card-result-savings {
+    font-size: 12px;
+  }
+
+  /* 全格式对比结果 */
+  .imgconv__card-compare {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .imgconv__compare-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .imgconv__compare-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    overflow: hidden;
+    background: #fff;
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  .imgconv__compare-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .imgconv__compare-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .imgconv__compare-format {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgconv__compare-size {
+    color: var(--color-text-soft);
+  }
+
+  .imgconv__compare-savings {
+    font-size: 11px;
+  }
+
+  /* 徽标 */
+  .imgconv__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.1));
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .imgconv__badge--best {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  .imgconv__badge--image-avif {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+  }
+
+  .imgconv__badge--image-webp {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+  }
+
+  .imgconv__badge--image-jpeg {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+  }
+
+  .imgconv__badge--image-png {
+    background: rgba(168, 85, 247, 0.1);
+    color: #9333ea;
+  }
+
+  /* 统计条 */
+  .imgconv__stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imgconv__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .imgconv__stat-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgconv__stat-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgconv__stat-value--good {
+    color: #16a34a;
+  }
+
+  .imgconv__stat-value--bad {
+    color: #dc2626;
+  }
+
+  /* 按钮 */
+  .imgconv__btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .imgconv__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: var(--color-primary, #2b6cff);
+  }
+
+  .imgconv__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .imgconv__btn--primary {
+    background: var(--color-primary, #2b6cff);
+    color: #fff;
+    border-color: var(--color-primary, #2b6cff);
+  }
+
+  .imgconv__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-dark, #1e54d9);
+    color: #fff;
+  }
+
+  .imgconv__btn--ghost {
+    background: transparent;
+  }
+
+  .imgconv__btn--small {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  /* 响应式：768px 单列 */
+  @media (max-width: 768px) {
+    .imgconv__card-result {
+      grid-template-columns: 80px 1fr;
+    }
+
+    .imgconv__card-result-preview {
+      width: 80px;
+      height: 80px;
+    }
+
+    .imgconv__card-compare {
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    }
+
+    .imgconv__stats-bar {
+      gap: 16px;
+    }
+  }
+
+  /* 响应式：414px 紧凑布局 */
+  @media (max-width: 414px) {
+    .imgconv__dropzone {
+      padding: 32px 16px;
+    }
+
+    .imgconv__panel {
+      padding: 14px;
+    }
+
+    .imgconv__mode-tab {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .imgconv__format-options {
+      grid-template-columns: 1fr;
+    }
+
+    .imgconv__field-group--row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .imgconv__card-result {
+      grid-template-columns: 64px 1fr;
+    }
+
+    .imgconv__card-result-preview {
+      width: 64px;
+      height: 64px;
+    }
+
+    .imgconv__card-compare {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global(.dark) .imgconv__dropzone {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imgconv__panel {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imgconv__card {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global(.dark) .imgconv__format-item {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.dark) .imgconv__mode-tab--active {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-primary, #6b8eff);
+  }
+
+  :global(.dark) .imgconv__compare-item {
+    background: rgba(255, 255, 255, 0.03);
+  }
+</style>
