@@ -1,0 +1,858 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import ImageResizeTool from '../components/ImageResizeTool.tsx';
+
+const meta: SiteMeta = {
+  title: '图片缩放工具 - 在线等比缩放 / 放大缩小 / 批量缩放 / 预设尺寸',
+  description:
+    '在线图片缩放工具：支持按宽度 / 按高度 / 按宽高（可锁定等比） / 按百分比 / 按预设尺寸共 5 种缩放模式，内置 8 种预设（缩略图 256 / SD 480p / HD 720p / FHD 1080p / 2K 1440p / 4K 2160p / 原图 50% / 原图 200%），可选允许或禁止放大，导出 PNG / JPEG / WebP / AVIF 格式，支持批量缩放与 ZIP 打包下载。基于 Canvas API drawImage 整图重采样（imageSmoothingQuality=high）全本地处理，零上传零追踪，适用于社交媒体上传、电商商品图、博客配图、缩略图生成、壁纸适配等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '图片缩放工具',
+    description: '在线图片缩放工具，支持 5 种缩放模式、8 种预设尺寸、等比锁定、放大控制、批量缩放与 ZIP 打包下载，全本地 Canvas API 处理。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>图片缩放工具</h1>
+      <p>
+        纯本地处理的<strong>在线图片缩放工具</strong>，支持
+        <strong>按宽度 / 按高度 / 按宽高 / 按百分比 / 按预设尺寸</strong>共 5 种缩放模式。
+        内置 <strong>8 种预设尺寸</strong>（缩略图 256 / SD 480p / HD 720p / FHD 1080p /
+        2K 1440p / 4K 2160p / 原图 50% / 原图 200%），可选
+        <strong>允许或禁止放大</strong>、<strong>锁定等比</strong>，
+        导出 <strong>PNG / JPEG / WebP / AVIF</strong> 格式；
+        批量模式支持 <strong>ZIP 打包下载</strong>。基于 Canvas API 的
+        <code>drawImage</code> 整图重采样（<code>imageSmoothingQuality=high</code>），
+        在浏览器本地完成缩放，<strong>零上传、零追踪、可离线使用</strong>。
+      </p>
+    </div>
+
+    <ImageResizeTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>图片缩放是否在本地处理？会上传图片吗？</summary>
+        <p>
+          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。
+          缩放由浏览器原生 Canvas API 完成：原图通过 <code>createImageBitmap</code> 或
+          <code>HTMLImageElement</code> 加载，缩放通过
+          <code>ctx.drawImage(img, 0, 0, srcW, srcH, 0, 0, dstW, dstH)</code> 的目标矩形参数
+          完成整图重采样，最终通过 <code>canvas.toBlob()</code> 在内存中生成目标格式的二进制数据。
+          全程零网络请求，可在浏览器开发者工具 Network 面板确认。
+        </p>
+      </details>
+      <details>
+        <summary>5 种缩放模式分别是什么？怎么选？</summary>
+        <p>
+          本工具提供 5 种缩放模式：<br />
+          - <strong>按宽度</strong>：仅指定目标宽度，高度按原图比例自动等比缩放。适用于"我要 1280 宽的图"场景<br />
+          - <strong>按高度</strong>：仅指定目标高度，宽度按原图比例自动等比缩放。适用于"我要 720 高的图"场景<br />
+          - <strong>按宽高</strong>：同时指定宽高，可锁定等比（按主导方向缩放不变形）或自由拉伸（允许变形）<br />
+          - <strong>按百分比</strong>：按原图百分比缩放，50 = 一半尺寸，200 = 两倍尺寸<br />
+          - <strong>按预设尺寸</strong>：选择常用预设（缩略图 / HD / 4K 等），按长边等比缩放<br />
+          <strong>选择建议</strong>：精确控制宽或高用「按宽度/高度」，整体尺寸控制用「按宽高 + 锁定等比」，
+          快速缩放用「按百分比」，社交媒体常用尺寸用「按预设尺寸」。
+        </p>
+      </details>
+      <details>
+        <summary>什么是"按长边等比缩放"？预设尺寸是如何计算的？</summary>
+        <p>
+          <strong>按长边等比缩放</strong>是预设尺寸模式的核心算法：找出原图宽高中较长的一边（长边），
+          按目标长边计算缩放比，短边按相同比例缩放，保证整体不变形。<br />
+          例如：原图 4000×3000（横版，长边 4000），选择 HD 720p（长边 1280），<br />
+          缩放比 = 1280 / 4000 = 0.32，目标尺寸 = 4000×0.32 × 3000×0.32 = 1280 × 960。<br />
+          预设尺寸清单：<br />
+          - <strong>缩略图 256</strong>：长边 256px，适合列表/相册缩略图<br />
+          - <strong>SD 480p</strong>：长边 854px，标清视频封面<br />
+          - <strong>HD 720p</strong>：长边 1280px，高清视频/网页配图<br />
+          - <strong>FHD 1080p</strong>：长边 1920px，全高清壁纸<br />
+          - <strong>2K 1440p</strong>：长边 2560px，2K 显示器壁纸<br />
+          - <strong>4K 2160p</strong>：长边 3840px，4K 壁纸/印刷<br />
+          - <strong>原图 50% / 200%</strong>：按百分比缩放，与原图方向无关
+        </p>
+      </details>
+      <details>
+        <summary>允许放大是什么意思？为什么默认关闭？</summary>
+        <p>
+          <strong>允许放大</strong>开关控制目标尺寸大于原图时的行为：<br />
+          - <strong>关闭（默认）</strong>：目标大于原图时保留原尺寸，不放大。避免放大后出现马赛克与锯齿，
+          保护图片质量<br />
+          - <strong>开启</strong>：按目标尺寸放大。适用于特殊场景（如小图放大到指定尺寸用于打印模板、
+          生成位图素材等），但放大后画质会下降<br />
+          <strong>为什么默认关闭</strong>：放大本质是插值生成新像素（双线性/双三次插值），
+          无法恢复原图没有的细节，反而会暴露像素感。绝大多数场景（社交媒体、网页配图、缩略图）
+          都只需要缩小不需要放大。
+        </p>
+      </details>
+      <details>
+        <summary>缩放后的画质会损失吗？用了什么重采样算法？</summary>
+        <p>
+          <strong>缩小场景</strong>：画质几乎无损（视觉感知层面），但本质是有损的——缩小丢弃了部分像素信息。
+          本工具使用浏览器最高质量重采样算法：<code>ctx.imageSmoothingEnabled = true</code> +
+          <code>imageSmoothingQuality = 'high'</code>，主流浏览器实现为
+          <strong>双三次插值（Bicubic Interpolation）</strong>，比双线性插值的锯齿更少、过渡更平滑。<br />
+          <strong>放大场景</strong>：画质必然下降，放大倍数越大越明显（2 倍以内尚可接受，4 倍以上明显马赛克）。
+          浏览器原生 API 不支持 AI 超分辨率（如 ESRGAN、Real-ESRGAN），如需 AI 放大请使用专业工具。<br />
+          <strong>格式影响</strong>：JPEG/WebP/AVIF 是有损格式，质量参数（1-100）影响最终体积与画质；
+          PNG 是无损格式，质量参数不生效。
+        </p>
+      </details>
+      <details>
+        <summary>为什么导出 JPEG 后透明区域变白色？</summary>
+        <p>
+          这是由格式特性决定的：<br />
+          - <strong>JPEG 不支持透明通道</strong>，转换时透明区域会被填充为默认背景色（白色 #ffffff）<br />
+          - <strong>PNG / WebP / AVIF 支持透明</strong>，可保留原图的透明区域<br />
+          本工具默认导出 WebP 格式以兼顾体积与透明支持。如需 JPEG，且原图含透明区域（如 PNG 截图、WebP 图标），
+          会自动填充用户选择的背景色（默认白色，可在配置区修改为任意颜色）避免透明区域变黑。
+        </p>
+      </details>
+      <details>
+        <summary>支持哪些输出格式？AVIF 总是可用吗？</summary>
+        <p>
+          支持 <strong>PNG / JPEG / WebP / AVIF</strong> 四种格式，但 AVIF 受浏览器编码能力限制：<br />
+          - <strong>PNG / JPEG / WebP</strong>：所有现代浏览器均支持编码（Chrome / Firefox / Safari / Edge）<br />
+          - <strong>AVIF</strong>：仅 <strong>Chrome 93+ 与 Safari 16.4+</strong> 支持 <code>toBlob</code> 编码，
+          Firefox 截至最新版本仍不支持 AVIF 编码（仅支持解码）<br />
+          工具加载时会自动探测浏览器编码能力，仅显示当前浏览器实际支持的格式选项，
+          避免选 AVIF 却生成 PNG 的困惑。如需 AVIF 输出，请使用 Chrome 或 Safari。
+        </p>
+      </details>
+      <details>
+        <summary>批量缩放有多少张限制？ZIP 打包是什么原理？</summary>
+        <p>
+          <strong>批量上限 20 张</strong>，单文件 ≤ 20MB，避免浏览器内存堆积导致崩溃。<br />
+          <strong>ZIP 打包原理</strong>：本工具采用 <strong>ZIP STORE 模式</strong>（compression method = 0），
+          不压缩文件内容，仅做打包归档。原因：<br />
+          - 图片本身已是压缩格式（PNG/JPEG/WebP/AVIF），二次 DEFLATE 压缩收益极小但 CPU 开销显著<br />
+          - STORE 模式比 DEFLATE 快 5-10 倍，浏览器与系统原生支持解压，兼容性最佳<br />
+          - 完全在浏览器本地用 <code>DataView + Uint8Array</code> 构造 ZIP 二进制，
+          包含 Local File Header + 文件数据 + Central Directory + EOCD 完整结构，
+          内置 CRC32 校验（256 项预计算查找表），UTF-8 文件名标志位确保中文文件名正确识别<br />
+          <strong>批量使用流程</strong>：上传多张 → 调整统一规格 → 点击「批量缩放」→ 等待逐张处理 →
+          「逐个下载」或「下载为 ZIP」。
+        </p>
+      </details>
+    </section>
+
+    <!-- 相关工具内链：提升站内导航与 SEO 内链结构 -->
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools__list">
+        <li><a href="/image-compress">图片压缩</a> —— 质量压缩与三格式横向对比</li>
+        <li><a href="/image-convert">图片格式转换</a> —— PNG/JPEG/WebP/AVIF 批量互转与体积对比</li>
+        <li><a href="/image-crop">图片裁剪</a> —— 可视化裁剪框 + 9 种比例 + 撤销重做</li>
+        <li><a href="/image-watermark">图片水印</a> —— 文字/图片水印批量添加</li>
+        <li><a href="/exif">EXIF 查看</a> —— 图片元数据解析（相机参数、GPS）</li>
+        <li><a href="/base64-image">Base64 图片互转</a> —— 图片与 data URL 互转</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 图片缩放工具专属样式：imres 命名空间 */
+  .imres {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 模式切换 Tab */
+  .imres__mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .imres__mode-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imres__mode-tab:hover {
+    color: var(--color-text);
+    background: var(--color-bg, #fff);
+  }
+
+  .imres__mode-tab--active {
+    background: var(--color-bg, #fff);
+    color: #2b6cff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* 错误提示 */
+  .imres__error {
+    padding: 12px 16px;
+    border-left: 4px solid #dc2626;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 14px;
+  }
+
+  /* 工作区：左右两栏 */
+  .imres__workspace {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .imres__left,
+  .imres__right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 拖拽上传区 */
+  .imres__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 36px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+    text-align: center;
+  }
+
+  .imres__dropzone:hover,
+  .imres__dropzone--active {
+    border-color: var(--color-primary, #2b6cff);
+    background: var(--color-primary-soft, rgba(43, 108, 255, 0.06));
+  }
+
+  .imres__dropzone-icon {
+    font-size: 40px;
+    line-height: 1;
+  }
+
+  .imres__dropzone-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imres__dropzone-hint {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imres__file-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* 原图信息 */
+  .imres__source-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--color-border);
+  }
+
+  .imres__source-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imres__source-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 批量文件列表 */
+  .imres__batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 6px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--color-border);
+  }
+
+  .imres__batch-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--color-bg, #fff);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+  }
+
+  .imres__batch-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .imres__batch-item-size {
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .imres__batch-item-remove {
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .imres__batch-item-remove:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+  }
+
+  /* 配置区 */
+  .imres__config {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .imres__config-legend {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    padding: 0 8px;
+  }
+
+  .imres__field {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .imres__field--checkbox {
+    grid-template-columns: 1fr;
+  }
+
+  .imres__field-label {
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .imres__input,
+  .imres__select {
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+  }
+
+  .imres__input:focus-visible,
+  .imres__select:focus-visible {
+    outline: none;
+    border-color: var(--color-primary, #2b6cff);
+    box-shadow: 0 0 0 2px var(--color-primary-ring, rgba(43, 108, 255, 0.2));
+  }
+
+  .imres__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  /* 预设尺寸网格 */
+  .imres__preset-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .imres__preset-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imres__preset-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .imres__preset-item--active {
+    border-color: #2b6cff;
+    background: rgba(43, 108, 255, 0.08);
+    color: #2b6cff;
+    font-weight: 600;
+  }
+
+  /* 范围滑块：复用全站统一样式 */
+  .imres__range {
+    width: 100%;
+  }
+
+  /* 颜色选择器 */
+  .imres__color-input {
+    width: 60px;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+  }
+
+  /* 目标尺寸预览 */
+  .imres__preview-target {
+    padding: 10px 12px;
+    background: rgba(43, 108, 255, 0.06);
+    border: 1px solid rgba(43, 108, 255, 0.2);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .imres__preview-label {
+    color: var(--color-text-soft);
+    margin-right: 4px;
+  }
+
+  .imres__preview-ratio {
+    margin-left: 8px;
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .imres__preview-hint {
+    margin-left: 8px;
+    color: #b45309;
+    font-size: 12px;
+  }
+
+  /* 操作按钮 */
+  .imres__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .imres__btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imres__btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #2b6cff);
+    color: #2b6cff;
+  }
+
+  .imres__btn--primary {
+    background: #2b6cff;
+    color: #fff;
+    border-color: #2b6cff;
+  }
+
+  .imres__btn--primary:hover:not(:disabled) {
+    background: #1e5ce6;
+    color: #fff;
+  }
+
+  .imres__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 右侧预览区 */
+  .imres__preview-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg, #fff);
+  }
+
+  .imres__preview-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imres__preview-img {
+    display: block;
+    max-width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+  }
+
+  .imres__preview-info {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  /* 结果信息表 */
+  .imres__result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+  }
+
+  .imres__result-row {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .imres__result-label {
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .imres__delta {
+    padding: 2px 6px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .imres__delta--positive {
+    background: rgba(22, 163, 74, 0.1);
+    color: #15803d;
+  }
+
+  .imres__delta--negative {
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+  }
+
+  /* 空状态与加载态 */
+  .imres__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .imres__empty-icon {
+    font-size: 40px;
+    line-height: 1;
+  }
+
+  .imres__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: var(--color-text-soft);
+    font-size: 14px;
+  }
+
+  .imres__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top-color: #2b6cff;
+    border-radius: 50%;
+    animation: imres-spin 0.8s linear infinite;
+  }
+
+  @keyframes imres-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* 批量结果 */
+  .imres__batch-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg, #fff);
+  }
+
+  .imres__batch-stats {
+    display: flex;
+    gap: 16px;
+    padding: 8px 12px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  .imres__batch-stats strong {
+    color: var(--color-text);
+    margin-left: 4px;
+  }
+
+  .imres__batch-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .imres__batch-result-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+  }
+
+  .imres__batch-result-item--error {
+    background: rgba(220, 38, 38, 0.06);
+    grid-template-columns: 1fr auto;
+  }
+
+  .imres__batch-result-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .imres__batch-result-meta {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imres__batch-result-size {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imres__batch-result-download {
+    padding: 2px 10px;
+    background: #2b6cff;
+    color: #fff;
+    border-radius: var(--radius-sm, 4px);
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .imres__batch-result-download:hover {
+    background: #1e5ce6;
+  }
+
+  .imres__batch-result-error {
+    font-size: 12px;
+    color: #b91c1c;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imres__batch-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* 响应式：768px 平板单列 */
+  @media (max-width: 768px) {
+    .imres__workspace {
+      grid-template-columns: 1fr;
+    }
+
+    .imres__preset-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .imres__field {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .imres__batch-stats {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  /* 响应式：414px 移动端紧凑布局 */
+  @media (max-width: 414px) {
+    .imres__mode-tab {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .imres__batch-item {
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+    }
+
+    .imres__batch-item-name {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .imres__batch-item-size {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .imres__batch-item-remove {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .imres__batch-result-item {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 4px;
+    }
+
+    .imres__batch-actions {
+      flex-direction: column;
+    }
+  }
+
+  /* 暗色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .imres__mode-tab--active {
+      background: rgba(43, 108, 255, 0.15);
+      color: #6e9aff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .imres__dropzone:hover,
+    .imres__dropzone--active {
+      border-color: #6e9aff;
+      background: rgba(110, 154, 255, 0.08);
+    }
+
+    .imres__preview-target {
+      background: rgba(110, 154, 255, 0.1);
+      border-color: rgba(110, 154, 255, 0.25);
+    }
+
+    .imres__preset-item--active {
+      border-color: #6e9aff;
+      background: rgba(110, 154, 255, 0.15);
+      color: #6e9aff;
+    }
+
+    .imres__btn--primary {
+      background: #2b6cff;
+      border-color: #2b6cff;
+    }
+
+    .imres__btn--primary:hover:not(:disabled) {
+      background: #1e5ce6;
+    }
+
+    .imres__btn:hover:not(:disabled) {
+      border-color: #6e9aff;
+      color: #6e9aff;
+    }
+
+    .imres__batch-result-download {
+      background: #2b6cff;
+    }
+
+    .imres__batch-result-download:hover {
+      background: #1e5ce6;
+    }
+
+    .imres__spinner {
+      border-color: var(--color-border);
+      border-top-color: #6e9aff;
+    }
+  }
+</style>
