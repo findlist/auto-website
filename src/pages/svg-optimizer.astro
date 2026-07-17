@@ -1,0 +1,557 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import SvgOptimizerTool from '../components/SvgOptimizerTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'SVG 优化器 - 在线 SVG 压缩与精简工具 | 去除 metadata 与编辑器残留',
+  description:
+    '在线 SVG 优化器：纯本地处理，去除 XML 声明、DOCTYPE、注释、metadata、Inkscape / Sketch / Adobe 编辑器残留属性与无意义 id，简化数字精度（0.5 → .5），去除默认值属性，压缩空白换行。支持保守 / 标准 / 激进 3 套预设与 11 条规则独立开关，实时预览优化前后效果，一键复制下载。零广告零追踪，SVG 内容不离开浏览器。适用于网页性能优化、SVG 内联、图标精简、Favicon 压缩等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'SVG 优化器',
+    description: '纯本地处理的在线 SVG 优化器，支持去除 XML 声明、编辑器残留、默认值属性、压缩空白，3 套预设与 11 条规则独立开关。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+
+// 6 个相关工具：图像处理 + 配色 + 二维码 + CSS 格式化
+const relatedTools = [
+  { href: '/image-compress', title: '图片压缩', desc: '位图压缩（PNG/JPEG/WebP）' },
+  { href: '/exif', title: 'EXIF 查看', desc: '图片元数据解析' },
+  { href: '/base64-image', title: 'Base64 图片互转', desc: '图片与 data URL 互转' },
+  { href: '/color', title: '颜色转换', desc: 'HEX/RGB/HSL 互转' },
+  { href: '/qr', title: '二维码生成', desc: '在线二维码生成器' },
+  { href: '/css-formatter', title: 'CSS 格式化', desc: 'CSS 压缩与美化' },
+];
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>SVG 优化器</h1>
+      <p>
+        纯本地处理的<strong>在线 SVG 优化器</strong>，覆盖 SVGO 常用插件核心能力：
+        去除 <strong>XML 声明 / DOCTYPE / 注释 / metadata</strong>，
+        清理 <strong>Inkscape / Sketch / Adobe 编辑器残留属性与无意义 id</strong>，
+        简化<strong>数字精度</strong>（<code>0.5 → .5</code>、<code>1.000 → 1</code>），
+        去除<strong>默认值属性</strong>（<code>fill="black"</code> <code>stroke="none"</code>），
+        压缩<strong>空白与换行</strong>。内置<strong>保守 / 标准 / 激进</strong>3 套预设与
+        <strong>11 条规则独立开关</strong>，实时预览优化前后效果，一键复制下载。
+        所有处理在浏览器本地完成，<strong>SVG 内容不离开浏览器</strong>，零广告零追踪。
+      </p>
+    </div>
+
+    <SvgOptimizerTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>SVG 优化器是否在本地处理？会上传 SVG 内容吗？</summary>
+        <p>
+          <strong>是的，全部在浏览器本地处理，SVG 内容不离开浏览器</strong>。<br />
+          - 优化逻辑由 JavaScript 在浏览器执行，不调用任何后端 API<br />
+          - 文件上传通过 FileReader 读取为文本，不上传到服务器<br />
+          - 历史输入仅保存在当前浏览器内存中（关页即清，不持久化不上传）<br />
+          - 无 Cookie 追踪、无第三方统计、无广告<br />
+          <strong>隐私建议</strong>：处理敏感图标（如内部产品 logo）时可放心使用，
+          拔网线也能正常优化。如需进一步验证，可在浏览器开发者工具 Network 面板确认无任何请求。
+        </p>
+      </details>
+      <details>
+        <summary>为什么 SVG 需要优化？编辑器导出的 SVG 有哪些冗余？</summary>
+        <p>
+          编辑器（Inkscape / Illustrator / Sketch / Figma）导出的 SVG 通常含大量冗余：
+          <br />
+          - <strong>XML 声明与 DOCTYPE</strong>：<code>&lt;?xml version="1.0"?&gt;</code>
+          与 <code>&lt;!DOCTYPE&gt;</code> 在 HTML 内联场景下不必要<br />
+          - <strong>metadata 元素</strong>：含 RDF 版权信息、编辑器元数据，体积可观且不影响渲染<br />
+          - <strong>编辑器命名空间</strong>：<code>xmlns:sodipodi</code> <code>xmlns:inkscape</code>
+          及相关属性（如 <code>inkscape:label</code> <code>sodipodi:nodetypes</code>）<br />
+          - <strong>无意义 id</strong>：如 <code>Layer_1</code> <code>_x2C_</code>
+          <code>rect-1</code>，编辑器自动生成，无引用价值<br />
+          - <strong>多余精度</strong>：<code>50.00000</code> <code>2.00000</code>
+          可简化为 <code>50</code> <code>2</code><br />
+          - <strong>默认值属性</strong>：<code>fill="black"</code> <code>stroke="none"</code>
+          是 SVG 默认值，可移除<br />
+          - <strong>换行缩进</strong>：编辑器为可读性添加的空白，对渲染无影响<br />
+          <strong>优化收益</strong>：典型 Inkscape 导出 SVG 可压缩 30%-60%，
+          减少首屏加载体积与内联 HTML 体积。
+        </p>
+      </details>
+      <details>
+        <summary>保守 / 标准 / 激进 3 套预设有什么区别？</summary>
+        <p>
+          3 套预设对应不同场景的优化强度：<br />
+          - <strong>保守</strong>：仅去除 XML 声明、DOCTYPE、注释与编辑器残留，
+          保留所有结构、数字精度、默认值与空白。<strong>适合需要保留可读性与调试信息的场景</strong>，
+          体积压缩 10%-20%<br />
+          - <strong>标准</strong>（默认）：在保守基础上额外去除 desc、简化数字精度、
+          去除默认值属性、压缩空白。<strong>平衡体积与可读性，适合大多数场景</strong>，
+          体积压缩 30%-50%<br />
+          - <strong>激进</strong>：在标准基础上额外去除 title 元素（影响无障碍），
+          <strong>适合 SVG 内联到 HTML / CSS 的极致压缩场景</strong>，体积压缩 40%-60%<br />
+          <strong>建议</strong>：先用标准预设优化，若仍需更小体积再切激进；
+          需要保留无障碍语义（如 logo 图标的 title）时用保守或标准。
+        </p>
+      </details>
+      <details>
+        <summary>优化后的 SVG 会破坏渲染吗？如何验证？</summary>
+        <p>
+          <strong>本工具的优化规则均为安全规则，不破坏 SVG 结构合法性</strong>，但仍建议验证：
+          <br />
+          - <strong>预览对比 Tab</strong>：本工具内置「预览对比」面板，左右并排渲染优化前后 SVG，
+          视觉一致即说明优化安全<br />
+          - <strong>不优化 path 数据</strong>：path 的 d 属性含复杂指令（M/L/C/Z/Q/A），
+          重新编码易引入渲染差异，本工具不触碰 path 数据，留给 SVGO 的 convertPathData 插件<br />
+          - <strong>保留 text 内容</strong>：压缩空白时用占位符保护 <code>&lt;text&gt;</code>
+          与 <code>&lt;tspan&gt;</code> 内容，避免影响文字渲染<br />
+          - <strong>保留被引用的 id</strong>：仅移除未被 <code>url(#id)</code>
+          <code>href="#id"</code> <code>xlink:href="#id"</code> 引用的编辑器 id，
+          不破坏 <code>&lt;use&gt;</code> <code>&lt;clipPath&gt;</code> <code>&lt;mask&gt;</code> 引用<br />
+          <strong>异常排查</strong>：若预览发现渲染异常，可逐条关闭规则定位问题（建议先关闭
+          removeEditorIds 与 removeDefaultAttrs），并在 GitHub 反馈具体 case。
+        </p>
+      </details>
+      <details>
+        <summary>为什么不优化 path 数据？SVGO 的 convertPathData 有什么不同？</summary>
+        <p>
+          <strong>path 数据优化复杂度高且易引入渲染差异</strong>，本工具基于字符串与正则的轻量方案
+          无法安全处理：<br />
+          - <strong>坐标相对化</strong>：将 M/L 绝对坐标转为 m/l 相对坐标可减小体积，
+          但需解析前一个点的位置<br />
+          - <strong>指令合并</strong>：连续的 L 指令可合并为隐式指令（如 <code>L 1 2 3 4</code>），
+          需语义分析<br />
+          - <strong>曲线平滑</strong>：C 三次贝塞尔可转为 S 平滑贝塞尔，需控制点共线判定<br />
+          - <strong>精度损失</strong>：path 坐标精度简化可能引入亚像素级渲染差异，
+          对像素级精确的图标（如 favicon）不可接受<br />
+          <strong>本工具的定位</strong>：轻量、安全、零依赖，覆盖 80% 通用优化场景。
+          如需 path 级优化，建议使用 <code>svgo</code> CLI（Node.js 工具）或
+          <a href="https://jakearchibald.github.io/svgomg/" rel="noopener noreferrer" target="_blank">SVGOMG</a>
+          在线工具（基于 SVGO 完整插件链）。
+        </p>
+      </details>
+      <details>
+        <summary>removeTitle 默认关闭，什么时候应该开启？</summary>
+        <p>
+          <strong>title 元素影响 SVG 无障碍语义</strong>，移除后屏幕阅读器无法读出图标含义：
+          <br />
+          - <strong>保留 title（默认）</strong>：适合独立 SVG 文件、需要无障碍支持的场景
+          （如网站 logo、导航图标）<br />
+          - <strong>移除 title（激进预设）</strong>：适合 SVG 内联到 HTML / CSS 的场景，
+          此时 HTML 上下文已提供语义（如 <code>&lt;button aria-label="保存"&gt;</code>），
+          SVG 内的 title 反而冗余<br />
+          <strong>无障碍最佳实践</strong>：若 SVG 作为独立文件被 <code>&lt;img src&gt;</code>
+          引用，建议保留 title；若内联到 HTML，可移除 title 并在父元素提供
+          <code>aria-label</code>。
+        </p>
+      </details>
+      <details>
+        <summary>数字精度简化规则（0.5 → .5）会不会破坏渲染？</summary>
+        <p>
+          <strong>不会，SVG 数值精度简化是安全的</strong>：<br />
+          - <strong>SVG 规范允许省略前导零</strong>：<code>0.5</code> 与 <code>.5</code>
+          在 SVG 所有属性中语义完全等价<br />
+          - <strong>尾随零去除</strong>：<code>1.50</code> → <code>1.5</code>，
+          <code>1.0</code> → <code>1</code>，数值不变<br />
+          - <strong>精度截断</strong>：保留 3 位小数（<code>1.23456</code> → <code>1.235</code>），
+          对屏幕渲染（DPI 通常 96-192）几乎无影响，仅在像素级精确的印刷场景可能可见差异<br />
+          - <strong>不处理颜色 hex</strong>：<code>#3b82f6</code> 不含小数点，不会被匹配<br />
+          <strong>边缘场景</strong>：若 SVG 用于高精度印刷（如 PDF 矢量图），
+          可在「保守」预设中关闭此规则，保留原始精度。
+        </p>
+      </details>
+      <details>
+        <summary>优化后的 SVG 如何内联到 HTML？有什么注意事项？</summary>
+        <p>
+          <strong>SVG 内联到 HTML 的常见方式</strong>：<br />
+          - <strong>直接嵌入</strong>：将 <code>&lt;svg&gt;</code> 整段粘贴到 HTML 中，
+          可用 CSS 控制颜色（<code>fill: currentColor</code>）<br />
+          - <strong>使用 use 引用</strong>：将 SVG 放入 <code>&lt;symbol&gt;</code>
+          定义，通过 <code>&lt;use href="#icon"&gt;</code> 引用<br />
+          - <strong>data URI</strong>：编码为 <code>data:image/svg+xml,...</code>
+          用于 CSS <code>background-image</code> 或 <code>&lt;img src&gt;</code><br />
+          <strong>内联优化注意事项</strong>：<br />
+          - 移除 <code>xmlns="http://www.w3.org/2000/svg"</code> 命名空间声明（HTML 内联不需要）<br />
+          - 使用「激进」预设移除 title 与 desc，避免屏幕阅读器重复读出<br />
+          - 保留 <code>viewBox</code> 与 <code>fill="currentColor"</code>，便于 CSS 控制尺寸与颜色<br />
+          - data URI 场景需 URL 编码 <code>#</code> <code>%</code> 等特殊字符，
+          可配合本站 Base64 工具进一步编码
+        </p>
+      </details>
+    </section>
+
+    <!-- 相关工具内链：增强站内导航与 SEO 权重传递 -->
+    <nav class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        {relatedTools.map((tool) => (
+          <li>
+            <a href={tool.href}>
+              <strong>{tool.title}</strong>
+              <span>{tool.desc}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </section>
+</BaseLayout>
+
+<style>
+  /* svgopt__ 命名空间：SVG 优化器专属样式 */
+  .svgopt__container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  /* ===== 顶部工具栏 ===== */
+  .svgopt__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .svgopt__presets,
+  .svgopt__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .svgopt__btn {
+    padding: 6px 14px;
+    font-size: 0.88rem;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .svgopt__btn:hover:not(:disabled) {
+    background: var(--color-bg-soft);
+    border-color: var(--color-primary);
+  }
+  .svgopt__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .svgopt__btn--preset {
+    background: var(--color-bg);
+  }
+  .svgopt__btn--primary {
+    color: var(--color-bg);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  .svgopt__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+  .svgopt__file-input {
+    display: none;
+  }
+
+  /* ===== 主布局：左右两栏 ===== */
+  .svgopt__main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ===== 输入面板 ===== */
+  .svgopt__input-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .svgopt__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .svgopt__filename {
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+  .svgopt__textarea {
+    width: 100%;
+    min-height: 320px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+    transition: border-color var(--transition-fast);
+  }
+  .svgopt__textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+  .svgopt__textarea[data-drag-over='true'] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-ring);
+  }
+
+  /* ===== 优化规则开关 ===== */
+  .svgopt__options {
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .svgopt__options legend {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    padding: 0 6px;
+  }
+  .svgopt__rules {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px 12px;
+    margin-top: 8px;
+  }
+  .svgopt__rule {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .svgopt__rule input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+  .svgopt__rule-name {
+    user-select: none;
+  }
+
+  /* ===== 输出面板 ===== */
+  .svgopt__output-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ===== 状态摘要条 ===== */
+  .svgopt__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+  }
+  .svgopt__summary-item strong {
+    color: var(--color-primary);
+  }
+  .svgopt__summary-item--error {
+    color: var(--color-danger);
+  }
+  .svgopt__summary-item--muted {
+    color: var(--color-text-muted);
+  }
+  .svgopt__summary-item[data-savings='high'] strong {
+    color: var(--color-success);
+  }
+  .svgopt__summary-item[data-savings='mid'] strong {
+    color: var(--color-primary);
+  }
+  .svgopt__summary-item[data-savings='low'] strong {
+    color: var(--color-text-muted);
+  }
+
+  /* ===== Tab 切换 ===== */
+  .svgopt__tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .svgopt__tab {
+    padding: 8px 16px;
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .svgopt__tab:hover {
+    color: var(--color-text);
+  }
+  .svgopt__tab[data-active='true'] {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+  }
+
+  /* ===== Tab 内容区 ===== */
+  .svgopt__tab-content {
+    min-height: 320px;
+  }
+  .svgopt__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    padding: 24px;
+    color: var(--color-text-muted);
+    background: var(--color-bg-soft);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  /* ===== 输出文本区 ===== */
+  .svgopt__output-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .svgopt__output-text {
+    width: 100%;
+    min-height: 320px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+  .svgopt__output-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ===== 预览对比 ===== */
+  .svgopt__preview-area {
+    min-height: 320px;
+  }
+  .svgopt__preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .svgopt__preview-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .svgopt__preview-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .svgopt__preview-frame {
+    width: 100%;
+    height: 280px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-soft);
+  }
+
+  /* ===== 规则统计表 ===== */
+  .svgopt__stats-area {
+    min-height: 320px;
+  }
+  .svgopt__stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .svgopt__stats-table th,
+  .svgopt__stats-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .svgopt__stats-table th {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+  .svgopt__stats-table td:nth-child(2),
+  .svgopt__stats-table td:nth-child(3) {
+    font-family: var(--font-mono);
+  }
+  .svgopt__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
+  }
+  .svgopt__badge--on {
+    color: var(--color-success);
+    background: var(--color-success-ring);
+  }
+  .svgopt__badge--off {
+    color: var(--color-text-muted);
+    background: var(--color-bg-soft);
+  }
+
+  /* ===== 响应式：768px 平板单列 ===== */
+  @media (max-width: 768px) {
+    .svgopt__main {
+      grid-template-columns: 1fr;
+    }
+    .svgopt__rules {
+      grid-template-columns: 1fr;
+    }
+    .svgopt__preview-grid {
+      grid-template-columns: 1fr;
+    }
+    .svgopt__toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  /* ===== 响应式：414px 移动端紧凑 ===== */
+  @media (max-width: 414px) {
+    .svgopt__btn {
+      padding: 6px 10px;
+      font-size: 0.82rem;
+    }
+    .svgopt__textarea,
+    .svgopt__output-text {
+      min-height: 240px;
+      font-size: 0.8rem;
+    }
+    .svgopt__summary {
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+  }
+
+  /* ===== 暗色模式适配 ===== */
+  :global([data-theme='dark']) .svgopt__preview-frame {
+    background: var(--color-bg-code);
+  }
+</style>
