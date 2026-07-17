@@ -6,13 +6,20 @@ import {
   type HandleCode,
   type AspectRatioCode,
   type CropResult,
+  type OutputShape,
+  type BatchCropItem,
   ASPECT_RATIOS,
   HANDLES,
   OUTPUT_FORMATS,
+  OUTPUT_SHAPES,
   ACCEPTED_INPUT_MIMES,
+  MAX_BATCH_COUNT,
   DEFAULT_CROP_OPTIONS,
+  PRESET_SIZES,
   loadImage,
   cropImage,
+  cropBatch,
+  downloadBatch,
   detectAllEncodeSupport,
   formatBytes,
   downloadBlob,
@@ -48,6 +55,8 @@ interface DragStart {
 }
 
 export default function ImageCropTool() {
+  /** 工作模式：单图精细裁剪 / 批量统一裁剪 */
+  const [mode, setMode] = useState<'single' | 'batch'>('single');
   const [source, setSource] = useState<SourceImage | null>(null);
   const [rect, setRect] = useState<CropRect>({ x: 0, y: 0, width: 0, height: 0 });
   const [aspectCode, setAspectCode] = useState<AspectRatioCode>('free');
@@ -66,6 +75,14 @@ export default function ImageCropTool() {
   const [dragMode, setDragMode] = useState<DragMode | null>(null);
   const [dragStart, setDragStart] = useState<DragStart | null>(null);
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
+
+  /** 批量模式专属状态 */
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchItems, setBatchItems] = useState<BatchCropItem[]>([]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [batchDownloading, setBatchDownloading] = useState(false);
+  const batchFileInputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -159,6 +176,171 @@ export default function ImageCropTool() {
       }
     },
     [aspectCode, source, customRatioW, customRatioH],
+  );
+
+  /** 当前选中的预设尺寸代码（用于高亮，null 表示未选） */
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
+  /**
+   * 应用预设尺寸：一键切换比例 + 填充等比缩放目标尺寸
+   * - 切换比例：联动裁剪框形状
+   * - 填充 maxWidth/maxHeight：输出时等比缩放到目标尺寸
+   * - 清除 activePreset 当用户手动改比例 / 自定义尺寸时
+   */
+  const applyPreset = useCallback(
+    (preset: typeof PRESET_SIZES[number]) => {
+      if (!source) return;
+      setActivePreset(preset.code);
+      // 切换比例（复用 handleAspectChange 逻辑）
+      setAspectCode(preset.aspect);
+      const meta = ASPECT_RATIOS.find((r) => r.code === preset.aspect);
+      const ratio = meta?.ratio ?? null;
+      const initial = computeInitialRect(source.width, source.height, ratio);
+      setRect(initial);
+      // 填充等比缩放目标尺寸
+      setExportCfg((p) => ({ ...p, maxWidth: preset.width, maxHeight: preset.height }));
+      setResult(null);
+    },
+    [source],
+  );
+
+  /** 用户手动切换比例时清除预设高亮 */
+  const handleAspectChangeWithPreset = useCallback(
+    (code: AspectRatioCode) => {
+      setActivePreset(null);
+      handleAspectChange(code);
+    },
+    [handleAspectChange],
+  );
+
+  /**
+   * 切换输出形状
+   * - 选择圆形时自动切换到 1:1 比例（保证正圆视觉）
+   * - 选择矩形 / 圆角矩形时仅更新形状，不变比例
+   */
+  const handleShapeChange = useCallback(
+    (shape: OutputShape) => {
+      setExportCfg((p) => ({ ...p, shape }));
+      if (shape === 'circle' && aspectCode !== '1:1' && source) {
+        setActivePreset(null);
+        setAspectCode('1:1');
+        const initial = computeInitialRect(source.width, source.height, 1);
+        setRect(initial);
+      }
+      setResult(null);
+    },
+    [aspectCode, source],
+  );
+
+  /**
+   * 批量模式：处理多文件选择
+   * - 限制最大 MAX_BATCH_COUNT 张，超出的文件被截断并提示
+   * - 仅接受 ACCEPTED_INPUT_MIMES 列出的图片类型
+   */
+  const handleBatchFiles = useCallback((fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const accepted = Array.from(fileList).filter((f) =>
+      ACCEPTED_INPUT_MIMES.some((m) => f.type === m || f.name.toLowerCase().endsWith(m.split('/')[1])),
+    );
+    if (accepted.length === 0) {
+      setError('未选中有效的图片文件，支持 PNG / JPEG / WebP / AVIF / GIF / BMP');
+      return;
+    }
+    setError('');
+    // 截断超出上限的部分
+    const trimmed = accepted.slice(0, MAX_BATCH_COUNT);
+    if (accepted.length > MAX_BATCH_COUNT) {
+      setError(`单次最多处理 ${MAX_BATCH_COUNT} 张，已截断多余的 ${accepted.length - MAX_BATCH_COUNT} 张`);
+    }
+    // 清理旧结果
+    batchItems.forEach((it) => {
+      if (it.result) URL.revokeObjectURL(it.result.url);
+    });
+    setBatchFiles(trimmed);
+    setBatchItems([]);
+  }, [batchItems]);
+
+  /** 批量模式：移除指定索引的文件 */
+  const removeBatchFile = useCallback((index: number) => {
+    setBatchFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  /**
+   * 批量模式：执行批量裁剪
+   * - 按当前比例 + 形状 + 格式 + 质量统一处理所有文件
+   * - 每张图按比例自动居中裁剪（不显示裁剪框）
+   * - 顺序执行避免内存堆积，实时更新进度
+   */
+  const runBatchCrop = useCallback(async () => {
+    if (batchFiles.length === 0) return;
+    // 清理旧结果
+    batchItems.forEach((it) => {
+      if (it.result) URL.revokeObjectURL(it.result.url);
+    });
+    setBatchItems([]);
+    setBatchProcessing(true);
+    setBatchProgress({ current: 0, total: batchFiles.length });
+    setError('');
+    try {
+      await cropBatch(
+        batchFiles,
+        { ...exportCfg },
+        currentRatio,
+        (index, total) => {
+          setBatchProgress({ current: index + 1, total });
+        },
+      ).then((items) => {
+        setBatchItems(items);
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBatchProcessing(false);
+    }
+  }, [batchFiles, batchItems, exportCfg, currentRatio]);
+
+  /** 批量模式：下载全部裁剪结果（逐个触发，200ms 间隔） */
+  const downloadAllBatch = useCallback(async () => {
+    if (batchItems.length === 0) return;
+    setBatchDownloading(true);
+    try {
+      await downloadBatch(batchItems);
+    } finally {
+      setBatchDownloading(false);
+    }
+  }, [batchItems]);
+
+  /** 批量模式：清空全部文件与结果 */
+  const clearBatch = useCallback(() => {
+    batchItems.forEach((it) => {
+      if (it.result) URL.revokeObjectURL(it.result.url);
+    });
+    setBatchFiles([]);
+    setBatchItems([]);
+    setBatchProgress({ current: 0, total: 0 });
+    setError('');
+    if (batchFileInputRef.current) batchFileInputRef.current.value = '';
+  }, [batchItems]);
+
+  /** 批量拖拽事件 */
+  const onBatchDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(true);
+  }, []);
+  const onBatchDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+  }, []);
+  const onBatchDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragging(false);
+      handleBatchFiles(e.dataTransfer.files);
+    },
+    [handleBatchFiles],
   );
 
   /** 处理图片文件选择 */
@@ -340,11 +522,14 @@ export default function ImageCropTool() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [source, result]);
 
-  /** 卸载时清理所有 URL */
+  /** 卸载时清理所有 URL（单图 + 批量） */
   useEffect(() => {
     return () => {
       if (source) URL.revokeObjectURL(source.url);
       if (result) URL.revokeObjectURL(result.url);
+      batchItems.forEach((it) => {
+        if (it.result) URL.revokeObjectURL(it.result.url);
+      });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -354,6 +539,30 @@ export default function ImageCropTool() {
 
   return (
     <div className="imcrop">
+      {/* 模式切换 Tab：单图精细裁剪 / 批量统一裁剪 */}
+      <div className="imcrop__mode-tabs" role="tablist" aria-label="工作模式">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'single'}
+          className={`imcrop__mode-tab${mode === 'single' ? ' imcrop__mode-tab--active' : ''}`}
+          onClick={() => setMode('single')}
+        >
+          单图精细裁剪
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'batch'}
+          className={`imcrop__mode-tab${mode === 'batch' ? ' imcrop__mode-tab--active' : ''}`}
+          onClick={() => setMode('batch')}
+        >
+          批量统一裁剪
+        </button>
+      </div>
+
+      {mode === 'single' && (
+        <>
       {/* 上传区 */}
       {!source && (
         <div
@@ -387,7 +596,7 @@ export default function ImageCropTool() {
         </div>
       )}
 
-      {error && <div className="imcrop__error" role="alert">{error}</div>}
+      {error && mode === 'single' && <div className="imcrop__error" role="alert">{error}</div>}
 
       {/* 工作区 */}
       {source && (
@@ -483,6 +692,28 @@ export default function ImageCropTool() {
 
           {/* 右侧：配置与预览 */}
           <div className="imcrop__panel">
+            {/* 预设尺寸：社交媒体常用尺寸一键应用 */}
+            <div className="imcrop__field-group">
+              <span className="imcrop__field-label">预设尺寸</span>
+              <div className="imcrop__preset-grid" role="group" aria-label="预设尺寸">
+                {PRESET_SIZES.map((p) => (
+                  <button
+                    key={p.code}
+                    type="button"
+                    className={`imcrop__preset-item${activePreset === p.code ? ' imcrop__preset-item--active' : ''}`}
+                    title={p.desc}
+                    onClick={() => applyPreset(p)}
+                  >
+                    <span className="imcrop__preset-label">{p.label}</span>
+                    <span className="imcrop__preset-size">{p.width}×{p.height}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="imcrop__hint-text">
+                点击预设自动切换比例并填充目标输出尺寸；手动调整比例或尺寸将清除高亮
+              </div>
+            </div>
+
             {/* 比例选择 */}
             <div className="imcrop__field-group">
               <span className="imcrop__field-label">裁剪比例</span>
@@ -498,7 +729,7 @@ export default function ImageCropTool() {
                       name="aspect"
                       value={r.code}
                       checked={aspectCode === r.code}
-                      onChange={() => handleAspectChange(r.code)}
+                      onChange={() => handleAspectChangeWithPreset(r.code)}
                     />
                     <span>{r.label}</span>
                   </label>
@@ -601,6 +832,44 @@ export default function ImageCropTool() {
               </div>
             </div>
 
+            {/* 输出形状：矩形 / 圆形 / 圆角矩形 */}
+            <div className="imcrop__field-group">
+              <span className="imcrop__field-label">输出形状</span>
+              <div className="imcrop__shape-options" role="radiogroup" aria-label="输出形状">
+                {OUTPUT_SHAPES.map((s) => (
+                  <label
+                    key={s.code}
+                    className={`imcrop__shape-item${exportCfg.shape === s.code ? ' imcrop__shape-item--active' : ''}`}
+                    title={s.desc}
+                  >
+                    <input
+                      type="radio"
+                      name="output-shape"
+                      value={s.code}
+                      checked={exportCfg.shape === s.code}
+                      onChange={() => handleShapeChange(s.code)}
+                    />
+                    <span className="imcrop__shape-icon" aria-hidden="true">
+                      {s.code === 'rect' && '▭'}
+                      {s.code === 'circle' && '◯'}
+                      {s.code === 'rounded' && '▢'}
+                    </span>
+                    <span>{s.label}</span>
+                  </label>
+                ))}
+              </div>
+              {exportCfg.shape === 'circle' && (
+                <div className="imcrop__hint-text">
+                  圆形裁剪会自动锁定 1:1 比例；导出 PNG / WebP / AVIF 可保留圆外透明，JPEG 会填充背景色
+                </div>
+              )}
+              {exportCfg.shape === 'rounded' && (
+                <div className="imcrop__hint-text">
+                  圆角半径取较短边的 1/4；导出 PNG / WebP / AVIF 可保留圆角外透明，JPEG 会填充背景色
+                </div>
+              )}
+            </div>
+
             {/* 导出格式 */}
             <div className="imcrop__field-group">
               <span className="imcrop__field-label">导出格式</span>
@@ -654,7 +923,10 @@ export default function ImageCropTool() {
                     type="number"
                     min={0}
                     value={exportCfg.maxWidth}
-                    onChange={(e) => setExportCfg((p) => ({ ...p, maxWidth: Math.max(0, Number(e.target.value)) }))}
+                    onChange={(e) => {
+                      setActivePreset(null);
+                      setExportCfg((p) => ({ ...p, maxWidth: Math.max(0, Number(e.target.value)) }));
+                    }}
                     className="imcrop__number-input"
                   />
                   <span className="imcrop__field-unit">px</span>
@@ -666,7 +938,10 @@ export default function ImageCropTool() {
                     type="number"
                     min={0}
                     value={exportCfg.maxHeight}
-                    onChange={(e) => setExportCfg((p) => ({ ...p, maxHeight: Math.max(0, Number(e.target.value)) }))}
+                    onChange={(e) => {
+                      setActivePreset(null);
+                      setExportCfg((p) => ({ ...p, maxHeight: Math.max(0, Number(e.target.value)) }));
+                    }}
                     className="imcrop__number-input"
                   />
                   <span className="imcrop__field-unit">px</span>
@@ -707,6 +982,215 @@ export default function ImageCropTool() {
               </div>
             )}
           </div>
+        </div>
+      )}
+        </>
+      )}
+
+      {/* 批量模式：多文件统一裁剪 */}
+      {mode === 'batch' && (
+        <div className="imcrop__batch">
+          {error && <div className="imcrop__error" role="alert">{error}</div>}
+
+          {/* 批量上传区 */}
+          {batchFiles.length === 0 && (
+            <div
+              className={`imcrop__dropzone${dragging ? ' imcrop__dropzone--active' : ''}`}
+              onDragOver={onBatchDragOver}
+              onDragLeave={onBatchDragLeave}
+              onDrop={onBatchDrop}
+              onClick={() => batchFileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              aria-label="点击或拖拽上传多张图片进行批量裁剪"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  batchFileInputRef.current?.click();
+                }
+              }}
+            >
+              <div className="imcrop__dropzone-icon" aria-hidden="true">📁</div>
+              <div className="imcrop__dropzone-text">点击上传或拖拽多张图片到此处</div>
+              <div className="imcrop__dropzone-hint">
+                支持 PNG / JPEG / WebP / AVIF / GIF / BMP，单次最多 {MAX_BATCH_COUNT} 张，每张最大 20MB
+              </div>
+              <input
+                ref={batchFileInputRef}
+                type="file"
+                accept={ACCEPTED_INPUT_MIMES.join(',')}
+                multiple
+                onChange={(e) => handleBatchFiles(e.target.files)}
+                hidden
+              />
+            </div>
+          )}
+
+          {/* 批量配置摘要 + 文件列表 */}
+          {batchFiles.length > 0 && (
+            <>
+              <div className="imcrop__batch-summary">
+                <div className="imcrop__batch-summary-item">
+                  <span className="imcrop__batch-summary-label">文件数</span>
+                  <span className="imcrop__batch-summary-value">{batchFiles.length}</span>
+                </div>
+                <div className="imcrop__batch-summary-item">
+                  <span className="imcrop__batch-summary-label">裁剪比例</span>
+                  <span className="imcrop__batch-summary-value">
+                    {aspectCode === 'free' ? '自由（最大化居中）' : aspectCode === 'custom' ? `${customRatioW}:${customRatioH}` : aspectCode}
+                  </span>
+                </div>
+                <div className="imcrop__batch-summary-item">
+                  <span className="imcrop__batch-summary-label">输出形状</span>
+                  <span className="imcrop__batch-summary-value">
+                    {OUTPUT_SHAPES.find((s) => s.code === exportCfg.shape)?.label}
+                  </span>
+                </div>
+                <div className="imcrop__batch-summary-item">
+                  <span className="imcrop__batch-summary-label">导出格式</span>
+                  <span className="imcrop__batch-summary-value">
+                    {OUTPUT_FORMATS.find((f) => f.mime === exportCfg.format)?.label}
+                  </span>
+                </div>
+                {exportCfg.maxWidth > 0 && exportCfg.maxHeight > 0 && (
+                  <div className="imcrop__batch-summary-item">
+                    <span className="imcrop__batch-summary-label">目标尺寸</span>
+                    <span className="imcrop__batch-summary-value">{exportCfg.maxWidth}×{exportCfg.maxHeight}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 批量操作按钮 */}
+              <div className="imcrop__batch-actions">
+                <button
+                  type="button"
+                  className="imcrop__btn imcrop__btn--primary"
+                  onClick={runBatchCrop}
+                  disabled={batchProcessing}
+                >
+                  {batchProcessing ? `处理中 ${batchProgress.current}/${batchProgress.total}` : '开始批量裁剪'}
+                </button>
+                {batchItems.some((it) => it.result) && (
+                  <button
+                    type="button"
+                    className="imcrop__btn imcrop__btn--ghost"
+                    onClick={downloadAllBatch}
+                    disabled={batchDownloading}
+                  >
+                    {batchDownloading ? '下载中...' : '全部下载'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="imcrop__btn imcrop__btn--ghost"
+                  onClick={clearBatch}
+                  disabled={batchProcessing || batchDownloading}
+                >
+                  清空
+                </button>
+                <button
+                  type="button"
+                  className="imcrop__btn imcrop__btn--ghost"
+                  onClick={() => batchFileInputRef.current?.click()}
+                  disabled={batchProcessing || batchDownloading}
+                >
+                  添加文件
+                </button>
+                <input
+                  ref={batchFileInputRef}
+                  type="file"
+                  accept={ACCEPTED_INPUT_MIMES.join(',')}
+                  multiple
+                  onChange={(e) => {
+                    // 追加文件（合并去重）
+                    if (e.target.files) {
+                      const newFiles = Array.from(e.target.files);
+                      setBatchFiles((prev) => {
+                        const merged = [...prev, ...newFiles].slice(0, MAX_BATCH_COUNT);
+                        return merged;
+                      });
+                    }
+                    if (batchFileInputRef.current) batchFileInputRef.current.value = '';
+                  }}
+                  hidden
+                />
+              </div>
+
+              {/* 处理进度条 */}
+              {batchProcessing && batchProgress.total > 0 && (
+                <div className="imcrop__batch-progress">
+                  <div
+                    className="imcrop__batch-progress-bar"
+                    style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                  />
+                  <span className="imcrop__batch-progress-text">
+                    {batchProgress.current} / {batchProgress.total}
+                  </span>
+                </div>
+              )}
+
+              {/* 文件列表 / 结果列表 */}
+              <div className="imcrop__batch-list">
+                {batchFiles.map((file, index) => {
+                  const item = batchItems[index];
+                  const hasResult = item?.result;
+                  const hasError = item?.error;
+                  return (
+                    <div key={`${file.name}-${index}`} className="imcrop__batch-item">
+                      <div className="imcrop__batch-item-info">
+                        <span className="imcrop__batch-item-name" title={file.name}>{file.name}</span>
+                        <span className="imcrop__batch-item-meta">
+                          {formatBytes(file.size)}
+                          {hasResult && ` · ${item.result!.width}×${item.result!.height}px · ${formatBytes(item.result!.size)}`}
+                          {hasError && ` · 错误：${item.error}`}
+                        </span>
+                      </div>
+                      <div className="imcrop__batch-item-actions">
+                        {hasResult && (
+                          <>
+                            <img
+                              src={item.result!.url}
+                              alt={`${file.name} 裁剪结果`}
+                              className="imcrop__batch-item-thumb"
+                            />
+                            <button
+                              type="button"
+                              className="imcrop__btn imcrop__btn--ghost imcrop__btn--small"
+                              onClick={() => downloadBlob(item.result!.url, buildCropFilename(file.name, item.result!.mime))}
+                            >
+                              下载
+                            </button>
+                          </>
+                        )}
+                        {!hasResult && !hasError && (
+                          <span className="imcrop__batch-item-status">
+                            {batchProcessing ? '等待中' : '待处理'}
+                          </span>
+                        )}
+                        {hasError && (
+                          <span className="imcrop__batch-item-status imcrop__batch-item-status--error">失败</span>
+                        )}
+                        {!batchProcessing && !hasResult && (
+                          <button
+                            type="button"
+                            className="imcrop__btn imcrop__btn--ghost imcrop__btn--small"
+                            onClick={() => removeBatchFile(index)}
+                            aria-label={`移除 ${file.name}`}
+                          >
+                            移除
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="imcrop__hint-text">
+                批量模式按当前比例自动居中裁剪每张图片；如需精细调整单张图片的裁剪区域，请切换到「单图精细裁剪」模式
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -131,6 +131,8 @@ export interface CropOptions {
   maxHeight: number;
   /** JPEG 等不支持透明格式的背景色 */
   background: string;
+  /** 输出形状：矩形 / 圆形 / 圆角矩形 */
+  shape: OutputShape;
 }
 
 /** 默认裁剪配置 */
@@ -140,10 +142,64 @@ export const DEFAULT_CROP_OPTIONS: Omit<CropOptions, 'rect'> = {
   maxWidth: 0,
   maxHeight: 0,
   background: '#ffffff',
+  shape: 'rect',
 };
 
 /** 最小裁剪尺寸（避免过小导致难以操作与编码失败） */
 export const MIN_CROP_SIZE = 8;
+
+/** 输出形状（用于圆形 / 圆角矩形裁剪，主要服务头像场景） */
+export type OutputShape = 'rect' | 'circle' | 'rounded';
+
+/** 输出形状元数据 */
+export interface OutputShapeMeta {
+  code: OutputShape;
+  label: string;
+  desc: string;
+}
+
+/** 输出形状清单（UI 渲染顺序） */
+export const OUTPUT_SHAPES: OutputShapeMeta[] = [
+  { code: 'rect', label: '矩形', desc: '标准矩形裁剪，适用于所有场景' },
+  { code: 'circle', label: '圆形', desc: '正圆裁剪，头像 / Logo 场景' },
+  { code: 'rounded', label: '圆角', desc: '圆角矩形裁剪，App 图标风格' },
+];
+
+/** 预设尺寸元数据（社交媒体常用尺寸，方便用户一键应用） */
+export interface PresetSizeMeta {
+  code: string;
+  label: string;
+  /** 目标输出宽度（px） */
+  width: number;
+  /** 目标输出高度（px） */
+  height: number;
+  /** 推荐的裁剪比例代码（用于联动比例选择） */
+  aspect: AspectRatioCode;
+  desc: string;
+}
+
+/**
+ * 社交媒体常用预设尺寸清单
+ * - 点击预设时自动切换比例 + 填充等比缩放（maxWidth / maxHeight）
+ * - 比例锁定用于裁剪框形状，maxWidth/maxHeight 用于输出尺寸
+ */
+export const PRESET_SIZES: PresetSizeMeta[] = [
+  { code: 'wechat-avatar', label: '微信头像', width: 640, height: 640, aspect: '1:1', desc: '640×640，正方形' },
+  { code: 'wechat-moment', label: '朋友圈封面', width: 1080, height: 1920, aspect: '9:16', desc: '1080×1920，竖版全屏' },
+  { code: 'weibo-avatar', label: '微博头像', width: 180, height: 180, aspect: '1:1', desc: '180×180，正方形' },
+  { code: 'douyin-cover', label: '抖音封面', width: 1080, height: 1920, aspect: '9:16', desc: '1080×1920，竖版短视频' },
+  { code: 'youtube-thumb', label: 'YouTube 缩略图', width: 1280, height: 720, aspect: '16:9', desc: '1280×720，16:9 宽屏' },
+  { code: 'bilibili-cover', label: 'B 站封面', width: 1146, height: 717, aspect: '16:9', desc: '1146×717，约 16:10' },
+  { code: 'twitter-avatar', label: 'Twitter 头像', width: 400, height: 400, aspect: '1:1', desc: '400×400，正方形' },
+  { code: 'twitter-cover', label: 'Twitter 封面', width: 1500, height: 500, aspect: '3:2', desc: '1500×500，3:1 横幅' },
+  { code: 'facebook-avatar', label: 'Facebook 头像', width: 170, height: 170, aspect: '1:1', desc: '170×170，正方形' },
+  { code: 'facebook-cover', label: 'Facebook 封面', width: 820, height: 312, aspect: '3:2', desc: '820×312，横幅' },
+  { code: 'instagram-square', label: 'IG 方形', width: 1080, height: 1080, aspect: '1:1', desc: '1080×1080，正方形' },
+  { code: 'instagram-portrait', label: 'IG 竖版', width: 1080, height: 1350, aspect: '3:4', desc: '1080×1350，4:5 竖版' },
+  { code: 'instagram-story', label: 'IG Story', width: 1080, height: 1920, aspect: '9:16', desc: '1080×1920，9:16 故事' },
+  { code: 'linkedin-avatar', label: 'LinkedIn 头像', width: 400, height: 400, aspect: '1:1', desc: '400×400，正方形' },
+  { code: 'linkedin-cover', label: 'LinkedIn 封面', width: 1584, height: 396, aspect: '3:2', desc: '1584×396，4:1 横幅' },
+];
 
 /**
  * 计算给定比例下的初始居中裁剪矩形
@@ -349,9 +405,36 @@ function computeTargetSize(srcW: number, srcH: number, maxWidth: number, maxHeig
 }
 
 /**
+ * 手动绘制圆角矩形路径（兼容性降级：roundRect 是 Baseline 2023，部分老浏览器不支持）
+ * - 仅构建路径，不填充不描边，调用方需自行 fill/stroke/clip
+ */
+function drawRoundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  // 圆角半径不能超过边长的一半
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+}
+
+/**
  * 执行裁剪：使用 drawImage 源矩形参数从原图截取指定区域
  * - 不支持透明的格式（JPEG）会先填充背景色
  * - PNG 无损：quality 参数不生效
+ * - shape='circle' 正圆遮罩（建议配合 1:1 比例，否则为内切椭圆视觉效果）
+ * - shape='rounded' 圆角矩形遮罩（圆角半径 = 较短边 / 4）
  */
 export function cropImage(source: SourceImage, options: CropOptions): Promise<CropResult> {
   return new Promise((resolve, reject) => {
@@ -359,7 +442,7 @@ export function cropImage(source: SourceImage, options: CropOptions): Promise<Cr
     const img = new Image();
     img.onload = () => {
       try {
-        const { rect, format, quality, maxWidth, maxHeight, background } = options;
+        const { rect, format, quality, maxWidth, maxHeight, background, shape } = options;
         // 校验裁剪矩形
         if (rect.width <= 0 || rect.height <= 0) {
           reject(new Error('裁剪区域无效，宽高必须大于 0'));
@@ -380,12 +463,37 @@ export function cropImage(source: SourceImage, options: CropOptions): Promise<Cr
           return;
         }
 
-        // 不支持透明的格式先填背景色，避免透明区域变黑
+        // 不支持透明的格式先填背景色，避免透明区域变黑（针对 JPEG）
         const targetMeta = OUTPUT_FORMATS.find((f) => f.mime === format);
         if (targetMeta && !targetMeta.alpha) {
           ctx.fillStyle = background;
           ctx.fillRect(0, 0, target.width, target.height);
         }
+
+        // 非矩形形状：先 clip 再 drawImage，让形状外保持透明（PNG）或背景色（JPEG）
+        const needsClip = shape !== 'rect';
+        if (needsClip) {
+          ctx.save();
+          ctx.beginPath();
+          if (shape === 'circle') {
+            // 正圆：以画布中心为圆心，较短边的一半为半径
+            const cx = target.width / 2;
+            const cy = target.height / 2;
+            const radius = Math.min(cx, cy);
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          } else if (shape === 'rounded') {
+            // 圆角矩形：圆角半径取较短边的 1/4，兼顾视觉与可识别性
+            const radius = Math.min(target.width, target.height) / 4;
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(0, 0, target.width, target.height, radius);
+            } else {
+              drawRoundedRectPath(ctx, 0, 0, target.width, target.height, radius);
+            }
+          }
+          ctx.closePath();
+          ctx.clip();
+        }
+
         // 关键：drawImage 源矩形参数实现裁剪
         ctx.drawImage(
           img,
@@ -398,6 +506,10 @@ export function cropImage(source: SourceImage, options: CropOptions): Promise<Cr
           target.width,
           target.height,
         );
+
+        if (needsClip) {
+          ctx.restore();
+        }
 
         const qualityParam = targetMeta?.lossy ? quality / 100 : undefined;
         canvas.toBlob(
@@ -434,4 +546,84 @@ export function buildCropFilename(originalName: string, mime: OutputMime): strin
   const dotIdx = originalName.lastIndexOf('.');
   const base = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
   return `${base}-cropped.${extFromMime(mime)}`;
+}
+
+/** 批量裁剪单项结果 */
+export interface BatchCropItem {
+  /** 原始文件名 */
+  name: string;
+  /** 原图尺寸（加载失败时为 0） */
+  sourceWidth: number;
+  sourceHeight: number;
+  /** 裁剪结果（失败时为 null） */
+  result: CropResult | null;
+  /** 错误信息（成功时为 null） */
+  error: string | null;
+}
+
+/**
+ * 批量裁剪：对多张图片按统一比例 + 形状 + 格式顺序处理
+ * - 每张图按当前比例自动居中裁剪（不显示裁剪框，适合批量统一处理）
+ * - 顺序执行避免内存堆积，每张处理完立即回调进度
+ * - 单张失败不影响其他图片，错误记录在 item.error
+ * - 调用方负责在卸载时 revokeObjectURL 所有 result.url
+ */
+export async function cropBatch(
+  files: File[],
+  options: Omit<CropOptions, 'rect'>,
+  ratio: number | null,
+  onProgress?: (index: number, total: number, item: BatchCropItem) => void,
+): Promise<BatchCropItem[]> {
+  const results: BatchCropItem[] = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    let item: BatchCropItem;
+    try {
+      const source = await loadImage(file);
+      const rect = computeInitialRect(source.width, source.height, ratio);
+      const result = await cropImage(source, { ...options, rect });
+      item = {
+        name: file.name,
+        sourceWidth: source.width,
+        sourceHeight: source.height,
+        result,
+        error: null,
+      };
+      // 加载后立即释放 source.url（result.url 是独立的，不受影响）
+      URL.revokeObjectURL(source.url);
+    } catch (e) {
+      item = {
+        name: file.name,
+        sourceWidth: 0,
+        sourceHeight: 0,
+        result: null,
+        error: e instanceof Error ? e.message : String(e),
+      };
+    }
+    results.push(item);
+    onProgress?.(i, files.length, item);
+  }
+  return results;
+}
+
+/**
+ * 批量下载：逐个触发下载，间隔 200ms 避免浏览器拦截
+ * - 浏览器对连续多文件下载有限制（Chrome 5+ 弹授权，Firefox 默认阻止，Safari 仅触发首个）
+ * - 200ms 间隔是经验值，兼顾速度与稳定性
+ */
+export async function downloadBatch(
+  items: BatchCropItem[],
+  onProgress?: (index: number, total: number) => void,
+): Promise<void> {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.result) {
+      downloadBlob(item.result.url, buildCropFilename(item.name, item.result.mime));
+      onProgress?.(i + 1, items.length);
+      // 间隔 200ms，最后一个不等待
+      if (i < items.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+    }
+  }
 }

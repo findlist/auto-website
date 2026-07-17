@@ -155,6 +155,41 @@ const meta: SiteMeta = {
     gap: 20px;
   }
 
+  /* 模式切换 Tab：单图精细裁剪 / 批量统一裁剪 */
+  .imcrop__mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .imcrop__mode-tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imcrop__mode-tab:hover {
+    color: var(--color-text);
+    background: var(--color-bg, #fff);
+  }
+
+  .imcrop__mode-tab--active {
+    background: var(--color-bg, #fff);
+    color: #2b6cff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
   /* 拖拽上传区 */
   .imcrop__dropzone {
     display: flex;
@@ -364,6 +399,55 @@ const meta: SiteMeta = {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 
+  /* 预设尺寸网格：2 列布局，每项含标签 + 尺寸 */
+  .imcrop__preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .imcrop__preset-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imcrop__preset-item:hover {
+    border-color: #2b6cff;
+    color: #2b6cff;
+  }
+
+  .imcrop__preset-label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .imcrop__preset-size {
+    font-size: 11px;
+    opacity: 0.7;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .imcrop__preset-item--active {
+    border-color: #2b6cff;
+    background: rgba(43, 108, 255, 0.08);
+    color: #2b6cff;
+  }
+
+  .imcrop__preset-item--active .imcrop__preset-size {
+    opacity: 0.85;
+  }
+
   /* 比例网格 */
   .imcrop__ratio-grid {
     display: grid;
@@ -473,6 +557,45 @@ const meta: SiteMeta = {
   }
 
   /* 格式选项 */
+  /* 输出形状选项：3 列布局，每项含图标 + 标签 */
+  .imcrop__shape-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .imcrop__shape-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imcrop__shape-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .imcrop__shape-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .imcrop__shape-item--active {
+    border-color: #2b6cff;
+    background: rgba(43, 108, 255, 0.08);
+    color: #2b6cff;
+    font-weight: 600;
+  }
+
   .imcrop__format-options {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -614,6 +737,166 @@ const meta: SiteMeta = {
     display: inline-block;
   }
 
+  /* 批量模式容器 */
+  .imcrop__batch {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 配置摘要：4 列网格展示关键参数 */
+  .imcrop__batch-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .imcrop__batch-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .imcrop__batch-summary-label {
+    font-size: 11px;
+    color: var(--color-text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .imcrop__batch-summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 批量操作按钮组 */
+  .imcrop__batch-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* 处理进度条 */
+  .imcrop__batch-progress {
+    position: relative;
+    height: 24px;
+    background: var(--color-bg-elevated, rgba(0, 0, 0, 0.06));
+    border-radius: var(--radius-sm, 4px);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  .imcrop__batch-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #2b6cff, #4f8aff);
+    transition: width 0.2s ease;
+  }
+
+  .imcrop__batch-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  }
+
+  /* 文件列表 */
+  .imcrop__batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  .imcrop__batch-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    transition: border-color var(--transition-fast, 0.15s);
+  }
+
+  .imcrop__batch-item:hover {
+    border-color: #2b6cff;
+  }
+
+  .imcrop__batch-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .imcrop__batch-item-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imcrop__batch-item-meta {
+    font-size: 11px;
+    color: var(--color-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .imcrop__batch-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .imcrop__batch-item-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--color-border);
+  }
+
+  .imcrop__batch-item-status {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    padding: 4px 10px;
+    background: var(--color-bg-elevated, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .imcrop__batch-item-status--error {
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.1);
+  }
+
   /* 响应式：768px 单列堆叠 */
   @media (max-width: 768px) {
     .imcrop__workspace {
@@ -628,6 +911,15 @@ const meta: SiteMeta = {
     .imcrop__ratio-grid {
       grid-template-columns: repeat(2, 1fr);
     }
+    /* 批量摘要：4 列 → 2 列 */
+    .imcrop__batch-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    /* 批量列表项：缩略图 + 信息 + 操作纵向排列更紧凑 */
+    .imcrop__batch-item-thumb {
+      width: 32px;
+      height: 32px;
+    }
   }
 
   /* 响应式：414px 紧凑布局 */
@@ -638,12 +930,38 @@ const meta: SiteMeta = {
     .imcrop__panel {
       padding: 14px;
     }
+    .imcrop__preset-grid {
+      grid-template-columns: 1fr;
+    }
     .imcrop__quick-actions {
       flex-wrap: wrap;
     }
     .imcrop__btn {
       padding: 8px 12px;
       font-size: 13px;
+    }
+    /* 模式 Tab：紧凑内边距 */
+    .imcrop__mode-tab {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    /* 批量摘要：单列堆叠，便于阅读 */
+    .imcrop__batch-summary {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    /* 批量操作按钮：换行排布，每按钮等宽 */
+    .imcrop__batch-actions .imcrop__btn {
+      flex: 1 1 calc(50% - 8px);
+    }
+    /* 批量列表项：信息与操作换行 */
+    .imcrop__batch-item {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .imcrop__batch-item-actions {
+      justify-content: flex-end;
     }
   }
 
@@ -656,9 +974,15 @@ const meta: SiteMeta = {
     border-color: #4f8aff;
   }
   :global([data-theme='dark']) .imcrop__ratio-item--active,
-  :global([data-theme='dark']) .imcrop__format-item--active {
+  :global([data-theme='dark']) .imcrop__format-item--active,
+  :global([data-theme='dark']) .imcrop__preset-item--active,
+  :global([data-theme='dark']) .imcrop__shape-item--active {
     border-color: #4f8aff;
     background: rgba(79, 138, 255, 0.15);
+    color: #8ab4ff;
+  }
+  :global([data-theme='dark']) .imcrop__preset-item:hover {
+    border-color: #4f8aff;
     color: #8ab4ff;
   }
   :global([data-theme='dark']) .imcrop__btn--primary {
@@ -679,5 +1003,34 @@ const meta: SiteMeta = {
       linear-gradient(-45deg, transparent 75%, #333 75%);
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+  /* 暗色模式：模式 Tab、批量进度条、批量列表项 */
+  :global([data-theme='dark']) .imcrop__mode-tabs {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  :global([data-theme='dark']) .imcrop__mode-tab {
+    color: var(--color-text-soft);
+  }
+  :global([data-theme='dark']) .imcrop__mode-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text);
+  }
+  :global([data-theme='dark']) .imcrop__mode-tab--active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #8ab4ff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  :global([data-theme='dark']) .imcrop__batch-item:hover {
+    border-color: #4f8aff;
+  }
+  :global([data-theme='dark']) .imcrop__batch-progress-bar {
+    background: linear-gradient(90deg, #4f8aff, #6ba0ff);
+  }
+  :global([data-theme='dark']) .imcrop__batch-progress-text {
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  }
+  :global([data-theme='dark']) .imcrop__batch-item-status--error {
+    color: #f87171;
+    background: rgba(220, 38, 38, 0.18);
   }
 </style>
