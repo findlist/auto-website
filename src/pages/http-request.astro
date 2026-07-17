@@ -1,0 +1,658 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import HttpRequestTool from '../components/HttpRequestTool.tsx';
+
+const meta: SiteMeta = {
+  title: 'HTTP 请求代码生成器 - cURL/fetch/axios/Python/Go 多语言互转',
+  description:
+    '在线 HTTP 请求代码生成器：统一配置 URL、方法、Headers、认证与请求体，一键生成 cURL、JavaScript fetch、axios、Python requests、Go net/http 五种语言客户端调用代码。支持 Basic / Bearer / API Key 认证，JSON / Form / x-www-form-urlencoded 请求体，超时与重定向控制。全本地处理，零广告零追踪。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'HTTP 请求代码生成器',
+    description: '在线生成 5 种主流语言 HTTP 客户端调用代码（cURL / fetch / axios / Python requests / Go net/http），支持 Basic / Bearer / API Key 认证与多种请求体格式。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>HTTP 请求代码生成器</h1>
+      <p>
+        统一配置请求参数，一键生成 <strong>5 种主流语言</strong>客户端调用代码：
+        <code>cURL</code>（命令行）、<code>JavaScript fetch</code>（浏览器原生）、
+        <code>axios</code>（主流第三方库）、<code>Python requests</code>、
+        <code>Go net/http</code>。支持 <strong>4 种认证方式</strong>
+        （无认证 / Basic / Bearer Token / API Key），
+        <strong>5 种请求体格式</strong>（JSON / Form-Data / x-www-form-urlencoded / Raw / 无），
+        高级选项含<strong>超时、重定向跟随、SSL 证书校验</strong>。内置 6 个高频预设场景，
+        覆盖 GET 查询、POST 创建、PUT 更新、表单提交、Basic 认证、API Key 调用。
+        适用于跨语言 API 调用代码转换、客户端 SDK 文档示例生成、Postman 替代、
+        接口调试与教学等场景，所有配置仅在浏览器本地处理，零上传零追踪。
+      </p>
+    </div>
+
+    <HttpRequestTool client:load />
+
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+      <details>
+        <summary>这个工具和 HTTP Header 工具有什么区别？应该用哪个？</summary>
+        <p>
+          两个工具定位互补，按需求选择：<br />
+          <strong>HTTP Header 工具</strong>（<a href="/http-headers">/http-headers</a>）：
+          专注<strong>Header 本身</strong>，内置 40+ 常用 Header 速查表，支持解析原始报文与 cURL -H 文本，
+          生成器仅支持 cURL + JavaScript fetch 两种语言，适合 Header 学习与调试场景。<br />
+          <strong>HTTP 请求代码生成器</strong>（本工具）：
+          专注<strong>多语言代码生成</strong>，支持 cURL / fetch / axios / Python requests / Go net/http
+          共 5 种语言，认证方式与请求体格式更丰富（4 种认证 + 5 种请求体），含超时/重定向/SSL 高级选项，
+          适合跨语言 API 调用代码转换、SDK 文档示例生成、接口调试等场景。<br />
+          简单需求（仅需 cURL/fetch）用 Header 工具的生成器即可；
+          跨语言代码转换、多认证方式、多请求体格式场景使用本工具。
+        </p>
+      </details>
+      <details>
+        <summary>Basic Auth 和 Bearer Token 有什么区别？什么场景用哪个？</summary>
+        <p>
+          <strong>Basic Auth</strong>（HTTP 基本认证）：客户端发送
+          <code>Authorization: Basic &lt;base64(user:pass)&gt;</code> 头。
+          用户名密码用 Base64 编码（<strong>非加密</strong>），必须配合 HTTPS 使用。
+          适合内部系统、简单 API、设备认证等场景。优点是协议简单通用，缺点是凭证每次都传输、
+          无法细粒度授权、密码泄露即获得全部权限。<br />
+          <strong>Bearer Token</strong>（持有者令牌）：客户端发送
+          <code>Authorization: Bearer &lt;token&gt;</code> 头。Token 由服务端签发，
+          通常为 JWT（含签名、过期时间、自定义声明）。适合现代 RESTful API、OAuth2 授权、
+          单点登录（SSO）等场景。优点是 Token 可携带权限声明、可独立吊销、可设置短时效，
+          缺点是需要 Token 签发与管理基础设施。<br />
+          <strong>选型建议</strong>：新项目优先用 Bearer Token（JWT），
+          老系统集成或简单内部 API 可用 Basic Auth，第三方开放 API 多用 API Key（自定义 Header）。
+        </p>
+      </details>
+      <details>
+        <summary>API Key 注入到 Header 还是 Query 参数？有什么区别？</summary>
+        <p>
+          <strong>Header 注入</strong>（如 <code>X-API-Key: abc123</code>）：
+          <br />
+          - 不会出现在 URL 中，<strong>不会被日志、Referer、浏览器历史记录泄露</strong><br />
+          - 不会进入 CDN / 反向代理访问日志<br />
+          - 支持 HTTP/2 头部压缩，性能略优<br />
+          - 推荐 99% 的场景使用<br />
+          <strong>Query 参数注入</strong>（如 <code>?api_key=abc123</code>）：
+          <br />
+          - URL 中明文携带密钥，<strong>会泄露到访问日志、Referer、浏览器历史</strong><br />
+          - 易于测试（直接浏览器访问）<br />
+          - 适合 GET 请求的简单测试场景或客户端无法自定义 Header 的场景（如 &lt;img&gt; 标签）<br />
+          - 生产环境应避免，必要时配合短时效签名 URL<br />
+          <strong>本工具支持两种方式</strong>，在「认证」选择 API Key 后可切换 Header / Query。
+        </p>
+      </details>
+      <details>
+        <summary>JSON 请求体和 Form 请求体有什么区别？什么时候用哪个？</summary>
+        <p>
+          <strong>JSON 请求体</strong>（<code>Content-Type: application/json</code>）：
+          <br />
+          - 结构化数据，支持嵌套对象与数组<br />
+          - RESTful API 主流格式，现代前后端分离项目首选<br />
+          - 字符编码 UTF-8，支持中文与 Emoji<br />
+          - 浏览器需手动 <code>JSON.stringify</code>，服务端需 <code>JSON.parse</code><br />
+          <strong>Form 请求体</strong>：
+          <br />
+          - <code>application/x-www-form-urlencoded</code>：传统 HTML 表单提交，键值对用 <code>&amp;</code> 连接、
+          <code>=</code> 分隔，值会 URL 编码。适合简单键值对（如登录表单）。<br />
+          - <code>multipart/form-data</code>：每个字段一段，支持二进制数据（文件上传）。
+          适合文件上传场景。浏览器用 <code>FormData</code> 对象构造。<br />
+          <strong>选型建议</strong>：<br />
+          - 文件上传：必须用 <code>multipart/form-data</code><br />
+          - 简单表单（无嵌套）：可用 <code>x-www-form-urlencoded</code>，但 JSON 也行<br />
+          - 复杂结构数据：优先 <code>application/json</code><br />
+          - 老系统兼容：根据服务端能力选择
+        </p>
+      </details>
+      <details>
+        <summary>生成的代码会自动加上 Content-Type 头吗？</summary>
+        <p>
+          <strong>会，但仅在用户未显式指定 Content-Type 时自动注入</strong>：<br />
+          - JSON 请求体：自动加 <code>Content-Type: application/json</code><br />
+          - x-www-form-urlencoded 请求体：自动加 <code>Content-Type: application/x-www-form-urlencoded</code><br />
+          - multipart/form-data 请求体：<strong>不自动加</strong>，由客户端库（如浏览器 FormData、Python requests）
+          自动设置带 boundary 的完整 Content-Type。cURL 用 <code>-F</code> 也会自动处理。<br />
+          - Raw 请求体：<strong>不自动加</strong>，由用户根据实际格式自行指定（如 XML、HTML、自定义 MIME）<br />
+          - 无请求体（GET / HEAD）：不加 Content-Type<br />
+          <strong>注意</strong>：若用户在 Headers 编辑器中已添加 Content-Type（不论大小写），
+          生成器不会覆盖用户值，便于自定义 charset（如 <code>application/json; charset=utf-8</code>）。
+        </p>
+      </details>
+      <details>
+        <summary>fetch 没有原生 timeout 选项，代码是怎么实现超时的？</summary>
+        <p>
+          fetch API 设计上不直接支持 timeout 选项（设计哲学是 AbortController 显式控制）。
+          本工具生成的代码使用 <strong>AbortSignal.timeout(ms)</strong> 实现超时：<br />
+          <code>signal: AbortSignal.timeout(30000)</code><br />
+          该 API 在 <strong>Chrome 103+ / Firefox 100+ / Safari 16.4+</strong> 进入 Baseline，
+          生产可用。超时后会抛出 <code>TimeoutError</code>（DOMException 子类），
+          可在 try/catch 中识别。<br />
+          <strong>兼容旧浏览器的写法</strong>：手动构造 AbortController + setTimeout：<br />
+          <code>const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 30000);
+          fetch(url, &#123; signal: ctrl.signal &#125;);</code><br />
+          <strong>其他语言</strong>：axios 原生支持 <code>timeout</code> 选项（毫秒）；
+          Python requests 的 <code>timeout</code> 单位是秒（已自动转换）；
+          Go 用 <code>http.Client.Timeout</code>（time.Duration）；cURL 用 <code>--max-time</code>（秒）。
+        </p>
+      </details>
+      <details>
+        <summary>关闭 SSL 证书校验安全吗？什么场景需要？</summary>
+        <p>
+          <strong>不安全，仅在受控的测试或开发环境使用，生产环境必须开启</strong>。<br />
+          关闭 SSL 校验（即不验证服务端证书合法性）会导致：<br />
+          - 中间人攻击（MITM）：攻击者可冒充服务端截获通信<br />
+          - 证书过期/吊销/域名不匹配不报错，掩盖安全问题<br />
+          - 自签名证书的内部服务可正常访问，但丧失身份校验<br />
+          <strong>合理使用场景</strong>：<br />
+          - 本地开发：自签名证书的内部 API（如 <code>https://localhost:8443</code>）<br />
+          - 测试环境：临时证书或内网服务<br />
+          - 调试：排查证书链问题<br />
+          <strong>各语言实现</strong>：<br />
+          - cURL：<code>-k</code> 或 <code>--insecure</code><br />
+          - fetch：浏览器无法关闭证书校验（安全策略），仅 Node.js 18+ 通过环境变量
+          <code>NODE_TLS_REJECT_UNAUTHORIZED=0</code><br />
+          - axios（Node.js）：通过 <code>httpsAgent: new https.Agent(&#123; rejectUnauthorized: false &#125;)</code><br />
+          - Python requests：<code>verify=False</code>（会打印 InsecureRequestWarning，已自动禁用警告）<br />
+          - Go：<code>http.Transport.TLSClientConfig: &amp;tls.Config&#123;InsecureSkipVerify: true&#125;</code>
+        </p>
+      </details>
+      <details>
+        <summary>这个工具会上传我的请求配置吗？生成的代码安全吗？</summary>
+        <p>
+          <strong>完全本地处理，零上传</strong>：<br />
+          - 你输入的 URL、方法、Headers、认证凭证、请求体<strong>仅在浏览器内存中处理</strong>，
+          不发送到任何服务器。<br />
+          - 生成的代码<strong>仅在你本地浏览器中显示</strong>，点击复制按钮才会写入剪贴板。<br />
+          - 无 Cookie 追踪、无第三方统计、无广告。<br />
+          - 适合处理含 <code>Authorization</code>、<code>Cookie</code>、<code>API Key</code>
+          等敏感凭证的请求配置。<br />
+          <strong>注意</strong>：本工具<strong>仅生成代码不发起请求</strong>——生成的 cURL 命令需你复制到终端执行，
+          生成的 fetch / axios / Python / Go 代码需你复制到项目运行。本工具不会主动调用你输入的 URL，
+          不会触发任何真实网络请求。<br />
+          <strong>提醒</strong>：分享或粘贴生成的代码到外部环境时，请确认已脱敏（如把真实 Token 替换为占位符）。
+        </p>
+      </details>
+    </section>
+
+    <section class="related-links" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul>
+        <li><a href="/http-headers">HTTP Header 解析与生成工具</a> — 内置 40+ Header 速查表，含 cURL/fetch 简单生成器，与本工具互补</li>
+        <li><a href="/http-status">HTTP 状态码查询工具</a> — 查询 1xx-5xx 状态码含义，配合本工具生成的代码做错误排查</li>
+        <li><a href="/user-agent">User-Agent 解析与识别工具</a> — 识别 UA 字符串中的浏览器、操作系统、设备类型与爬虫</li>
+        <li><a href="/jwt">JWT 解码工具</a> — 解码 Bearer Token 中的 JWT 令牌内容（header / payload / signature）</li>
+        <li><a href="/jwt-verify">JWT 签名验证工具</a> — 验证 Bearer Token 中 JWT 的签名有效性</li>
+        <li><a href="/url">URL 解析与编码工具</a> — 解析请求 URL 的协议、host、path、query 参数结构</li>
+      </ul>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  /* 工具页专属样式：hr 命名空间（http-request） */
+
+  .hr__container {
+    margin: 24px 0;
+  }
+
+  /* 预设场景按钮组 */
+  .hr__presets {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+  }
+
+  .hr__presets-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted, #6b7280);
+    white-space: nowrap;
+  }
+
+  .hr__presets-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hr__preset-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hr__preset-btn:hover {
+    border-color: var(--color-accent, #2563eb);
+    color: var(--color-accent, #2563eb);
+  }
+
+  /* 主布局：左右两栏 */
+  .hr__layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .hr__config,
+  .hr__output {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg);
+    overflow: hidden;
+  }
+
+  .hr__config {
+    padding: 16px;
+  }
+
+  /* 配置面板分节 */
+  .hr__section {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hr__section:first-child {
+    padding-top: 0;
+  }
+
+  .hr__section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .hr__section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .hr__section-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 通用控件 */
+  .hr__input,
+  .hr__select,
+  .hr__textarea {
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .hr__textarea {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .hr__input:focus,
+  .hr__select:focus,
+  .hr__textarea:focus {
+    outline: 2px solid var(--color-accent, #2563eb);
+    outline-offset: 1px;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  /* URL 行布局：方法 + URL */
+  .hr__row--url {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 8px;
+  }
+
+  .hr__select--method {
+    width: 100%;
+    font-weight: 600;
+    color: var(--color-accent, #2563eb);
+  }
+
+  .hr__select--sm {
+    width: auto;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  /* 键值对列表（Headers / Form 字段） */
+  .hr__kv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hr__kv-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 32px;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .hr__input--key,
+  .hr__input--val {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* 按钮 */
+  .hr__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hr__btn--ghost {
+    background: transparent;
+  }
+
+  .hr__btn--ghost:hover {
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+  }
+
+  .hr__btn--primary {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .hr__btn--primary:hover {
+    opacity: 0.9;
+  }
+
+  .hr__btn--sm {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .hr__btn--icon {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--color-text-muted, #6b7280);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hr__btn--icon:hover {
+    color: #dc2626;
+    border-color: #dc2626;
+  }
+
+  /* 提示与空状态 */
+  .hr__hint {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    margin: 4px 0 8px;
+  }
+
+  .hr__empty-inline {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    margin: 8px 0;
+  }
+
+  /* 单选按钮组（API Key 注入位置） */
+  .hr__radio-group {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .hr__radio {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+
+  /* 高级选项 */
+  .hr__advanced {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .hr__field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .hr__field-label {
+    color: var(--color-text-muted, #6b7280);
+    min-width: 100px;
+  }
+
+  .hr__input--num {
+    width: 120px;
+  }
+
+  .hr__checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+
+  /* ============== 输出面板 ============== */
+  .hr__panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.03));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hr__lang-tabs {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  .hr__lang-tab {
+    padding: 5px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #6b7280);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hr__lang-tab:hover {
+    color: var(--color-text);
+  }
+
+  .hr__lang-tab.is-active {
+    background: var(--color-accent, #2563eb);
+    color: #fff;
+    border-color: var(--color-accent, #2563eb);
+  }
+
+  .hr__code-meta {
+    padding: 6px 14px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .hr__lang-desc {
+    font-size: 11px;
+    color: var(--color-text-muted, #6b7280);
+  }
+
+  .hr__code {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--color-bg);
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--color-text);
+    overflow-x: auto;
+    white-space: pre;
+    min-height: 300px;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .hr__code code {
+    font-family: inherit;
+  }
+
+  /* ============== 响应式适配 ============== */
+  @media (max-width: 768px) {
+    .hr__layout {
+      grid-template-columns: 1fr;
+    }
+
+    .hr__presets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .hr__presets-label {
+      text-align: center;
+    }
+
+    .hr__presets-list {
+      justify-content: center;
+    }
+
+    .hr__row--url {
+      grid-template-columns: 80px 1fr;
+    }
+
+    .hr__code {
+      font-size: 11px;
+      max-height: 400px;
+    }
+
+    .hr__lang-tab {
+      padding: 5px 10px;
+      font-size: 11px;
+    }
+  }
+
+  @media (max-width: 414px) {
+    .hr__kv-row {
+      grid-template-columns: 1fr 1fr 28px;
+      gap: 4px;
+    }
+
+    .hr__input--key,
+    .hr__input--val {
+      padding: 5px 8px;
+      font-size: 11px;
+    }
+
+    .hr__btn--icon {
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+    }
+
+    .hr__row--url {
+      grid-template-columns: 70px 1fr;
+    }
+
+    .hr__select--method {
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+
+    .hr__field-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+    }
+
+    .hr__field-label {
+      min-width: 0;
+    }
+
+    .hr__input--num {
+      width: 100%;
+    }
+
+    .hr__lang-tabs {
+      gap: 1px;
+    }
+
+    .hr__lang-tab {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .hr__code {
+      font-size: 10px;
+      padding: 10px 12px;
+    }
+  }
+
+  /* ============== 暗色模式 ============== */
+  @media (prefers-color-scheme: dark) {
+    .hr__btn--primary:hover {
+      opacity: 0.85;
+    }
+
+    .hr__code {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hr__btn--icon:hover {
+      color: #f87171;
+      border-color: #f87171;
+    }
+  }
+</style>

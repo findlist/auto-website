@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 98 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 99 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -581,6 +581,15 @@ const tools = [
     keywords: 'user-agent ua 浏览器 解析 识别 设备 移动端 爬虫 googlebot bingbot 百度 微信 qq uc 360 edge opera chrome safari firefox blink webkit gecko webview 移动 平板 桌面',
   },
   {
+    href: '/http-request',
+    title: 'HTTP 请求代码生成器',
+    desc: '在线 HTTP 请求代码生成器：统一配置 URL、方法、Headers、认证与请求体，一键生成 5 种主流语言客户端调用代码（cURL / JavaScript fetch / axios / Python requests / Go net/http）。支持 4 种认证方式（无认证 / Basic Auth / Bearer Token / API Key，API Key 可选 Header 或 Query 注入）、5 种请求体格式（JSON / multipart/form-data / application/x-www-form-urlencoded / Raw / 无）、高级选项含超时、重定向跟随、SSL 证书校验。内置 6 个高频预设场景（GET 查询 / POST 创建 / PUT 更新 / 表单提交 / Basic 认证 / API Key 调用）。适用于跨语言 API 调用代码转换、客户端 SDK 文档示例生成、Postman 替代、接口调试与教学等场景，所有配置仅在浏览器本地处理，零上传零追踪。',
+    badge: '可用',
+    available: true,
+    category: '网络',
+    keywords: 'http 请求 代码生成 curl fetch axios python requests go 多语言 互转 转换 认证 basic bearer token api key jwt json form urlencoded multipart 表单 文件上传 超时 重定向 ssl postman sdk',
+  },
+  {
     href: '/jsonpath',
     title: 'JSONPath 查询工具',
     desc: '在线 JSONPath 查询工具：基于 RFC 9535 标准实现的三阶段解析器（词法 / 语法 / 求值），支持 $ 根、.name 子节点、..name 递归下降、[*] 通配符、[index] 索引（含负索引）、[?(filter)] 过滤表达式（==/!=/>/>=/</<=/=~ 与 &&/||/! 组合），内置 12 个预设示例与电商订单 / 用户列表示例数据，查询结果展示索引、类型标签与单条复制，零依赖纯函数实现，适用于 API 响应提取、JSON 数据探查、配置筛选、自动化测试断言等场景。',
@@ -966,7 +975,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 98 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 99 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
