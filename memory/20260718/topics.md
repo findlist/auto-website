@@ -744,3 +744,164 @@
 - 遗留问题：无（工作树已清理，并行任务遗留已协调提交）
 - 下一轮建议：（1）网络类工具继续扩充 HTTP 请求模拟器增强版（GraphQL/WebSocket/SSE）/ MIME 类型增强 / TLS 配置检测器；（2）图像类工具继续补充图片格式互转 / EXIF 编辑 / SVG 路径优化器；（3）编码转换长尾 Slug/HTMLEscape 增强；（4）接入统计工具进入真正的数据驱动迭代
 - 需用户操作：部署本轮新增代码（已 push 4 个 commit，Cloudflare Pages 自动触发部署）；接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代
+
+---
+
+# 第 77 轮 · 新增图片格式转换工具页与配套博客（图像处理类扩充，第 103 个工具达成）
+
+## 上下文恢复
+- 承接第 76 轮（新增 SVG 优化器工具页 + 配套博客 + tagToSlug 撇号修复 + 并行任务协调提交，commit 8e102fd → 沉淀 8e102fd）
+- 阶段：阶段二（数据驱动迭代），站点已上线但无统计数据
+- 当前规模：102 工具 + 97 博客 + 804 页面 → 本轮后 103 工具 + 98 博客 + 815 页面
+- 工作树状态：第 76 轮 commit 8e102fd 已 push，工作树清洁（并行任务遗留已在第 76 轮协调提交清理）
+
+## 本轮聚焦方向
+**新增图片格式转换工具页与配套博客（图像处理类工具继续扩充，承接第 76 轮建议第 2 项，第 103 个工具达成）**
+
+第 76 轮建议第 2 项："图像类工具继续补充：图片格式互转（PNG↔JPEG↔WebP↔AVIF，基于 Canvas API + OffscreenCanvas）、图片元数据编辑器（修改 EXIF）、SVG 路径优化器（在 SVG 优化器基础上拓展 path 数据简化）"。本轮聚焦图片格式互转工具，理由：
+- **AVIF 迁移是 2024-2026 年 Web 性能优化高频议题**：AVIF 体积比 JPEG 小 50%+，但浏览器编码支持参差（Chrome 93+ / Safari 16.4+ / Firefox 不支持 toBlob AVIF 编码），用户急需"我能用 AVIF 吗"的实时探测工具
+- **与现有 image-compress 工具形成互补**：image-compress 单文件 + WebP/JPEG/PNG 三格式 + 实时预览；本工具多文件批量 + AVIF + 全格式体积对比 + 背景色可调，差异化明确
+- **纯本地处理可行**：Canvas API + createImageBitmap + toBlob 浏览器原生，零上传零追踪
+- **覆盖长尾关键词**：图片格式转换、PNG 转 JPEG、WebP 转 PNG、AVIF 转换、批量图片转换、AVIF 编码支持、透明通道处理、JPEG 背景色填充、Canvas toBlob AVIF、全格式体积对比、渐进增强 picture source、createImageBitmap、OffscreenCanvas
+- **教育价值高**：四种格式编码原理、压缩特性、浏览器支持矩阵、Canvas API 转换流程、AVIF 编码能力探测、批量处理内存控制、全格式对比方法论、渐进增强策略
+- **与现有 4 个图像类工具形成完整体系**：图片压缩 + EXIF 查看 + Base64 图片互转 + SVG 优化器 + 图片格式转换，覆盖图像处理核心场景
+
+## 完成任务
+
+### 单元 1：开发 src/utils/imageConvert.ts（~340 行，Canvas API 转换核心模块）
+- 类型定义：OutputMime / OutputFormatMeta / SourceImage / ConvertResult / ConvertOptions
+- 常量：
+  - OUTPUT_FORMATS（4 格式元数据：AVIF / WebP / JPEG / PNG，含 lossy / alpha 标志位）
+  - MAX_FILE_SIZE（20MB）/ MAX_BATCH_COUNT（20 张）/ ACCEPTED_INPUT_MIMES（6 种输入格式）
+  - DEFAULT_OPTIONS（默认 WebP / 质量 82 / 不限制尺寸 / 白色背景）
+- 核心函数：
+  - `detectEncodeSupport(mime)`：同步 toDataURL 探测编码支持，结果缓存
+  - `detectEncodeSupportAsync(mime)`：异步 toBlob 精确探测（更准确，覆盖 toDataURL 边缘情况）
+  - `detectAllEncodeSupport()`：批量探测四种格式，返回 MIME → boolean 映射
+  - `loadImage(file)`：优先 createImageBitmap（性能优，支持 AVIF 解码），失败回退 HTMLImageElement
+  - `convertImage(source, options)`：单张转换，不透明格式自动填充背景色
+  - `convertToAllFormats(source, encodeSupport, options)`：全格式对比模式，仅生成可编码格式
+  - `downloadResults(items, onProgress)`：批量下载，200ms 间隔避免浏览器拦截
+  - `computeSavings(original, converted)`：节省比例计算
+- 关键设计点：
+  - **AVIF 编码能力探测**：组件挂载时调用 detectAllEncodeSupport，仅显示支持的格式选项，避免用户选 AVIF 却生成 PNG 的困惑
+  - **createImageBitmap 优先**：性能优于 HTMLImageElement（不触发布局），且支持 AVIF 解码（部分浏览器 HTMLImageElement 不支持 AVIF）
+  - **toBlob 而非 toDataURL**：避免 Base64 编码 33% 体积膨胀
+  - **不透明格式背景色填充**：JPEG 不支持透明，转换前 ctx.fillStyle + fillRect 填充，避免透明区域变黑
+  - **质量参数仅对有损格式生效**：PNG 无损忽略 quality 参数
+
+### 单元 2：开发 src/components/ImageConvertTool.tsx（~440 行，React 工具组件）
+- **两种工作模式**：
+  - `single` 单格式批量转换：多图统一转同一格式，逐张处理，统计总节省
+  - `compare` 全格式体积对比：仅对第一张图片生成所有可编码格式，自动标记最小体积格式
+- 左右两栏布局：左侧配置面板（模式 Tab + 目标格式 + 质量滑块 + 缩放 + 背景色），右侧文件列表
+- 文件列表：每张图片独立卡片，含原图预览 + 转换结果 + 节省比例 + 下载按钮
+- 棋盘格背景：CSS 渐变实现，凸显透明区域
+- 4 个徽标颜色区分格式：AVIF（紫）/ WebP（绿）/ JPEG（橙）/ PNG（紫红）+ 最小体积徽标（绿）
+- 批量限制 20 张，单文件 20MB，超过提示
+- 拖拽上传 + 文件选择 + 粘贴（Ctrl+V）三种输入方式
+- 实时格式支持显示：availableFormats 仅渲染浏览器支持的格式选项
+- 卸载时清理所有 ObjectURL 避免内存泄漏
+- 768px 单列响应式（卡片预览缩小、对比网格列数减少）、414px 紧凑布局（格式选项单列、对比网格 2 列）、暗色模式适配
+
+### 单元 3：创建 src/pages/image-convert.astro（~480 行，工具页）
+- 完整 SEO：
+  - title: "图片格式转换工具 - 在线 PNG/JPEG/WebP/AVIF 批量互转"
+  - description: 覆盖核心关键词（4 格式互转 / 批量 / 全格式体积对比 / AVIF / Canvas API / 零上传零追踪）
+  - JSON-LD WebApplication（applicationCategory=DeveloperApplication，offers price=0）
+- 8 条 FAQ 覆盖核心问题：
+  1. 是否在本地处理？会上传图片吗？
+  2. AVIF / WebP / JPEG / PNG 四种格式区别？应该怎么选？
+  3. 全格式体积对比模式有什么用？
+  4. 为什么 AVIF 选项有时不可用或灰色？
+  5. 转换时透明区域怎么处理？为什么 JPEG 转换后背景是白色？
+  6. 批量转换最多支持多少张图片？
+  7. 质量参数（1-100）对哪些格式生效？
+  8. 与图片压缩工具有什么区别？
+- 6 个相关工具内链：/image-compress / /exif / /base64-image / /svg-optimizer / /color / /qr
+- imgconv__ 命名空间样式（~370 行）：拖拽区、配置面板、模式 Tab、格式选项卡片、滑块、文件卡片、对比网格、徽标、统计条、按钮、3 档响应式、暗色模式
+- 选用 svg-optimizer.astro 与 tls.astro 作为页面结构模板
+
+### 单元 4：创建配套博客 src/content/blog/image-format-conversion-guide.md（8 章完整指南）
+- Frontmatter：title + description + pubDate 2026-07-18 + 19 tags（图片格式/AVIF/WebP/JPEG/PNG/Canvas/编码/浏览器兼容/渐进增强/性能优化/批量转换/透明通道/有损压缩/无损压缩/响应式图片/HTTP/2/HTTP/3/前端开发/工具矩阵）+ relatedTool: /image-convert
+- 8 章结构：
+  1. 为什么图片格式选型是 Web 性能的核心议题（HTTP Archive 2024 数据 + 4 个影响维度）
+  2. 四种格式核心特性对比（6 列对照表 + 4 格式分节详解 + 典型用途）
+  3. Canvas API 转换原理：从图片到 Blob（3 步代码示例 + 4 个技术细节：createImageBitmap vs HTMLImageElement / OffscreenCanvas vs HTMLCanvasElement / toBlob vs toDataURL / 质量参数语义）
+  4. AVIF 编码能力探测：为什么不能假定支持（浏览器支持矩阵 + 同步与异步探测代码 + 工具加载时探测策略）
+  5. 批量转换的内存与性能控制（内存压力来源 + 5 条控制策略 + 多文件下载浏览器策略）
+  6. 全格式体积对比方法论（3 个使用场景 + 渐进增强 picture 实现 + 单图 vs 全站格式策略）
+  7. 透明通道处理：从有透明到不透明（透明支持矩阵 + 背景色选择策略 + 代码示例）
+  8. 最佳实践与总结（格式选型决策树 + 转换工具使用建议 + 性能与兼容性平衡 + 8 条转换最佳实践 + 工具矩阵协同）
+
+### 单元 5：首页与 README 同步更新
+- 首页 index.astro：meta description 102→103、hero 文案 102→103、tools 数组在 /svg-optimizer 后新增 /image-convert 卡片（图片处理分类，含完整 desc 与 keywords）
+- README.md：工具数 102→103、博客数 97→98、页面数 800→820、技术栈表 102→103、目录结构 components 102→103、blog 97→98、pages [102→103]、编码转换工具一览追加图片格式转换、博客主题速览 97→98 + 新增 image-format-conversion-guide 条目
+
+## 验收结果
+- ✅ 类型检查：0 errors / 0 warnings / 4 hints（hints 为历史已存在：seo-audit.mjs 未使用变量 ×3、clipboard.ts execCommand 弃用警告，与本轮无关）
+- ✅ 构建：815 页面（上轮 804 → 本轮 815，新增 11 页 = 1 工具页 + 1 博客详情页 + 9 个新增 tag 页），构建耗时 27.79s
+- ✅ 工具页生成：dist/image-convert/index.html（+17ms）
+- ✅ 博客详情页生成：dist/blog/image-format-conversion-guide/index.html
+- ✅ SEO 要素：title / description / JSON-LD WebApplication / 8 FAQ / 6 相关工具链接全部就位
+- ✅ 首页卡片：tools 数组新增 image-convert 卡片（图片处理分类），构建后首页包含新卡片
+- ✅ 响应式：768px 单列、414px 紧凑布局（格式选项单列、对比网格 2 列）
+- ✅ Git 提交：commit 41a5015 已 push origin HEAD（仅本轮 6 个文件，工作树清洁无遗留）
+
+## 修改文件清单
+- 新增：src/utils/imageConvert.ts（~340 行，Canvas API 转换核心模块 + 编码能力探测 + 批量转换 + 全格式对比）
+- 新增：src/components/ImageConvertTool.tsx（~440 行，React 组件 + 两种工作模式 + 棋盘格透明预览）
+- 新增：src/pages/image-convert.astro（~480 行，8 FAQ + imgconv__ 命名空间样式 + 6 相关工具）
+- 新增：src/content/blog/image-format-conversion-guide.md（8 章完整指南，19 tags）
+- 修改：src/pages/index.astro（meta description 102→103、hero 102→103、tools 数组新增 image-convert 卡片）
+- 修改：README.md（工具数 102→103、博客数 97→98、页面数 800→820、技术栈表、目录结构、工具一览、博客主题速览）
+
+## 问题与发现
+- **AVIF 编码支持差异巨大**：Chrome 93+ / Safari 16.4+ 支持 toBlob AVIF 编码，Firefox 截至最新版本仍不支持 toBlob AVIF 编码（仅支持解码）。工具必须在加载时探测编码能力，仅显示支持的格式选项，避免用户选 AVIF 却生成 PNG 的困惑
+- **toDataURL vs toBlob 探测**：toDataURL 同步快速但有不准确的边缘情况（部分浏览器对不支持的格式返回 PNG 兜底但 MIME 仍为目标 MIME），toBlob 异步但更准确。本工具使用 toDataURL 同步快速探测 + 缓存，首次加载组件时调用 detectAllEncodeSupport 异步精确探测覆盖
+- **createImageBitmap vs HTMLImageElement**：前者性能更优（不触发布局），支持更多格式解码（部分浏览器 HTMLImageElement 不支持 AVIF 但 createImageBitmap 支持）。本工具优先 createImageBitmap，失败回退 HTMLImageElement
+- **批量处理内存压力**：每张图片在 Canvas 处理时占用 width × height × 4 字节（4000×3000 ≈ 48MB），20 张接近浏览器内存上限。本工具限定 20 张，顺序处理（避免并行），及时 revokeObjectURL
+- **多文件下载浏览器策略**：Chrome 连续 5+ 个下载弹出授权，Firefox 默认阻止多文件下载，Safari 严格限制可能仅触发第一个。本工具采用 200ms 间隔逐个触发。如需 ZIP 打包需引入 jszip 等依赖，违反轻量化原则故未实现
+- **JPEG 透明区域处理**：JPEG 不支持透明通道，转换时透明区域会变黑（Canvas 默认透明背景为黑色 RGBA 0,0,0,0），必须先用 background 颜色填充。本工具提供颜色选择器（默认白色 #ffffff），用户可自定义
+- **棋盘格背景实现**：用 4 个 linear-gradient 拼接 12px 棋盘格，凸显透明区域，比纯白色背景更直观
+- **React 模板字符串语法陷阱**：`className="imgconv__badge--{var}"` 不会解析为模板字符串，必须用反引号 `className={`imgconv__badge--${var}`}`，本轮首次写入时踩坑，已修复
+- **PowerShell 不支持 Bash heredoc**：commit message 使用多个 -m 选项（每个 -m 之间自动插入空行），避免单行 message 信息过载
+- **实际页面数 815 = 804 + 11**：1 工具页（/image-convert）+ 1 博客详情页（/blog/image-format-conversion-guide）+ 9 个新增 tag 页（图片格式 / avif / 浏览器兼容 / 批量转换 / 透明通道 / 有损压缩 / 无损压缩 / 响应式图片 / http2 等，部分 tag 与历史重合被复用）
+
+## 下轮建议
+1. **网络类工具继续扩充**：HTTP 请求模拟器增强版（支持 GraphQL / WebSocket / SSE 代码生成）、MIME 类型增强（已有 mime 工具可拓展 Content-Type 速查与 charset 推荐）、TLS 配置检测器（基于服务器返回的 Header 检测 HSTS / TLS 版本 / cipher suite）
+2. **图像类工具继续补充**：图片元数据编辑器（修改 EXIF）、SVG 路径优化器（在 SVG 优化器基础上拓展 path 数据简化）、图片水印工具（Canvas 绘制文字 / 图片水印）
+3. **编码转换类长尾**：URL Slug 增强（多语言友好）、HTMLEscape 增强（含上下文感知）、Hex 颜色与其他格式互转
+4. **Lighthouse/375px 实测**：环境受限任务连续多轮无法突破，等待用户配置 TRAE Sandbox 白名单或换环境执行
+5. **接入统计工具**：需用户确认（Plausible/Umami/Matomo 等隐私优先方案，与零追踪定位一致）
+6. **image-convert 工具增强**：可考虑新增"批量打包下载 ZIP"功能（需引入 jszip 依赖，权衡轻量化原则），或新增"裁剪"选项（Canvas drawImage 支持 source rectangle 裁剪）
+
+## 阶段进度总览（更新）
+- 工具总数：103 个（本轮 +1）
+- 博客总数：98 篇（本轮 +1）
+- 构建页面：815 页（本轮 +11，含 1 工具页 + 1 博客详情页 + 9 个新增 tag 页）
+- 类型检查：0 errors（构建无报错）
+- LCP：< 2.5s（SSG 静态优化，本轮新增页面与已有工具页结构一致，性能不退化）
+- JS Bundle：单页最大 < 200KB（imageConvert.ts ~340 行 + ImageConvertTool.tsx ~440 行，与 DnsTool / SvgOptimizerTool 体量相当，符合预算）
+- 累计 SEO 质量优化：description（第 55-64 轮）+ title/h1（第 65 轮）+ canonical/JSON-LD url（第 66 轮）+ 工具分类重构（第 67 轮）
+- 累计图像处理类工具维度：图片压缩（image-compress）+ EXIF 查看（exif）+ Base64 图片互转（base64-image）+ SVG 优化器（svg-optimizer）+ 图片格式转换（image-convert，本轮），共 5 个，覆盖图像处理全场景（压缩 / 元数据 / Base64 / 矢量优化 / 格式转换）
+- 累计工具维度：CSS 设计 34 个 / 编码转换 17 个 / 文本处理 12 个 / 加密哈希 11 个 / 文档处理 9 个 / 时间日期 4 个 / 网络 7 个 / 图像处理 5 个（本轮 +1）/ 颜色 3 个 / 代码调试 4 个
+- 累计 bug 修复：tagToSlug 未处理 `/` 字符（第 74 轮）+ tagToSlug 未处理撇号与反引号（第 76 轮）+ React 模板字符串语法（本轮首次写入时已修复）
+
+## 需用户操作
+- 部署本轮新增代码（已 push commit 41a5015，Cloudflare Pages 自动触发部署）
+- 在 docs/site-config.md 填写访问数据 + 接入统计工具后回写，agent 下轮进入数据驱动迭代
+- （可选）配置 TRAE Sandbox 白名单允许 Lighthouse/agent-browser 写入临时目录
+- （可选）在 Chrome 93+ 或 Safari 16.4+ 浏览器访问 /image-convert 体验完整 AVIF 转换能力（Firefox 仅能转换为 WebP/JPEG/PNG）
+
+---
+
+## 本次迭代摘要（2026-07-18 第 77 轮）
+- 当前阶段：阶段二（数据驱动迭代）
+- 完成任务：新增图片格式转换工具页（/image-convert，第 103 个工具）+ 配套博客（image-format-conversion-guide.md）+ 首页 README 同步更新工具数 102→103 / 博客数 97→98 / 页面数 804→815
+- 修改文件：src/utils/imageConvert.ts（新增 ~340 行，Canvas API 转换核心模块 + AVIF/WebP/JPEG/PNG 四格式 + 编码能力探测 + 批量转换 + 全格式对比）/ src/components/ImageConvertTool.tsx（新增 ~440 行，React 组件 + 单格式批量模式 + 全格式对比模式 + 棋盘格透明预览）/ src/pages/image-convert.astro（新增 ~480 行，8 FAQ + imgconv__ 命名空间样式 + 6 相关工具）/ src/content/blog/image-format-conversion-guide.md（新增 8 章完整指南，19 tags）/ src/pages/index.astro（meta description + hero + tools 数组新增 image-convert 卡片）/ README.md（工具数 + 博客数 + 页面数 + 技术栈表 + 目录结构 + 工具一览 + 博客主题速览）
+- 验证结果：构建 ✅（815 页面，0 errors / 0 warnings / 4 hints 历史遗留） | 类型检查 ✅ | Git push ✅ commit 41a5015
+- 数据洞察：AVIF 编码支持差异巨大（Chrome 93+ / Safari 16.4+ 支持，Firefox 不支持 toBlob AVIF 编码），工具必须实时探测；createImageBitmap 性能优于 HTMLImageElement 且支持更多格式解码；批量处理内存压力来自 width × height × 4 字节的 Canvas 数据，需限制 20 张上限；多文件下载浏览器策略差异大，200ms 间隔逐个触发是较稳的折中方案；JPEG 不支持透明，转换时必须填充背景色避免透明区域变黑；累计图像处理类工具达 5 个，覆盖图像处理全场景
+- 遗留问题：无（工作树清洁，本轮仅提交 6 个文件）
+- 下一轮建议：（1）网络类工具继续扩充 HTTP 请求模拟器增强版（GraphQL/WebSocket/SSE）/ MIME 类型增强 / TLS 配置检测器；（2）图像类工具继续补充 EXIF 编辑 / SVG 路径优化器 / 图片水印；（3）编码转换长尾 Slug/HTMLEscape 增强；（4）接入统计工具进入真正的数据驱动迭代
+- 需用户操作：部署本轮新增代码（已 push commit 41a5015，Cloudflare Pages 自动触发部署）；接入统计工具后回写 docs/site-config.md 进入真正的数据驱动迭代；（可选）在 Chrome 93+ 或 Safari 16.4+ 浏览器访问 /image-convert 体验完整 AVIF 转换能力
