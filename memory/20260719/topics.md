@@ -1117,3 +1117,168 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 91 轮 · 长尾 SEO 内容补充 - 三篇实战类博客新增
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 90 轮（commit af0fb10 → 29175f7）：图片对比工具完成，108 工具 + 103 博客 + 872 页面
+- 第 90 轮下轮建议第 4 项明确指向本轮方向："长尾 SEO 内容补充（设计稿对比 / 回归测试截图 / JPEG 压缩损失评估）"
+- 工作树状态：第 90 轮已 push，本轮聚焦 3 篇高价值长尾博客
+
+## 本轮聚焦方向
+**长尾 SEO 内容补充 - 三篇实战类博客新增（第 90 轮下轮建议第 4 项）**
+
+承接第 90 轮"长尾 SEO 内容补充"建议，本轮选择 3 个高价值长尾关键词场景，补充实战类博客：
+- **批量删除照片 GPS 隐私完整指南**（关联 /exif-editor）：基于第 89 轮 EXIF 批量处理能力
+- **回归测试截图差异分析实践**（关联 /image-compare）：基于第 90 轮图片对比工具
+- **JPEG 压缩损失评估方法量化分析**（关联 /image-compress + /image-compare）：跨工具协同工作流
+
+理由：
+- **数据驱动受阻下的内容深化**：统计工具未接入（阶段二核心阻塞项），无法数据驱动，转向可控的内容深化方向
+- **工具能力尚未充分曝光**：第 89 轮 EXIF 批量处理与预设管理、第 90 轮图片对比工具的能力未被博客内容充分覆盖
+- **差异化定位**：已有博客（exif-editing-guide / image-comparison-guide / image-compression-guide）聚焦"原理讲解"，本轮博客聚焦"实战工作流"，主题互补不重叠
+- **长尾关键词覆盖**：批量清理 GPS、回归测试截图对比、JPEG 压缩损失评估均为高搜索量长尾关键词
+- **低成本高收益**：纯内容新增，无功能逻辑变更，无构建风险
+
+## 完成任务
+
+### 单元 1：批量删除照片 GPS 隐私完整指南（commit 29175f7）
+- 文件：`src/content/blog/batch-remove-gps-privacy-guide.md`（约 325 行）
+- 主题：批量清理照片 GPS 隐私的完整工作流
+- 内容结构：
+  1. 为什么批量清理至关重要（GPS 之外还有哪些隐私字段表）
+  2. 必须批量清理的七个典型场景（旅行分享 / 电商发布 / 二手出售 / 作品交付 / 新闻发稿 / 团队协作 / 个人归档）
+  3. 三种方案对比（社交平台去元数据 / 命令行工具 / 在线批量编辑器）
+  4. EXIF 编辑器批量处理实战（4 步工作流：勾选操作 → 添加文件 → 执行处理 → 下载 ZIP）
+  5. 编辑预设保存与导入导出最佳实践（含 JSON 结构示例）
+  6. 典型陷阱与避坑指南（缩略图残留 / MakerNote 隐藏字段 / 社交平台二次压缩 / 跨格式兼容性 / 大文件性能）
+  7. 与其他工具的协同工作流（旅行分享 / 电商发布 / 摄影交付三个完整流程图）
+  8. 最佳实践清单（8 条）
+- 内链密度：8 个工具内链（exif-editor / exif / image-compress / image-convert / image-resize / image-watermark / image-compare）
+
+### 单元 2：回归测试截图差异分析实践（commit 29175f7）
+- 文件：`src/content/blog/regression-test-screenshot-diff.md`（约 320 行）
+- 主题：前端 UI 回归测试中的截图差异分析
+- 内容结构：
+  1. 为什么回归测试需要像素级截图对比（三类视觉回归问题表）
+  2. 手工比对 vs 自动化对比的差距
+  3. 感知加权算法在 UI 回归测试中的应用（含代码示例与三大优势分析）
+  4. 阈值选择策略（严格 5 / 默认 20 / 宽松 50 在回归测试场景的映射）
+  5. 六项差异统计指标解读（差异像素数 / 差异比例 / 最大差异 / 平均差异 / 共同区域 / 处理耗时）
+  6. 典型场景实战（设计稿还原验收 / 组件库版本升级 / 浏览器兼容性 / 响应式断点 / 暗色模式切换）
+  7. 与 Playwright / Puppeteer / Cypress 集成思路（含代码示例）
+  8. 误报与漏报治理
+  9. 与图片对比工具的协同工作流
+  10. 最佳实践清单（10 条）
+- 内链密度：3 个工具内链（image-compare）
+
+### 单元 3：JPEG 压缩损失评估方法量化分析（commit 29175f7）
+- 文件：`src/content/blog/jpeg-compression-loss-evaluation.md`（约 311 行）
+- 主题：JPEG 压缩损失的量化评估方法
+- 内容结构：
+  1. 为什么 JPEG 压缩损失需要量化评估（三类压缩决策表）
+  2. 肉眼对比的局限（三个问题与四个盲区）
+  3. 像素级差异分析的完整流程
+  4. 阈值选择在压缩评估中的含义
+  5. 六项量化指标解读
+  6. 典型压缩场景分析（质量 90 / 80 / 70 / 60 / 50 五档的预期表现与差异图特征）
+  7. WebP 与 JPEG 压缩损失对比（同质量参数 / 同体积两种对比维度）
+  8. 与图片压缩工具和图片对比工具的协同工作流（压缩方案评估 / 电商商品图 / 网站性能优化三个完整流程）
+  9. 压缩质量与体积的最佳平衡点（按场景推荐参数表 + 四个常见误区）
+  10. 最佳实践清单（10 条）
+- 内链密度：2 个工具内链（image-compress / image-compare）
+
+### 单元 4：验证与提交
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留：seo-audit.mjs 未使用 import、clipboard.ts deprecated execCommand，与本轮无关）
+- `npm run build`：887 页面构建成功（28.81s）
+  - 原规模 872 页面 + 3 篇博客详情 + 12 个新 tag 索引页 = 887
+- Git 提交：1 次（29175f7），已 push 到 origin/main
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：887 页面构建成功，无错误
+- ✅ 内容质量：3 篇博客均结构完整（10+ 章节、表格、代码块、流程图、最佳实践清单）
+- ✅ 内链密度：3 篇博客共 13 个工具内链，形成"博客 → 工具"的单向关联网络
+- ✅ 主题差异化：与已有 exif-editing-guide / image-comparison-guide / image-compression-guide（原理讲解）互补，本轮聚焦实战工作流
+- ✅ 所有代码注释、UI 文案使用中文
+- ✅ frontmatter 规范：title / description / pubDate / tags / relatedTool 五字段完整
+
+## 修改文件清单
+
+### commit 29175f7（3 文件，+1056 行）
+- `src/content/blog/batch-remove-gps-privacy-guide.md`（+325 行）
+- `src/content/blog/regression-test-screenshot-diff.md`（+320 行）
+- `src/content/blog/jpeg-compression-loss-evaluation.md`（+311 行）
+
+## 进度沉淀
+- Git：commit 29175f7 已 push（d95376d..29175f7 HEAD -> main）
+- 当前规模：**108 工具**（无变化）+ **106 博客**（103+3）+ **887 页面**（872+15）
+- 长尾 SEO 内容覆盖：批量清理 GPS / 回归测试截图对比 / JPEG 压缩损失评估三大高价值长尾关键词场景
+- 工具内链网络：3 篇博客共 13 个工具内链，与已有 107/107 工具页内链网络形成"工具 ↔ 工具"与"博客 → 工具"双向关联
+
+## 问题与发现
+1. **主题差异化策略验证**：已有 103 篇博客对应 108 工具，看似覆盖全面，但深入分析发现已有博客多聚焦"原理讲解"（如 exif-editing-guide 讲 JPEG 二进制结构、image-comparison-guide 讲像素差异算法），缺少"实战工作流"维度。本轮 3 篇博客均聚焦实战场景（批量清理工作流、回归测试集成、压缩方案评估），与已有博客主题互补不重叠，验证了"原理 + 实战"双维度内容覆盖策略的可行性。
+2. **跨工具协同工作流的价值**：本轮 3 篇博客均包含跨工具协同工作流章节（如旅行分享工作流：EXIF 查看 → EXIF 编辑 → 图片压缩 → 验证；压缩方案评估工作流：图片压缩 → 图片对比 → 量化决策）。这种跨工具协同内容既提升博客实用性，又自然形成工具内链网络，对 SEO 与用户体验双重收益。
+3. **工具页反向内链的缺失**：本轮发现工具页目前仅有"相关工具"区块（工具 ↔ 工具），缺少"相关博客"区块（工具 → 博客）。这意味着用户在工具页无法直接发现深度内容。下轮可考虑在工具页新增"相关博客"区块，基于 frontmatter `relatedTool` 字段反向查询关联博客，形成完整的双向内链网络。
+4. **PowerShell 语法限制复现**：本轮提交时再次遇到 PowerShell 不支持 bash 语法（`$(date +%Y-%m-%d)`）与 `;` 分隔符在多命令场景下不稳定的问题。改用分步执行（git add → git commit → git push）解决。此为 Windows 环境下的可复用模式。
+5. **并行任务文件隔离**：工作树存在 memory/20260718/topics.md 修改、docs/bug-check/bug-check-2026-07-19.md、docs/style-optimization/style-opt-2026-07-19.md、memory/20260718/topics-archive-20260718.md 等并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮仅提交 3 个博客文件。
+
+## 下轮建议（第 91 轮产出）
+1. **工具页反向内链补齐**（本轮新发现）：在工具页新增"相关博客"区块，基于 frontmatter `relatedTool` 字段反向查询关联博客。优先处理高频工具（exif-editor / image-compare / image-compress / exif / image-resize 等）
+2. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）
+4. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+5. **图片对比工具增强**（第 90 轮下轮建议第 3 项）：批量对比 / 差异区域框选与放大 / 对比结果导出 JSON
+6. **长尾 SEO 内容补充继续**：基于加密哈希矩阵拓展"密码哈希算法对比实战"、"JWT 安全实践案例"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **EXIF 编辑器未支持 PNG/WebP/TIFF**：当前仅支持 JPEG（EXIF 主要载体）。其他格式需新增解析器，复杂度较高，非本轮范围。
+- **工具页缺少"相关博客"区块**：本轮新发现的设计短板，工具页仅有"相关工具"内链，缺少"相关博客"反向内链。下轮可独立处理。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 91 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 91 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：长尾 SEO 内容补充 - 三篇实战类博客新增
+**Commit**：29175f7
+**Push**：d95376d..29175f7 HEAD -> main
+
+### 完成任务
+1. ✅ 新增 src/content/blog/batch-remove-gps-privacy-guide.md（约 325 行）：批量清理照片 GPS 隐私完整指南，覆盖 7 大场景 + 3 种方案对比 + 4 步工作流 + 6 大陷阱 + 3 个跨工具协同流程
+2. ✅ 新增 src/content/blog/regression-test-screenshot-diff.md（约 320 行）：回归测试截图差异分析实践，覆盖感知加权算法应用 + 三档阈值在回归场景的映射 + 六项统计指标解读 + 5 个典型场景实战 + Playwright 集成思路 + 误报漏报治理
+3. ✅ 新增 src/content/blog/jpeg-compression-loss-evaluation.md（约 311 行）：JPEG 压缩损失评估方法量化分析，覆盖六项量化指标 + 五档质量参数的损失分布 + WebP 对比 + 三种协同工作流 + 平衡点选择原则与误区
+4. ✅ 类型检查通过（0 errors）、构建成功（887 页面 28.81s）
+5. ✅ Git 提交推送完成（1 次提交，3 文件改动，+1056 行）
+
+### 当前规模
+- **工具**：108 个（无变化）
+- **博客**：106 篇（+3，新增 batch-remove-gps-privacy / regression-test-screenshot-diff / jpeg-compression-loss-evaluation）
+- **页面**：887 页（+15：3 博客详情 + 12 个新 tag 索引页）
+- **长尾 SEO 内容覆盖**：批量清理 GPS / 回归测试截图对比 / JPEG 压缩损失评估三大高价值长尾关键词场景
+
+### 下轮优先级
+1. 工具页反向内链补齐（新增"相关博客"区块，本轮新发现的设计短板）
+2. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+3. 图像工具矩阵继续扩充（metadata 打包）
+4. EXIF 编辑器进一步增强（PNG/WebP/TIFF 支持）
+5. 图片对比工具增强（批量对比 / JSON 导出）
+6. 长尾 SEO 内容补充继续（加密哈希矩阵实战类博客）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- EXIF 编辑器未支持 PNG/WebP/TIFF（需新增解析器，复杂度较高）
+- 工具页缺少"相关博客"区块（本轮新发现，下轮独立处理）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
