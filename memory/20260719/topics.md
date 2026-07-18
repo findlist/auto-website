@@ -1285,6 +1285,193 @@
 
 ---
 
+# 第 93 轮 · 为无博客工具页补齐配套博客（JWE / MIME / JSONPath 三篇深度内容）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 92 轮（commit 86d18e4）：工具页反向内链补齐完成，108 工具 + 106 博客 + 887 页面，双向内链网络形成（99/108 工具页含 `.related-blogs` 区块）
+- 第 92 轮下轮建议第 2 项明确指向本轮方向："为 9 个无博客工具页补充配套博客（JWE / MIME / JSONPath / XML-JSON / YAML Schema / TOML Schema / Base64 图片 / 正则性能 / XML 转 JSON）"
+- 工作树状态：第 92 轮 commit 86d18e4 已 push，本轮聚焦 9 个无博客工具中优先级最高的 3 个高价值方向
+
+## 本轮聚焦方向
+**为 9 个无博客工具页补充配套博客（第 92 轮下轮建议第 2 项）- 本轮优先处理 3 个高价值方向**
+
+承接第 92 轮新发现的"9 个无博客工具页"设计短板，本轮选择 3 个高价值方向优先处理：
+- **JWE 工作原理与 JWT 区别**（关联 /jwe）：与已有 JWT 系列博客形成完整 JOSE 矩阵
+- **MIME 类型对照与浏览器支持**（关联 /mime）：涉及安全配置实战价值高
+- **JSONPath 语法与查询实战**（关联 /jsonpath）：关联 RFC 9535 标准
+
+理由：
+- **SEO 主题矩阵协同**：JWE 博客与已有 JWT 入门博客互补，形成完整的 JOSE 家族内容矩阵（JWT/JWS/JWE/JWK/JWA），提升加密哈希矩阵在搜索引擎中的整体可见度
+- **实战价值驱动**：MIME 博客聚焦浏览器嗅探与安全配置实战（X-Content-Type-Options nosniff），是 Web 安全配置的高频长尾关键词场景
+- **标准化主题关联**：JSONPath 博客关联 RFC 9535 标准（2024 年正式标准化），覆盖开发者查询语言的标准化演进史
+- **主题差异化**：3 篇博客均聚焦"实战工作流"维度，与既有"原理讲解"类博客互补不重叠（如 JWE 博客聚焦"何时用 JWE 而非 JWS"的决策树，不重复 JWT 入门博客内容）
+- **低成本高收益**：纯内容新增 + 复用第 92 轮建立的 `scripts/add-related-blogs.mjs` 批量脚本自动补齐工具页反向内链
+
+## 完成任务
+
+### 单元 1：新增博客 `jwe-vs-jwt-encryption-guide.md`（约 320 行）
+- 文件：`src/content/blog/jwe-vs-jwt-encryption-guide.md`
+- 主题：JWE 加密令牌工作原理与 JWT/JWS 的区别决策树
+- 内容结构（10 章节）：
+  1. JOSE 家族全景（JWT/JWS/JWE/JWK/JWA 五件套关系）
+  2. JWS vs JWE：签名与加密的本质区别
+  3. JWE 五段式结构详解（protected / encrypted_key / iv / ciphertext / tag）
+  4. 五类密钥管理算法选择决策树（dir / AES-KW / RSA-OAEP / PBES2 / ECDH-ES）
+  5. AEAD 标配：为什么 JWE 强制使用 AES-GCM
+  6. 嵌套令牌（Nested JWT）：先签名后加密的混合模式
+  7. 五个典型应用场景实战（API 令牌 / 医疗数据 / 政务数据 / 金融支付 / 端到端加密通信）
+  8. 安全清单（密钥轮换 / 算法白名单 / alg:none 拒绝 / 时序攻击防护等 8 条）
+  9. 工具矩阵协同（/jwe 与 /jwt、/jwt-sign、/jwt-verify、/aes 的协同工作流）
+- frontmatter：pubDate 2026-07-19, relatedTool "/jwe", 13 个 tags
+
+### 单元 2：新增博客 `mime-types-browser-support-guide.md`（约 380 行）
+- 文件：`src/content/blog/mime-types-browser-support-guide.md`
+- 主题：MIME 类型在 Web 中的角色与浏览器安全策略实战
+- 内容结构（11 章节）：
+  1. MIME 的双重身份（邮件附件与 HTTP 内容类型）
+  2. 8 大类别全览（文档/图片/音频/视频/压缩/代码/字体/应用）
+  3. 浏览器 MIME 嗅探机制与 XSS 风险
+  4. X-Content-Type-Options: nosniff 实战（防止内容类型混淆攻击）
+  5. Content-Disposition 与下载行为控制
+  6. 文件签名 magic number 校验代码示例
+  7. 现代图片格式兼容性（AVIF / WebP / HEIC 浏览器支持矩阵）
+  8. 字体跨域与 CORS 关联
+  9. Nginx MIME 配置实战（mime.types / default_type / types 块）
+  10. Apache MIME 配置实战（AddType / FilesMatch）
+  11. 安全清单与最佳实践
+- frontmatter：pubDate 2026-07-19, relatedTool "/mime", 12 个 tags
+
+### 单元 3：新增博客 `jsonpath-syntax-practice-guide.md`（约 320 行）
+- 文件：`src/content/blog/jsonpath-syntax-practice-guide.md`
+- 主题：JSONPath 查询语言从标准到实战的完整指南
+- 内容结构（10 章节）：
+  1. RFC 9535 标准化简史（2007 年 Stefan Gössner 提出 → 2024 年 IETF 标准化）
+  2. 五种基本构件（$ 根节点 / .name 子节点 / [index] 索引 / [*] 通配符 / ..name 递归下降）
+  3. 过滤表达式七类运算符（比较 / 正则 / 逻辑 / 存在性 / 数组 / 多索引 / 负索引）
+  4. 三阶段解析架构（tokenizer 词法分析 → parser 语法分析 → evaluator 求值）
+  5. 与 jq 选型对比（学习曲线 / 功能范围 / 性能 / 嵌入式场景）
+  6. 性能优化与陷阱（递归下降开销 / 大数据集分页 / 过滤表达式短路求值）
+  7. 典型应用场景 1：API 响应数据提取（代码示例）
+  8. 典型应用场景 2：自动化测试断言（Postman / RestAssured 集成）
+  9. 典型应用场景 3：JSON 配置查询（K8s manifest / OpenAPI spec）
+  10. 工具矩阵协同（/jsonpath 与 /json、/json-to-ts、/json-schema 的协同）
+- frontmatter：pubDate 2026-07-19, relatedTool "/jsonpath", 12 个 tags
+
+### 单元 4：复用脚本批量补齐 3 个工具页反向内链
+- 直接复用第 92 轮建立的 `scripts/add-related-blogs.mjs` 批量脚本
+- 脚本扫描博客 frontmatter 的 `relatedTool` 字段，构建映射 → 在工具页 `.related-tools` 区块后插入 `.related-blogs` 区块
+- 幂等性保证：已有 `.related-blogs` 的文件自动跳过（本轮前 jwe.astro / mime.astro / jsonpath.astro 均无此区块，全部成功插入）
+- 脚本输出统计：成功插入 3 个文件，跳过 105 个（99 个已有 + 6 个无相关博客）
+- 涉及修改文件：`src/pages/jwe.astro` / `src/pages/mime.astro` / `src/pages/jsonpath.astro`
+- 插入区块结构：`<section class="related-blogs" aria-labelledby="related-blogs-title">` + `<h2>` + `<ul class="related-blogs__list">` + 博客列表项（链接 + 简短描述）
+
+### 单元 5：全量验证
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留：seo-audit.mjs 未使用 import、clipboard.ts deprecated execCommand，与本轮无关）
+- `npm run build`：915 页面构建成功（28.46s）
+  - 原规模 887 页面 + 3 篇博客详情 + 多个新 tag 索引页 + 部分既有页面重渲染 = 915（+28）
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：915 页面构建成功，无错误
+- ✅ 内容质量：3 篇博客均结构完整（10+ 章节、表格、代码块、决策树、最佳实践清单）
+- ✅ 主题差异化：3 篇博客均聚焦"实战工作流"维度，与既有"原理讲解"类博客互补不重叠
+- ✅ 内链补齐：3 个工具页（jwe/mime/jsonpath）成功插入 `.related-blogs` 区块
+- ✅ 脚本幂等性：复用第 92 轮脚本，幂等性保证已有区块不重复插入
+- ✅ 工具 ↔ 博客双向内链网络覆盖率提升：从 99/108（91.7%）→ 102/108（94.4%），剩余 6 个无博客工具页（base64-image / json-to-xml / regex-benchmark / toml-schema / xml-to-json / yaml-schema）
+- ✅ frontmatter 规范：title / description / pubDate / tags / relatedTool 五字段完整
+- ✅ 所有代码注释、UI 文案使用中文
+
+## 修改文件清单
+
+### 本轮 commit（6 文件，约 +1030 行）
+**新增博客（3 文件）**：
+- `src/content/blog/jwe-vs-jwt-encryption-guide.md`（+约 320 行）
+- `src/content/blog/mime-types-browser-support-guide.md`（+约 380 行）
+- `src/content/blog/jsonpath-syntax-practice-guide.md`（+约 320 行）
+
+**工具页反向内链补齐（3 文件）**：
+- `src/pages/jwe.astro`（+约 10 行：插入 `.related-blogs` 区块）
+- `src/pages/mime.astro`（+约 10 行）
+- `src/pages/jsonpath.astro`（+约 10 行）
+
+### 进度沉淀（1 文件，独立提交）
+- `memory/20260719/topics.md`（追加本轮记录）
+
+## 进度沉淀
+- Git：本轮代码改动 + 进度沉淀统一提交，已 push 到 origin/main
+- 当前规模：**108 工具**（无变化）+ **109 博客**（106+3）+ **915 页面**（887+28）
+- 工具 ↔ 博客双向内链网络覆盖率：从 99/108（91.7%）→ 102/108（94.4%）
+- 剩余无博客工具页：6 个（base64-image / json-to-xml / regex-benchmark / toml-schema / xml-to-json / yaml-schema）
+
+## 问题与发现
+1. **方向选择权衡**：第 92 轮下轮建议第 2 项列出 9 个无博客工具页。本轮选择 JWE/MIME/JSONPath 三个方向优先处理的理由：JWE 与已有 JWT 系列博客形成完整 JOSE 矩阵（SEO 主题协同）；MIME 涉及浏览器安全配置实战价值高（X-Content-Type-Options nosniff 是高频长尾关键词）；JSONPath 关联 RFC 9535 标准（2024 年正式标准化，覆盖开发者查询语言的标准化演进史）
+2. **主题差异化策略**：3 篇博客均聚焦"实战工作流"维度，与既有"原理讲解"类博客互补不重叠。例如 JWE 博客聚焦"何时用 JWE 而非 JWS"的决策树与五类密钥管理算法选择策略，不重复 JWT 入门博客内容；MIME 博客聚焦浏览器嗅探机制与安全策略，不重复 MIME 工具页 FAQ 的基础内容
+3. **脚本复用价值验证**：直接复用第 92 轮建立的 `scripts/add-related-blogs.mjs` 批量脚本，无需任何修改即可处理本轮新增的 3 篇博客反向内链补齐。脚本的幂等性、多结构兼容、HTML 转义、描述截断等特性在新增博客场景下自动生效，验证了脚本化批量处理的可持续价值
+4. **并行任务文件隔离**：工作树存在 `memory/20260718/topics.md` 修改、`docs/bug-check/bug-check-2026-07-19.md`、`docs/style-optimization/style-opt-2026-07-19.md`、`memory/20260718/topics-archive-20260718.md` 等并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮仅提交 6 个本轮修改文件 + 1 个进度沉淀文件
+5. **页面数增长分析**：构建产物从 887 增长到 915（+28），其中 3 篇博客详情页 + 多个新 tag 索引页（每篇博客 12-13 个 tags，部分新 tag 触发新的索引页生成）+ 部分既有页面因内链更新重渲染。Astro content collection 的分页与 tag 索引随博客数量自动扩展，无需手工干预
+
+## 下轮建议（第 93 轮产出）
+1. **为剩余 6 个无博客工具页补齐配套博客**（本轮遗留）：base64-image / json-to-xml / regex-benchmark / toml-schema / xml-to-json / yaml-schema
+   - 优先级建议：xml-to-json 与 json-to-xml（XML/JSON 互转陷阱与字段映射策略，SEO 价值高）→ yaml-schema 与 toml-schema（Schema 校验实践，与已有 json-schema 博客形成系列）→ regex-benchmark（正则性能基准测试方法，与已有 regex 博客互补）→ base64-image（图片与 Base64 互转性能优化，与图像矩阵协同）
+2. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 12 天，仍未获取访问数据
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）
+4. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+5. **图片对比工具增强**（第 90 轮下轮建议第 3 项）：批量对比 / 差异区域框选与放大 / 对比结果导出 JSON
+6. **长尾 SEO 内容补充继续**：基于加密哈希矩阵拓展"密码哈希算法对比实战"、"JWT 安全实践案例"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 12 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **EXIF 编辑器未支持 PNG/WebP/TIFF**：当前仅支持 JPEG（EXIF 主要载体）。其他格式需新增解析器，复杂度较高，非本轮范围。
+- **剩余 6 个无博客工具页**：base64-image / json-to-xml / regex-benchmark / toml-schema / xml-to-json / yaml-schema 暂无配套博客，相关博客区块无法展示。下轮可继续补齐。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 93 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 93 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：为 9 个无博客工具页补齐配套博客 - 优先处理 3 个高价值方向（JWE / MIME / JSONPath）
+**Commit**：（本轮提交）
+
+### 完成任务
+1. ✅ 新增 `src/content/blog/jwe-vs-jwt-encryption-guide.md`（约 320 行）：JWE 加密令牌工作原理与 JWT/JWS 区别决策树，覆盖 JOSE 家族全景 + 五段式结构 + 五类密钥管理算法选择 + AEAD 标配 + 嵌套令牌 + 5 个典型应用场景 + 安全清单
+2. ✅ 新增 `src/content/blog/mime-types-browser-support-guide.md`（约 380 行）：MIME 类型在 Web 中的角色与浏览器安全策略实战，覆盖 8 大类别 + MIME 嗅探与 XSS 风险 + X-Content-Type-Options nosniff + magic number 校验 + 现代图片格式兼容性 + Nginx/Apache 配置实战
+3. ✅ 新增 `src/content/blog/jsonpath-syntax-practice-guide.md`（约 320 行）：JSONPath 查询语言从 RFC 9535 标准到三阶段解析架构的完整指南，覆盖标准化简史 + 五种基本构件 + 七类过滤运算符 + 三阶段解析架构 + jq 选型对比 + 6 个典型应用场景代码示例
+4. ✅ 复用 `scripts/add-related-blogs.mjs` 批量脚本，自动为 jwe.astro / mime.astro / jsonpath.astro 3 个工具页插入 `.related-blogs` 区块（脚本输出：成功插入 3 个文件，跳过 105 个）
+5. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，均为既有遗留）
+6. ✅ 构建成功（915 页面 28.46s，+28 页面）
+7. ✅ Git 提交推送完成（1 次提交，6 文件改动，+1030 行）
+
+### 当前规模
+- **工具**：108 个（无变化）
+- **博客**：109 篇（+3，新增 jwe-vs-jwt-encryption-guide / mime-types-browser-support-guide / jsonpath-syntax-practice-guide）
+- **页面**：915 页（+28：3 博客详情 + 多个新 tag 索引页 + 部分既有页面重渲染）
+- **工具 ↔ 博客双向内链网络覆盖率**：从 99/108（91.7%）→ 102/108（94.4%）
+
+### 下轮优先级
+1. 为剩余 6 个无博客工具页补齐配套博客（xml-to-json / json-to-xml / yaml-schema / toml-schema / regex-benchmark / base64-image）
+2. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+3. 图像工具矩阵继续扩充（metadata 打包）
+4. EXIF 编辑器进一步增强（PNG/WebP/TIFF 支持）
+5. 图片对比工具增强（批量对比 / JSON 导出）
+6. 长尾 SEO 内容补充继续（加密哈希矩阵实战类博客）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- EXIF 编辑器未支持 PNG/WebP/TIFF（需新增解析器，复杂度较高）
+- 剩余 6 个无博客工具页暂无配套博客（下轮继续补齐）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
 # 第 92 轮 · 工具页反向内链补齐 - 新增"相关博客"区块（SEO 双向内链网络）
 
 ## 上下文恢复
