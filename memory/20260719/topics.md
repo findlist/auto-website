@@ -955,3 +955,165 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 90 轮 · 图片对比工具新增（左右并排 / 滑块叠加 / 像素差异高亮三模式）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 89 轮（commit 196ea47）：EXIF 编辑器批量处理 + 预设管理增强完成，107 工具 + 102 博客 + 866 页面
+- 第 89 轮下轮建议第 2 项明确指向本轮方向："图像工具矩阵继续扩充（metadata 打包 / 图片对比 / 批量清理）"
+- 工作树状态：第 89 轮 commit 196ea47 已 push，本轮聚焦图像工具矩阵第 10 个工具——图片对比
+
+## 本轮聚焦方向
+**新增图片对比工具（图像工具矩阵第 10 个工具，承接第 83 轮遗留第 2 项 + 第 89 轮下轮建议第 2 项）**
+
+选择"图片对比"作为图像工具矩阵扩充方向，理由：
+- **用户痛点驱动**：设计稿版本对比、A/B 素材对比、回归测试截图对比是高频需求，市面竞品多为简单滑块对比，缺少像素级量化分析
+- **矩阵协同价值**：图片对比工具是图像工具矩阵的关键节点，可与 image-compress（压缩前后质量评估）、image-resize（对比前统一尺寸）、image-crop（对比前裁剪到同区域）等形成完整工作流
+- **技术差异化**：采用感知加权欧几里得距离（基于 ITU-R BT.601 权重）的像素差异算法，提供差异像素数、差异比例、最大差异、平均差异强度等 4 项量化指标，远超市面普通滑块对比工具
+- **零网络依赖**：基于 Canvas API ImageData 全本地处理，符合站点定位
+- **避免高复杂度方向**：metadata 打包工具需新增 XMP/IPTC/ICC 解析器，复杂度高；批量清理已通过 EXIF 编辑器批量能力实现，重复开发价值低
+
+## 完成任务
+
+### 单元 1：imageCompare.ts 核心对比逻辑（commit 743e16b）
+- 文件：`src/utils/imageCompare.ts`
+- 核心算法：感知加权欧几里得距离（0.299 * ΔR² + 0.587 * ΔG² + 0.114 * ΔB² 加权后开方，归一化到 0-255）
+- 接口设计：
+  - `loadImage(file)`: 加载图片文件，使用 ObjectURL 避免 Base64 编码开销
+  - `computeCompareSize(a, b)`: 取两张图较小尺寸作为对比区域
+  - `pixelDiff(r1,g1,b1,r2,g2,b2)`: 单像素差异计算
+  - `compareImagesDiff(sourceA, sourceB, threshold)`: 像素级差异分析，相同区域灰度化、差异区域红色高亮，返回差异图 dataURL + 统计数据
+  - `composeSideBySide(sourceA, sourceB, targetHeight)`: 等比缩放后并排拼接为单张图，含中间分隔线
+  - `formatBytes` / `downloadDataUrl`: 工具函数
+- 常量：MAX_FILE_SIZE（30MB 上限）、ACCEPTED_MIMES（6 种格式支持）、DIFF_PALETTE（差异色板）
+
+### 单元 2：ImageCompareTool.tsx UI 组件（commit 743e16b）
+- 文件：`src/components/ImageCompareTool.tsx`
+- 核心状态：双图独立 sourceA/sourceB + 三种模式 mode + 阈值 threshold + 滑块位置 sliderPos + 结果 diffResult/sideBySideUrl
+- 三种对比模式：
+  1. **side-by-side（左右并排）**：调用 composeSideBySide 合成图，可下载 PNG
+  2. **overlay-slider（滑块叠加）**：CSS clip + 拖动垂直分隔线对比，支持鼠标/触摸/键盘（← → 方向键）
+  3. **diff-highlight（差异高亮）**：调用 compareImagesDiff 像素级分析，输出差异图 + 6 项统计
+- 交互：双图独立上传（点击/拖拽/Ctrl+V 粘贴）+ 模式切换 Tab + 阈值滑块（0-100）+ 三档预设（严格5/默认20/宽松50）+ 交换 A/B 按钮 + 重置按钮 + 下载结果按钮
+- 性能：300ms 防抖避免拖动阈值滑块时频繁计算；let cancelled 标志防止 React 状态更新到已卸载组件
+- 无障碍：tablist/tab 语义化 + aria-selected + role="slider" + aria-valuenow + aria-label + role="alert" 错误提示
+
+### 单元 3：image-compare.astro 页面（commit 743e16b）
+- 文件：`src/pages/image-compare.astro`
+- SEO meta：title 含三种模式关键词、description 包含算法与场景、JSON-LD WebApplication 结构化数据
+- Hero 区：加粗卖点（三种模式 + 阈值调节 + 6 项统计 + 全本地处理）
+- 10 条 FAQ：覆盖三种模式场景、像素差异算法、阈值选择、尺寸差异、滑块操作、统计指标、格式支持、隐私、导出格式、与压缩工具关系
+- 相关工具内链：9 个图像工具（排除自身）
+- 样式（imgcmp 命名空间）：双图上传区 grid 2 列 + 控制面板 + 滑块叠加模式 + 差异统计 + 响应式（768/480px）+ 暗色模式全套
+
+### 单元 4：配套博客（commit af0fb10）
+- 文件：`src/content/blog/image-comparison-guide.md`
+- 内容结构：核心原理 + 像素差异算法 + 阈值选择策略 + 三种模式应用场景 + 统计指标解读 + 最佳实践 + 常见陷阱 + 与其他图像工具的协同
+
+### 单元 5：9 个图像工具页内链补齐（commit af0fb10）
+- 在每个图像工具页的相关工具区块新增 /image-compare 链接
+- 涉及文件：exif.astro / exif-editor.astro / image-compress.astro / image-convert.astro / image-crop.astro / image-resize.astro / image-watermark.astro / base64-image.astro / svg-optimizer.astro
+- svg-optimizer.astro 是数组形式（relatedTools），其他 8 个是 `<ul class="related-tools__list">` 标准结构
+- 链接文案统一：`图片对比 —— 左右并排 / 滑块叠加 / 像素差异高亮`
+- exif-editor.astro 使用 `·` 分隔符（保持文件原有风格）
+
+### 单元 6：全量验收
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留，与本轮无关）
+- `npm run build`：872 页面构建成功（29.29s）
+  - 原规模 866 页面 + image-compare 工具页 1 + 博客文章 1 + 分页与 tag 索引自动扩展 4 = 872
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：872 页面构建成功，无错误
+- ✅ 功能完整性：三种对比模式全链路可用（双图上传 → 模式切换 → 阈值调节 → 结果展示 → 下载导出）
+- ✅ 移动端响应式：768px 双图上传变单列、统计 2 列；480px 统计单列、操作按钮单列
+- ✅ 暗色模式：双图 slot / 控制面板 / 模式 Tab / 滑块把手 / 差异统计全套暗色样式
+- ✅ 无障碍：tablist/tab 语义 + role="slider" + aria-valuenow + 键盘 ← → 支持 + WCAG 2.2 触控目标（按钮 44px）
+- ✅ 性能：300ms 防抖避免频繁计算；ObjectURL 避免 Base64 编码开销；中间画布及时释放（width=0）
+- ✅ 内链覆盖：10 个图像工具页（含 image-compare 自身）形成完整内链网络
+- ✅ 代码注释、UI 文案、提交信息全部使用中文
+
+## 修改文件清单
+
+### commit 743e16b（3 文件，+1881 行）
+- `src/utils/imageCompare.ts`（+约 320 行：核心算法 + 6 个接口 + 常量定义）
+- `src/components/ImageCompareTool.tsx`（+约 580 行：双图上传 + 三模式 UI + 阈值调节 + 滑块交互 + 差异统计）
+- `src/pages/image-compare.astro`（+约 980 行：SEO meta + Hero + 10 条 FAQ + 9 个内链 + 完整样式 + 响应式 + 暗色模式）
+
+### commit af0fb10（10 文件，+303 行）
+- `src/content/blog/image-comparison-guide.md`（+约 200 行：算法原理 + 阈值策略 + 模式场景 + 最佳实践）
+- 9 个图像工具页（+9 行：每文件新增 1 条内链）
+
+## 进度沉淀
+- Git：commit 743e16b + af0fb10 已 push（196ea47..af0fb10 HEAD -> main）
+- 当前规模：**108 工具**（107+1）+ **103 博客**（102+1）+ **872 页面**（866+6）
+- 图像工具矩阵扩充至 10 个工具：exif / exif-editor / image-compress / image-convert / image-resize / image-crop / image-watermark / base64-image / svg-optimizer / **image-compare**
+- 内链网络：10 个图像工具页形成完整内链网络（每页链接到其他 9 个图像工具）
+
+## 问题与发现
+1. **方向选择权衡**：第 89 轮下轮建议提到"metadata 打包 / 图片对比 / 批量清理"三个方向。评估后选择图片对比：metadata 打包需新增 XMP（XML RDF 解析）/ IPTC（8BIM 段解析）/ ICC profile 解析器，复杂度高且非 JPEG 拍摄场景必需；批量清理已通过 EXIF 编辑器批量能力实现，重复开发价值低。图片对比是市面竞品普遍存在但功能浅薄的方向，本工具通过感知加权欧几里得距离 + 6 项量化指标 + 三档阈值预设实现差异化。
+2. **感知加权算法的选择**：朴素 RGB 差异（如 |r1-r2| + |g1-g2| + |b1-b2|）忽略了人眼对不同颜色的敏感度差异。本工具采用基于 ITU-R BT.601 标准的加权欧几里得距离（0.299/0.587/0.114 权重），更符合人眼感知。同时使用平方加权而非绝对值，使大差异的权重更高，符合人眼对显著改动的感知特性。
+3. **滑块叠加模式实现**：采用 CSS clip + 绝对定位方案：底层图片 A 占满容器，上层图片 B 通过 width 百分比的 div 包裹并 overflow:hidden 实现 clip，分隔线通过 left 百分比定位。这种纯 CSS 方案性能优于 Canvas 重绘，且支持平滑触摸拖动。同时监听 window mousemove/touchmove 事件实现拖动跟随，避免仅依赖组件内事件。
+4. **差异图色板设计**：相同区域灰度化（gray = 0.299r + 0.587g + 0.114b 后再乘 0.5 降低饱和度）使差异红色更醒目；差异区域使用半透明红色（rgba(231,76,60,230)）便于观察下方像素；输出 PNG 保留透明通道与精确像素。
+5. **类型检查 hint 清理**：初次实现中导入了未使用的 MAX_FILE_SIZE 和 drawImageToCanvas 函数，立即清理为 0 errors / 0 warnings / 4 hints（剩余 4 个均为既有遗留）。
+6. **并行任务文件隔离**：工作树存在 memory/20260718/topics.md 修改与 docs/bug-check/、docs/style-optimization/、memory/20260718/topics-archive-20260718.md 未跟踪文件，均为其他并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮未纳入这些文件。
+7. **页面数增长分析**：构建产物从 866 增长到 872，多出 6 个：1 个 image-compare 工具页 + 1 个博客详情页 + 4 个分页/tag 索引页（Astro content collection 自动分页与 tag 索引随博客数量增长）。
+
+## 下轮建议（第 90 轮产出）
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+2. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）/ 图片元数据批量清理（基于本轮批量能力扩展，可作为 EXIF 编辑器增强而非新工具）
+3. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+4. **图片对比工具增强**（可选）：批量对比 / 差异区域框选与放大 / 对比结果导出 JSON（差异像素坐标列表，便于自动化测试集成）
+5. **长尾 SEO 内容补充**：基于本轮图片对比工具，拓展"设计稿版本对比最佳实践"、"回归测试截图差异分析"、"JPEG 压缩损失评估方法"等长尾关键词落地页
+6. **阶段二运营推进**（第 89 轮遗留）：提交 sitemap 至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **EXIF 编辑器未支持 PNG/WebP/TIFF**：当前仅支持 JPEG（EXIF 主要载体）。其他格式需新增解析器，复杂度较高，非本轮范围。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 90 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 90 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：新增图片对比工具（图像工具矩阵第 10 个工具，承接第 83 轮遗留 + 第 89 轮下轮建议）
+**Commit**：743e16b（核心工具）+ af0fb10（博客 + 9 工具页内链）
+**Push**：196ea47..af0fb10 HEAD -> main
+
+### 完成任务
+1. ✅ 新增 src/utils/imageCompare.ts：感知加权欧几里得距离像素差异算法 + 6 个核心接口（loadImage/computeCompareSize/pixelDiff/compareImagesDiff/composeSideBySide + 工具函数）
+2. ✅ 新增 src/components/ImageCompareTool.tsx：双图独立上传 + 三种对比模式（左右并排 / 滑块叠加 / 像素差异高亮）+ 阈值调节（0-100，三档预设）+ 6 项差异统计 + 滑块触摸/键盘支持 + PNG 导出
+3. ✅ 新增 src/pages/image-compare.astro：完整 SEO meta + 10 条 FAQ + 9 个图像工具内链 + 完整样式（imgcmp 命名空间，含响应式 + 暗色模式）
+4. ✅ 新增 src/content/blog/image-comparison-guide.md：算法原理 + 阈值策略 + 三种模式场景 + 统计解读 + 最佳实践 + 常见陷阱
+5. ✅ 在 9 个图像工具页相关工具区块新增 /image-compare 内链
+6. ✅ 类型检查通过（0 errors）、构建成功（872 页面 29.29s）
+7. ✅ Git 提交推送完成（2 次提交，13 文件改动，+2184 行）
+
+### 当前规模
+- **工具**：108 个（+1，新增 image-compare）
+- **博客**：103 篇（+1，新增 image-comparison-guide）
+- **页面**：872 页（+6：1 工具页 + 1 博客详情 + 4 分页/tag 索引）
+- **图像工具矩阵**：扩充至 10 个工具，完整内链网络（每页链接到其他 9 个图像工具）
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 图像工具矩阵继续扩充（metadata 打包 / EXIF 编辑器 PNG/WebP/TIFF 支持）
+3. 图片对比工具增强（批量对比 / 差异区域框选 / 结果导出 JSON）
+4. 长尾 SEO 内容补充（设计稿对比 / 回归测试截图 / JPEG 压缩损失评估）
+5. 阶段二运营推进（sitemap 提交至搜索引擎）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- EXIF 编辑器未支持 PNG/WebP/TIFF（需新增解析器，复杂度较高）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
