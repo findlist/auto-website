@@ -1,0 +1,352 @@
+/**
+ * 图片对比工具核心逻辑
+ *
+ * 全部基于浏览器原生 Canvas API，零网络请求，零依赖。
+ *
+ * 三种对比模式：
+ *  - side-by-side（左右并排）：将两张图缩放至相同尺寸后并排展示
+ *  - overlay-slider（滑块叠加）：将两张图叠加，通过可拖动的垂直分割线对比
+ *  - diff-highlight（差异高亮）：逐像素对比，相同区域灰度化、差异区域红色高亮
+ *
+ * 适用场景：设计稿版本对比、A/B 素材对比、像素级差异分析、回归测试截图对比
+ */
+
+/** 输入文件大小上限：30MB，避免浏览器内存压力 */
+export const MAX_FILE_SIZE = 30 * 1024 * 1024;
+
+/** 支持的输入 MIME 类型（GIF 仅取首帧） */
+export const ACCEPTED_MIMES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/bmp',
+  'image/avif',
+];
+
+/** 对比模式 */
+export type CompareMode = 'side-by-side' | 'overlay-slider' | 'diff-highlight';
+
+/** 差异图色板配置 */
+export const DIFF_PALETTE = {
+  same: [0, 0, 0, 0],          // 相同区域：透明（叠加在灰度底图上）
+  diff: [231, 76, 60, 230],    // 差异区域：红色高亮（半透明，便于观察下方像素）
+  background: [38, 38, 38, 255], // 灰度底图：深灰背景
+} as const;
+
+/** 单张图片源信息 */
+export interface SourceImage {
+  file: File;
+  url: string;          // ObjectURL，组件卸载时需 revoke
+  width: number;       // 原始宽度
+  height: number;      // 原始高度
+  mime: string;
+}
+
+/** 差异统计信息 */
+export interface DiffStats {
+  /** 差异像素数 */
+  diffPixels: number;
+  /** 总像素数（取较小图尺寸） */
+  totalPixels: number;
+  /** 差异比例（0-100，保留 2 位小数） */
+  diffPercent: number;
+  /** 最大单像素差异（0-255，用于评估差异剧烈程度） */
+  maxPixelDiff: number;
+  /** 平均差异强度（仅统计差异像素） */
+  avgDiffIntensity: number;
+}
+
+/** 差异分析结果 */
+export interface DiffResult {
+  /** 差异图 dataURL（可直接作为 img.src） */
+  dataUrl: string;
+  /** 差异统计 */
+  stats: DiffStats;
+  /** 输出画布尺寸 */
+  width: number;
+  height: number;
+}
+
+/**
+ * 加载图片文件为 SourceImage
+ * 使用 ObjectURL 而非 DataURL，避免大文件 Base64 编码开销
+ */
+export function loadImage(file: File): Promise<SourceImage> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('请选择图片文件（PNG / JPEG / WebP / GIF 等）'));
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      reject(new Error(`文件过大（${(file.size / 1024 / 1024).toFixed(2)}MB），请选择小于 30MB 的图片`));
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        file,
+        url,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        mime: file.type,
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('图片加载失败，文件可能已损坏或格式不支持'));
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * 计算两张图共同对比区域尺寸
+ * 策略：取两张图中较小的宽度和高度，避免超出任一图边界
+ */
+export function computeCompareSize(
+  a: { width: number; height: number },
+  b: { width: number; height: number },
+): { width: number; height: number } {
+  return {
+    width: Math.min(a.width, b.width),
+    height: Math.min(a.height, b.height),
+  };
+}
+
+/**
+ * 异步加载图片并绘制到 Canvas
+ * 避免依赖外部 image 状态，确保图片已加载完成
+ */
+function drawImageAsync(
+  source: SourceImage,
+  targetWidth: number,
+  targetHeight: number,
+): Promise<HTMLCanvasElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas 2D 上下文不可用，请更换浏览器'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        resolve(canvas);
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error(String(e)));
+      }
+    };
+    img.onerror = () => reject(new Error('图片加载失败，无法绘制到画布'));
+    img.src = source.url;
+  });
+}
+
+/**
+ * 计算两像素颜色差异强度
+ * 使用感知加权欧几里得距离（简化版 ITU-R BT.601 权重）
+ * 返回 0-255 范围的差异值
+ */
+export function pixelDiff(
+  r1: number, g1: number, b1: number,
+  r2: number, g2: number, b2: number,
+): number {
+  // 加权差异：人眼对绿色更敏感、对蓝色最不敏感
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+  const weighted = 0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db;
+  // 归一化到 0-255
+  return Math.min(255, Math.sqrt(weighted));
+}
+
+/**
+ * 像素差异分析：逐像素对比两张图，生成差异图
+ *
+ * - threshold（阈值）：0-255，像素差异小于阈值视为"相同"
+ *   - 较低（如 5）：高敏感度，捕捉细微差异（适用于回归测试）
+ *   - 中等（如 20）：默认值，平衡可见性与噪声
+ *   - 较高（如 50）：低敏感度，仅保留显著差异（适用于压缩损失对比）
+ *
+ * - 相同区域：原色灰度化（保留视觉信息，便于定位）
+ * - 差异区域：红色高亮（叠加在灰度底图上，醒目易识别）
+ */
+export async function compareImagesDiff(
+  sourceA: SourceImage,
+  sourceB: SourceImage,
+  threshold: number,
+): Promise<DiffResult> {
+  const { width, height } = computeCompareSize(sourceA, sourceB);
+  const [canvasA, canvasB] = await Promise.all([
+    drawImageAsync(sourceA, width, height),
+    drawImageAsync(sourceB, width, height),
+  ]);
+  const ctxA = canvasA.getContext('2d');
+  const ctxB = canvasB.getContext('2d');
+  if (!ctxA || !ctxB) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+  const dataA = ctxA.getImageData(0, 0, width, height).data;
+  const dataB = ctxB.getImageData(0, 0, width, height).data;
+
+  // 输出画布
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = width;
+  outCanvas.height = height;
+  const outCtx = outCanvas.getContext('2d');
+  if (!outCtx) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+  const outData = outCtx.createImageData(width, height);
+  const out = outData.data;
+
+  let diffPixels = 0;
+  let maxPixelDiff = 0;
+  let totalDiffIntensity = 0;
+  const totalPixels = width * height;
+
+  for (let i = 0; i < totalPixels; i++) {
+    const offset = i * 4;
+    const r1 = dataA[offset];
+    const g1 = dataA[offset + 1];
+    const b1 = dataA[offset + 2];
+    const r2 = dataB[offset];
+    const g2 = dataB[offset + 1];
+    const b2 = dataB[offset + 2];
+
+    const diff = pixelDiff(r1, g1, b1, r2, g2, b2);
+    if (diff > maxPixelDiff) maxPixelDiff = diff;
+
+    if (diff > threshold) {
+      // 差异像素：标记为红色高亮
+      out[offset] = DIFF_PALETTE.diff[0];
+      out[offset + 1] = DIFF_PALETTE.diff[1];
+      out[offset + 2] = DIFF_PALETTE.diff[2];
+      out[offset + 3] = DIFF_PALETTE.diff[3];
+      diffPixels++;
+      totalDiffIntensity += diff;
+    } else {
+      // 相同像素：将原图 A 灰度化（保留视觉定位信息）
+      const gray = Math.round(0.299 * r1 + 0.587 * g1 + 0.114 * b1);
+      // 灰度降低饱和度，使差异红色更醒目
+      const dimmed = Math.round(gray * 0.5);
+      out[offset] = dimmed;
+      out[offset + 1] = dimmed;
+      out[offset + 2] = dimmed;
+      out[offset + 3] = 255;
+    }
+  }
+
+  outCtx.putImageData(outData, 0, 0);
+
+  // 释放中间画布
+  canvasA.width = 0;
+  canvasA.height = 0;
+  canvasB.width = 0;
+  canvasB.height = 0;
+
+  const stats: DiffStats = {
+    diffPixels,
+    totalPixels,
+    diffPercent: Number(((diffPixels / totalPixels) * 100).toFixed(2)),
+    maxPixelDiff: Math.round(maxPixelDiff),
+    avgDiffIntensity: diffPixels === 0 ? 0 : Number((totalDiffIntensity / diffPixels).toFixed(2)),
+  };
+
+  return {
+    dataUrl: outCanvas.toDataURL('image/png'),
+    stats,
+    width,
+    height,
+  };
+}
+
+/**
+ * 将 ImageData 转为灰度（用于差异图叠加底图）
+ * 当前未使用，保留作为后续扩展接口
+ */
+export function toGrayscale(imageData: ImageData): void {
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    data[i] = gray;
+    data[i + 1] = gray;
+    data[i + 2] = gray;
+  }
+}
+
+/**
+ * 生成对比合成图（左右并排模式）
+ * 将两张图缩放至相同高度，并排拼接到同一张图中
+ */
+export async function composeSideBySide(
+  sourceA: SourceImage,
+  sourceB: SourceImage,
+  targetHeight: number,
+): Promise<{ dataUrl: string; width: number; height: number }> {
+  // 等比缩放：保持各自宽高比，统一到目标高度
+  const scaleA = targetHeight / sourceA.height;
+  const scaleB = targetHeight / sourceB.height;
+  const wA = Math.max(1, Math.round(sourceA.width * scaleA));
+  const wB = Math.max(1, Math.round(sourceB.width * scaleB));
+  const totalWidth = wA + wB;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = totalWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+
+  const [canvasA, canvasB] = await Promise.all([
+    drawImageAsync(sourceA, wA, targetHeight),
+    drawImageAsync(sourceB, wB, targetHeight),
+  ]);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, totalWidth, targetHeight);
+  ctx.drawImage(canvasA, 0, 0);
+  ctx.drawImage(canvasB, wA, 0);
+  // 中间分隔线
+  ctx.fillStyle = '#888';
+  ctx.fillRect(wA - 1, 0, 2, targetHeight);
+
+  // 释放中间画布
+  canvasA.width = 0;
+  canvasA.height = 0;
+  canvasB.width = 0;
+  canvasB.height = 0;
+
+  return {
+    dataUrl: canvas.toDataURL('image/png'),
+    width: totalWidth,
+    height: targetHeight,
+  };
+}
+
+/**
+ * 格式化字节为可读字符串
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+/**
+ * 触发文件下载
+ */
+export function downloadDataUrl(dataUrl: string, filename: string): void {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
