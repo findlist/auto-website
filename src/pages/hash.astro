@@ -66,6 +66,21 @@ const meta: SiteMeta = {
         <p>浏览器原生 SubtleCrypto API 的 <code>digest</code> 方法需要完整的 ArrayBuffer 一次性计算（不支持流式增量哈希），文件需要全部读入内存。对 100MB 以上的文件，浏览器内存可能不足以容纳原始 buffer + 多算法 digest 的中间结果。如需计算超大文件哈希，建议使用本地命令行工具（如 <code>sha256sum</code>、<code>certutil -hashfile</code>）。</p>
       </details>
     </section>
+
+    <!-- 相关工具：加密哈希矩阵内链，提升站内导航与 SEO 内链结构 -->
+    <section class="related-tools" aria-labelledby="related-title">
+      <h2 id="related-title">相关工具</h2>
+      <ul class="related-tools__list">
+        <li><a href="/uuid">UUID 生成器</a> —— RFC 4122 v4 唯一标识符批量生成</li>
+        <li><a href="/aes">AES 加解密</a> —— GCM/CBC/CTR 三种模式对称加解密</li>
+        <li><a href="/jwt">JWT 解码</a> —— 三段式 Token 解析与安全警告</li>
+        <li><a href="/jwt-sign">JWT 签名生成器</a> —— 10 种算法在线签发 JWT</li>
+        <li><a href="/jwt-verify">JWT 签名验证</a> —— 在线验签与声明校验</li>
+        <li><a href="/jwe">JWE 解码</a> —— 五段式加密令牌解析与解密</li>
+        <li><a href="/password">密码生成器</a> —— 强密码随机生成与熵评估</li>
+        <li><a href="/password-hash">密码哈希工具</a> —— bcrypt 与 PBKDF2 哈希生成验证</li>
+      </ul>
+    </section>
   </section>
 </BaseLayout>
 
