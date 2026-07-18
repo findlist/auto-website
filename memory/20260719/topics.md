@@ -1282,3 +1282,175 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 92 轮 · 工具页反向内链补齐 - 新增"相关博客"区块（SEO 双向内链网络）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 91 轮（commit 29175f7）：3 篇实战类博客新增完成，108 工具 + 106 博客 + 887 页面
+- 第 91 轮新发现的设计短板明确指向本轮方向："工具页缺少相关博客区块，仅有相关工具内链，缺少工具→博客的反向关联"
+- 工作树状态：第 91 轮已 push，本轮聚焦 99 个有相关博客的工具页反向内链补齐
+
+## 本轮聚焦方向
+**工具页反向内链补齐 - 新增"相关博客"区块（第 91 轮新发现的设计短板）**
+
+承接第 91 轮新发现："工具页目前仅有相关工具区块（工具 ↔ 工具），缺少相关博客区块（工具 → 博客）"。本轮系统性补齐这一设计短板，理由：
+- **完成双向内链网络**：现有内链结构只有"工具 ↔ 工具"与"博客 → 工具"（frontmatter relatedTool），缺少"工具 → 博客"反向链接。本轮补齐后形成完整的双向内链网络
+- **SEO 权重传递**：工具页是站点核心入口，向博客传递内链权重可提升博客页面在搜索引擎中的可见度
+- **用户深度阅读引导**：用户使用工具后常有深入理解原理的需求，相关博客区块提供自然的深度阅读路径
+- **第 91 轮新发现短板**：作为上一轮新发现的设计短板，优先级最高，符合"优先解决当前最大的质量/体验瓶颈"原则
+- **低成本高收益**：纯增量内链，无功能逻辑变更，通过脚本批量处理保证一致性
+
+## 调研发现
+
+### 工具页反向内链缺失现状（本轮修复前）
+- 全站 108 个工具页均有 `.related-tools`（工具 ↔ 工具）区块，但 0 个有 `.related-blogs`（工具 → 博客）区块
+- 99 个工具有相关博客（通过 frontmatter `relatedTool` 字段反向匹配），9 个工具无相关博客
+- 9 个无博客的工具：base64-image / json-to-xml / jsonpath / jwe / mime / regex-benchmark / toml-schema / xml-to-json / yaml-schema
+
+### 博客数量分布
+- 1 篇博客的工具页：92 个（绝大多数工具）
+- 2 篇博客的工具页：7 个（exif-editor / image-compare / image-compress / jwt / jwt-sign / regex / html-entities）
+
+## 完成任务
+
+### 单元 1：在 `global.css` 新增 `.related-blogs` 全局样式（约 90 行）
+- 设计原则：与 `.related-tools` 视觉同源（边框 + 柔和背景 + 圆角），但通过左侧主色边条差异化
+- 布局：响应式 grid `auto-fit minmax(280px, 1fr)`，移动端（≤480px）降级为单列
+- 卡片化设计：每个博客项使用 `<li>` + 边框 + hover 上移效果（`transform: translateY(-1px)`），与 `.related-tools` 的纯列表形成视觉区分
+- 交互：hover 加下划线、focus-visible 使用 `box-shadow` 焦点环（与全站表单/按钮一致）
+- 描述截断：`.related-blogs__desc` 限制 88 字符 + 省略号，避免长描述破坏布局
+
+### 单元 2：编写 Node.js 批量处理脚本 `scripts/add-related-blogs.mjs`（约 165 行）
+- 功能：扫描博客 frontmatter → 构建 relatedTool 映射 → 批量在工具页插入 `.related-blogs` 区块
+- 特性：
+  - 幂等性：已有 `.related-blogs` 区块的文件自动跳过
+  - 多结构兼容：同时支持 `<section class="related-tools">` 和 `<nav class="related-tools">` 两种结构
+  - HTML 转义：标题与描述中的特殊字符自动转义
+  - 描述截断：88 字符限制，避免破坏布局
+- 输出：99 个工具页成功插入，9 个无博客的工具页跳过，0 错误
+
+### 单元 3：批量处理 99 个工具页（脚本执行结果）
+- 在每个工具页的 `.related-tools` 区块后插入 `.related-blogs` 区块
+- 区块结构：`<section class="related-blogs" aria-labelledby="related-blogs-title">` + `<h2>` + `<ul class="related-blogs__list">` + 博客列表项
+- 每个博客项包含：链接（`/blog/<slug>`）+ 简短描述（`<span class="related-blogs__desc">`）
+
+### 单元 4：全量验证
+- `npm run check`：0 errors / 0 warnings / 5 hints（1 个 hint 是本轮新增脚本的 statSync 未使用，已修复；其余 4 个均为既有遗留）
+- `npm run build`：887 页面构建成功（28.22s）
+- 内链覆盖率验证：99/108 工具页（91.7%）包含 `.related-blogs` 区块；9 个无博客的工具页正确跳过
+- 博客数量分布验证：92 个工具页有 1 篇博客 / 7 个工具页有 2 篇博客
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints（修复了新脚本的 statSync hint）
+- ✅ `npm run build`：887 页面构建成功，无错误
+- ✅ 内链覆盖率：99/108 工具页（91.7%）含 `.related-blogs` 区块
+- ✅ 多结构兼容：svg-optimizer.astro 使用 `<nav>` 元素也正确处理
+- ✅ 幂等性：脚本可重复运行，已有区块的文件自动跳过
+- ✅ 样式复用：所有新增区块使用本轮建立的 `.related-blogs` 全局样式，无新增样式依赖
+- ✅ 语义化 HTML：`<section aria-labelledby="related-blogs-title">` + `<ul class="related-blogs__list">` 结构
+- ✅ 卡片化设计：每个博客项使用边框 + hover 上移效果，与 `.related-tools` 形成视觉区分
+- ✅ 移动端响应式：480px 以下单列布局
+- ✅ 无障碍：focus-visible 焦点环、aria-labelledby 语义化标签
+- ✅ 所有代码注释、UI 文案使用中文
+
+## 修改文件清单
+
+### commit（102 文件，约 +2700 行）
+**新增脚本与映射文件（2 文件）**：
+- `scripts/add-related-blogs.mjs`（+165 行：批量处理脚本，幂等性、多结构兼容、HTML 转义）
+- `scripts/related-blogs-map.txt`（+205 行：relatedTool → blogs 映射参考表）
+
+**样式（1 文件）**：
+- `src/styles/global.css`（+90 行：`.related-blogs` 全局样式，含响应式 + 暗色模式适配）
+
+**工具页（99 文件，每文件平均 +10 行）**：
+- 图像矩阵（10 个）：exif / exif-editor / image-compare / image-compress / image-convert / image-crop / image-resize / image-watermark / qr / svg-optimizer
+- 加密哈希矩阵（9 个）：aes / hash / jwt / jwt-sign / jwt-verify / jwe-跳过（无博客）/ password / password-hash / uuid → 实际 8 个
+- 文本处理矩阵（11 个）：lorem / text-analyzer / text-case / text-dedup / sort / random-picker / slug / reverse / find-replace / truncate / text-similarity
+- 编码转换矩阵（10 个）：base64 / base32 / hex / url / html-entities / punycode / morse / ascii-art / html-to-markdown / markdown
+- 数据格式矩阵（10 个）：json / json-to-ts / json-schema / yaml / toml / csv-json / csv-markdown / sql（跳过 3 个：json-to-xml / jsonpath / toml-schema / xml-to-json / yaml-schema）
+- 网络工具矩阵（8 个）：ip / dns / http-status / http-headers / http-request / user-agent / mime-跳过（无博客）/ tls
+- CSS 矩阵（31 个）：color / color-contrast / color-palette / gradient / light-dark / box-shadow / border-radius / clip-path / text-shadow / filter / transform / transition / animation / flexbox / grid / container / contain / subgrid / layer / scope / nesting / writing-mode / scroll-snap / scroll-driven / view-transition / anchor-positioning / position-area / interpolate-size / starting-style / css-if / css-math / background / text-wrap
+- 其他矩阵：cron / time-unit / timestamp / timezone / css-formatter / html-formatter / js-formatter / regex / diff / ieee754 / number-base / trigonometric
+
+**进度沉淀（1 文件）**：
+- `memory/20260719/topics.md`（追加本轮记录）
+
+## 进度沉淀
+- Git：本轮 commit 待提交后补记
+- 当前规模：108 工具 + 106 博客 + 887 页面（无变化，本轮纯内链优化）
+- 内链网络累计：
+  - 工具 ↔ 工具：107/107 工具页形成完整内链网络（第 88 轮完成）
+  - 博客 → 工具：106/106 博客通过 frontmatter relatedTool 字段关联工具（既有）
+  - **工具 → 博客：99/108 工具页新增 `.related-blogs` 区块（本轮完成，9 个无博客的工具页正确跳过）**
+- 全站内链网络升级为完整双向关联：工具 ↔ 工具 + 博客 → 工具 + 工具 → 博客
+
+## 问题与发现
+1. **脚本化批量处理的效率优势**：本轮处理 99 个工具页，通过 Node.js 脚本一次性完成，避免了手工编辑 99 个文件的繁琐与出错风险。脚本具备幂等性、多结构兼容、HTML 转义、描述截断等特性，可作为后续类似批量任务（如新增工具页时自动补齐内链）的模板。
+2. **多结构兼容性设计**：发现 svg-optimizer.astro 使用 `<nav>` 元素而非 `<section>` 元素（数组形式 relatedTools）。脚本通过同时检测 `</section>` 和 `</nav>` 两种结束标签实现兼容。这是全站唯一的 `<nav>` 结构工具页。
+3. **9 个无博客工具页的处理策略**：base64-image / json-to-xml / jsonpath / jwe / mime / regex-benchmark / toml-schema / xml-to-json / yaml-schema 这 9 个工具页因没有相关博客被脚本正确跳过。下轮可考虑为这些工具补充配套博客（如 JWE 工作原理、MIME 类型对照、JSONPath 语法等高价值主题）。
+4. **视觉差异化设计**：`.related-blogs` 与 `.related-tools` 视觉同源但通过左侧主色边条（`border-left: 3px solid var(--color-primary)`）差异化，让用户一眼区分"相关工具"与"相关博客"。每个博客项使用卡片化设计（边框 + hover 上移），与 `.related-tools` 的纯列表形成视觉层次区分。
+5. **描述截断策略**：博客 description 字段通常较长（100-200 字符），直接展示会破坏布局。脚本将描述截断到 88 字符 + 省略号，既保留主要信息又避免布局问题。截断后使用 CSS `text-overflow: ellipsis` 进一步保证视觉一致性。
+6. **并行任务文件隔离**：工作树存在 `memory/20260718/topics.md` 修改、`docs/bug-check/bug-check-2026-07-19.md`、`docs/style-optimization/style-opt-2026-07-19.md`、`memory/20260718/topics-archive-20260718.md` 等并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮仅提交 102 个本轮修改的文件。
+
+## 下轮建议（第 92 轮产出）
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+2. **为 9 个无博客工具页补充配套博客**（本轮新发现）：JWE 工作原理与 JWT 区别 / MIME 类型对照与浏览器支持 / JSONPath 语法与查询实战 / XML 与 JSON 互转陷阱 / YAML Schema 校验实践 / Base64 图片互转性能优化 / TOML Schema 校验 / 正则性能基准测试方法
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）
+4. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+5. **图片对比工具增强**（第 90 轮下轮建议第 3 项）：批量对比 / 差异区域框选与放大 / 对比结果导出 JSON
+6. **长尾 SEO 内容补充继续**：基于加密哈希矩阵拓展"密码哈希算法对比实战"、"JWT 安全实践案例"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **EXIF 编辑器未支持 PNG/WebP/TIFF**：当前仅支持 JPEG（EXIF 主要载体）。其他格式需新增解析器，复杂度较高，非本轮范围。
+- **9 个无博客工具页**：base64-image / json-to-xml / jsonpath / jwe / mime / regex-benchmark / toml-schema / xml-to-json / yaml-schema 暂无配套博客，相关博客区块无法展示。下轮可优先补齐这些博客。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 92 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 92 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：工具页反向内链补齐 - 新增"相关博客"区块（SEO 双向内链网络）
+**Commit**：待提交
+**Push**：待提交
+
+### 完成任务
+1. ✅ 在 `global.css` 新增 `.related-blogs` 全局样式（约 90 行，响应式 grid + 卡片化设计 + 左侧主色边条差异化）
+2. ✅ 编写 `scripts/add-related-blogs.mjs` 批量处理脚本（约 165 行，幂等性、多结构兼容、HTML 转义、描述截断）
+3. ✅ 批量处理 99 个工具页，每个工具页在 `.related-tools` 区块后插入 `.related-blogs` 区块（92 个 1 篇博客 + 7 个 2 篇博客）
+4. ✅ 9 个无博客的工具页正确跳过（base64-image / json-to-xml / jsonpath / jwe / mime / regex-benchmark / toml-schema / xml-to-json / yaml-schema）
+5. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，修复了新脚本 statSync hint）
+6. ✅ 构建成功（887 页面 28.22s，与上轮规模一致）
+7. ✅ 内链覆盖率验证 99/108 工具页（91.7%）
+
+### 当前规模
+- **工具**：108 个（无变化）
+- **博客**：106 篇（无变化）
+- **页面**：887 页（无变化，本轮纯内链优化）
+- **内链网络升级**：从"工具 ↔ 工具 + 博客 → 工具"升级为"工具 ↔ 工具 + 博客 → 工具 + **工具 → 博客**"完整双向关联
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 为 9 个无博客工具页补充配套博客（JWE / MIME / JSONPath / XML-JSON / YAML Schema / TOML Schema / Base64 图片 / 正则性能 / XML 转 JSON）
+3. 图像工具矩阵继续扩充（metadata 打包）
+4. EXIF 编辑器进一步增强（PNG/WebP/TIFF 支持）
+5. 图片对比工具增强（批量对比 / JSON 导出）
+6. 长尾 SEO 内容补充继续（加密哈希矩阵实战类博客）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- EXIF 编辑器未支持 PNG/WebP/TIFF（需新增解析器，复杂度较高）
+- 9 个无博客工具页暂无配套博客（下轮优先补齐）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools

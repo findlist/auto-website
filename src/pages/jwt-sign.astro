@@ -271,6 +271,19 @@ const meta: SiteMeta = {
         <li><a href="/password-hash">密码哈希工具</a> —— bcrypt 与 PBKDF2 哈希生成验证</li>
       </ul>
     </section>
+
+    <!-- 相关博客：工具页反向内链，引导用户深度阅读（脚本批量生成，请勿手动修改） -->
+    <section class="related-blogs" aria-labelledby="related-blogs-title">
+      <h2 id="related-blogs-title">相关博客</h2>
+      <ul class="related-blogs__list">
+        <li>
+          <a href="/blog/ecdsa-elliptic-curve-jwt-signing-guide">椭圆曲线密码学与 ECDSA 签名：从 ES256 到 JWT 实践</a><span class="related-blogs__desc">系统讲解椭圆曲线密码学（ECC）原理、ECDSA 签名算法、JWT 中 ES256/ES384/ES512 三种算法的曲线选择、密钥生成、签名格式（r||s raw 拼接）、…</span>
+        </li>
+        <li>
+          <a href="/blog/jwt-signing-guide">JWT 签名实战：HS256/RS256 算法选型、密钥管理与签发实现</a><span class="related-blogs__desc">从开发者签发 JWT 的视角，系统讲解 HMAC 对称密钥（HS256/HS384/HS512）与 RSA 非对称密钥（RS256/RS384/RS512）的算法选型、密钥生…</span>
+        </li>
+      </ul>
+    </section>
   </section>
 </BaseLayout>
 

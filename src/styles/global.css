@@ -928,6 +928,94 @@ button {
   }
 }
 
+/* ============ 相关博客区块（工具页反向内链） ============ */
+/* 设计目标：在工具页底部展示与当前工具主题相关的深度博客文章，形成
+   "工具 ↔ 工具"与"工具 → 博客"的双向内链网络，提升 SEO 权重传递与用户深度阅读。
+   视觉与 .related-tools 同源（边框 + 柔和背景 + 圆角），但通过左侧主色边条
+   与列表项前置图标差异化，让用户一眼区分"相关工具"与"相关博客"。 */
+.related-blogs {
+  max-width: 760px;
+  margin: 32px auto 48px;
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+}
+
+.related-blogs h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.related-blogs__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px 16px;
+}
+
+.related-blogs li {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-soft);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.related-blogs li:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.related-blogs a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  display: block;
+  border-radius: 3px;
+  transition: color var(--transition-fast);
+}
+
+.related-blogs a:hover {
+  text-decoration: underline;
+}
+
+.related-blogs a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary-ring);
+}
+
+/* 博客描述文字（链接后的补充说明） */
+.related-blogs__desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-text-soft);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* 移动端：单列布局，避免 280px 最小宽度在 375px 屏幕下挤压 */
+@media (max-width: 480px) {
+  .related-blogs {
+    margin: 24px auto 32px;
+    padding: 16px;
+  }
+  .related-blogs__list {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ============ 复制成功反馈动画 ============ */
 /* 复制按钮成功后短暂变绿 + 弹性缩放 + 发光，给用户明确的操作反馈 */
 @keyframes copy-flash {

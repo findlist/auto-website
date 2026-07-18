@@ -180,6 +180,19 @@ const meta: SiteMeta = {
         <li><a href="/password-hash">密码哈希工具</a> —— bcrypt 与 PBKDF2 哈希生成验证</li>
       </ul>
     </section>
+
+    <!-- 相关博客：工具页反向内链，引导用户深度阅读（脚本批量生成，请勿手动修改） -->
+    <section class="related-blogs" aria-labelledby="related-blogs-title">
+      <h2 id="related-blogs-title">相关博客</h2>
+      <ul class="related-blogs__list">
+        <li>
+          <a href="/blog/jwt-decode-guide">JWT 入门与安全实践：三段式结构、算法选型与解码实现</a><span class="related-blogs__desc">系统讲解 JSON Web Token 的三段式结构（Header.Payload.Signature）、base64url 编码、7 个标准声明字段、HS256/RS256…</span>
+        </li>
+        <li>
+          <a href="/blog/jwt-security-best-practices">JWT 安全进阶：Refresh Token、黑名单、算法选择与漏洞防御</a><span class="related-blogs__desc">深入讲解 JWT 生产环境安全实践：双令牌刷新机制、黑名单与吊销方案、HS256/RS256/ES256 算法选择决策树、alg=none 攻击与密钥混淆漏洞防御、Token…</span>
+        </li>
+      </ul>
+    </section>
   </section>
 </BaseLayout>
 
