@@ -616,3 +616,173 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 88 轮 · 时间日期/代码格式化/正则调试/数学数字矩阵及遗漏工具内链补齐（SEO 内链优化）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 87 轮（commit bd6a47c）：编码转换/数据格式/网络工具矩阵内链补齐完成，91/107 工具页（85%）形成内链网络
+- 第 87 轮下轮建议第 1 项明确指向本轮方向："剩余 16 个工具矩阵内链补齐（时间日期 4 + 代码格式化 3 + 正则调试 3 + 数学数字 3 + 遗漏 3）"
+- 工作树状态：发现第 86/87 轮进度沉淀已写入 topics.md 但未提交（上轮遗留问题），先补提交（commit 248797a）
+
+## 本轮聚焦方向
+**剩余 16 个工具矩阵内链补齐（第 87 轮遗留第 1 项）**
+
+承接第 87 轮遗留任务，本轮聚焦 4 个剩余矩阵 + 2 个遗漏工具页（实际处理 15 个，跳过 qr.astro）：
+- **时间日期矩阵（4 个）**：cron / time-unit / timestamp / timezone
+- **代码格式化矩阵（3 个）**：css-formatter / html-formatter / js-formatter
+- **正则与代码调试矩阵（3 个）**：regex / regex-benchmark / diff
+- **数学数字矩阵（3 个）**：ieee754 / number-base / trigonometric（替换现有 related-links）
+- **遗漏工具（2 个，跳过 qr）**：background（CSS 矩阵）/ text-wrap（CSS+文本处理）
+
+理由：
+- **完成内链网络收尾**：第 87 轮后 91/107 工具页形成内链网络（85%），本轮补齐后预计 106/107（99%）
+- **SEO 内链权重传递**：剩余矩阵多为低流量长尾工具，互链可提升矩阵整体权重
+- **跨矩阵协同**：每页配置 7-8 条链接（同组全量互链 + 跨组精选 4-5 条互补）
+- **跳过 qr.astro**：被并行任务（拾色器 WCAG 2.2 触控目标优化）修改，避免提交内容混淆
+
+## 完成任务
+
+### 单元 1：补提交第 86/87 轮进度沉淀（commit 248797a）
+- 发现第 86/87 轮 topics.md 已写入但未提交（上轮遗留问题）
+- 仅 git add memory/20260719/topics.md 一个文件，避免混淆并行任务产物
+- 提交信息：`docs: 补提第 86/87 轮进度沉淀（CSS 矩阵 + 编码转换/数据格式/网络工具矩阵内链补齐）`
+
+### 单元 2：时间日期矩阵 4 个工具页内链补齐
+- 每个工具页在 FAQ 区块后追加 `<section class="related-tools">` 区块
+- 同组互链（3 条）+ 跨组精选互补（4 条），共 7 条链接
+- 涉及文件：`cron.astro` / `time-unit.astro` / `timestamp.astro` / `timezone.astro`
+- 跨组精选示例：cron → regex（cron 表达式校验）/ http-request（定时任务接口调用）/ diff（cron 配置对比）/ json（任务调度配置）
+
+### 单元 3：代码格式化矩阵 3 个工具页内链补齐
+- 同结构，同组互链（2 条）+ 跨组精选互补（5 条），共 7 条链接
+- 涉及文件：`css-formatter.astro` / `html-formatter.astro` / `js-formatter.astro`
+- 跨组精选示例：css-formatter → color / gradient / box-shadow / background / border-radius（CSS 工具矩阵协同）
+
+### 单元 4：正则与代码调试矩阵 3 个工具页内链补齐
+- 同结构，同组互链（2 条）+ 跨组精选互补（5 条），共 7 条链接
+- 涉及文件：`regex.astro` / `regex-benchmark.astro` / `diff.astro`
+- 跨组精选示例：regex → js-formatter / slug / uuid / text-analyzer / find-replace（JS+文本处理协同）
+
+### 单元 5：数学数字矩阵 3 个工具页内链补齐
+- ieee754 / number-base：标准追加（同组互链 2 条 + 跨组 5 条）
+- trigonometric.astro：替换现有 `related-links` 为 `related-tools`（统一 BEM 规范），同组互链 2 条 + CSS 工具矩阵精选 5 条
+- 涉及文件：`ieee754.astro` / `number-base.astro` / `trigonometric.astro`
+
+### 单元 6：遗漏工具 2 个工具页内链补齐（跳过 qr）
+- `background.astro`：CSS 工具矩阵互链（8 条：color/gradient/color-palette/box-shadow/clip-path/filter/css-formatter/light-dark）
+- `text-wrap.astro`：CSS + 文本处理双矩阵精选（8 条：color/text-shadow/writing-mode/css-formatter/text-analyzer/truncate/text-case/animation）
+- **跳过 qr.astro**：该文件被并行任务修改（拾色器 WCAG 2.2 触控目标优化），git add 是文件级别无法选择性 stage，为避免混淆推迟处理
+
+### 单元 7：验证与提交
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留：seo-audit.mjs 未使用 import、clipboard.ts deprecated execCommand，与本轮无关）
+- `npm run build`：866 页面构建成功（29.61s）
+- 内链覆盖率验证：
+  - 时间日期矩阵 4/4 文件包含 `class="related-tools"`，每页 7 条链接
+  - 代码格式化矩阵 3/3，每页 7 条
+  - 正则与代码调试矩阵 3/3，每页 7 条
+  - 数学数字矩阵 3/3，每页 7 条
+  - 遗漏工具 2/2，每页 8 条
+  - **总计 15/15 通过**
+- Git 提交：1 次（1a7741c），已 push 到 origin/main（248797a..1a7741c HEAD -> main）
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：866 页面构建成功，无错误
+- ✅ 内链覆盖率：15/15 工具页全部达标
+- ✅ 样式复用：所有新增区块使用第 84 轮已建立的 `.related-tools` 全局样式，无新增样式依赖
+- ✅ 语义化 HTML：`<section aria-labelledby="related-title">` + `<ul class="related-tools__list">` 结构
+- ✅ BEM 规范统一：trigonometric.astro 的 `related-links` 替换为 `related-tools__list`
+- ✅ 所有代码注释、UI 文案使用中文
+
+## 修改文件清单
+
+### commit 248797a（1 文件，327 行新增）— 上轮遗留补提交
+- `memory/20260719/topics.md`（第 86/87 轮进度沉淀）
+
+### commit 1a7741c（15 文件，208 行新增 / 7 行删除）
+**时间日期矩阵（4 文件）**：
+- `src/pages/cron.astro`、`src/pages/time-unit.astro`、`src/pages/timestamp.astro`、`src/pages/timezone.astro`
+
+**代码格式化矩阵（3 文件）**：
+- `src/pages/css-formatter.astro`、`src/pages/html-formatter.astro`、`src/pages/js-formatter.astro`
+
+**正则与代码调试矩阵（3 文件）**：
+- `src/pages/regex.astro`、`src/pages/regex-benchmark.astro`、`src/pages/diff.astro`
+
+**数学数字矩阵（3 文件）**：
+- `src/pages/ieee754.astro`、`src/pages/number-base.astro`、`src/pages/trigonometric.astro`（含 related-links 替换）
+
+**遗漏工具（2 文件）**：
+- `src/pages/background.astro`（CSS 矩阵）、`src/pages/text-wrap.astro`（CSS+文本处理）
+
+## 进度沉淀
+- Git：commit 248797a（补提上轮进度）+ commit 1a7741c（本轮 15 工具页内链补齐）已 push
+- 当前规模：107 工具 + 102 博客 + 866 页面（无变化，本轮纯内链优化）
+- 内链网络累计：图像（9）+ 加密哈希（9）+ 文本处理（11）+ CSS（31）+ 编码转换（10）+ 数据格式（13）+ 网络工具（8）+ 时间日期（4）+ 代码格式化（3）+ 正则调试（3）+ 数学数字（3）+ 遗漏工具（2）= **106 个工具页形成完整内链网络（99%）**
+- 剩余：仅 qr.astro 1 个未补齐（因并行任务占用）
+
+## 问题与发现
+1. **上轮进度沉淀未提交问题**：发现第 86/87 轮 topics.md 已写入但未提交到 git，本轮先补提交（commit 248797a），保持进度记录与代码同步。后续需注意每轮结束时立即 git add topics.md 并提交。
+2. **并行任务文件隔离原则**：qr.astro 被并行任务（拾色器 WCAG 2.2 触控目标优化）修改，git add 是文件级别无法选择性 stage 部分行。严格遵守规范"仅添加本次修改的文件"，本轮跳过 qr.astro，避免提交内容混淆。qr.astro 的内链补齐推迟到并行任务提交后再处理。
+3. **trigonometric.astro 历史区块替换**：该文件已有 `related-links` 区块（非 BEM 规范），本轮统一替换为 `related-tools` + `related-tools__list`，并补齐数学数字矩阵内链（ieee754 / number-base）。这是本轮唯一一个"替换"而非"新增"的文件。
+4. **跨矩阵链接策略验证**：本轮 4 个矩阵的跨组链接均经过场景化设计（如 cron → http-request 定时任务接口调用，ieee754 → hash 位运算依赖，regex → find-replace 正则替换），确保链接对用户有实际价值而非凑数。
+
+## 下轮建议（第 88 轮产出）
+1. **qr.astro 内链补齐**（本轮遗留）：待并行任务（拾色器 WCAG 2.2 触控目标优化）提交后，补齐 qr.astro 到其他 8 个图像工具的内链（图像矩阵已全量互链，qr 是唯一缺口）
+2. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+3. **图像工具矩阵继续扩充**（第 83 轮遗留）：metadata 打包工具 / 图片对比工具 / 批量清理工具
+4. **EXIF 编辑器增强**（第 83 轮遗留）：IPTC/XMP 支持 + 批量处理 + 预设保存
+5. **长尾 SEO 内容补充**：基于时间日期/正则/数学矩阵，拓展"cron 表达式实战"、"正则性能优化"、"浮点数精度问题"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **qr.astro 内链补齐推迟**：因并行任务修改占用，待并行任务提交后处理。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录
+
+---
+
+## 第 88 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 88 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：剩余 4 个矩阵 + 遗漏工具内链补齐（时间日期/代码格式化/正则调试/数学数字/遗漏工具）
+**Commit**：248797a（补提上轮进度）+ 1a7741c（本轮 15 工具页）
+**Push**：bd6a47c..248797a..1a7741c HEAD -> main
+
+### 完成任务
+1. ✅ 补提交第 86/87 轮进度沉淀（上轮遗留问题，仅 topics.md 一个文件）
+2. ✅ 时间日期矩阵 4 个工具页（cron/time-unit/timestamp/timezone）补齐"相关工具"内链区块，每页 7 条链接（同组 3 + 跨组 4）
+3. ✅ 代码格式化矩阵 3 个工具页（css-formatter/html-formatter/js-formatter）补齐内链区块，每页 7 条（同组 2 + 跨组 5）
+4. ✅ 正则与代码调试矩阵 3 个工具页（regex/regex-benchmark/diff）补齐内链区块，每页 7 条
+5. ✅ 数学数字矩阵 3 个工具页（ieee754/number-base/trigonometric）补齐内链，trigonometric 替换 related-links 为标准 related-tools
+6. ✅ 遗漏工具 2 个（background/text-wrap）补齐内链区块，每页 8 条
+7. ✅ 跳过 qr.astro（并行任务占用，避免提交内容混淆）
+8. ✅ 类型检查通过（0 errors）、构建成功（866 页面）、内链覆盖率 15/15
+9. ✅ Git 提交推送完成（2 次提交，15 文件改动，208 行新增 / 7 行删除）
+
+### 当前规模
+- **工具**：107 个（无变化）
+- **博客**：102 篇（无变化）
+- **页面**：866 页（无变化）
+- **内链网络累计**：106/107 工具页形成完整内链网络（**99%**，仅 qr 待补）
+
+### 下轮优先级
+1. qr.astro 内链补齐（待并行任务提交后处理）
+2. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+3. 图像工具矩阵继续扩充（metadata 打包 / 图片对比 / 批量清理）
+4. EXIF 编辑器增强（IPTC/XMP 支持 + 批量处理）
+5. 长尾 SEO 内容补充
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- qr.astro 内链补齐推迟（并行任务占用）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
