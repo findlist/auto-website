@@ -350,3 +350,369 @@ export function downloadDataUrl(dataUrl: string, filename: string): void {
   a.click();
   document.body.removeChild(a);
 }
+
+/**
+ * 触发文本文件下载（用于 JSON 导出）
+ */
+export function downloadText(text: string, filename: string, mime = 'application/json'): void {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  downloadDataUrl(url, filename);
+  // 异步释放，避免下载未完成时回收
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ============================================================
+ *  增强能力：差异区域聚类 + JSON 导出
+ * ============================================================ */
+
+/** 默认网格分块尺寸（像素），用于区域检测 */
+export const DEFAULT_GRID_SIZE = 32;
+
+/** 区域合并的最小差异密度阈值（0-100），低于此值的块不视为活跃 */
+export const REGION_DENSITY_THRESHOLD = 5;
+
+/** JSON 导出中保留的区域数量上限（按差异像素数降序） */
+export const MAX_REGIONS_IN_EXPORT = 50;
+
+/** 差异区域包围盒 */
+export interface DiffRegion {
+  /** 区域左上角 X（像素坐标，相对差异图） */
+  x: number;
+  /** 区域左上角 Y（像素坐标，相对差异图） */
+  y: number;
+  /** 区域宽度（像素） */
+  width: number;
+  /** 区域高度（像素） */
+  height: number;
+  /** 该区域内的差异像素数 */
+  diffPixels: number;
+  /** 该区域差异密度（0-100，差异像素数 / 区域像素数） */
+  density: number;
+  /** 区域平均差异强度（0-255） */
+  avgIntensity: number;
+}
+
+/** 增强版差异结果（含区域列表） */
+export interface DiffResultWithRegions extends DiffResult {
+  /** 检测到的差异区域（按差异像素数降序） */
+  regions: DiffRegion[];
+  /** 网格分块尺寸（像素） */
+  gridSize: number;
+}
+
+/** JSON 导出文件元信息 */
+export interface DiffExportMeta {
+  /** 生成时间（ISO 字符串） */
+  generatedAt: string;
+  /** 工具标识 */
+  tool: string;
+  /** 差异阈值 */
+  threshold: number;
+  /** 网格分块尺寸 */
+  gridSize: number;
+  /** 差异图宽度 */
+  width: number;
+  /** 差异图高度 */
+  height: number;
+  /** 图片 A 元信息 */
+  imageA: { name: string; size: number; width: number; height: number; mime: string };
+  /** 图片 B 元信息 */
+  imageB: { name: string; size: number; width: number; height: number; mime: string };
+}
+
+/** JSON 导出文件完整结构 */
+export interface DiffExportJson {
+  meta: DiffExportMeta;
+  stats: DiffStats;
+  regions: DiffRegion[];
+}
+
+/**
+ * 并查集（Union-Find）实现
+ * 用于网格分块的连通区域合并，复杂度接近 O(α(n))
+ */
+class UnionFind {
+  private parent: Int32Array;
+  private rank: Uint8Array;
+
+  constructor(size: number) {
+    this.parent = new Int32Array(size);
+    this.rank = new Uint8Array(size);
+    for (let i = 0; i < size; i++) {
+      this.parent[i] = i;
+    }
+  }
+
+  find(x: number): number {
+    // 路径压缩
+    let root = x;
+    while (this.parent[root] !== root) {
+      root = this.parent[root];
+    }
+    while (this.parent[x] !== root) {
+      const next = this.parent[x];
+      this.parent[x] = root;
+      x = next;
+    }
+    return root;
+  }
+
+  union(a: number, b: number): void {
+    const ra = this.find(a);
+    const rb = this.find(b);
+    if (ra === rb) return;
+    // 按秩合并
+    if (this.rank[ra] < this.rank[rb]) {
+      this.parent[ra] = rb;
+    } else if (this.rank[ra] > this.rank[rb]) {
+      this.parent[rb] = ra;
+    } else {
+      this.parent[rb] = ra;
+      this.rank[ra]++;
+    }
+  }
+}
+
+/**
+ * 增强版差异分析：一次扫描同时生成差异图与差异区域
+ *
+ * 算法流程：
+ *  1. 逐像素对比，生成差异图（复用原逻辑）
+ *  2. 同步统计每个网格块的差异像素数与强度总和
+ *  3. 标记差异密度超过 REGION_DENSITY_THRESHOLD 的块为活跃块
+ *  4. 使用并查集对相邻活跃块进行 4 连通合并
+ *  5. 计算每个连通区域的包围盒与统计信息
+ *
+ * 复杂度：O(n) 像素扫描 + O(块数) 合并，远优于完整连通区域检测
+ *
+ * @param gridSize 网格分块尺寸，默认 32 像素
+ */
+export async function compareImagesDiffWithRegions(
+  sourceA: SourceImage,
+  sourceB: SourceImage,
+  threshold: number,
+  gridSize: number = DEFAULT_GRID_SIZE,
+): Promise<DiffResultWithRegions> {
+  const { width, height } = computeCompareSize(sourceA, sourceB);
+  const [canvasA, canvasB] = await Promise.all([
+    drawImageAsync(sourceA, width, height),
+    drawImageAsync(sourceB, width, height),
+  ]);
+  const ctxA = canvasA.getContext('2d');
+  const ctxB = canvasB.getContext('2d');
+  if (!ctxA || !ctxB) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+  const dataA = ctxA.getImageData(0, 0, width, height).data;
+  const dataB = ctxB.getImageData(0, 0, width, height).data;
+
+  // 输出画布
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = width;
+  outCanvas.height = height;
+  const outCtx = outCanvas.getContext('2d');
+  if (!outCtx) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+  const outData = outCtx.createImageData(width, height);
+  const out = outData.data;
+
+  // 网格分块统计
+  const cols = Math.ceil(width / gridSize);
+  const rows = Math.ceil(height / gridSize);
+  const blockDiffPixels = new Uint32Array(cols * rows);
+  const blockIntensitySum = new Float64Array(cols * rows);
+
+  let diffPixels = 0;
+  let maxPixelDiff = 0;
+  let totalDiffIntensity = 0;
+  const totalPixels = width * height;
+
+  for (let i = 0; i < totalPixels; i++) {
+    const offset = i * 4;
+    const r1 = dataA[offset];
+    const g1 = dataA[offset + 1];
+    const b1 = dataA[offset + 2];
+    const r2 = dataB[offset];
+    const g2 = dataB[offset + 1];
+    const b2 = dataB[offset + 2];
+
+    const diff = pixelDiff(r1, g1, b1, r2, g2, b2);
+    if (diff > maxPixelDiff) maxPixelDiff = diff;
+
+    // 像素对应的网格块索引
+    const px = i % width;
+    const py = Math.floor(i / width);
+    const blockX = Math.floor(px / gridSize);
+    const blockY = Math.floor(py / gridSize);
+    const blockIdx = blockY * cols + blockX;
+
+    if (diff > threshold) {
+      // 差异像素：标记为红色高亮
+      out[offset] = DIFF_PALETTE.diff[0];
+      out[offset + 1] = DIFF_PALETTE.diff[1];
+      out[offset + 2] = DIFF_PALETTE.diff[2];
+      out[offset + 3] = DIFF_PALETTE.diff[3];
+      diffPixels++;
+      totalDiffIntensity += diff;
+      blockDiffPixels[blockIdx]++;
+      blockIntensitySum[blockIdx] += diff;
+    } else {
+      // 相同像素：将原图 A 灰度化（保留视觉定位信息）
+      const gray = Math.round(0.299 * r1 + 0.587 * g1 + 0.114 * b1);
+      const dimmed = Math.round(gray * 0.5);
+      out[offset] = dimmed;
+      out[offset + 1] = dimmed;
+      out[offset + 2] = dimmed;
+      out[offset + 3] = 255;
+    }
+  }
+
+  outCtx.putImageData(outData, 0, 0);
+
+  // 释放中间画布
+  canvasA.width = 0;
+  canvasA.height = 0;
+  canvasB.width = 0;
+  canvasB.height = 0;
+
+  // 标记活跃块（差异密度超过阈值）
+  const totalBlocks = cols * rows;
+  const blockPixels = gridSize * gridSize;
+  const activeBlocks = new Uint8Array(totalBlocks);
+  for (let i = 0; i < totalBlocks; i++) {
+    const density = (blockDiffPixels[i] / blockPixels) * 100;
+    if (density >= REGION_DENSITY_THRESHOLD && blockDiffPixels[i] > 0) {
+      activeBlocks[i] = 1;
+    }
+  }
+
+  // 并查集合并相邻活跃块（4 连通：右、下）
+  const uf = new UnionFind(totalBlocks);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+      if (!activeBlocks[idx]) continue;
+      // 右邻居
+      if (x + 1 < cols && activeBlocks[idx + 1]) {
+        uf.union(idx, idx + 1);
+      }
+      // 下邻居
+      if (y + 1 < rows && activeBlocks[idx + cols]) {
+        uf.union(idx, idx + cols);
+      }
+    }
+  }
+
+  // 聚合每个连通分量的统计信息
+  const regionMap = new Map<number, {
+    minX: number; minY: number; maxX: number; maxY: number;
+    diffPixels: number; intensitySum: number; blockCount: number;
+  }>();
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+      if (!activeBlocks[idx]) continue;
+      const root = uf.find(idx);
+      const blockX = x * gridSize;
+      const blockY = y * gridSize;
+      const blockRight = Math.min(blockX + gridSize, width);
+      const blockBottom = Math.min(blockY + gridSize, height);
+
+      let region = regionMap.get(root);
+      if (!region) {
+        region = {
+          minX: blockX, minY: blockY,
+          maxX: blockRight, maxY: blockBottom,
+          diffPixels: 0, intensitySum: 0, blockCount: 0,
+        };
+        regionMap.set(root, region);
+      } else {
+        // 更新包围盒
+        if (blockX < region.minX) region.minX = blockX;
+        if (blockY < region.minY) region.minY = blockY;
+        if (blockRight > region.maxX) region.maxX = blockRight;
+        if (blockBottom > region.maxY) region.maxY = blockBottom;
+      }
+      region.diffPixels += blockDiffPixels[idx];
+      region.intensitySum += blockIntensitySum[idx];
+      region.blockCount++;
+    }
+  }
+
+  // 转换为 DiffRegion 数组（按差异像素数降序）
+  const regions: DiffRegion[] = Array.from(regionMap.values()).map((r) => {
+    const w = r.maxX - r.minX;
+    const h = r.maxY - r.minY;
+    const area = w * h;
+    return {
+      x: r.minX,
+      y: r.minY,
+      width: w,
+      height: h,
+      diffPixels: r.diffPixels,
+      density: area > 0 ? Number(((r.diffPixels / area) * 100).toFixed(2)) : 0,
+      avgIntensity: r.diffPixels > 0 ? Number((r.intensitySum / r.diffPixels).toFixed(2)) : 0,
+    };
+  }).sort((a, b) => b.diffPixels - a.diffPixels);
+
+  const stats: DiffStats = {
+    diffPixels,
+    totalPixels,
+    diffPercent: Number(((diffPixels / totalPixels) * 100).toFixed(2)),
+    maxPixelDiff: Math.round(maxPixelDiff),
+    avgDiffIntensity: diffPixels === 0 ? 0 : Number((totalDiffIntensity / diffPixels).toFixed(2)),
+  };
+
+  return {
+    dataUrl: outCanvas.toDataURL('image/png'),
+    stats,
+    width,
+    height,
+    regions,
+    gridSize,
+  };
+}
+
+/**
+ * 构造 JSON 导出字符串
+ * 包含元信息、统计、区域列表，便于自动化测试集成与跨工具复用
+ */
+export function buildDiffExportJson(
+  result: DiffResultWithRegions,
+  sourceA: SourceImage,
+  sourceB: SourceImage,
+  threshold: number,
+): string {
+  const exportData: DiffExportJson = {
+    meta: {
+      generatedAt: new Date().toISOString(),
+      tool: 'image-compare@website.niuzi.asia',
+      threshold,
+      gridSize: result.gridSize,
+      width: result.width,
+      height: result.height,
+      imageA: {
+        name: sourceA.file.name,
+        size: sourceA.file.size,
+        width: sourceA.width,
+        height: sourceA.height,
+        mime: sourceA.mime,
+      },
+      imageB: {
+        name: sourceB.file.name,
+        size: sourceB.file.size,
+        width: sourceB.width,
+        height: sourceB.height,
+        mime: sourceB.mime,
+      },
+    },
+    stats: result.stats,
+    // 区域数量上限保护，避免超大图片导出过多区域
+    regions: result.regions.slice(0, MAX_REGIONS_IN_EXPORT),
+  };
+  // 格式化输出，2 空格缩进便于阅读与 diff
+  return JSON.stringify(exportData, null, 2);
+}

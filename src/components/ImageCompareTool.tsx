@@ -1,14 +1,17 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   loadImage,
-  compareImagesDiff,
+  compareImagesDiffWithRegions,
   composeSideBySide,
   downloadDataUrl,
+  downloadText,
+  buildDiffExportJson,
   formatBytes,
   ACCEPTED_MIMES,
+  DEFAULT_GRID_SIZE,
   type SourceImage,
   type CompareMode,
-  type DiffResult,
+  type DiffResultWithRegions,
 } from '../utils/imageCompare';
 
 /**
@@ -85,10 +88,15 @@ export default function ImageCompareTool() {
   const sliderContainerRef = useRef<HTMLDivElement>(null);
 
   // 结果
-  const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
+  const [diffResult, setDiffResult] = useState<DiffResultWithRegions | null>(null);
   const [sideBySideUrl, setSideBySideUrl] = useState<string>('');
   const [computing, setComputing] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // 差异区域相关状态
+  const [showRegions, setShowRegions] = useState<boolean>(true);     // 是否在差异图上叠加区域框选
+  const [selectedRegionIdx, setSelectedRegionIdx] = useState<number>(-1); // 当前选中的区域索引（-1 表示无）
+  const diffImgRef = useRef<HTMLImageElement>(null);                 // 差异图元素引用，用于滚动定位
 
   /** 计算图片尺寸差异提示 */
   const sizeWarning = useMemo(() => {
@@ -238,7 +246,7 @@ export default function ImageCompareTool() {
    * 计算对比结果
    * - side-by-side：合成左右并排图
    * - overlay-slider：仅依赖 sourceA/sourceB 直接展示（无需预计算）
-   * - diff-highlight：执行像素级差异分析
+   * - diff-highlight：执行像素级差异分析（含区域检测，一次扫描）
    */
   const computeResult = useCallback(async () => {
     if (!sourceA || !sourceB) return;
@@ -246,9 +254,9 @@ export default function ImageCompareTool() {
     setError('');
     try {
       if (mode === 'diff-highlight') {
-        // 释放旧结果
-        const result = await compareImagesDiff(sourceA, sourceB, threshold);
+        const result = await compareImagesDiffWithRegions(sourceA, sourceB, threshold, DEFAULT_GRID_SIZE);
         setDiffResult(result);
+        setSelectedRegionIdx(-1);
       } else if (mode === 'side-by-side') {
         // 取两张图中较小的高度，避免合成图过大
         const targetHeight = Math.min(sourceA.height, sourceB.height, 800);
@@ -278,8 +286,11 @@ export default function ImageCompareTool() {
     const timer = setTimeout(async () => {
       try {
         if (mode === 'diff-highlight') {
-          const result = await compareImagesDiff(sourceA, sourceB, threshold);
-          if (!cancelled) setDiffResult(result);
+          const result = await compareImagesDiffWithRegions(sourceA, sourceB, threshold, DEFAULT_GRID_SIZE);
+          if (!cancelled) {
+            setDiffResult(result);
+            setSelectedRegionIdx(-1);
+          }
         } else if (mode === 'side-by-side') {
           const targetHeight = Math.min(sourceA.height, sourceB.height, 800);
           const { dataUrl } = await composeSideBySide(sourceA, sourceB, targetHeight);
@@ -310,6 +321,8 @@ export default function ImageCompareTool() {
     setSliderPos(50);
     setThreshold(20);
     setMode('side-by-side');
+    setShowRegions(true);
+    setSelectedRegionIdx(-1);
     if (inputARef.current) inputARef.current.value = '';
     if (inputBRef.current) inputBRef.current.value = '';
   }, [sourceA, sourceB, revokeSource]);
@@ -320,6 +333,7 @@ export default function ImageCompareTool() {
     setSourceB(sourceA);
     setDiffResult(null);
     setSideBySideUrl('');
+    setSelectedRegionIdx(-1);
   }, [sourceA, sourceB]);
 
   /** 下载对比结果 */
@@ -332,6 +346,26 @@ export default function ImageCompareTool() {
       downloadDataUrl(sideBySideUrl, `${baseName}-compare.png`);
     }
   }, [mode, diffResult, sideBySideUrl, sourceA]);
+
+  /**
+   * 导出差异分析结果为 JSON 文件
+   * 包含元信息、统计、区域列表，便于自动化测试集成与跨工具复用
+   */
+  const handleExportJson = useCallback(() => {
+    if (!diffResult || !sourceA || !sourceB) return;
+    const json = buildDiffExportJson(diffResult, sourceA, sourceB, threshold);
+    const baseName = sourceA.file.name.replace(/\.[^.]+$/, '') || 'image-a';
+    downloadText(json, `${baseName}-diff-report.json`);
+  }, [diffResult, sourceA, sourceB, threshold]);
+
+  /** 选中某个差异区域：更新选中索引并滚动到差异图位置 */
+  const handleSelectRegion = useCallback((idx: number) => {
+    setSelectedRegionIdx((current) => (current === idx ? -1 : idx));
+    // 滚动差异图到可视区域，便于用户对照
+    if (idx >= 0 && diffImgRef.current) {
+      diffImgRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, []);
 
   /** 卸载时清理 ObjectURL */
   useEffect(() => {
@@ -587,6 +621,16 @@ export default function ImageCompareTool() {
                 下载结果
               </button>
             ) : null}
+            {mode === 'diff-highlight' && diffResult && (
+              <button
+                type="button"
+                className="imgcmp__btn"
+                onClick={handleExportJson}
+                title="导出差异分析报告（JSON 格式，含元信息、统计、区域列表）"
+              >
+                导出 JSON
+              </button>
+            )}
             <button
               type="button"
               className="imgcmp__btn imgcmp__btn--danger"
@@ -672,12 +716,73 @@ export default function ImageCompareTool() {
           {/* 差异高亮模式 */}
           {mode === 'diff-highlight' && !computing && diffResult && (
             <>
-              <div className="imgcmp__preview">
+              <div className="imgcmp__preview imgcmp__preview--diff">
                 <img
+                  ref={diffImgRef}
                   src={diffResult.dataUrl}
                   alt="像素差异图：相同区域灰度化，差异区域红色高亮"
                   className="imgcmp__preview-img"
                 />
+                {/* 区域框选叠加层：基于 SVG viewBox 按差异图像素坐标定位 */}
+                {showRegions && diffResult.regions.length > 0 && (
+                  <svg
+                    className="imgcmp__regions-overlay"
+                    viewBox={`0 0 ${diffResult.width} ${diffResult.height}`}
+                    preserveAspectRatio="xMidYMid meet"
+                    aria-hidden="true"
+                  >
+                    {diffResult.regions.map((region, idx) => {
+                      // 区域序号标签位置（左上角偏移）
+                      const labelX = region.x + 4;
+                      const labelY = region.y + 12;
+                      const isSelected = idx === selectedRegionIdx;
+                      return (
+                        <g
+                          key={`region-${idx}`}
+                          className={`imgcmp__region-group${isSelected ? ' imgcmp__region-group--active' : ''}`}
+                          onClick={() => handleSelectRegion(idx)}
+                        >
+                          {/* 包围盒矩形 */}
+                          <rect
+                            x={region.x}
+                            y={region.y}
+                            width={region.width}
+                            height={region.height}
+                            rx={2}
+                            className="imgcmp__region-rect"
+                          />
+                          {/* 序号标签背景 */}
+                          <rect
+                            x={region.x}
+                            y={region.y}
+                            width={20}
+                            height={16}
+                            className="imgcmp__region-label-bg"
+                          />
+                          {/* 序号文本 */}
+                          <text
+                            x={labelX}
+                            y={labelY}
+                            className="imgcmp__region-label-text"
+                          >
+                            {idx + 1}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                )}
+                {/* 区域框选开关 */}
+                {diffResult.regions.length > 0 && (
+                  <label className="imgcmp__regions-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showRegions}
+                      onChange={(e) => setShowRegions(e.target.checked)}
+                    />
+                    <span>显示差异区域（{diffResult.regions.length} 个）</span>
+                  </label>
+                )}
               </div>
               {/* 差异统计 */}
               <div className="imgcmp__stats">
@@ -719,6 +824,52 @@ export default function ImageCompareTool() {
                   </span>
                 </div>
               </div>
+
+              {/* 差异区域列表：按差异像素数降序，可点击定位 */}
+              {diffResult.regions.length > 0 && (
+                <div className="imgcmp__regions" aria-labelledby="imgcmp-regions-title">
+                  <div className="imgcmp__regions-header">
+                    <h3 id="imgcmp-regions-title" className="imgcmp__regions-title">
+                      差异区域列表
+                    </h3>
+                    <span className="imgcmp__regions-meta">
+                      共 {diffResult.regions.length} 个区域 · 网格 {diffResult.gridSize}px
+                    </span>
+                  </div>
+                  <ul className="imgcmp__regions-list">
+                    {diffResult.regions.map((region, idx) => (
+                      <li
+                        key={`region-item-${idx}`}
+                        className={`imgcmp__region-item${idx === selectedRegionIdx ? ' imgcmp__region-item--active' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="imgcmp__region-btn"
+                          onClick={() => handleSelectRegion(idx)}
+                          aria-pressed={idx === selectedRegionIdx}
+                          aria-label={`区域 ${idx + 1}：坐标 (${region.x}, ${region.y})，尺寸 ${region.width}×${region.height}，差异像素 ${region.diffPixels}`}
+                        >
+                          <span className="imgcmp__region-index">{idx + 1}</span>
+                          <span className="imgcmp__region-coord">
+                            ({region.x}, {region.y}) · {region.width}×{region.height}
+                          </span>
+                          <span className="imgcmp__region-stats">
+                            <span className="imgcmp__region-pixels">
+                              {region.diffPixels.toLocaleString()} 像素
+                            </span>
+                            <span className="imgcmp__region-density">
+                              密度 {region.density}%
+                            </span>
+                            <span className="imgcmp__region-intensity">
+                              强度 {region.avgIntensity}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </>
           )}
 

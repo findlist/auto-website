@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ImageCompareTool from '../components/ImageCompareTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮）',
+  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -32,6 +32,8 @@ const meta: SiteMeta = {
         <strong>滑块叠加</strong>（拖动垂直分隔线对比同一区域）、
         <strong>像素级差异高亮</strong>（相同区域灰度化、差异区域红色标记）。
         差异模式逐像素分析，输出<strong>差异像素数、差异比例、最大差异强度、平均差异强度</strong>等统计，
+        并自动<strong>检测差异区域</strong>（网格分块 + 并查集连通合并，框选位置并列表展示），
+        支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
         支持<strong>阈值调节</strong>（0-100，可切换严格/默认/宽松三档预设）。
         基于 Canvas API 的 ImageData 在浏览器本地完成对比，<strong>零上传、零追踪、可离线使用</strong>，
         适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。
@@ -156,6 +158,51 @@ const meta: SiteMeta = {
           <strong>典型工作流</strong>：上传原图到压缩工具 → 调整质量参数得到压缩图 →
           上传原图与压缩图到本工具 → 切换"差异高亮"模式查看压缩损失区域 →
           根据差异比例与平均差异强度选择合适的压缩质量。
+        </p>
+      </details>
+      <details>
+        <summary>差异区域是怎么检测的？为什么用网格分块？</summary>
+        <p>
+          差异区域检测采用<strong>网格分块 + 并查集连通合并</strong>算法，流程如下：<br />
+          - <strong>网格分块</strong>：将差异图按 32×32 像素划分为网格块，统计每块的差异像素数与平均强度<br />
+          - <strong>活跃块标记</strong>：差异密度 ≥ 5% 的块被标记为活跃（过滤孤立噪声点）<br />
+          - <strong>连通合并</strong>：使用<strong>并查集</strong>（Union-Find，路径压缩 + 按秩合并）
+          对相邻活跃块进行 4 连通合并，得到连续的差异区域<br />
+          - <strong>包围盒计算</strong>：每个连通分量计算最小包围盒（x, y, width, height）<br />
+          <strong>为何不用完整连通区域检测？</strong>完整算法需对每个像素做 BFS/DFS 遍历，
+          复杂度 O(n²) 不适合浏览器实时交互。网格分块将复杂度降至 O(n) + O(块数)，
+          且输出更实用：用户看到的是"差异集中在哪个区域"而非"每个像素群"。
+          检测结果会在差异图上叠加半透明方框（可开关），并按差异像素数降序列出区域列表。
+        </p>
+      </details>
+      <details>
+        <summary>JSON 导出包含哪些内容？如何用于自动化测试？</summary>
+        <p>
+          点击"导出 JSON"按钮可下载差异分析报告，文件名格式为 <code>原文件名-diff-report.json</code>，
+          包含三部分：<br />
+          - <strong>meta（元信息）</strong>：生成时间、阈值、网格尺寸、对比尺寸、两张图的文件名/大小/尺寸/格式<br />
+          - <strong>stats（统计）</strong>：差异像素数、总像素数、差异比例、最大差异、平均差异强度<br />
+          - <strong>regions（区域列表）</strong>：最多 50 个差异区域（按差异像素数降序），
+          每个区域包含坐标 (x, y)、尺寸 (width, height)、差异像素数、密度、平均强度<br />
+          <strong>自动化测试集成</strong>：JSON 格式易于程序解析，可在 CI/CD 流水线中：
+          截图对比 → 调用本工具生成 JSON → 解析 stats.diffPercent 判断是否超过阈值 →
+          失败时附上 JSON 报告与差异图作为失败证据。相比单纯差异图，JSON 提供结构化数据便于
+          断言与趋势分析（如差异比例随版本变化曲线）。
+        </p>
+      </details>
+      <details>
+        <summary>差异区域列表如何使用？支持键盘操作吗？</summary>
+        <p>
+          差异区域列表位于统计区下方，按差异像素数降序排列，每个区域项显示序号、坐标、尺寸、
+          差异像素数、密度、平均强度。<strong>交互方式</strong>：<br />
+          - <strong>点击列表项</strong>：高亮对应区域（差异图上方框选变为红色加粗），
+          并自动滚动差异图到可视区域<br />
+          - <strong>点击差异图上方框</strong>：同样可选中对应区域，列表项同步高亮<br />
+          - <strong>再次点击</strong>：取消选中<br />
+          - <strong>显示/隐藏开关</strong>：差异图左下角的复选框可切换框选叠加层的显隐，
+          便于在"纯净查看差异图"与"定位差异区域"之间切换<br />
+          所有按钮均满足 WCAG 2.2 触控目标尺寸（≥ 44×44px），列表项支持键盘 Tab 导航与
+          Enter/Space 激活，aria-pressed 状态标识当前选中项。
         </p>
       </details>
     </section>
@@ -703,6 +750,218 @@ const meta: SiteMeta = {
     opacity: 0.8;
   }
 
+  /* ===== 差异区域框选与列表（增强能力） ===== */
+
+  /* 差异图预览容器：相对定位，作为 SVG 叠加层的参照 */
+  .imgcmp__preview--diff {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  /* SVG 区域叠加层：与差异图同尺寸，绝对定位覆盖 */
+  .imgcmp__regions-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* 单个区域分组：可点击（pointer-events: auto 接收事件） */
+  .imgcmp__region-group {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  /* 区域包围盒矩形：默认黄色半透明，与红色差异像素形成对比 */
+  .imgcmp__region-rect {
+    fill: rgba(52, 152, 219, 0.12);
+    stroke: rgba(52, 152, 219, 0.9);
+    stroke-width: 1.5;
+    transition: fill 0.15s, stroke-width 0.15s;
+  }
+
+  .imgcmp__region-group:hover .imgcmp__region-rect {
+    fill: rgba(52, 152, 219, 0.25);
+    stroke-width: 2.5;
+  }
+
+  /* 选中状态：红色加粗，与差异像素颜色呼应 */
+  .imgcmp__region-group--active .imgcmp__region-rect {
+    fill: rgba(231, 76, 60, 0.25);
+    stroke: rgba(231, 76, 60, 1);
+    stroke-width: 3;
+  }
+
+  /* 序号标签背景 */
+  .imgcmp__region-label-bg {
+    fill: rgba(52, 152, 219, 0.95);
+    stroke: none;
+  }
+
+  .imgcmp__region-group--active .imgcmp__region-label-bg {
+    fill: rgba(231, 76, 60, 0.95);
+  }
+
+  /* 序号文本 */
+  .imgcmp__region-label-text {
+    fill: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* 区域框选显示开关 */
+  .imgcmp__regions-toggle {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 12px;
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .imgcmp__regions-toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 差异区域列表容器 */
+  .imgcmp__regions {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+  }
+
+  .imgcmp__regions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .imgcmp__regions-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__regions-meta {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgcmp__regions-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .imgcmp__region-item {
+    margin: 0;
+  }
+
+  .imgcmp__region-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    min-height: 44px;  /* WCAG 2.2 触控目标 */
+  }
+
+  .imgcmp__region-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+
+  .imgcmp__region-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 3px var(--color-primary-ring));
+  }
+
+  .imgcmp__region-item--active .imgcmp__region-btn {
+    border-color: #c0392b;
+    background: rgba(231, 76, 60, 0.08);
+  }
+
+  /* 区域序号徽章 */
+  .imgcmp__region-index {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #3498db;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 50%;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  }
+
+  .imgcmp__region-item--active .imgcmp__region-index {
+    background: #c0392b;
+  }
+
+  /* 坐标信息 */
+  .imgcmp__region-coord {
+    flex-shrink: 0;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 统计信息组 */
+  .imgcmp__region-stats {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .imgcmp__region-pixels,
+  .imgcmp__region-density,
+  .imgcmp__region-intensity {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgcmp__region-pixels {
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
   /* 空状态 */
   .imgcmp__empty {
     padding: 24px;
@@ -752,6 +1011,17 @@ const meta: SiteMeta = {
       height: 32px;
       font-size: 14px;
     }
+
+    /* 区域列表项在窄屏下统计信息换行 */
+    .imgcmp__region-btn {
+      flex-wrap: wrap;
+    }
+
+    .imgcmp__region-stats {
+      width: 100%;
+      margin-left: 0;
+      gap: 8px;
+    }
   }
 
   @media (max-width: 480px) {
@@ -764,6 +1034,11 @@ const meta: SiteMeta = {
     }
 
     .imgcmp__btn--small {
+      width: 100%;
+    }
+
+    /* 区域列表项在超窄屏下坐标独占一行 */
+    .imgcmp__region-coord {
       width: 100%;
     }
   }
@@ -801,6 +1076,47 @@ const meta: SiteMeta = {
   }
 
   :global([data-theme="dark"]) .imgcmp__slider-handle {
+    background: #5b8cff;
+  }
+
+  /* 差异区域列表暗色模式 */
+  :global([data-theme="dark"]) .imgcmp__region-btn {
+    background: var(--color-bg);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-item--active .imgcmp__region-btn {
+    background: rgba(231, 76, 60, 0.12);
+    border-color: #ff6b6b;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-item--active .imgcmp__region-index {
+    background: #ff6b6b;
+  }
+
+  /* SVG 区域矩形在暗色模式下提高对比度 */
+  :global([data-theme="dark"]) .imgcmp__region-rect {
+    fill: rgba(91, 140, 255, 0.15);
+    stroke: rgba(91, 140, 255, 1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-group:hover .imgcmp__region-rect {
+    fill: rgba(91, 140, 255, 0.3);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-group--active .imgcmp__region-rect {
+    fill: rgba(255, 107, 107, 0.3);
+    stroke: rgba(255, 107, 107, 1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-label-bg {
+    fill: rgba(91, 140, 255, 0.95);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-group--active .imgcmp__region-label-bg {
+    fill: rgba(255, 107, 107, 0.95);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__region-index {
     background: #5b8cff;
   }
 </style>
