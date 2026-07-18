@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ImageCompareTool from '../components/ImageCompareTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测）',
+  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 批量对比）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告与批量 JSON 导出，适用于 CI/CD 截图回归测试批量执行场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，批量对比与队列处理，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -34,6 +34,8 @@ const meta: SiteMeta = {
         差异模式逐像素分析，输出<strong>差异像素数、差异比例、最大差异强度、平均差异强度</strong>等统计，
         并自动<strong>检测差异区域</strong>（网格分块 + 并查集连通合并，框选位置并列表展示），
         支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
+        <strong>批量对比模式</strong>支持上传多张图片自动两两配对（第 1+2、3+4...），
+        队列处理输出汇总报告与<strong>批量 JSON 导出</strong>，适用于 CI/CD 截图回归测试批量执行场景。
         支持<strong>阈值调节</strong>（0-100，可切换严格/默认/宽松三档预设）。
         基于 Canvas API 的 ImageData 在浏览器本地完成对比，<strong>零上传、零追踪、可离线使用</strong>，
         适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。
@@ -203,6 +205,59 @@ const meta: SiteMeta = {
           便于在"纯净查看差异图"与"定位差异区域"之间切换<br />
           所有按钮均满足 WCAG 2.2 触控目标尺寸（≥ 44×44px），列表项支持键盘 Tab 导航与
           Enter/Space 激活，aria-pressed 状态标识当前选中项。
+        </p>
+      </details>
+      <details>
+        <summary>批量对比模式如何使用？适合什么场景？</summary>
+        <p>
+          批量对比模式适用于<strong>一次性对比多对图片</strong>的场景，典型用途包括 CI/CD 回归测试
+          截图批量验证、设计稿多版本对比、A/B 素材批量评估等。<strong>使用流程</strong>：<br />
+          - <strong>切换模式</strong>：页面顶部点击「批量对比」切换到批量模式<br />
+          - <strong>上传文件</strong>：点击上传区或拖拽多个图片文件（支持 PNG / JPEG / WebP / GIF / BMP / AVIF），
+          可多次追加，文件按<strong>选择顺序</strong>排列<br />
+          - <strong>自动配对</strong>：文件按顺序两两配对（第 1+2、3+4...），文件列表会实时显示
+          配对预览（如「对1-A」「对1-B」标识每个文件在配对中的角色）<br />
+          - <strong>调整阈值</strong>：与单图模式一致的阈值调节（0-100，三档预设）<br />
+          - <strong>开始对比</strong>：点击「开始批量对比」按钮，队列顺序执行，实时显示进度条
+          （当前 / 总数），单对失败不影响其他对<br />
+          - <strong>查看结果</strong>：汇总统计区显示总配对数、成功数、失败数、平均差异、最大差异；
+          下方配对列表点击任意行可展开该对的差异图与详细统计<br />
+          - <strong>导出报告</strong>：点击「导出批量 JSON」下载汇总报告，或展开某对后单独导出该对的
+          JSON 与差异图 PNG<br />
+          单次最多支持 <strong>50 对</strong>（100 个文件），避免浏览器内存压力。
+        </p>
+      </details>
+      <details>
+        <summary>批量对比的配对策略是什么？能否自定义配对？</summary>
+        <p>
+          当前批量对比采用<strong>顺序两两配对</strong>策略：按用户选择文件的顺序，
+          第 1 个与第 2 个配对、第 3 个与第 4 个配对，以此类推。
+          这种策略简单直观，用户可以通过<strong>调整文件选择顺序</strong>或<strong>移除单个文件</strong>
+          来控制配对方式。<br />
+          <strong>奇数个文件处理</strong>：若文件数为奇数，最后一个文件无法配对，
+          页面会显示警告提示「最后一个文件『xxx』无法配对，已忽略」，但其他对仍会正常对比。<br />
+          <strong>为何不提供文件名自动配对？</strong>文件名配对（如 a-1.png vs b-1.png）需要约定命名规则，
+          不同用户习惯差异大，且容易因命名不一致导致配对错误。顺序配对让用户完全控制配对方式，
+          透明可预期。<br />
+          <strong>建议工作流</strong>：在文件管理器中按目标配对顺序重命名文件（如 01-a.png、01-b.png、
+          02-a.png、02-b.png），然后全选拖入即可按预期配对。
+        </p>
+      </details>
+      <details>
+        <summary>批量对比的 JSON 报告与单图模式有什么区别？</summary>
+        <p>
+          批量对比的 JSON 报告是<strong>多对结果的汇总</strong>，结构与单图模式有所不同：<br />
+          - <strong>meta（元信息）</strong>：生成时间、阈值、网格尺寸、<strong>总配对数、成功数、失败数、
+          平均差异比例、最大差异比例</strong>等汇总统计<br />
+          - <strong>items（配对列表）</strong>：每个配对项包含序号、图片 A/B 元信息、差异统计、
+          区域列表（最多 50 个）、错误信息（若有）<br />
+          <strong>与单图 JSON 的关系</strong>：批量 JSON 是单图 JSON 的「集合版」，每对的 items[].stats
+          与 items[].regions 字段结构完全等同于单图模式的 stats 与 regions，便于复用解析逻辑。<br />
+          <strong>CI/CD 集成建议</strong>：在自动化测试流水线中，可：
+          收集本批次所有截图 → 按预期配对顺序上传到本工具批量对比 → 下载批量 JSON →
+          解析 meta.success / meta.failed 判断整体通过率 → 解析 items[].stats.diffPercent
+          定位差异最大的配对 → 失败时附上批量 JSON 与差异图作为证据。
+          文件名格式为 <code>image-compare-batch-YYYYMMDD.json</code>。
         </p>
       </details>
     </section>
@@ -1118,5 +1173,483 @@ const meta: SiteMeta = {
 
   :global([data-theme="dark"]) .imgcmp__region-index {
     background: #5b8cff;
+  }
+
+  /* ============================================================
+   * 应用模式切换器（单图 / 批量）
+   * ============================================================ */
+  .imgcmp__appmode {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .imgcmp__appmode-tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 8px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imgcmp__appmode-tab:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .imgcmp__appmode-tab--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .imgcmp__appmode-tab--active:hover {
+    color: #fff;
+  }
+
+  .imgcmp__appmode-tab:focus-visible {
+    outline: 2px solid var(--color-primary-ring);
+    outline-offset: 2px;
+  }
+
+  .imgcmp__appmode-hint {
+    flex: 1 1 auto;
+    min-width: 200px;
+    padding-left: 8px;
+    color: var(--color-text-soft);
+    font-size: 13px;
+  }
+
+  /* ============================================================
+   * 批量对比模式
+   * ============================================================ */
+  .imgcmp__batch {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 批量拖拽上传区 */
+  .imgcmp__batch-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 32px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    cursor: pointer;
+    transition: border-color var(--transition-fast, 0.15s), background var(--transition-fast, 0.15s);
+    text-align: center;
+    outline: none;
+  }
+
+  .imgcmp__batch-drop:hover,
+  .imgcmp__batch-drop:focus-visible,
+  .imgcmp__batch-drop--active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+
+  .imgcmp__batch-drop-icon {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .imgcmp__batch-drop-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__batch-drop-hint {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+  }
+
+  /* 文件列表区 */
+  .imgcmp__batch-files {
+    padding: 14px 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .imgcmp__batch-files-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .imgcmp__batch-files-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__batch-files-pairs {
+    color: var(--color-text-soft);
+    font-weight: 400;
+  }
+
+  .imgcmp__batch-files-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .imgcmp__batch-file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+  }
+
+  .imgcmp__batch-file-index {
+    flex: 0 0 auto;
+    min-width: 28px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .imgcmp__batch-file-name {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .imgcmp__batch-file-meta {
+    flex: 0 0 auto;
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  .imgcmp__batch-file-role {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm, 4px);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .imgcmp__batch-file-role--a {
+    background: rgba(91, 140, 255, 0.15);
+    color: #5b8cff;
+  }
+
+  .imgcmp__batch-file-role--b {
+    background: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+  }
+
+  .imgcmp__batch-file-remove {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition-fast, 0.15s);
+  }
+
+  .imgcmp__batch-file-remove:hover:not(:disabled) {
+    border-color: #e74c3c;
+    color: #e74c3c;
+  }
+
+  .imgcmp__batch-file-remove:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* 进度条 */
+  .imgcmp__batch-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-md);
+  }
+
+  .imgcmp__batch-progress-bar {
+    flex: 1 1 auto;
+    height: 8px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .imgcmp__batch-progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.2s ease-out;
+  }
+
+  .imgcmp__batch-progress-text {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  /* 配对结果列表 */
+  .imgcmp__batch-list {
+    margin-top: 8px;
+  }
+
+  .imgcmp__batch-items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .imgcmp__batch-item {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .imgcmp__batch-item--expanded {
+    border-color: var(--color-primary);
+  }
+
+  .imgcmp__batch-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition-fast, 0.15s);
+  }
+
+  .imgcmp__batch-item-header:hover:not(:disabled) {
+    background: var(--color-bg-soft);
+  }
+
+  .imgcmp__batch-item-header:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .imgcmp__batch-item-index {
+    flex: 0 0 auto;
+    min-width: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft);
+  }
+
+  .imgcmp__batch-item-pair {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .imgcmp__batch-item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  .imgcmp__batch-item-vs {
+    flex: 0 0 auto;
+    color: var(--color-text-soft);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .imgcmp__batch-item-percent {
+    flex: 0 0 auto;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .imgcmp__batch-item-level {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-soft);
+  }
+
+  .imgcmp__batch-item-error {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: #c0392b;
+  }
+
+  /* 展开的详情区 */
+  .imgcmp__batch-item-detail {
+    padding: 14px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .imgcmp__batch-item-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  /* 响应式：768px 以下 */
+  @media (max-width: 768px) {
+    .imgcmp__appmode-hint {
+      flex: 1 1 100%;
+      padding-left: 0;
+    }
+
+    .imgcmp__batch-file-item {
+      flex-wrap: wrap;
+    }
+
+    .imgcmp__batch-file-name {
+      flex: 1 1 calc(100% - 80px);
+    }
+
+    .imgcmp__batch-item-pair {
+      flex: 1 1 100%;
+      flex-wrap: wrap;
+    }
+
+    .imgcmp__batch-item-percent {
+      flex: 0 0 auto;
+    }
+  }
+
+  /* 响应式：480px 以下 */
+  @media (max-width: 480px) {
+    .imgcmp__batch-drop {
+      min-height: 140px;
+      padding: 20px 16px;
+    }
+
+    .imgcmp__batch-drop-icon {
+      font-size: 36px;
+    }
+
+    .imgcmp__batch-file-meta {
+      flex: 0 0 100%;
+      font-size: 11px;
+    }
+
+    .imgcmp__batch-item-index {
+      min-width: 28px;
+      font-size: 12px;
+    }
+
+    .imgcmp__batch-item-stats {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme="dark"]) .imgcmp__appmode {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__appmode-tab {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-drop {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-files {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-file-item {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-file-index {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-file-role--a {
+    background: rgba(91, 140, 255, 0.25);
+    color: #8fb3ff;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-file-role--b {
+    background: rgba(231, 76, 60, 0.25);
+    color: #ff7b6b;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-item {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-item-detail {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__batch-item-error {
+    color: #ff7b6b;
   }
 </style>

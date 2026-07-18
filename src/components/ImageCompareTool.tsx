@@ -2,17 +2,25 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   loadImage,
   compareImagesDiffWithRegions,
-  composeSideBySide,
+  compareImagePairsBatch,
+  pairFilesSequentially,
+  buildDiffExportJson,
+  buildBatchExportJson,
   downloadDataUrl,
   downloadText,
-  buildDiffExportJson,
+  composeSideBySide,
   formatBytes,
   ACCEPTED_MIMES,
   DEFAULT_GRID_SIZE,
+  MAX_BATCH_PAIRS,
   type SourceImage,
   type CompareMode,
   type DiffResultWithRegions,
+  type BatchCompareSummary,
 } from '../utils/imageCompare';
+
+/** 应用模式：单图对比 / 批量对比 */
+type AppMode = 'single' | 'batch';
 
 /**
  * 图片对比工具
@@ -68,6 +76,9 @@ function getDiffLevel(percent: number): { label: string; cls: string } {
 }
 
 export default function ImageCompareTool() {
+  // 应用模式：单图对比 / 批量对比（默认单图，保持向后兼容）
+  const [appMode, setAppMode] = useState<AppMode>('single');
+
   // 两张源图片状态
   const [sourceA, setSourceA] = useState<SourceImage | null>(null);
   const [sourceB, setSourceB] = useState<SourceImage | null>(null);
@@ -381,6 +392,37 @@ export default function ImageCompareTool() {
 
   return (
     <div className="imgcmp">
+      {/* 应用模式切换：单图对比 / 批量对比 */}
+      <div className="imgcmp__appmode" role="tablist" aria-label="选择对比模式">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={appMode === 'single'}
+          className={`imgcmp__appmode-tab${appMode === 'single' ? ' imgcmp__appmode-tab--active' : ''}`}
+          onClick={() => setAppMode('single')}
+        >
+          单图对比
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={appMode === 'batch'}
+          className={`imgcmp__appmode-tab${appMode === 'batch' ? ' imgcmp__appmode-tab--active' : ''}`}
+          onClick={() => setAppMode('batch')}
+        >
+          批量对比
+        </button>
+        <span className="imgcmp__appmode-hint">
+          {appMode === 'single'
+            ? '上传两张图进行多种模式对比'
+            : '上传多张图自动两两配对，批量输出差异报告'}
+        </span>
+      </div>
+
+      {appMode === 'batch' ? (
+        <BatchCompareMode />
+      ) : (
+        <>
       {/* 双图上传区 */}
       <div className="imgcmp__uploads">
         <div
@@ -880,6 +922,471 @@ export default function ImageCompareTool() {
           {!computing && mode === 'diff-highlight' && !diffResult && (
             <div className="imgcmp__empty">点击「重新计算」开始像素级差异分析</div>
           )}
+        </div>
+      )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+ *  批量对比子组件
+ *  独立状态管理，避免与单图模式相互干扰
+ * ============================================================ */
+
+/** 差异比例等级标签（与单图模式保持一致的视觉语义） */
+function getBatchDiffLevel(percent: number): { label: string; cls: string } {
+  if (percent === 0) return { label: '完全相同', cls: 'imgcmp__stat-value--good' };
+  if (percent < 1) return { label: '几乎相同', cls: 'imgcmp__stat-value--good' };
+  if (percent < 10) return { label: '轻微', cls: 'imgcmp__stat-value--warn' };
+  if (percent < 30) return { label: '中等', cls: 'imgcmp__stat-value--warn' };
+  if (percent < 70) return { label: '显著', cls: 'imgcmp__stat-value--bad' };
+  return { label: '完全不同', cls: 'imgcmp__stat-value--bad' };
+}
+
+function BatchCompareMode() {
+  // 文件列表（已选择但未加载为 SourceImage）
+  const [files, setFiles] = useState<File[]>([]);
+  // 阈值（与单图模式独立，避免切换时互相影响）
+  const [threshold, setThreshold] = useState<number>(20);
+  // 处理状态
+  const [computing, setComputing] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  // 结果
+  const [summary, setSummary] = useState<BatchCompareSummary | null>(null);
+  const [error, setError] = useState<string>('');
+  // 展开查看差异图的配对索引（-1 表示无展开）
+  const [expandedIdx, setExpandedIdx] = useState<number>(-1);
+  // 配对警告（如奇数个文件）
+  const [pairWarning, setPairWarning] = useState<string>('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  /** 处理多文件选择 */
+  const handleFileSelect = useCallback((selected: FileList | null | undefined) => {
+    if (!selected || selected.length === 0) return;
+    // 仅保留图片文件
+    const imageFiles = Array.from(selected).filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      setError('未选择有效的图片文件');
+      return;
+    }
+    setError('');
+    setSummary(null);
+    setFiles((prev) => [...prev, ...imageFiles]);
+  }, []);
+
+  /** 移除指定索引的文件 */
+  const handleRemoveFile = useCallback((idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setSummary(null);
+  }, []);
+
+  /** 清空全部文件 */
+  const handleClearAll = useCallback(() => {
+    setFiles([]);
+    setSummary(null);
+    setError('');
+    setPairWarning('');
+    setExpandedIdx(-1);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
+
+  /** 执行批量对比 */
+  const handleStartBatch = useCallback(async () => {
+    if (files.length < 2) {
+      setError('至少需要 2 个文件才能配对');
+      return;
+    }
+
+    const { pairs: filePairs, warning } = pairFilesSequentially(files);
+    setPairWarning(warning ?? '');
+
+    if (filePairs.length === 0) {
+      setError(warning || '配对失败');
+      return;
+    }
+    if (filePairs.length > MAX_BATCH_PAIRS) {
+      setError(`配对数超出上限（${MAX_BATCH_PAIRS}），请减少文件数`);
+      return;
+    }
+
+    setComputing(true);
+    setError('');
+    setSummary(null);
+    setExpandedIdx(-1);
+    setProgress({ current: 0, total: filePairs.length });
+
+    try {
+      // 加载所有图片为 SourceImage（失败时单独记录，不影响整体）
+      const loadedPairs: { sourceA: SourceImage; sourceB: SourceImage }[] = [];
+      for (let i = 0; i < filePairs.length; i++) {
+        const [fileA, fileB] = filePairs[i];
+        try {
+          const [sourceA, sourceB] = await Promise.all([loadImage(fileA), loadImage(fileB)]);
+          loadedPairs.push({ sourceA, sourceB });
+        } catch (e) {
+          // 加载失败时跳过该对，但记录到错误信息
+          setError((prev) => `${prev}${prev ? '；' : ''}配对 ${i + 1} 加载失败：${e instanceof Error ? e.message : String(e)}`);
+        }
+        // 更新加载进度（与对比进度共用同一个 progress）
+        setProgress({ current: i + 1, total: filePairs.length });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      if (loadedPairs.length === 0) {
+        setError('所有配对加载失败，无法执行批量对比');
+        return;
+      }
+
+      // 执行批量对比
+      const result = await compareImagePairsBatch(
+        loadedPairs,
+        threshold,
+        DEFAULT_GRID_SIZE,
+        (current, total) => setProgress({ current, total }),
+      );
+      setSummary(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setComputing(false);
+    }
+  }, [files, threshold]);
+
+  /** 导出批量对比 JSON 报告 */
+  const handleExportBatchJson = useCallback(() => {
+    if (!summary) return;
+    const json = buildBatchExportJson(summary);
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    downloadText(json, `image-compare-batch-${dateStr}.json`);
+  }, [summary]);
+
+  /** 切换展开某配对的差异图 */
+  const handleToggleExpand = useCallback((idx: number) => {
+    setExpandedIdx((current) => (current === idx ? -1 : idx));
+  }, []);
+
+  // 配对预览（基于当前文件列表）
+  const pairPreview = useMemo(() => {
+    if (files.length < 2) return [];
+    const { pairs } = pairFilesSequentially(files);
+    return pairs;
+  }, [files]);
+
+  return (
+    <div className="imgcmp__batch">
+      {/* 文件选择区 */}
+      <div
+        className={`imgcmp__batch-drop${dragging ? ' imgcmp__batch-drop--active' : ''}`}
+        onClick={() => !computing && fileInputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          handleFileSelect(e.dataTransfer.files);
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="批量上传图片：点击或拖拽多个文件"
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && !computing) {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_MIMES.join(',')}
+          multiple
+          onChange={(e) => handleFileSelect(e.target.files)}
+          hidden
+        />
+        <div className="imgcmp__batch-drop-icon" aria-hidden="true">📁</div>
+        <div className="imgcmp__batch-drop-text">
+          {computing ? `处理中... (${progress.current}/${progress.total})` : '点击或拖拽多个图片文件'}
+        </div>
+        <div className="imgcmp__batch-drop-hint">
+          文件按选择顺序两两配对（第 1+2、3+4...），最多 {MAX_BATCH_PAIRS} 对
+        </div>
+      </div>
+
+      {/* 文件列表 */}
+      {files.length > 0 && (
+        <div className="imgcmp__batch-files">
+          <div className="imgcmp__batch-files-header">
+            <span className="imgcmp__batch-files-title">
+              已选择 {files.length} 个文件
+              {pairPreview.length > 0 && (
+                <span className="imgcmp__batch-files-pairs">
+                  {' '}/ 将配对为 {pairPreview.length} 对
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              className="imgcmp__btn imgcmp__btn--small imgcmp__btn--danger"
+              onClick={handleClearAll}
+              disabled={computing}
+            >
+              清空全部
+            </button>
+          </div>
+          <ol className="imgcmp__batch-files-list">
+            {files.map((file, idx) => {
+              // 判断该文件在配对中的位置（A 或 B）
+              const pairIdx = Math.floor(idx / 2);
+              const roleInPair = idx % 2 === 0 ? 'A' : 'B';
+              return (
+                <li key={`file-${idx}-${file.name}`} className="imgcmp__batch-file-item">
+                  <span className="imgcmp__batch-file-index">{idx + 1}</span>
+                  <span className="imgcmp__batch-file-name" title={file.name}>{file.name}</span>
+                  <span className="imgcmp__batch-file-meta">{formatBytes(file.size)}</span>
+                  <span className={`imgcmp__batch-file-role imgcmp__batch-file-role--${roleInPair.toLowerCase()}`}>
+                    对{pairIdx + 1}-{roleInPair}
+                  </span>
+                  <button
+                    type="button"
+                    className="imgcmp__batch-file-remove"
+                    onClick={() => handleRemoveFile(idx)}
+                    disabled={computing}
+                    aria-label={`移除文件 ${file.name}`}
+                  >
+                    ×
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      )}
+
+      {/* 配对警告 */}
+      {pairWarning && (
+        <div className="imgcmp__notice" role="status">{pairWarning}</div>
+      )}
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="imgcmp__error" role="alert">
+          <strong>错误：</strong> {error}
+        </div>
+      )}
+
+      {/* 控制面板 */}
+      {files.length >= 2 && (
+        <div className="imgcmp__panel">
+          <div className="imgcmp__field-group">
+            <label className="imgcmp__field-label" htmlFor="batch-threshold">
+              差异阈值：<span className="imgcmp__field-value">{threshold}</span>
+            </label>
+            <input
+              id="batch-threshold"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value))}
+              className="imgcmp__range"
+              disabled={computing}
+            />
+            <div className="imgcmp__preset-row">
+              {THRESHOLD_PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  className={`imgcmp__preset-btn${threshold === p.value ? ' imgcmp__preset-btn--active' : ''}`}
+                  onClick={() => setThreshold(p.value)}
+                  disabled={computing}
+                  title={p.desc}
+                >
+                  {p.label}（{p.value}）
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="imgcmp__actions">
+            <button
+              type="button"
+              className="imgcmp__btn imgcmp__btn--primary"
+              onClick={handleStartBatch}
+              disabled={computing || pairPreview.length === 0}
+            >
+              {computing ? `处理中 (${progress.current}/${progress.total})` : `开始批量对比（${pairPreview.length} 对）`}
+            </button>
+            {summary && (
+              <button
+                type="button"
+                className="imgcmp__btn"
+                onClick={handleExportBatchJson}
+                title="导出批量对比汇总报告（JSON 格式）"
+              >
+                导出批量 JSON
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 进度条 */}
+      {computing && progress.total > 0 && (
+        <div className="imgcmp__batch-progress" role="status">
+          <div className="imgcmp__batch-progress-bar">
+            <div
+              className="imgcmp__batch-progress-fill"
+              style={{ width: `${(progress.current / progress.total) * 100}%` }}
+            />
+          </div>
+          <span className="imgcmp__batch-progress-text">
+            {progress.current} / {progress.total}
+          </span>
+        </div>
+      )}
+
+      {/* 结果汇总 */}
+      {summary && (
+        <div className="imgcmp__batch-result">
+          {/* 汇总统计 */}
+          <div className="imgcmp__stats">
+            <div className="imgcmp__stat-item">
+              <span className="imgcmp__stat-label">总配对数</span>
+              <span className="imgcmp__stat-value">{summary.total}</span>
+            </div>
+            <div className="imgcmp__stat-item">
+              <span className="imgcmp__stat-label">成功</span>
+              <span className="imgcmp__stat-value imgcmp__stat-value--good">{summary.success}</span>
+            </div>
+            <div className="imgcmp__stat-item">
+              <span className="imgcmp__stat-label">失败</span>
+              <span className={`imgcmp__stat-value${summary.failed > 0 ? ' imgcmp__stat-value--bad' : ''}`}>
+                {summary.failed}
+              </span>
+            </div>
+            <div className="imgcmp__stat-item">
+              <span className="imgcmp__stat-label">平均差异</span>
+              <span className="imgcmp__stat-value">{summary.avgDiffPercent}%</span>
+            </div>
+            <div className="imgcmp__stat-item">
+              <span className="imgcmp__stat-label">最大差异</span>
+              <span className="imgcmp__stat-value">{summary.maxDiffPercent}%</span>
+            </div>
+          </div>
+
+          {/* 配对结果列表 */}
+          <div className="imgcmp__batch-list" aria-labelledby="imgcmp-batch-list-title">
+            <div className="imgcmp__regions-header">
+              <h3 id="imgcmp-batch-list-title" className="imgcmp__regions-title">
+                配对结果
+              </h3>
+              <span className="imgcmp__regions-meta">
+                点击行展开差异图
+              </span>
+            </div>
+            <ul className="imgcmp__batch-items">
+              {summary.items.map((item) => {
+                const level = item.result ? getBatchDiffLevel(item.result.stats.diffPercent) : null;
+                const isExpanded = expandedIdx === item.index;
+                return (
+                  <li
+                    key={`batch-item-${item.index}`}
+                    className={`imgcmp__batch-item${isExpanded ? ' imgcmp__batch-item--expanded' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="imgcmp__batch-item-header"
+                      onClick={() => item.result && handleToggleExpand(item.index)}
+                      aria-pressed={isExpanded}
+                      aria-expanded={isExpanded}
+                      disabled={!item.result}
+                      aria-label={
+                        item.result
+                          ? `配对 ${item.index}：${item.sourceA.file.name} vs ${item.sourceB.file.name}，差异 ${item.result.stats.diffPercent}%，点击展开差异图`
+                          : `配对 ${item.index} 处理失败：${item.error}`
+                      }
+                    >
+                      <span className="imgcmp__batch-item-index">#{item.index}</span>
+                      <span className="imgcmp__batch-item-pair">
+                        <span className="imgcmp__batch-item-name" title={item.sourceA.file.name}>
+                          {item.sourceA.file.name}
+                        </span>
+                        <span className="imgcmp__batch-item-vs">vs</span>
+                        <span className="imgcmp__batch-item-name" title={item.sourceB.file.name}>
+                          {item.sourceB.file.name}
+                        </span>
+                      </span>
+                      {item.result ? (
+                        <span className={`imgcmp__batch-item-percent ${level?.cls}`}>
+                          {item.result.stats.diffPercent}%
+                          {level && <span className="imgcmp__batch-item-level"> · {level.label}</span>}
+                        </span>
+                      ) : (
+                        <span className="imgcmp__batch-item-error">失败：{item.error}</span>
+                      )}
+                    </button>
+                    {/* 展开的差异图 */}
+                    {isExpanded && item.result && (
+                      <div className="imgcmp__batch-item-detail">
+                        <img
+                          src={item.result.dataUrl}
+                          alt={`配对 ${item.index} 差异图`}
+                          className="imgcmp__preview-img"
+                        />
+                        <div className="imgcmp__batch-item-stats">
+                          <span>差异像素：{item.result.stats.diffPixels.toLocaleString()}</span>
+                          <span>总像素：{item.result.stats.totalPixels.toLocaleString()}</span>
+                          <span>最大差异：{item.result.stats.maxPixelDiff}</span>
+                          <span>平均强度：{item.result.stats.avgDiffIntensity}</span>
+                          <span>区域数：{item.result.regions.length}</span>
+                          <span>对比区域：{item.result.width}×{item.result.height}</span>
+                        </div>
+                        <div className="imgcmp__actions">
+                          <button
+                            type="button"
+                            className="imgcmp__btn imgcmp__btn--small"
+                            onClick={() => {
+                              const baseName = item.sourceA.file.name.replace(/\.[^.]+$/, '');
+                              downloadDataUrl(item.result!.dataUrl, `${baseName}-diff.png`);
+                            }}
+                          >
+                            下载差异图
+                          </button>
+                          <button
+                            type="button"
+                            className="imgcmp__btn imgcmp__btn--small"
+                            onClick={() => {
+                              const json = buildDiffExportJson(
+                                item.result!,
+                                item.sourceA,
+                                item.sourceB,
+                                summary.threshold,
+                              );
+                              const baseName = item.sourceA.file.name.replace(/\.[^.]+$/, '');
+                              downloadText(json, `${baseName}-diff-report.json`);
+                            }}
+                          >
+                            导出该对 JSON
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       )}
     </div>

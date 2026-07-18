@@ -716,3 +716,211 @@ export function buildDiffExportJson(
   // 格式化输出，2 空格缩进便于阅读与 diff
   return JSON.stringify(exportData, null, 2);
 }
+
+/* ============================================================
+ *  批量对比能力：多文件配对 + 队列处理 + 汇总导出
+ * ============================================================ */
+
+/** 单次批量处理的最大配对数（防止内存与时间溢出） */
+export const MAX_BATCH_PAIRS = 50;
+
+/** 批量对比单个配对项 */
+export interface BatchCompareItem {
+  /** 配对序号（从 1 开始，便于用户阅读） */
+  index: number;
+  /** 图片 A */
+  sourceA: SourceImage;
+  /** 图片 B */
+  sourceB: SourceImage;
+  /** 对比结果（失败时为 null） */
+  result: DiffResultWithRegions | null;
+  /** 失败原因（成功时为 undefined） */
+  error?: string;
+}
+
+/** 批量对比汇总结果 */
+export interface BatchCompareSummary {
+  /** 生成时间（ISO 字符串） */
+  generatedAt: string;
+  /** 工具标识 */
+  tool: string;
+  /** 差异阈值 */
+  threshold: number;
+  /** 网格分块尺寸 */
+  gridSize: number;
+  /** 总配对数 */
+  total: number;
+  /** 成功对比数 */
+  success: number;
+  /** 失败数 */
+  failed: number;
+  /** 平均差异比例（仅成功项，0-100） */
+  avgDiffPercent: number;
+  /** 最大差异比例（仅成功项，0-100） */
+  maxDiffPercent: number;
+  /** 配对结果列表 */
+  items: BatchCompareItem[];
+}
+
+/** 批量处理进度回调（current 为当前完成数，total 为总数） */
+export type BatchProgressCallback = (
+  current: number,
+  total: number,
+  item: BatchCompareItem,
+) => void;
+
+/**
+ * 批量对比多对图片
+ *
+ * 设计要点：
+ *  - 顺序执行：避免并发触发过多 Canvas，防止内存峰值过高
+ *  - 每对完成后通过回调通知进度，便于 UI 实时更新
+ *  - 每对之间让出主线程（setTimeout 0），避免长时间阻塞 UI 响应
+ *  - 单对失败不影响其他对，错误信息记录到 item.error
+ *
+ * @param pairs 图片对数组（每项包含 sourceA 与 sourceB）
+ * @param threshold 差异阈值（0-255）
+ * @param gridSize 网格分块尺寸
+ * @param onProgress 进度回调（可选）
+ */
+export async function compareImagePairsBatch(
+  pairs: { sourceA: SourceImage; sourceB: SourceImage }[],
+  threshold: number,
+  gridSize: number = DEFAULT_GRID_SIZE,
+  onProgress?: BatchProgressCallback,
+): Promise<BatchCompareSummary> {
+  if (pairs.length === 0) {
+    throw new Error('批量对比配对列表为空');
+  }
+  if (pairs.length > MAX_BATCH_PAIRS) {
+    throw new Error(`批量对比配对数超出上限（${MAX_BATCH_PAIRS}），请分批处理`);
+  }
+
+  const items: BatchCompareItem[] = [];
+  let success = 0;
+  let failed = 0;
+  let diffPercentSum = 0;
+  let maxDiffPercent = 0;
+
+  for (let i = 0; i < pairs.length; i++) {
+    const { sourceA, sourceB } = pairs[i];
+    const item: BatchCompareItem = {
+      index: i + 1,
+      sourceA,
+      sourceB,
+      result: null,
+    };
+
+    try {
+      const result = await compareImagesDiffWithRegions(sourceA, sourceB, threshold, gridSize);
+      item.result = result;
+      success++;
+      diffPercentSum += result.stats.diffPercent;
+      if (result.stats.diffPercent > maxDiffPercent) {
+        maxDiffPercent = result.stats.diffPercent;
+      }
+    } catch (e) {
+      item.error = e instanceof Error ? e.message : String(e);
+      failed++;
+    }
+
+    items.push(item);
+    if (onProgress) onProgress(i + 1, pairs.length, item);
+
+    // 让出主线程，避免批量处理长时间阻塞 UI
+    if (i < pairs.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    tool: 'image-compare-batch@website.niuzi.asia',
+    threshold,
+    gridSize,
+    total: pairs.length,
+    success,
+    failed,
+    avgDiffPercent: success > 0 ? Number((diffPercentSum / success).toFixed(2)) : 0,
+    maxDiffPercent,
+    items,
+  };
+}
+
+/**
+ * 将文件列表按顺序两两配对
+ * 策略：files[0]+files[1]、files[2]+files[3]...
+ *
+ * 若文件数为奇数，最后一个文件会被丢弃并返回警告信息
+ *
+ * @param files 文件列表
+ * @returns 配对结果与（可能的）警告信息
+ */
+export function pairFilesSequentially(
+  files: File[],
+): { pairs: File[][]; warning?: string } {
+  if (files.length === 0) {
+    return { pairs: [], warning: '未选择任何文件' };
+  }
+  if (files.length < 2) {
+    return { pairs: [], warning: '至少需要 2 个文件才能配对' };
+  }
+
+  const pairs: File[][] = [];
+  for (let i = 0; i + 1 < files.length; i += 2) {
+    pairs.push([files[i], files[i + 1]]);
+  }
+
+  // 奇数个文件时，最后一个无法配对
+  if (files.length % 2 === 1) {
+    return {
+      pairs,
+      warning: `共选择 ${files.length} 个文件，最后一个文件「${files[files.length - 1].name}」无法配对，已忽略`,
+    };
+  }
+  return { pairs };
+}
+
+/**
+ * 构造批量对比 JSON 导出字符串
+ * 合并所有配对结果为单个 JSON，便于 CI/CD 集成与趋势分析
+ *
+ * 导出结构剥离 ObjectURL 等运行时字段，仅保留可序列化的元信息与统计
+ */
+export function buildBatchExportJson(summary: BatchCompareSummary): string {
+  const exportData = {
+    meta: {
+      generatedAt: summary.generatedAt,
+      tool: summary.tool,
+      threshold: summary.threshold,
+      gridSize: summary.gridSize,
+      total: summary.total,
+      success: summary.success,
+      failed: summary.failed,
+      avgDiffPercent: summary.avgDiffPercent,
+      maxDiffPercent: summary.maxDiffPercent,
+    },
+    items: summary.items.map((item) => ({
+      index: item.index,
+      imageA: {
+        name: item.sourceA.file.name,
+        size: item.sourceA.file.size,
+        width: item.sourceA.width,
+        height: item.sourceA.height,
+        mime: item.sourceA.mime,
+      },
+      imageB: {
+        name: item.sourceB.file.name,
+        size: item.sourceB.file.size,
+        width: item.sourceB.width,
+        height: item.sourceB.height,
+        mime: item.sourceB.mime,
+      },
+      stats: item.result?.stats ?? null,
+      // 区域数量上限保护
+      regions: item.result?.regions.slice(0, MAX_REGIONS_IN_EXPORT) ?? [],
+      error: item.error ?? null,
+    })),
+  };
+  return JSON.stringify(exportData, null, 2);
+}
