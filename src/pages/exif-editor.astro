@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ExifEditorTool from '../components/ExifEditorTool.tsx';
 
 const meta: SiteMeta = {
-  title: 'EXIF 元数据编辑器 - 在线删除 GPS / 个人信息 / 修改拍摄时间',
+  title: 'EXIF 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
   description:
-    '在线 EXIF 元数据编辑器：删除 GPS 定位 / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间，一键清除全部 EXIF。直接操作 JPEG 二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
+    '在线 EXIF 元数据编辑器：删除 GPS 定位 / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间，一键清除全部 EXIF。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。直接操作 JPEG 二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'EXIF 元数据编辑器',
-    description: '在线 EXIF 元数据编辑工具，支持删除 GPS、个人信息、MakerNote、缩略图，修改拍摄时间，全本地处理 JPEG 二进制结构。',
+    description: '在线 EXIF 元数据编辑工具，支持删除 GPS、个人信息、MakerNote、缩略图，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，全本地处理 JPEG 二进制结构。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -31,6 +31,7 @@ const meta: SiteMeta = {
         支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
         <strong>删除 MakerNote</strong>、<strong>删除缩略图</strong>、<strong>删除软件信息</strong>、
         <strong>修改拍摄时间</strong>、<strong>一键清除全部 EXIF</strong>。
+        支持<strong>批量处理多文件</strong>并打包 ZIP 下载，<strong>编辑预设保存与导入导出</strong>。
         不修改图像压缩数据（SOS..EOI），<strong>保证图像质量无损</strong>。
         编辑前后元数据可视化对比，一目了然。在浏览器本地完成全部操作，<strong>零上传、零追踪、可离线使用</strong>。
       </p>
@@ -127,6 +128,44 @@ const meta: SiteMeta = {
           均能正确识别与跳过空条目。<br />
           极少数老旧或非标准的 EXIF 读取器可能仍尝试解析置零的条目（虽然 tag=0 应被跳过），
           若遇到兼容问题，建议改用"清除全部 EXIF"直接移除整个 APP1 段。
+        </p>
+      </details>
+      <details>
+        <summary>批量处理最多支持多少文件？处理速度如何？</summary>
+        <p>
+          <strong>本工具未设置硬性文件数量上限</strong>，但建议单批不超过 200 个文件以获得最佳体验。
+          单文件大小限制为 50MB，总数据量受浏览器内存限制（通常 1-2GB）。<br />
+          处理速度参考：单个 JPEG（含 GPS + MakerNote + 缩略图，约 5MB）的编辑耗时通常在 5-30ms 之间，
+          批量处理 100 个文件的总耗时通常在 1-3 秒内。<br />
+          <strong>处理策略</strong>：每处理 5 个文件会通过 <code>setTimeout(0)</code> 让出主线程一次，
+          避免长时间阻塞 UI；单文件异常不会中断整批处理，会在结果列表中标记为失败。
+          处理完成后可一键打包为 ZIP 下载（采用 STORE 模式无压缩，避免重复编码图像数据）。
+        </p>
+      </details>
+      <details>
+        <summary>编辑预设保存在哪里？换浏览器会丢失吗？</summary>
+        <p>
+          <strong>预设保存在浏览器的 localStorage 中</strong>，与具体的浏览器 + 域名绑定。<br />
+          - 同一浏览器同一域名下，预设会持久保留，关闭页面或重启浏览器都不会丢失<br />
+          - 切换浏览器、切换设备、或使用隐私模式（无痕窗口）时预设不会同步<br />
+          - 浏览器清理缓存 / Cookie 时预设可能被清除<br />
+          <strong>备份方案</strong>：预设面板支持「导出全部预设」按钮，可将全部预设导出为 JSON 文件
+          保存到本地。新设备上通过「导入预设」按钮加载 JSON 文件即可恢复（采用合并模式，
+          同名预设会跳过，不会覆盖现有预设）。<br />
+          上限：单个浏览器最多保存 20 个预设，超出时自动按 LRU 策略淘汰最久未使用的预设。
+        </p>
+      </details>
+      <details>
+        <summary>批量处理时如何选择编辑操作？和单文件模式有关联吗？</summary>
+        <p>
+          <strong>批量处理与单文件模式共享同一组编辑操作配置</strong>。<br />
+          典型工作流：<br />
+          1. 在「单文件编辑」Tab 中上传一张代表性 JPEG，勾选所需的编辑操作（如删除 GPS + 个人信息 + MakerNote）<br />
+          2. 切换到「批量处理」Tab，顶部「当前编辑操作」会显示已勾选的操作列表<br />
+          3. 添加多个 JPEG 文件，点击「执行批量编辑」<br />
+          4. 处理完成后可下载 ZIP 包，包含全部成功处理的结果文件<br />
+          <strong>预设加速</strong>：若经常使用相同的编辑组合，可在「编辑预设」面板保存为预设
+          （如命名"分享前清理"），下次直接点击「应用」按钮恢复配置，无需重复勾选。
         </p>
       </details>
       <details>
@@ -627,6 +666,377 @@ const meta: SiteMeta = {
   }
 
   /* ============================================================
+     Tab 切换：单文件 / 批量处理（第 89 轮新增）
+     ============================================================ */
+  .exifedit__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--color-bg-soft, #f3f4f6);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  .exifedit__tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft, #6b7280);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: background 0.15s, color 0.15s;
+    min-height: 44px; /* WCAG 2.2 触控目标最小尺寸 */
+  }
+
+  .exifedit__tab:hover:not(.exifedit__tab--active) {
+    color: var(--color-text);
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .exifedit__tab--active {
+    background: var(--color-bg, #fff);
+    color: var(--color-primary, #2563eb);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  .exifedit__tab:focus-visible {
+    outline: 2px solid var(--color-primary, #2563eb);
+    outline-offset: 2px;
+  }
+
+  /* ============================================================
+     批量处理面板（exifedit__batch__ 命名空间）
+     ============================================================ */
+  .exifedit__batch {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__batch-ops-summary {
+    padding: 12px;
+    background: var(--color-bg-soft, #f9fafb);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .exifedit__batch-ops-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .exifedit__batch-ops-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text);
+  }
+
+  .exifedit__batch-ops-icon {
+    color: #059669;
+    font-weight: bold;
+  }
+
+  .exifedit__batch-ops-detail {
+    color: var(--color-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  /* 批量上传区：在原 dropzone 基础上稍微突出 */
+  .exifedit__dropzone--batch {
+    padding: 24px 16px;
+  }
+
+  /* 批量文件列表 */
+  .exifedit__batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .exifedit__batch-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .exifedit__batch-list-header .exifedit__section-title {
+    margin: 0;
+    border: none;
+    padding: 0;
+  }
+
+  .exifedit__batch-files {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .exifedit__batch-file {
+    display: grid;
+    grid-template-columns: 1fr auto 32px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--color-border, #f3f4f6);
+  }
+
+  .exifedit__batch-file:last-child {
+    border-bottom: none;
+  }
+
+  .exifedit__batch-file-name {
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .exifedit__batch-file-size {
+    color: var(--color-text-soft, #6b7280);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .exifedit__batch-file-remove {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-soft, #6b7280);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--radius-sm, 4px);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .exifedit__batch-file-remove:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+  }
+
+  .exifedit__batch-file-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* 批量处理结果 */
+  .exifedit__batch-result {
+    padding: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__batch-result .exifedit__summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .exifedit__summary-value--bad {
+    color: #b91c1c;
+  }
+
+  .exifedit__batch-items {
+    list-style: none;
+    margin: 12px 0 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .exifedit__batch-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    border-left: 3px solid transparent;
+    font-size: 12px;
+  }
+
+  .exifedit__batch-item--success {
+    border-left-color: #059669;
+    background: rgba(5, 150, 105, 0.04);
+  }
+
+  .exifedit__batch-item--skipped {
+    border-left-color: #d97706;
+    background: rgba(217, 119, 6, 0.04);
+  }
+
+  .exifedit__batch-item--error {
+    border-left-color: #b91c1c;
+    background: rgba(220, 38, 38, 0.04);
+  }
+
+  .exifedit__batch-item-name {
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .exifedit__batch-item-status {
+    color: var(--color-text-soft, #6b7280);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+  }
+
+  /* ============================================================
+     预设管理面板（exifedit__preset__ 命名空间）
+     ============================================================ */
+  .exifedit__presets {
+    padding: 16px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-bg, #fff);
+  }
+
+  .exifedit__preset-save {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .exifedit__preset-name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: var(--radius-sm, 4px);
+    font-size: 13px;
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+  }
+
+  .exifedit__preset-name-input:focus {
+    border-color: var(--color-primary, #2563eb);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .exifedit__preset-list {
+    list-style: none;
+    margin: 12px 0 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .exifedit__preset-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg-soft, #f9fafb);
+  }
+
+  .exifedit__preset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .exifedit__preset-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .exifedit__preset-ops {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .exifedit__preset-op-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm, 4px);
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-size: 11px;
+  }
+
+  .exifedit__preset-meta {
+    font-size: 11px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .exifedit__preset-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  .exifedit__btn--small {
+    padding: 4px 10px;
+    font-size: 12px;
+    min-height: 28px;
+  }
+
+  .exifedit__btn--danger {
+    color: #b91c1c;
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  .exifedit__btn--danger:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: #b91c1c;
+  }
+
+  .exifedit__preset-io {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--color-border, #e5e7eb);
+  }
+
+  .exifedit__preset-io .exifedit__btn {
+    flex: 1;
+  }
+
+  .exifedit__hint--muted {
+    color: var(--color-text-soft, #9ca3af);
+    font-style: italic;
+  }
+
+  /* ============================================================
      响应式：768px 单列堆叠
      ============================================================ */
   @media (max-width: 768px) {
@@ -648,6 +1058,30 @@ const meta: SiteMeta = {
 
     .exifedit__preview-item img {
       max-height: 200px;
+    }
+
+    /* Tab：移动端紧凑显示，单行文本 */
+    .exifedit__tab {
+      padding: 10px 8px;
+      font-size: 12px;
+    }
+
+    /* 批量结果摘要：移动端两列 */
+    .exifedit__batch-result .exifedit__summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* 预设项：移动端单列堆叠，操作按钮横向 */
+    .exifedit__preset-item {
+      grid-template-columns: 1fr;
+    }
+
+    .exifedit__preset-actions {
+      flex-direction: row;
+    }
+
+    .exifedit__preset-actions .exifedit__btn {
+      flex: 1;
     }
   }
 
@@ -681,6 +1115,21 @@ const meta: SiteMeta = {
     .exifedit__actions .exifedit__btn {
       flex: 1;
       min-width: 0;
+    }
+
+    /* 批量结果摘要：紧凑单列 */
+    .exifedit__batch-result .exifedit__summary {
+      grid-template-columns: 1fr;
+    }
+
+    /* 预设保存输入与按钮堆叠 */
+    .exifedit__preset-save {
+      flex-direction: column;
+    }
+
+    /* 预设导入导出按钮堆叠 */
+    .exifedit__preset-io {
+      flex-direction: column;
     }
   }
 
@@ -730,6 +1179,83 @@ const meta: SiteMeta = {
 
     .exifedit__btn--primary:hover:not(:disabled) {
       background: #2563eb;
+    }
+
+    /* Tab 切换暗色 */
+    .exifedit__tabs {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .exifedit__tab--active {
+      background: #1f2937;
+      color: #93c5fd;
+    }
+
+    .exifedit__tab:hover:not(.exifedit__tab--active) {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* 批量处理面板暗色 */
+    .exifedit__batch,
+    .exifedit__batch-result,
+    .exifedit__presets {
+      background: #1f2937;
+    }
+
+    .exifedit__batch-ops-summary {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .exifedit__batch-files {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .exifedit__batch-file {
+      border-bottom-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .exifedit__batch-item--success {
+      background: rgba(5, 150, 105, 0.1);
+    }
+
+    .exifedit__batch-item--skipped {
+      background: rgba(217, 119, 6, 0.1);
+    }
+
+    .exifedit__batch-item--error {
+      background: rgba(220, 38, 38, 0.1);
+    }
+
+    .exifedit__summary-value--bad {
+      color: #fca5a5;
+    }
+
+    /* 预设面板暗色 */
+    .exifedit__preset-item {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .exifedit__preset-op-tag {
+      background: rgba(96, 165, 250, 0.15);
+      color: #93c5fd;
+    }
+
+    .exifedit__preset-name-input {
+      background: #1f2937;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #f3f4f6;
+    }
+
+    .exifedit__btn--danger {
+      color: #fca5a5;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .exifedit__btn--danger:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: #fca5a5;
     }
   }
 </style>

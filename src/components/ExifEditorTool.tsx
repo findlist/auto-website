@@ -2,15 +2,26 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import exifr from 'exifr';
 import {
   applyEdits,
+  applyEditsBatch,
   buildEditedFilename,
+  buildBatchEditedFilename,
   EDIT_OPERATIONS,
   MAX_FILE_SIZE,
   nowExifDateTime,
   parseJpegSegments,
   isExifSegment,
+  loadPresets,
+  savePreset,
+  deletePreset,
+  touchPreset,
+  exportPresets,
+  importPresets,
   type EditOperation,
   type EditResult,
+  type EditPreset,
+  type BatchEditSummary,
 } from '../utils/exifEditor';
+import { createZipFile, type ZipEntry } from '../utils/imageCrop';
 import { formatBytes, downloadBlob } from '../utils/imageConvert';
 
 /**
@@ -108,6 +119,23 @@ export default function ExifEditorTool() {
   const [dragging, setDragging] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 模式切换：单文件 / 批量处理（第 89 轮新增）
+  const [mode, setMode] = useState<'single' | 'batch'>('single');
+
+  // 批量处理状态
+  const [batchFiles, setBatchFiles] = useState<File[]>([]);
+  const [batchRunning, setBatchRunning] = useState<boolean>(false);
+  const [batchResult, setBatchResult] = useState<BatchEditSummary | null>(null);
+  const [batchError, setBatchError] = useState<string>('');
+  const [batchDragging, setBatchDragging] = useState<boolean>(false);
+  const batchInputRef = useRef<HTMLInputElement>(null);
+
+  // 预设管理状态
+  const [presets, setPresets] = useState<EditPreset[]>([]);
+  const [presetName, setPresetName] = useState<string>('');
+  const [presetError, setPresetError] = useState<string>('');
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   /** 清理 ObjectURL 避免内存泄漏 */
   useEffect(() => {
@@ -236,6 +264,180 @@ export default function ExifEditorTool() {
     return ops;
   }, [checkedOps, enableDateTime, dateTimeValue]);
 
+  // ============================================================
+  // 批量处理逻辑（第 89 轮新增）
+  // ============================================================
+
+  /** 加载批量文件（仅保留 JPEG，校验大小） */
+  const handleBatchFiles = useCallback((fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const jpegFiles = Array.from(fileList).filter(
+      (f) => f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name),
+    );
+    if (jpegFiles.length === 0) {
+      setBatchError('未选择 JPEG 文件。批量处理仅支持 JPEG 格式。');
+      return;
+    }
+    const oversized = jpegFiles.filter((f) => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      setBatchError(
+        `${oversized.length} 个文件超过 ${formatBytes(MAX_FILE_SIZE)} 限制：${oversized.map((f) => f.name).join(', ')}`,
+      );
+      return;
+    }
+    setBatchError('');
+    setBatchResult(null);
+    setBatchFiles((prev) => [...prev, ...jpegFiles]);
+  }, []);
+
+  /** 批量文件选择 */
+  const handleBatchSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      handleBatchFiles(e.target.files);
+      if (batchInputRef.current) batchInputRef.current.value = '';
+    },
+    [handleBatchFiles],
+  );
+
+  /** 批量拖拽事件 */
+  const onBatchDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setBatchDragging(true);
+  }, []);
+  const onBatchDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setBatchDragging(false);
+  }, []);
+  const onBatchDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setBatchDragging(false);
+      handleBatchFiles(e.dataTransfer.files);
+    },
+    [handleBatchFiles],
+  );
+
+  /** 移除批量列表中指定文件 */
+  const removeBatchFile = useCallback((idx: number) => {
+    setBatchFiles((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+  /** 清空批量列表 */
+  const clearBatch = useCallback(() => {
+    setBatchFiles([]);
+    setBatchResult(null);
+    setBatchError('');
+    if (batchInputRef.current) batchInputRef.current.value = '';
+  }, []);
+
+  /** 执行批量编辑（并行读取字节，串行应用编辑避免主线程阻塞） */
+  const runBatchEdit = useCallback(async () => {
+    if (batchFiles.length === 0 || activeOps.length === 0) return;
+    setBatchRunning(true);
+    setBatchError('');
+    try {
+      const buffers = await Promise.all(batchFiles.map((f) => f.arrayBuffer()));
+      const bytesList = buffers.map((b) => new Uint8Array(b));
+      const names = batchFiles.map((f) => f.name);
+      const summary = await applyEditsBatch(bytesList, names, activeOps);
+      setBatchResult(summary);
+    } catch (err) {
+      setBatchError(`批量处理失败：${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setBatchRunning(false);
+    }
+  }, [batchFiles, activeOps]);
+
+  /** 下载批量结果为 ZIP（复用 imageCrop 的 createZipFile，STORE 模式无压缩） */
+  const downloadBatchZip = useCallback(async () => {
+    if (!batchResult) return;
+    const successItems = batchResult.items.filter((it) => it.status === 'success' && it.result);
+    if (successItems.length === 0) {
+      setBatchError('没有可下载的成功处理结果');
+      return;
+    }
+    const entries: ZipEntry[] = successItems.map((it, idx) => ({
+      name: buildBatchEditedFilename(it.fileName, idx, successItems.length),
+      blob: new Blob([it.result!.bytes as BlobPart], { type: 'image/jpeg' }),
+    }));
+    await createZipFile(entries, `exif-edited-${Date.now()}.zip`);
+  }, [batchResult]);
+
+  // ============================================================
+  // 预设管理逻辑（第 89 轮新增）
+  // ============================================================
+
+  /** 组件挂载时加载预设列表 */
+  useEffect(() => {
+    setPresets(loadPresets());
+  }, []);
+
+  /** 保存当前编辑组合为预设 */
+  const handleSavePreset = useCallback(() => {
+    const name = presetName.trim();
+    if (!name) {
+      setPresetError('请输入预设名称');
+      return;
+    }
+    if (activeOps.length === 0) {
+      setPresetError('请至少选择一个编辑操作');
+      return;
+    }
+    try {
+      savePreset({ name, operations: activeOps, enableDateTime, dateTimeValue });
+      setPresets(loadPresets());
+      setPresetName('');
+      setPresetError('');
+    } catch (err) {
+      setPresetError(`保存预设失败：${err instanceof Error ? err.message : String(err)}`);
+    }
+  }, [presetName, activeOps, enableDateTime, dateTimeValue]);
+
+  /** 应用预设到当前编辑配置 */
+  const handleApplyPreset = useCallback((preset: EditPreset) => {
+    setCheckedOps(new Set(preset.operations.map((op) => op.type)));
+    setEnableDateTime(preset.enableDateTime);
+    setDateTimeValue(preset.dateTimeValue);
+    touchPreset(preset.id);
+    setPresets(loadPresets());
+    setPresetError('');
+  }, []);
+
+  /** 删除预设 */
+  const handleDeletePreset = useCallback((presetId: string) => {
+    deletePreset(presetId);
+    setPresets(loadPresets());
+  }, []);
+
+  /** 导出全部预设为 JSON 文件（便于备份/分享） */
+  const handleExportPresets = useCallback(() => {
+    if (presets.length === 0) {
+      setPresetError('没有预设可导出');
+      return;
+    }
+    const json = exportPresets(presets);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    downloadBlob(url, `exif-presets-${Date.now()}.json`);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, [presets]);
+
+  /** 导入预设 JSON 文件（merge 模式跳过同名） */
+  const handleImportPresets = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    f.text()
+      .then((text) => {
+        const merged = importPresets(text, 'merge');
+        setPresets(merged);
+        setPresetError(`已导入预设（合并模式），共 ${merged.length} 个`);
+      })
+      .catch((err) => {
+        setPresetError(`导入失败：${err instanceof Error ? err.message : String(err)}`);
+      });
+    if (importInputRef.current) importInputRef.current.value = '';
+  }, []);
+
   /** 执行编辑 */
   const runEdit = useCallback(async () => {
     if (!file || activeOps.length === 0) return;
@@ -298,6 +500,30 @@ export default function ExifEditorTool() {
 
   return (
     <div className="exifedit__container">
+      {/* Tab 切换：单文件 / 批量处理（第 89 轮新增） */}
+      <div className="exifedit__tabs" role="tablist" aria-label="编辑模式切换">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'single'}
+          className={`exifedit__tab${mode === 'single' ? ' exifedit__tab--active' : ''}`}
+          onClick={() => setMode('single')}
+        >
+          单文件编辑
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === 'batch'}
+          className={`exifedit__tab${mode === 'batch' ? ' exifedit__tab--active' : ''}`}
+          onClick={() => setMode('batch')}
+        >
+          批量处理（多文件）
+        </button>
+      </div>
+
+      {mode === 'single' ? (
+        <>
       {/* 文件输入区 */}
       <div
         className={`exifedit__dropzone${dragging ? ' exifedit__dropzone--drag' : ''}`}
@@ -576,6 +802,41 @@ export default function ExifEditorTool() {
           </div>
         </div>
       )}
+        </>
+      ) : (
+        <BatchPanel
+          activeOps={activeOps}
+          batchFiles={batchFiles}
+          batchRunning={batchRunning}
+          batchResult={batchResult}
+          batchError={batchError}
+          batchDragging={batchDragging}
+          batchInputRef={batchInputRef}
+          onBatchSelect={handleBatchSelect}
+          onBatchDragOver={onBatchDragOver}
+          onBatchDragLeave={onBatchDragLeave}
+          onBatchDrop={onBatchDrop}
+          onRemoveBatchFile={removeBatchFile}
+          onClearBatch={clearBatch}
+          onRunBatchEdit={runBatchEdit}
+          onDownloadBatchZip={downloadBatchZip}
+        />
+      )}
+
+      {/* 预设管理面板（两种模式共用，第 89 轮新增） */}
+      <PresetPanel
+        presets={presets}
+        presetName={presetName}
+        presetError={presetError}
+        importInputRef={importInputRef}
+        activeOpsCount={activeOps.length}
+        onPresetNameChange={setPresetName}
+        onSavePreset={handleSavePreset}
+        onApplyPreset={handleApplyPreset}
+        onDeletePreset={handleDeletePreset}
+        onExportPresets={handleExportPresets}
+        onImportPresets={handleImportPresets}
+      />
     </div>
   );
 }
@@ -601,6 +862,404 @@ function MetaSnapshotView({ snapshot }: { snapshot: MetaSnapshot }) {
           </dl>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ============================================================
+// 批量处理面板（第 89 轮新增）
+// ============================================================
+
+interface BatchPanelProps {
+  /** 当前生效的编辑操作列表（用于摘要展示） */
+  activeOps: EditOperation[];
+  /** 批量文件列表 */
+  batchFiles: File[];
+  /** 是否正在处理 */
+  batchRunning: boolean;
+  /** 批量处理结果 */
+  batchResult: BatchEditSummary | null;
+  /** 错误信息 */
+  batchError: string;
+  /** 是否正在拖拽 */
+  batchDragging: boolean;
+  /** 文件输入 ref */
+  batchInputRef: React.RefObject<HTMLInputElement>;
+  /** 文件选择回调 */
+  onBatchSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** 拖拽回调 */
+  onBatchDragOver: (e: React.DragEvent) => void;
+  onBatchDragLeave: (e: React.DragEvent) => void;
+  onBatchDrop: (e: React.DragEvent) => void;
+  /** 移除文件回调 */
+  onRemoveBatchFile: (idx: number) => void;
+  /** 清空列表回调 */
+  onClearBatch: () => void;
+  /** 执行批量编辑回调 */
+  onRunBatchEdit: () => void;
+  /** 下载 ZIP 回调 */
+  onDownloadBatchZip: () => void;
+}
+
+/** 批量处理面板：多文件上传 + 队列处理 + 结果列表 + ZIP 下载 */
+function BatchPanel(props: BatchPanelProps) {
+  const {
+    activeOps,
+    batchFiles,
+    batchRunning,
+    batchResult,
+    batchError,
+    batchDragging,
+    batchInputRef,
+    onBatchSelect,
+    onBatchDragOver,
+    onBatchDragLeave,
+    onBatchDrop,
+    onRemoveBatchFile,
+    onClearBatch,
+    onRunBatchEdit,
+    onDownloadBatchZip,
+  } = props;
+
+  return (
+    <div className="exifedit__batch">
+      {/* 当前生效操作摘要 */}
+      <div className="exifedit__batch-ops-summary">
+        <h3 className="exifedit__section-title">当前编辑操作</h3>
+        {activeOps.length === 0 ? (
+          <p className="exifedit__hint">
+            未选择任何编辑操作。请切换到「单文件编辑」Tab 勾选操作后再回到批量处理。
+          </p>
+        ) : (
+          <ul className="exifedit__batch-ops-list">
+            {activeOps.map((op, idx) => {
+              const meta = EDIT_OPERATIONS.find((m) => m.type === op.type);
+              return (
+                <li key={idx} className="exifedit__batch-ops-item">
+                  <span className="exifedit__batch-ops-icon">✓</span>
+                  <span>{meta?.label ?? op.type}</span>
+                  {op.dateTime && <span className="exifedit__batch-ops-detail">→ {op.dateTime}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* 批量上传区 */}
+      <div
+        className={`exifedit__dropzone exifedit__dropzone--batch${batchDragging ? ' exifedit__dropzone--drag' : ''}`}
+        onDragOver={onBatchDragOver}
+        onDragLeave={onBatchDragLeave}
+        onDrop={onBatchDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="点击或拖入多个 JPEG 图片"
+        onClick={() => batchInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            batchInputRef.current?.click();
+          }
+        }}
+      >
+        <input
+          ref={batchInputRef}
+          type="file"
+          accept="image/jpeg,.jpg,.jpeg"
+          multiple
+          onChange={onBatchSelect}
+          className="exifedit__file-input"
+          aria-label="选择多个 JPEG 图片"
+        />
+        <div className="exifedit__dropzone-content">
+          <div className="exifedit__dropzone-icon" aria-hidden="true">📦</div>
+          <div className="exifedit__dropzone-text">
+            <strong>点击或拖入多个 JPEG 图片</strong>
+            <span className="exifedit__file-meta">
+              仅支持 JPEG，单文件最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 错误提示 */}
+      {batchError && (
+        <div className="exifedit__error" role="alert">
+          {batchError}
+        </div>
+      )}
+
+      {/* 文件列表 */}
+      {batchFiles.length > 0 && (
+        <div className="exifedit__batch-list">
+          <div className="exifedit__batch-list-header">
+            <h3 className="exifedit__section-title">
+              待处理文件（{batchFiles.length}）
+            </h3>
+            <button
+              type="button"
+              className="exifedit__btn"
+              onClick={onClearBatch}
+              disabled={batchRunning}
+            >
+              清空列表
+            </button>
+          </div>
+          <ul className="exifedit__batch-files">
+            {batchFiles.map((f, idx) => (
+              <li key={idx} className="exifedit__batch-file">
+                <span className="exifedit__batch-file-name">{f.name}</span>
+                <span className="exifedit__batch-file-size">{formatBytes(f.size)}</span>
+                <button
+                  type="button"
+                  className="exifedit__batch-file-remove"
+                  onClick={() => onRemoveBatchFile(idx)}
+                  disabled={batchRunning}
+                  aria-label={`移除 ${f.name}`}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="exifedit__actions">
+            <button
+              type="button"
+              className="exifedit__btn exifedit__btn--primary"
+              onClick={onRunBatchEdit}
+              disabled={batchRunning || batchFiles.length === 0 || activeOps.length === 0}
+            >
+              {batchRunning ? `处理中...（${batchResult?.total ?? 0}/${batchFiles.length}）` : `执行批量编辑（${batchFiles.length} 个文件）`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 批量处理结果 */}
+      {batchResult && (
+        <div className="exifedit__batch-result">
+          <h3 className="exifedit__section-title">批量处理结果</h3>
+          <div className="exifedit__summary">
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">总文件数</span>
+              <span className="exifedit__summary-value">{batchResult.total}</span>
+            </div>
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">成功</span>
+              <span className="exifedit__summary-value exifedit__summary-value--good">
+                {batchResult.succeeded}
+              </span>
+            </div>
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">跳过</span>
+              <span className="exifedit__summary-value">{batchResult.skipped}</span>
+            </div>
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">失败</span>
+              <span className="exifedit__summary-value exifedit__summary-value--bad">
+                {batchResult.failed}
+              </span>
+            </div>
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">总节省</span>
+              <span className="exifedit__summary-value exifedit__summary-value--good">
+                {batchResult.totalSavedBytes > 0 ? `-${formatBytes(batchResult.totalSavedBytes)}` : '0 B'}
+              </span>
+            </div>
+            <div className="exifedit__summary-item">
+              <span className="exifedit__summary-label">总耗时</span>
+              <span className="exifedit__summary-value">{batchResult.totalElapsedMs.toFixed(0)} ms</span>
+            </div>
+          </div>
+
+          {/* 单文件结果列表 */}
+          <ul className="exifedit__batch-items">
+            {batchResult.items.map((it, idx) => (
+              <li
+                key={idx}
+                className={`exifedit__batch-item exifedit__batch-item--${it.status}`}
+              >
+                <span className="exifedit__batch-item-name">{it.fileName}</span>
+                <span className="exifedit__batch-item-status">
+                  {it.status === 'success' && it.result
+                    ? `✓ 成功 · 节省 ${formatBytes(it.result.savedBytes)} · ${it.result.elapsedMs.toFixed(0)}ms`
+                    : it.status === 'skipped'
+                    ? `⚠ 跳过 · ${it.message ?? ''}`
+                    : `✗ 失败 · ${it.message ?? '未知错误'}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* 下载 ZIP 按钮 */}
+          {batchResult.succeeded > 0 && (
+            <button
+              type="button"
+              className="exifedit__btn exifedit__btn--primary exifedit__btn--download"
+              onClick={onDownloadBatchZip}
+            >
+              ⬇ 下载全部成功结果为 ZIP（{batchResult.succeeded} 个文件）
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 预设管理面板（第 89 轮新增）
+// ============================================================
+
+interface PresetPanelProps {
+  /** 已保存的预设列表 */
+  presets: EditPreset[];
+  /** 当前输入的预设名称 */
+  presetName: string;
+  /** 预设错误信息 */
+  presetError: string;
+  /** 导入文件输入 ref */
+  importInputRef: React.RefObject<HTMLInputElement>;
+  /** 当前生效的操作数量（用于禁用保存按钮） */
+  activeOpsCount: number;
+  /** 预设名称变更回调 */
+  onPresetNameChange: (name: string) => void;
+  /** 保存预设回调 */
+  onSavePreset: () => void;
+  /** 应用预设回调 */
+  onApplyPreset: (preset: EditPreset) => void;
+  /** 删除预设回调 */
+  onDeletePreset: (presetId: string) => void;
+  /** 导出预设回调 */
+  onExportPresets: () => void;
+  /** 导入预设回调 */
+  onImportPresets: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+/** 预设管理面板：保存/加载/删除/导入/导出编辑组合 */
+function PresetPanel(props: PresetPanelProps) {
+  const {
+    presets,
+    presetName,
+    presetError,
+    importInputRef,
+    activeOpsCount,
+    onPresetNameChange,
+    onSavePreset,
+    onApplyPreset,
+    onDeletePreset,
+    onExportPresets,
+    onImportPresets,
+  } = props;
+
+  return (
+    <div className="exifedit__presets">
+      <h3 className="exifedit__section-title">编辑预设</h3>
+      <p className="exifedit__hint">
+        保存常用的编辑操作组合，下次一键加载。预设存储在浏览器本地（localStorage），不会上传。
+      </p>
+
+      {/* 保存当前组合 */}
+      <div className="exifedit__preset-save">
+        <input
+          type="text"
+          className="exifedit__preset-name-input"
+          value={presetName}
+          onChange={(e) => onPresetNameChange(e.target.value)}
+          placeholder="输入预设名称（如：分享前清理 GPS）"
+          aria-label="预设名称"
+          maxLength={40}
+        />
+        <button
+          type="button"
+          className="exifedit__btn exifedit__btn--primary"
+          onClick={onSavePreset}
+          disabled={activeOpsCount === 0 || !presetName.trim()}
+        >
+          保存当前组合
+        </button>
+      </div>
+
+      {/* 错误提示 */}
+      {presetError && (
+        <div className="exifedit__error" role="alert">
+          {presetError}
+        </div>
+      )}
+
+      {/* 预设列表 */}
+      {presets.length === 0 ? (
+        <p className="exifedit__hint exifedit__hint--muted">暂无已保存的预设。</p>
+      ) : (
+        <ul className="exifedit__preset-list">
+          {presets.map((preset) => (
+            <li key={preset.id} className="exifedit__preset-item">
+              <div className="exifedit__preset-info">
+                <div className="exifedit__preset-name">{preset.name}</div>
+                <div className="exifedit__preset-ops">
+                  {preset.operations.map((op, idx) => {
+                    const meta = EDIT_OPERATIONS.find((m) => m.type === op.type);
+                    return (
+                      <span key={idx} className="exifedit__preset-op-tag">
+                        {meta?.label ?? op.type}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="exifedit__preset-meta">
+                  创建于 {new Date(preset.createdAt).toLocaleDateString('zh-CN')} ·
+                  最近使用 {new Date(preset.lastUsedAt).toLocaleDateString('zh-CN')}
+                </div>
+              </div>
+              <div className="exifedit__preset-actions">
+                <button
+                  type="button"
+                  className="exifedit__btn exifedit__btn--small"
+                  onClick={() => onApplyPreset(preset)}
+                >
+                  应用
+                </button>
+                <button
+                  type="button"
+                  className="exifedit__btn exifedit__btn--small exifedit__btn--danger"
+                  onClick={() => onDeletePreset(preset.id)}
+                  aria-label={`删除预设 ${preset.name}`}
+                >
+                  删除
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* 导入/导出 */}
+      <div className="exifedit__preset-io">
+        <button
+          type="button"
+          className="exifedit__btn"
+          onClick={onExportPresets}
+          disabled={presets.length === 0}
+        >
+          导出全部预设
+        </button>
+        <button
+          type="button"
+          className="exifedit__btn"
+          onClick={() => importInputRef.current?.click()}
+        >
+          导入预设
+        </button>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={onImportPresets}
+          className="exifedit__file-input"
+          aria-label="选择预设 JSON 文件"
+        />
+      </div>
     </div>
   );
 }

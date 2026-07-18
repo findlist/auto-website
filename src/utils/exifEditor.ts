@@ -1001,3 +1001,265 @@ export function buildEditedFilename(originalName: string): string {
   const base = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
   return `${base}-edited.jpg`;
 }
+
+// ============================================================
+// 批量处理与预设管理（第 89 轮新增：批量处理 + 预设保存）
+// ============================================================
+
+/** 编辑预设（用户保存的常用编辑组合，便于复用） */
+export interface EditPreset {
+  /** 预设唯一 ID（基于名称 hash + 时间戳生成） */
+  id: string;
+  /** 预设名称（用户输入，同名视为同一预设） */
+  name: string;
+  /** 编辑操作列表 */
+  operations: EditOperation[];
+  /** 是否启用拍摄时间修改 */
+  enableDateTime: boolean;
+  /** 拍摄时间值（'YYYY:MM:DD HH:MM:SS'） */
+  dateTimeValue: string;
+  /** 创建时间戳 */
+  createdAt: number;
+  /** 最后使用时间戳 */
+  lastUsedAt: number;
+}
+
+/** 批量处理单个文件的结果 */
+export interface BatchItemResult {
+  /** 原始文件名 */
+  fileName: string;
+  /** 处理状态 */
+  status: 'success' | 'skipped' | 'error';
+  /** 编辑结果（status=success 时有值） */
+  result?: EditResult;
+  /** 错误/跳过原因（status=error/skipped 时有值） */
+  message?: string;
+}
+
+/** 批量处理汇总结果 */
+export interface BatchEditSummary {
+  /** 总文件数 */
+  total: number;
+  /** 成功数 */
+  succeeded: number;
+  /** 跳过数（非 JPEG、无 EXIF 等） */
+  skipped: number;
+  /** 失败数 */
+  failed: number;
+  /** 总节省字节数 */
+  totalSavedBytes: number;
+  /** 总耗时（毫秒） */
+  totalElapsedMs: number;
+  /** 每个文件的结果 */
+  items: BatchItemResult[];
+}
+
+/**
+ * 批量应用编辑操作到多个 JPEG 文件
+ * 设计要点：
+ *  - 非 JPEG 文件提前跳过（仅校验 SOI 标记 0xFFD8，避免完整解析开销）
+ *  - 每处理 5 个文件让出主线程一次，避免阻塞 UI
+ *  - 单文件异常不影响其他文件，错误记录到 items
+ */
+export async function applyEditsBatch(
+  files: Uint8Array[],
+  fileNames: string[],
+  operations: EditOperation[],
+): Promise<BatchEditSummary> {
+  const startTime = performance.now();
+  const items: BatchItemResult[] = [];
+  let succeeded = 0;
+  let skipped = 0;
+  let failed = 0;
+  let totalSavedBytes = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const bytes = files[i];
+    const fileName = fileNames[i] ?? `file-${i + 1}.jpg`;
+
+    // 校验 JPEG SOI 标记（0xFFD8），提前跳过非 JPEG 文件
+    if (bytes.length < 2 || bytes[0] !== 0xff || bytes[1] !== 0xd8) {
+      items.push({ fileName, status: 'skipped', message: '非 JPEG 文件，已跳过' });
+      skipped++;
+      continue;
+    }
+
+    try {
+      const result = applyEdits(bytes, operations);
+      items.push({ fileName, status: 'success', result });
+      succeeded++;
+      totalSavedBytes += result.savedBytes;
+    } catch (err) {
+      items.push({
+        fileName,
+        status: 'error',
+        message: err instanceof Error ? err.message : '未知错误',
+      });
+      failed++;
+    }
+
+    // 每 5 个文件让出主线程，避免批量处理时阻塞 UI 渲染
+    if ((i + 1) % 5 === 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  return {
+    total: files.length,
+    succeeded,
+    skipped,
+    failed,
+    totalSavedBytes,
+    totalElapsedMs: performance.now() - startTime,
+    items,
+  };
+}
+
+/** 预设持久化存储 key（localStorage） */
+const PRESET_STORAGE_KEY = 'exif-editor-presets';
+
+/** 最大预设数量（避免无限增长，超出时按最久未使用淘汰） */
+const MAX_PRESETS = 20;
+
+/** 基于名称生成预设 ID（hash + 时间戳，保证唯一性） */
+function generatePresetId(name: string): string {
+  // 简单字符串 hash，生成 8 位 hex 前缀
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash + name.charCodeAt(i)) >>> 0;
+  }
+  return `preset-${hash.toString(16).padStart(8, '0')}-${Date.now().toString(36)}`;
+}
+
+/** 从 localStorage 加载所有预设（按 lastUsedAt 降序排序，最近使用的在前） */
+export function loadPresets(): EditPreset[] {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PRESET_STORAGE_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw) as EditPreset[];
+    if (!Array.isArray(list)) return [];
+    return list.sort((a, b) => b.lastUsedAt - a.lastUsedAt);
+  } catch {
+    return [];
+  }
+}
+
+/** 保存预设到 localStorage（同名覆盖，超出上限按最久未使用淘汰） */
+export function savePreset(
+  preset: Omit<EditPreset, 'id' | 'createdAt' | 'lastUsedAt'>,
+): EditPreset {
+  const presets = loadPresets();
+  const existingIdx = presets.findIndex((p) => p.name === preset.name);
+  const now = Date.now();
+  const newPreset: EditPreset = {
+    ...preset,
+    id: existingIdx >= 0 ? presets[existingIdx].id : generatePresetId(preset.name),
+    createdAt: existingIdx >= 0 ? presets[existingIdx].createdAt : now,
+    lastUsedAt: now,
+  };
+  if (existingIdx >= 0) {
+    presets[existingIdx] = newPreset;
+  } else {
+    // 超出上限时移除最久未使用的（lastUsedAt 最小）
+    if (presets.length >= MAX_PRESETS) {
+      presets.sort((a, b) => a.lastUsedAt - b.lastUsedAt);
+      presets.shift();
+    }
+    presets.push(newPreset);
+  }
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+    } catch {
+      // localStorage 写入失败（如配额超限），忽略错误不阻塞主流程
+    }
+  }
+  return newPreset;
+}
+
+/** 删除指定 ID 的预设 */
+export function deletePreset(presetId: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const presets = loadPresets();
+    const filtered = presets.filter((p) => p.id !== presetId);
+    if (filtered.length !== presets.length) {
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(filtered));
+    }
+  } catch {
+    // 忽略删除错误
+  }
+}
+
+/** 更新预设的最后使用时间（用于排序与淘汰） */
+export function touchPreset(presetId: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const presets = loadPresets();
+    const idx = presets.findIndex((p) => p.id === presetId);
+    if (idx >= 0) {
+      presets[idx].lastUsedAt = Date.now();
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+    }
+  } catch {
+    // 忽略更新错误
+  }
+}
+
+/** 导出预设为 JSON 字符串（便于备份/分享） */
+export function exportPresets(presets: EditPreset[]): string {
+  return JSON.stringify(
+    {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      presets,
+    },
+    null,
+    2,
+  );
+}
+
+/** 从 JSON 字符串导入预设（merge 模式跳过同名，replace 模式全量替换） */
+export function importPresets(jsonStr: string, mode: 'merge' | 'replace' = 'merge'): EditPreset[] {
+  const data = JSON.parse(jsonStr) as { presets?: EditPreset[] };
+  if (!Array.isArray(data.presets)) {
+    throw new Error('无效的预设文件格式');
+  }
+  const imported = data.presets;
+  if (mode === 'replace') {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(imported));
+    }
+    return imported;
+  }
+  // merge 模式：同名预设跳过，避免覆盖本地修改
+  const existing = loadPresets();
+  const existingNames = new Set(existing.map((p) => p.name));
+  const toAdd = imported.filter((p) => !existingNames.has(p.name));
+  const merged = [...existing, ...toAdd];
+  // 按 lastUsedAt 降序截断至 MAX_PRESETS
+  const trimmed = merged.sort((a, b) => b.lastUsedAt - a.lastUsedAt).slice(0, MAX_PRESETS);
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(trimmed));
+  }
+  return trimmed;
+}
+
+/**
+ * 生成批量编辑后的文件名
+ *  - 单文件：保持原命名规则（base-edited.jpg）
+ *  - 多文件：加序号便于排序（base-edited-01.jpg）
+ */
+export function buildBatchEditedFilename(
+  originalName: string,
+  index: number,
+  total: number,
+): string {
+  const dotIdx = originalName.lastIndexOf('.');
+  const base = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
+  if (total === 1) return `${base}-edited.jpg`;
+  const padLen = String(total).length;
+  const idx = String(index + 1).padStart(padLen, '0');
+  return `${base}-edited-${idx}.jpg`;
+}
