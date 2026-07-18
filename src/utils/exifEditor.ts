@@ -483,18 +483,30 @@ export function parseExifSegment(payload: Uint8Array): ParsedExif {
   const ifd0 = parseIfd(payload, ifd0Offset, bigEndian, tiffOffset);
 
   // ExifIFD（IFD0 中的 0x8769 指针）
+  // 注意：ExifIFDPointer 是 LONG 类型（4 字节），count=1，valueByteLength=4，
+  // 在 parseIfd 中走"内联存储"分支，valueOffset 为 null。
+  // 因此需区分内联与外部偏移两种情况读取指针值，否则 ExifIFD 永远不会被解析。
   let exifIfd: ParsedIfd | null = null;
   const exifPointer = ifd0?.entries.find((e) => e.tag === TAG.ExifIfdPointer);
-  if (exifPointer && exifPointer.valueOffset !== null) {
-    const exifOffset = tiffOffset + readU32(payload, exifPointer.valueOffset, bigEndian);
+  if (exifPointer) {
+    const ptrValue =
+      exifPointer.valueOffset !== null
+        ? readU32(payload, exifPointer.valueOffset, bigEndian)
+        : readU32(payload, exifPointer.entryOffset + 8, bigEndian);
+    const exifOffset = tiffOffset + ptrValue;
     exifIfd = parseIfd(payload, exifOffset, bigEndian, tiffOffset);
   }
 
   // GPSIFD（IFD0 中的 0x8825 指针）
+  // 同 ExifIFDPointer，亦为 LONG 类型内联存储，需从 entryOffset+8 读取。
   let gpsIfd: ParsedIfd | null = null;
   const gpsPointer = ifd0?.entries.find((e) => e.tag === TAG.GpsIfdPointer);
-  if (gpsPointer && gpsPointer.valueOffset !== null) {
-    const gpsOffset = tiffOffset + readU32(payload, gpsPointer.valueOffset, bigEndian);
+  if (gpsPointer) {
+    const ptrValue =
+      gpsPointer.valueOffset !== null
+        ? readU32(payload, gpsPointer.valueOffset, bigEndian)
+        : readU32(payload, gpsPointer.entryOffset + 8, bigEndian);
+    const gpsOffset = tiffOffset + ptrValue;
     gpsIfd = parseIfd(payload, gpsOffset, bigEndian, tiffOffset);
   }
 
