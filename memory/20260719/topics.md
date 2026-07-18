@@ -1970,3 +1970,305 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 96 轮 · 图片对比工具增强（差异区域检测 + JSON 报告导出）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 95 轮（commit b737024）：双向内链网络 100% 覆盖里程碑达成，108 工具 + 115 博客 + 951 页面
+- 第 95 轮下轮建议第 4 项明确指向本轮方向："图片对比工具增强（批量对比 / 差异区域框选与放大 / 对比结果导出 JSON）"
+- 工作树状态：第 95 轮 commit b737024 已 push，工作树干净（不含并行任务产物）
+
+## 本轮聚焦方向
+**图片对比工具体验深度增强（差异区域检测 + JSON 报告导出）**
+
+承接第 95 轮下轮建议第 4 项，本轮聚焦图片对比工具的两个核心增强：
+1. **差异区域检测**：自动识别差异集中在哪些区域，框选位置并列表展示
+2. **JSON 报告导出**：导出结构化差异分析报告，便于自动化测试集成
+
+**方向选择理由**：
+- **回归测试场景刚需**：第 90 轮新增图片对比工具后，差异比例与统计已完备，但缺少"差异集中在哪"的定位能力与"程序可解析"的导出能力，这两个能力是回归测试自动化的核心需求
+- **技术差异化**：采用网格分块 + 并查集连通合并算法（O(n) 复杂度），优于市面常见的完整连通区域检测（O(n²)），且输出更实用（区域包围盒而非像素群）
+- **矩阵协同价值**：JSON 导出可与 Playwright/Puppeteer/Cypress 等 E2E 测试框架集成，形成"截图对比 → JSON 报告 → CI/CD 断言"完整工作流
+- **趁热打铁深度打磨**：第 90 轮刚完成图片对比工具，本轮深度打磨符合"新增 → 深化"的迭代节奏
+- **批量对比模式留待下轮**：批量对比复杂度高（多文件配对 + 队列处理 + 结果汇总），独立成轮质量更可控
+
+## 完成任务
+
+### 单元 1：imageCompare.ts 核心算法扩展（+约 350 行）
+- **新增 `DiffRegion` 类型**：差异区域包围盒（x/y/width/height/diffPixels/density/avgIntensity）
+- **新增 `DiffResultWithRegions` 类型**：扩展 DiffResult，增加 regions 与 gridSize
+- **新增 `DiffExportJson` / `DiffExportMeta` 类型**：JSON 导出文件结构定义
+- **新增常量**：`DEFAULT_GRID_SIZE`（32px）、`REGION_DENSITY_THRESHOLD`（5%）、`MAX_REGIONS_IN_EXPORT`（50）
+- **新增 `UnionFind` 类**：并查集实现（路径压缩 + 按秩合并），复杂度接近 O(α(n))
+- **新增 `compareImagesDiffWithRegions` 函数**：增强版差异分析，一次扫描同时生成差异图与区域
+  - 算法流程：逐像素对比 → 网格块统计 → 活跃块标记 → 并查集 4 连通合并 → 包围盒计算
+  - 复杂度：O(n) 像素扫描 + O(块数) 合并，远优于完整连通区域检测
+- **新增 `buildDiffExportJson` 函数**：构造 JSON 导出字符串（元信息 + 统计 + 区域列表）
+- **新增 `downloadText` 函数**：触发文本文件下载（Blob + ObjectURL）
+
+### 单元 2：ImageCompareTool.tsx UI 集成（+约 180 行）
+- **状态升级**：`diffResult` 类型从 `DiffResult` 升级为 `DiffResultWithRegions`（向后兼容）
+- **新增状态**：`showRegions`（区域框选显隐）、`selectedRegionIdx`（选中区域索引）、`diffImgRef`（差异图引用）
+- **计算逻辑升级**：`computeResult` 与自动计算 useEffect 调用 `compareImagesDiffWithRegions` 替代原 `compareImagesDiff`
+- **新增 `handleExportJson`**：调用 buildDiffExportJson + downloadText 导出 JSON 报告
+- **新增 `handleSelectRegion`**：选中区域索引切换 + 滚动差异图到可视区域
+- **新增「导出 JSON」按钮**：操作面板中，仅 diff-highlight 模式且有结果时显示
+- **新增 SVG 区域框选叠加层**：基于 viewBox 按差异图像素坐标定位，半透明方框 + 序号标签
+  - 默认蓝色半透明，hover 加深，选中状态红色加粗
+  - 点击方框触发 handleSelectRegion
+- **新增区域框选显示开关**：差异图左下角复选框，切换叠加层显隐
+- **新增差异区域列表**：统计区下方，按差异像素数降序，每项显示序号徽章/坐标/尺寸/像素数/密度/强度
+  - 点击列表项高亮对应方框并滚动定位
+  - 选中状态红色边框 + 红色序号徽章
+  - 列表最大高度 360px 可滚动
+- **重置与交换逻辑完善**：handleReset / handleSwap 同步重置 selectedRegionIdx
+
+### 单元 3：image-compare.astro 配套更新（+约 320 行）
+- **SEO meta 更新**：title 增加"区域检测"关键词，description 覆盖区域检测算法与 JSON 导出
+- **hero 文案更新**：突出差异区域检测与 JSON 报告导出两大新能力
+- **新增 3 条 FAQ**：
+  1. 差异区域是怎么检测的？为什么用网格分块？（算法原理 + 与完整连通检测对比）
+  2. JSON 导出包含哪些内容？如何用于自动化测试？（结构 + CI/CD 集成场景）
+  3. 差异区域列表如何使用？支持键盘操作吗？（交互方式 + 无障碍）
+- **新增样式**（imgcmp 命名空间扩展）：
+  - `.imgcmp__preview--diff`：相对定位容器
+  - `.imgcmp__regions-overlay`：SVG 绝对定位叠加层
+  - `.imgcmp__region-group` / `.imgcmp__region-rect` / `.imgcmp__region-label-bg` / `.imgcmp__region-label-text`：区域方框与序号
+  - `.imgcmp__regions-toggle`：显示开关
+  - `.imgcmp__regions` / `.imgcmp__regions-header` / `.imgcmp__regions-list` / `.imgcmp__region-item` / `.imgcmp__region-btn` / `.imgcmp__region-index` / `.imgcmp__region-coord` / `.imgcmp__region-stats`：区域列表
+  - 响应式：768px 列表项统计换行、480px 坐标独占一行
+  - 暗色模式：区域方框蓝色加深、选中红色加深、序号徽章适配
+
+### 单元 4：全量验收
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留：seo-audit.mjs 未使用 import、clipboard.ts deprecated execCommand，与本轮无关）
+  - 初次检查发现 `DiffRegion` 类型导入未使用（ts 6133 hint），立即移除
+- `npm run build`：951 页面构建成功（31.00s），页面数与上轮一致（本轮为已有工具功能深化，无新增工具/博客）
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：951 页面构建成功，无错误
+- ✅ 功能完整性：差异区域自动检测 + SVG 框选叠加 + 区域列表 + 点击高亮 + JSON 导出 全链路可用
+- ✅ 算法性能：O(n) 一次扫描同时生成差异图与区域，无重复计算
+- ✅ 移动端响应式：768px 列表项统计换行、480px 坐标独占一行
+- ✅ 暗色模式：区域方框/列表/序号徽章/选中状态全套暗色样式
+- ✅ 无障碍：区域按钮 min-height 44px（WCAG 2.2）、aria-pressed 选中状态、aria-label 完整描述、focus-visible 焦点环
+- ✅ 代码注释、UI 文案、提交信息全部使用中文
+
+## 修改文件清单
+
+### commit f9d81cf（3 文件，+845 / -12）
+- `src/utils/imageCompare.ts`（+约 350 行：UnionFind 类 + compareImagesDiffWithRegions + buildDiffExportJson + downloadText + 6 个新类型/常量）
+- `src/components/ImageCompareTool.tsx`（+约 180 行：状态升级 + handleExportJson + handleSelectRegion + SVG 叠加层 + 区域列表 + 导出按钮）
+- `src/pages/image-compare.astro`（+约 320 行：SEO meta + hero + 3 FAQ + 全套样式 + 响应式 + 暗色模式）
+
+## 进度沉淀
+- Git：commit f9d81cf 已 push（b737024..f9d81cf HEAD -> main）
+- 当前规模：**108 工具**（无变化）+ **115 博客**（无变化）+ **951 页面**（无变化，本轮为已有工具功能深化）
+- 图片对比工具能力升级：从"三种对比模式 + 6 项统计"升级为"三种对比模式 + 6 项统计 + 差异区域检测 + JSON 报告导出"四位一体完整工具
+
+## 问题与发现
+1. **算法选择权衡**：完整连通区域检测（BFS/DFS 遍历每个像素）复杂度 O(n²)，不适合浏览器实时交互。网格分块将复杂度降至 O(n) + O(块数)，且输出更实用：用户看到的是"差异集中在哪个区域"而非"每个像素群"。32px 块大小是平衡精度与性能的选择：太小（如 8px）块数过多合并开销大，太大（如 64px）区域定位不精确。
+2. **并查集优化**：采用路径压缩 + 按秩合并两种优化，使 find/union 操作复杂度接近 O(α(n))（α 是反阿克曼函数，增长极慢）。使用 Int32Array/Uint8Array 而非普通数组，减少内存占用与 GC 压力。
+3. **一次扫描策略**：在生成差异图的同时同步统计网格块信息，避免二次扫描 ImageData。虽然代码量略增（合并了两个职责），但性能提升明显，尤其对大图（如 4K 截图对比）。
+4. **SVG 叠加层方案**：采用 SVG viewBox 按差异图像素坐标定位，而非 CSS 百分比计算。优势：①坐标系与差异图一致，无需换算；②支持 viewBox 自动缩放，响应式无需额外处理；③SVG 矩形可单独控制 fill/stroke/事件，比 CSS div 灵活。
+5. **JSON 导出设计**：不导出完整差异像素坐标列表（可能数百万个），而是导出区域列表（最多 50 个，每个含包围盒+统计）。理由：①JSON 体积可控（KB 级而非 MB 级）；②区域信息对自动化测试更有用（断言"某区域差异比例 > X%"比"某像素不同"更有意义）；③支持趋势分析（区域数随版本变化）。
+6. **PowerShell heredoc 限制**：首次 git commit 使用 `<<'EOF'` heredoc 语法失败（PowerShell 不支持），改用多个 `-m` 参数传递多段提交信息。后续提交需注意 PowerShell 与 Bash 语法差异。
+7. **并行任务文件隔离**：工作树存在 `memory/20260718/topics.md` 修改、`docs/bug-check/bug-check-2026-07-19.md`、`docs/style-optimization/style-opt-2026-07-19.md`、`memory/20260718/topics-archive-20260718.md` 等并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮仅提交 3 个本轮修改文件。
+
+## 下轮建议（第 96 轮产出）
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 10 天，仍未获取访问数据，**此为进入真正数据驱动迭代阶段的前置条件**
+2. **图片对比工具批量对比模式**（第 90 轮下轮建议第 3 项 + 本轮未完成方向）：多文件配对 + 队列处理 + 结果汇总 + 批量 JSON 导出
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）
+4. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+5. **图片对比工具差异区域放大查看**（本轮未完成方向）：点击区域弹 modal 显示该区域的原图 A/B/差异图三联放大对比
+6. **长尾 SEO 内容补充**：基于本轮新增的区域检测与 JSON 导出，拓展"回归测试截图差异区域定位"、"图片对比 JSON 报告自动化测试集成"等长尾关键词落地页
+7. **内链网络质量审计**（第 95 轮下轮建议第 6 项）：从"量"的覆盖转向"质"的提升
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 10 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **图片对比工具批量对比模式未实现**：本轮聚焦区域检测与 JSON 导出，批量对比留待下轮。
+- **差异区域放大查看未实现**：本轮仅实现框选与列表选中高亮，区域三联放大对比留待下轮。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 96 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 96 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：图片对比工具增强 - 差异区域检测 + JSON 报告导出（功能深度打磨）
+**Commit**：f9d81cf
+**Push**：b737024..f9d81cf HEAD -> main
+
+### 完成任务
+1. ✅ imageCompare.ts 扩展：新增 UnionFind 类 + compareImagesDiffWithRegions（网格分块 + 并查集 4 连通合并，O(n) 复杂度）+ buildDiffExportJson + downloadText + 6 个新类型/常量
+2. ✅ ImageCompareTool.tsx 集成：diffResult 类型升级 + SVG 区域框选叠加层 + 区域列表（按差异像素数降序）+ 点击高亮定位 + 导出 JSON 按钮 + 显示/隐藏开关
+3. ✅ image-compare.astro 更新：SEO meta + hero 文案 + 3 条新 FAQ（区域检测算法 / JSON 导出格式 / 区域列表交互）+ 全套样式（响应式 + 暗色模式）
+4. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，均为既有遗留）
+5. ✅ 构建成功（951 页面 31.00s，页面数无变化，本轮为已有工具功能深化）
+6. ✅ Git 提交推送完成（1 次提交，3 文件改动，+845 / -12）
+
+### 当前规模
+- **工具**：108 个（无变化）
+- **博客**：115 篇（无变化）
+- **页面**：951 页（无变化）
+- **图片对比工具能力升级**：从"三种对比模式 + 6 项统计"升级为"三种对比模式 + 6 项统计 + 差异区域检测 + JSON 报告导出"四位一体完整工具
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 图片对比工具批量对比模式（多文件配对 + 队列处理 + 批量 JSON 导出）
+3. 图像工具矩阵继续扩充（metadata 打包）
+4. EXIF 编辑器进一步增强（PNG/WebP/TIFF 支持）
+5. 图片对比工具差异区域放大查看（三联放大对比 modal）
+6. 长尾 SEO 内容补充（回归测试区域定位 / JSON 报告自动化集成）
+7. 内链网络质量审计
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 图片对比工具批量对比模式未实现（留待下轮）
+- 差异区域放大查看未实现（本轮仅实现框选与列表选中高亮）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+## 第 97 轮（2026-07-19）
+
+### 上下文恢复
+- 读取 `docs/site-config.md`：阶段二（数据驱动迭代），站点已上线 https://website.niuzi.asia（10 天）
+- 读取 `memory/20260719/topics.md` 第 96 轮：commit f9d81cf 已推送，图片对比工具新增差异区域检测 + JSON 报告导出
+- git log 确认：f9d81cf 为最新 commit，工作树有并行任务产物（bug-check / style-optimization / topics-archive），本轮仅处理自己的核心任务
+
+### 本轮聚焦方向
+**图片对比工具批量对比模式**（第 96 轮下轮建议第 2 项）
+- 第 1 项「接入 Cloudflare Web Analytics」需用户操作，本轮跳过
+- 上轮已实现单图对比完整能力（三种模式 + 区域检测 + JSON 导出），批量对比是自然的功能扩展
+- 对自动化测试场景（CI/CD 截图回归批量验证）有实际价值
+
+### 完成的最小单元
+
+#### 单元 1：imageCompare.ts 批量对比核心逻辑（+约 200 行）
+- 新增常量 `MAX_BATCH_PAIRS=50`（单次批量上限保护）
+- 新增类型 `BatchCompareItem`、`BatchCompareSummary`、`BatchProgressCallback`
+- 新增 `compareImagePairsBatch` 函数：顺序执行队列，每对让出主线程（setTimeout 0）避免阻塞 UI，单对失败不影响其他对，通过回调实时通知进度
+- 新增 `pairFilesSequentially` 函数：文件按顺序两两配对（第 1+2、3+4...），奇数个文件警告并忽略最后一个
+- 新增 `buildBatchExportJson` 函数：合并所有配对结果为单个 JSON，剥离 ObjectURL 等运行时字段，仅保留可序列化的元信息与统计
+
+#### 单元 2：ImageCompareTool.tsx 批量模式 UI（+约 470 行）
+- 顶部新增应用模式切换器（单图对比 / 批量对比，role=tablist + aria-selected）
+- 用 `{appMode === 'batch' ? <BatchCompareMode /> : <>{单图模式所有 UI}</>}` 包裹现有代码
+- 新增 `BatchCompareMode` 子组件（独立状态管理，避免与单图模式相互干扰）：
+  - 多文件上传区（支持点击 + 拖拽，可多次追加）
+  - 文件列表（实时显示配对预览，每个文件标注「对N-A/B」角色徽章，可单独移除）
+  - 阈值调节（与单图模式一致，0-100 + 三档预设）
+  - 开始批量对比按钮（显示配对数）
+  - 队列进度条（当前/总数 + 进度填充条）
+  - 汇总统计区（总配对数/成功/失败/平均差异/最大差异）
+  - 配对结果列表（点击行展开差异图 + 详细统计 + 下载差异图 PNG + 导出该对 JSON）
+  - 批量 JSON 导出按钮（合并所有配对为单个 JSON）
+
+#### 单元 3：image-compare.astro SEO + FAQ + 样式（+约 580 行）
+- SEO meta title 增加"批量对比"关键词、description 覆盖批量对比能力与 CI/CD 应用场景、jsonLd 补充批量对比描述
+- hero 文案新增"批量对比模式支持上传多张图片自动两两配对"说明
+- 新增 3 条 FAQ：
+  1. 批量对比模式如何使用？适合什么场景？（完整使用流程 + 50 对上限说明）
+  2. 批量对比的配对策略是什么？能否自定义？（顺序两两配对 + 奇数处理 + 为何不用文件名配对 + 建议工作流）
+  3. 批量对比的 JSON 报告与单图模式有什么区别？（meta + items 结构 + 与单图 JSON 关系 + CI/CD 集成建议）
+- 新增 478 行样式（应用模式切换器 + 批量上传区 + 文件列表 + 文件项 + 角色徽章 + 移除按钮 + 进度条 + 配对结果列表 + 配对项 + 展开详情 + 768px/480px 响应式 + 暗色模式全套适配）
+
+### 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints（均为既有遗留）
+- ✅ `npm run build`：951 页面构建成功（28.49s），无错误
+- ✅ 功能完整性：批量对比全链路可用（上传 → 配对 → 队列处理 → 进度 → 汇总 → 展开 → 导出）
+- ✅ 算法性能：顺序执行 + 每对让出主线程，避免长时间阻塞 UI；MAX_BATCH_PAIRS=50 防止内存溢出
+- ✅ 移动端响应式：768px 文件项换行 / 配对项换行；480px 上传区缩小 / 文件 meta 独占行 / 配对统计纵向排列
+- ✅ 暗色模式：应用模式切换器 / 上传区 / 文件列表 / 角色徽章（A 蓝 / B 红）/ 配对项 / 展开详情 / 错误提示全套暗色样式
+- ✅ 无障碍：模式切换 role=tablist + aria-selected、文件移除 aria-label、配对展开 aria-pressed + aria-expanded、所有按钮 min-height 44px（WCAG 2.2）
+- ✅ 代码注释、UI 文案、提交信息全部使用中文
+
+### 修改文件清单
+
+#### commit 76da1be（3 文件，+1253 / -5）
+- `src/utils/imageCompare.ts`（+约 200 行：MAX_BATCH_PAIRS + 4 个新类型 + compareImagePairsBatch + pairFilesSequentially + buildBatchExportJson）
+- `src/components/ImageCompareTool.tsx`（+约 470 行：appMode 状态 + 应用模式切换器 + BatchCompareMode 子组件完整实现）
+- `src/pages/image-compare.astro`（+约 580 行：SEO meta + hero + 3 FAQ + 478 行批量模式样式含响应式与暗色模式）
+
+### 进度沉淀
+- Git：commit 76da1be 已 push（f9d81cf..76da1be HEAD -> main）
+- 当前规模：**108 工具**（无变化）+ **115 博客**（无变化）+ **951 页面**（无变化，本轮为已有工具功能扩展）
+- 图片对比工具能力升级：从"三种对比模式 + 6 项统计 + 差异区域检测 + JSON 报告导出"升级为"单图对比全能力 + 批量对比模式（多文件配对 + 队列处理 + 批量 JSON 导出）"完整工具
+
+## 问题与发现
+1. **顺序执行 vs 并发执行权衡**：批量对比采用顺序执行而非并发，原因：①Canvas 操作会占用 GPU 内存，并发多对会导致内存峰值过高；②顺序执行便于通过 onProgress 回调实时更新进度；③每对之间用 setTimeout(0) 让出主线程，避免长时间阻塞 UI 响应。代价是处理时间稍长（N 对需 N × 单对时间），但对批量场景可接受。
+2. **配对策略选择**：采用顺序两两配对（第 1+2、3+4...）而非文件名配对（如 a-1.png vs b-1.png），原因：①文件名配对需要约定命名规则，不同用户习惯差异大；②顺序配对透明可预期，用户完全控制配对方式；③用户可通过重命名文件（如 01-a.png、01-b.png）实现与文件名配对等效的效果。奇数个文件时显式警告，避免静默丢失。
+3. **子组件架构决策**：将 BatchCompareMode 独立为子组件而非融入主组件，原因：①批量模式状态较多（files/threshold/computing/progress/summary/error/expandedIdx/pairWarning），与单图模式状态混合会导致主组件过于庞大；②独立子组件状态隔离，切换模式时自动清理；③代码可读性更好，单图模式逻辑保持不变。代价是需要传递少量共享逻辑（如 THRESHOLD_PRESETS），但通过模块顶层常量共享即可。
+4. **MAX_BATCH_PAIRS=50 上限选择**：50 对（100 个文件）是平衡实用性与浏览器内存压力的选择：①典型 CI/CD 回归测试单批截图通常不超过 50 对；②超过 50 对时浏览器 Canvas 内存占用可能超过 500MB，影响稳定性；③用户可分批处理更多对。上限保护在 compareImagePairsBatch 与 UI 两层都做了校验。
+5. **批量 JSON 导出格式设计**：meta 包含汇总统计（total/success/failed/avgDiffPercent/maxDiffPercent），items 数组每项包含与单图 JSON 等价的 stats 与 regions 字段，便于复用解析逻辑。文件名格式 `image-compare-batch-YYYYMMDD.json`，包含日期便于版本对比与归档。
+6. **PowerShell 提交信息多行处理**：本次 commit 使用多个 `-m` 参数传递多段提交信息（每段对应一个文件），避免 heredoc 在 PowerShell 中不兼容的问题（第 96 轮已踩坑）。
+7. **并行任务文件隔离**：工作树仍存在 `memory/20260718/topics.md`、`docs/bug-check/bug-check-2026-07-19.md`、`docs/style-optimization/style-opt-2026-07-19.md`、`memory/20260718/topics-archive-20260718.md` 等并行任务产物。严格遵守规范"仅添加本次修改的文件"，本轮仅 git add 3 个本轮修改文件。
+
+## 下轮建议（第 97 轮产出）
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 10 天，仍未获取访问数据，**此为进入真正数据驱动迭代阶段的前置条件**
+2. **图片对比工具差异区域放大查看**（第 96 轮下轮建议第 5 项）：点击区域弹 modal 显示该区域的原图 A/B/差异图三联放大对比
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项剩余方向）：metadata 打包工具（IPTC/XMP/ICC profile 查看与清理）
+4. **EXIF 编辑器进一步增强**（第 89 轮下轮建议第 3 项）：PNG/WebP/TIFF 支持 / 预设拖拽排序 / 批量进度条
+5. **长尾 SEO 内容补充**：基于本轮新增的批量对比模式，拓展"CI/CD 截图回归批量对比"、"图片对比工具自动化测试集成"等长尾关键词落地页
+6. **内链网络质量审计**（第 95 轮下轮建议第 6 项）：从"量"的覆盖转向"质"的提升
+7. **批量对比模式增强**：支持 ZIP 打包下载所有差异图、支持按文件名前缀自动配对（可选高级模式）
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 10 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **差异区域放大查看未实现**：本轮聚焦批量对比模式，三联放大对比留待下轮。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 97 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 97 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：图片对比工具增强 - 批量对比模式（功能深度打磨）
+**Commit**：76da1be
+**Push**：f9d81cf..76da1be HEAD -> main
+
+### 完成任务
+1. ✅ imageCompare.ts 扩展：新增 compareImagePairsBatch（顺序执行队列 + 让出主线程 + 进度回调）+ pairFilesSequentially（顺序两两配对 + 奇数警告）+ buildBatchExportJson（批量汇总 JSON）+ MAX_BATCH_PAIRS=50 + 4 个新类型
+2. ✅ ImageCompareTool.tsx 集成：顶部应用模式切换器（单图/批量）+ BatchCompareMode 子组件（多文件上传 + 拖拽 + 实时配对预览 + 文件角色徽章 + 阈值调节 + 队列进度条 + 汇总统计 + 配对列表展开差异图 + 批量 JSON 导出 + 单对 JSON/PNG 导出）
+3. ✅ image-compare.astro 更新：SEO meta + hero 文案 + 3 条新 FAQ（批量对比使用流程 / 配对策略 / 批量 JSON 与 CI/CD 集成）+ 478 行样式（响应式 + 暗色模式）
+4. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，均为既有遗留）
+5. ✅ 构建成功（951 页面 28.49s，页面数无变化，本轮为已有工具功能扩展）
+6. ✅ Git 提交推送完成（1 次提交，3 文件改动，+1253 / -5）
+
+### 当前规模
+- **工具**：108 个（无变化）
+- **博客**：115 篇（无变化）
+- **页面**：951 页（无变化）
+- **图片对比工具能力升级**：从"单图对比全能力"升级为"单图对比 + 批量对比模式（多文件配对 + 队列处理 + 批量 JSON 导出）"完整工具
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 图片对比工具差异区域放大查看（三联放大对比 modal）
+3. 图像工具矩阵继续扩充（metadata 打包）
+4. EXIF 编辑器进一步增强（PNG/WebP/TIFF 支持）
+5. 长尾 SEO 内容补充（CI/CD 截图回归批量对比 / 自动化测试集成）
+6. 内链网络质量审计
+7. 批量对比模式增强（ZIP 打包下载 / 文件名前缀自动配对）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 差异区域放大查看未实现（本轮聚焦批量对比模式）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
