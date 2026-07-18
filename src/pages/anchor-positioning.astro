@@ -137,11 +137,14 @@ const meta: SiteMeta = {
 
     <section class="related-tools" aria-labelledby="related-title">
       <h2 id="related-title">相关工具</h2>
-      <ul class="related-tools-list">
-        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — 锚点定位常配合 popover 弹层入场动画使用</li>
-        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值动画生成器</a> — 弹层尺寸过渡与锚点定位协同</li>
-        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — 视图过渡与锚点定位的组合</li>
-        <li><a href="/container">CSS @container 容器查询生成器</a> — 组件级响应式定位</li>
+      <ul class="related-tools__list">
+        <li><a href="/position-area">CSS position-area 生成器</a> — 3x3 网格定位区域，与锚点定位协同</li>
+        <li><a href="/interpolate-size">CSS interpolate-size 尺寸插值生成器</a> — 弹层尺寸过渡与锚点定位协同</li>
+        <li><a href="/starting-style">CSS @starting-style 入场动画生成器</a> — popover 弹层入场动画</li>
+        <li><a href="/css-if">CSS if() 条件函数生成器</a> — 条件化锚点值</li>
+        <li><a href="/css-math">CSS 数学函数生成器</a> — 数学函数与锚点定位</li>
+        <li><a href="/view-transition">CSS view-transition 视图过渡生成器</a> — 视图过渡与锚点定位组合</li>
+        <li><a href="/container">CSS 容器查询生成器</a> — 组件级响应式定位</li>
       </ul>
     </section>
   </section>
@@ -426,38 +429,7 @@ const meta: SiteMeta = {
     white-space: pre;
   }
 
-  /* 相关工具链接 */
-  .related-tools {
-    margin-top: 2rem;
-    padding: 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: 0.625rem;
-    background: var(--surface);
-  }
-  .related-tools h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1rem;
-    color: var(--text);
-  }
-  .related-tools-list {
-    margin: 0;
-    padding-left: 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .related-tools-list a {
-    color: var(--primary);
-    text-decoration: none;
-    font-size: 0.875rem;
-  }
-  .related-tools-list a:hover {
-    text-decoration: underline;
-  }
-  .related-tools-list li {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
-  }
+  /* 相关工具样式复用全局 .related-tools（第 84 轮 global.css 已定义） */
 
   /* 响应式：768px 平板 */
   @media (max-width: 768px) {

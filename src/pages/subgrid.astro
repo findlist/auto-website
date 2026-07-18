@@ -152,12 +152,16 @@ const meta: SiteMeta = {
       </details>
     </section>
 
-    <section class="related-links" aria-labelledby="related-title">
+    <!-- 相关工具：布局组同矩阵互链 + 现代CSS跨组互补 -->
+    <section class="related-tools" aria-labelledby="related-title">
       <h2 id="related-title">相关工具</h2>
-      <ul>
+      <ul class="related-tools__list">
+        <li><a href="/flexbox">CSS Flexbox 可视化生成器</a> — 一维弹性布局</li>
         <li><a href="/grid">CSS Grid 可视化生成器</a> — 父网格布局定义，与 subgrid 配合实现嵌套对齐</li>
-        <li><a href="/flexbox">CSS Flexbox 可视化生成器</a> — 一维布局，组件内排列</li>
-        <li><a href="/container">CSS @container 容器查询生成器</a> — 组件级响应式</li>
+        <li><a href="/container">CSS 容器查询生成器</a> — 组件级响应式</li>
+        <li><a href="/contain">CSS contain 生成器</a> — 组件级隔离与性能</li>
+        <li><a href="/layer">CSS @layer 层叠层生成器</a> — 布局层级控制</li>
+        <li><a href="/scope">CSS @scope 作用域生成器</a> — 作用域隔离</li>
         <li><a href="/nesting">CSS Nesting 原生嵌套生成器</a> — 选择器嵌套语法</li>
       </ul>
     </section>
@@ -480,28 +484,7 @@ const meta: SiteMeta = {
     white-space: pre;
   }
 
-  /* 相关链接 */
-  .related-links ul {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
-  }
-  .related-links li {
-    padding: 10px 14px;
-    background: var(--sbg-accent-bg);
-    border-radius: 6px;
-    font-size: 13px;
-  }
-  .related-links a {
-    color: var(--sbg-accent);
-    font-weight: 600;
-    text-decoration: none;
-  }
-  .related-links a:hover {
-    text-decoration: underline;
-  }
+  /* 相关工具样式复用全局 .related-tools（第 84 轮 global.css 已定义） */
 
   /* 响应式：768px 平板 */
   @media (max-width: 768px) {
