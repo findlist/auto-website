@@ -196,15 +196,17 @@ const meta: SiteMeta = {
       </details>
     </section>
 
-    <section class="related-links" aria-labelledby="related-title">
+    <section class="related-tools" aria-labelledby="related-title">
       <h2 id="related-title">相关工具</h2>
-      <ul>
-        <li><a href="/http-status">HTTP 状态码查询工具</a> — 查询 1xx-5xx 状态码含义与本工具的 Header 配合使用</li>
-        <li><a href="/jwt">JWT 解码工具</a> — 解码 Authorization 头中的 Bearer JWT 令牌</li>
-        <li><a href="/jwt-verify">JWT 签名验证工具</a> — 验证 Authorization 头中 JWT 的签名有效性</li>
-        <li><a href="/mime">MIME 类型查询工具</a> — Content-Type 头对应的 MIME 类型完整对照表</li>
-        <li><a href="/url">URL 解析与编码工具</a> — 解析 Origin/Referer/Host 头中的 URL 结构</li>
-        <li><a href="/ip">IP 子网计算器</a> — X-Forwarded-For 头中 IP 与子网划分计算</li>
+      <ul class="related-tools__list">
+        <li><a href="/ip">IP 子网计算器</a> —— X-Forwarded-For 头中 IP 与子网划分计算</li>
+        <li><a href="/dns">DNS 查询工具</a> —— Host 头域名的 DNS 解析链路</li>
+        <li><a href="/tls">TLS 证书解析工具</a> —— Strict-Transport-Security 头与证书协同</li>
+        <li><a href="/http-status">HTTP 状态码</a> —— 与响应头共同排查 HTTP 错误</li>
+        <li><a href="/http-request">HTTP 请求代码生成器</a> —— 多语言 HTTP 客户端代码生成</li>
+        <li><a href="/user-agent">User-Agent 解析器</a> —— UA 头的客户端识别</li>
+        <li><a href="/mime">MIME 类型查询</a> —— Content-Type 头的 MIME 类型对照</li>
+        <li><a href="/jwt">JWT 解码</a> —— Authorization 头中的 Bearer JWT 令牌解析</li>
       </ul>
     </section>
   </section>

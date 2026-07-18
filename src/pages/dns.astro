@@ -176,15 +176,17 @@ const meta: SiteMeta = {
       </details>
     </section>
 
-    <section class="related-links" aria-labelledby="related-title">
+    <section class="related-tools" aria-labelledby="related-title">
       <h2 id="related-title">相关工具</h2>
-      <ul>
-        <li><a href="/ip">IP 子网计算器</a> — DNS 解析出的 IP 地址可用 CIDR 计算网络地址、掩码、可用主机范围</li>
-        <li><a href="/punycode">Punycode 编解码工具</a> — 中文域名注册与查询时需先转换为 ACE（xn-- 前缀）格式</li>
-        <li><a href="/http-headers">HTTP Header 解析与生成工具</a> — 网站访问慢或失败时配合 DNS 排查 HTTP 响应链路</li>
-        <li><a href="/http-status">HTTP 状态码查询工具</a> — 域名解析正常但访问报错时查询状态码含义</li>
-        <li><a href="/http-request">HTTP 请求代码生成器</a> — 调试 HTTP 接口时生成 cURL / fetch / axios / Python / Go 代码</li>
-        <li><a href="/uuid">UUID 生成工具</a> — DNS 服务记录（SRV）实例标识常使用 UUID 格式</li>
+      <ul class="related-tools__list">
+        <li><a href="/ip">IP 子网计算器</a> —— IPv4/IPv6 子网划分与 CIDR 计算</li>
+        <li><a href="/tls">TLS 证书解析工具</a> —— 域名 HTTPS 证书与 DNS 协同调试</li>
+        <li><a href="/http-status">HTTP 状态码</a> —— DNS 解析错误对应的 HTTP 错误</li>
+        <li><a href="/http-headers">HTTP Header 解析</a> —— 响应头部中的 DNS 相关字段</li>
+        <li><a href="/http-request">HTTP 请求代码生成器</a> —— 多语言 HTTP 客户端代码生成</li>
+        <li><a href="/user-agent">User-Agent 解析器</a> —— 客户端 UA 字符串识别</li>
+        <li><a href="/mime">MIME 类型查询</a> —— 文件扩展名与 MIME 类型映射</li>
+        <li><a href="/punycode">Punycode 编解码</a> —— 国际化域名 IDN 与 ACE 转换</li>
       </ul>
     </section>
   </section>
