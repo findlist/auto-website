@@ -1384,7 +1384,7 @@
 
 ## 修改文件清单
 
-### 本轮 commit（6 文件，约 +1030 行）
+### commit 4e32175（7 文件，+1765 行：代码改动 6 文件 + 进度沉淀 1 文件统一提交）
 **新增博客（3 文件）**：
 - `src/content/blog/jwe-vs-jwt-encryption-guide.md`（+约 320 行）
 - `src/content/blog/mime-types-browser-support-guide.md`（+约 380 行）
@@ -1395,11 +1395,11 @@
 - `src/pages/mime.astro`（+约 10 行）
 - `src/pages/jsonpath.astro`（+约 10 行）
 
-### 进度沉淀（1 文件，独立提交）
+**进度沉淀（1 文件）**：
 - `memory/20260719/topics.md`（追加本轮记录）
 
 ## 进度沉淀
-- Git：本轮代码改动 + 进度沉淀统一提交，已 push 到 origin/main
+- Git：commit 4e32175 已 push（77e663a..4e32175 HEAD -> main）
 - 当前规模：**108 工具**（无变化）+ **109 博客**（106+3）+ **915 页面**（887+28）
 - 工具 ↔ 博客双向内链网络覆盖率：从 99/108（91.7%）→ 102/108（94.4%）
 - 剩余无博客工具页：6 个（base64-image / json-to-xml / regex-benchmark / toml-schema / xml-to-json / yaml-schema）
@@ -1436,7 +1436,8 @@
 **轮次**：第 93 轮（2026-07-19）
 **阶段**：阶段二（数据驱动迭代）
 **方向**：为 9 个无博客工具页补齐配套博客 - 优先处理 3 个高价值方向（JWE / MIME / JSONPath）
-**Commit**：（本轮提交）
+**Commit**：4e32175
+**Push**：77e663a..4e32175 HEAD -> main
 
 ### 完成任务
 1. ✅ 新增 `src/content/blog/jwe-vs-jwt-encryption-guide.md`（约 320 行）：JWE 加密令牌工作原理与 JWT/JWS 区别决策树，覆盖 JOSE 家族全景 + 五段式结构 + 五类密钥管理算法选择 + AEAD 标配 + 嵌套令牌 + 5 个典型应用场景 + 安全清单
