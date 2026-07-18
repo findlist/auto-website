@@ -289,3 +289,330 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 86 轮 · CSS 工具矩阵内链网络补齐（SEO 内链优化）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 85 轮（commit 338eeff）：加密哈希 + 文本处理矩阵内链补齐完成，107 工具 + 102 博客 + 866 页面
+- 第 85 轮下轮建议第 1 项明确指向本轮方向："CSS 工具矩阵内链网络补齐（规模 31 个，需先制定分组策略）"
+- 工作树状态：第 85 轮 commit 338eeff 已 push，本轮聚焦 CSS 工具矩阵 31 个工具页
+
+## 本轮聚焦方向
+**CSS 工具矩阵 31 个工具页内链网络补齐（第 85 轮遗留第 1 项）**
+
+承接第 85 轮"CSS 工具矩阵规模过大"的发现，本轮制定 6 分组策略，将 31 个工具按功能语义聚类，避免单页链接列表过长：
+
+### 6 大分组与工具归集
+1. **颜色组（5 个）**：color / color-contrast / color-palette / gradient / light-dark
+2. **形状组（4 个）**：box-shadow / border-radius / clip-path / text-shadow
+3. **动效组（4 个）**：filter / transform / transition / animation
+4. **布局组（5 个）**：flexbox / grid / container / contain / subgrid
+5. **现代CSS语法组（7 个）**：layer / scope / nesting / writing-mode / scroll-snap / scroll-driven / view-transition
+6. **CSS新特性组（6 个）**：anchor-positioning / position-area / interpolate-size / starting-style / css-if / css-math
+
+### 内链策略
+- **同组全量互链**：组内工具语义高度相关，全量链接（排除自身）
+- **跨组精选互补**：每组向其他 5 组各选 1-2 个最具协同价值的工具链接
+- 单页链接总数控制在 7-9 条，兼顾 SEO 权重传递与阅读体验
+
+## 完成任务
+
+### 单元 1：31 个工具页内链区块补齐（commit 68b7535）
+- 每个工具页在 FAQ 区块后追加 `<section class="related-tools" aria-labelledby="related-title">` 区块
+- 同组互链 + 跨组精选互补链接，每页 7-9 条链接
+- 类名统一使用 `.related-tools__list`（BEM 风格），替换原 `.related-tools-list` / `.related-links`
+- 涉及 31 个 .astro 文件（颜色组 5 + 形状组 4 + 动效组 4 + 布局组 5 + 现代CSS语法组 7 + CSS新特性组 6）
+
+### 单元 2：历史遗留样式冗余清理
+- 4 个文件（subgrid.astro / anchor-positioning.astro / position-area.astro / starting-style.astro）存在本地 `.related-links` 或 `.related-tools-list` 样式定义
+- 全部删除本地冗余样式，统一替换为注释 `/* 相关工具样式复用全局 .related-tools（第 84 轮 global.css 已定义） */`
+- 符合 DRY 原则，未来样式调整只需修改 global.css 一处
+
+### 单元 3：验证与提交
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留，与本轮无关）
+- `npm run build`：866 页面构建成功（28.29s）
+- 内链覆盖率验证：PowerShell 脚本扫描 31 个 CSS 工具页，全部包含 `class="related-tools"`
+- Git 提交：1 次（68b7535），已 push 到 origin/main
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：866 页面构建成功，无错误
+- ✅ 内链覆盖率：31/31 工具页包含 `class="related-tools"` 区块
+- ✅ 链接数量控制：每页 7-9 条，兼顾 SEO 与阅读体验
+- ✅ 样式复用：所有新增区块使用第 84 轮已建立的 `.related-tools` 全局样式，无新增样式依赖
+- ✅ 语义化 HTML：`<section aria-labelledby="related-title">` + `<ul class="related-tools__list">` 结构
+- ✅ 类名规范统一：BEM 风格 `.related-tools__list`，移除历史遗留 `.related-tools-list` / `.related-links`
+- ✅ 所有代码注释、UI 文案使用中文
+
+## 修改文件清单
+
+### commit 68b7535（31 文件，+404 / -145）
+**颜色组（5 文件）**：
+- `src/pages/color.astro` / `src/pages/color-contrast.astro` / `src/pages/color-palette.astro`
+- `src/pages/gradient.astro` / `src/pages/light-dark.astro`
+
+**形状组（4 文件）**：
+- `src/pages/box-shadow.astro` / `src/pages/border-radius.astro`
+- `src/pages/clip-path.astro` / `src/pages/text-shadow.astro`
+
+**动效组（4 文件）**：
+- `src/pages/filter.astro` / `src/pages/transform.astro`
+- `src/pages/transition.astro` / `src/pages/animation.astro`
+
+**布局组（5 文件）**：
+- `src/pages/flexbox.astro` / `src/pages/grid.astro` / `src/pages/container.astro`
+- `src/pages/contain.astro` / `src/pages/subgrid.astro`
+
+**现代CSS语法组（7 文件）**：
+- `src/pages/layer.astro` / `src/pages/scope.astro` / `src/pages/nesting.astro`
+- `src/pages/writing-mode.astro` / `src/pages/scroll-snap.astro`
+- `src/pages/scroll-driven.astro` / `src/pages/view-transition.astro`
+
+**CSS新特性组（6 文件）**：
+- `src/pages/anchor-positioning.astro` / `src/pages/position-area.astro`
+- `src/pages/interpolate-size.astro` / `src/pages/starting-style.astro`
+- `src/pages/css-if.astro` / `src/pages/css-math.astro`
+
+## 进度沉淀
+- Git：commit 68b7535 已 push（338eeff..68b7535 HEAD -> main）
+- 当前规模：107 工具 + 102 博客 + 866 页面（无变化，本轮纯内链优化）
+- 内链网络累计：图像矩阵（9）+ 加密哈希矩阵（9）+ 文本处理矩阵（11）+ CSS 矩阵（31）= 60 个工具页形成完整内链网络
+
+## 问题与发现
+1. **规模控制策略验证**：第 85 轮发现"31 个工具全量互链会导致单页链接列表过长"。本轮通过 6 分组 + 同组互链 + 跨组精选策略，将每页链接控制在 7-9 条，验证了分组策略的可行性。此模式可复用于未来其他大规模矩阵。
+2. **类名规范统一**：发现 anchor-positioning.astro / position-area.astro 原使用 `.related-tools-list`，与第 84 轮建立的 BEM 规范 `.related-tools__list` 不一致。本轮统一替换为 BEM 风格，保持全站类名规范一致。
+3. **样式冗余清理**：4 个文件（subgrid/anchor-positioning/position-area/starting-style）存在本地样式定义与全局 `.related-tools` 重复。删除本地冗余后，所有 CSS 工具页统一复用全局样式，符合 DRY 原则。
+4. **PowerShell 语法限制**：PowerShell 不支持 `&&` 作为语句分隔符，需用 `;` 代替。此为 Windows 环境下的可复用模式。
+5. **并行任务文件隔离**：工作期间发现 qr.astro 和 memory/20260718/topics.md 有未提交改动，严格遵守规范"仅添加本次修改的文件"，未纳入本轮提交。
+
+## 下轮建议（第 86 轮产出）
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+2. **剩余工具矩阵内链补齐**：编码转换（Base64/URL/HTML 实体等）/ 数据格式（JSON/YAML/TOML/CSV 等）/ 网络工具（IP/域名/HTTP 等）等约 47 个工具页
+3. **图像工具矩阵继续扩充**（第 83 轮遗留第 2 项）：metadata 打包工具 / 图片对比工具 / 批量清理工具
+4. **EXIF 编辑器增强**（第 83 轮遗留第 3 项）：IPTC/XMP 支持 + 批量处理 + 预设保存
+5. **长尾 SEO 内容补充**：基于 CSS 新特性矩阵，拓展"@starting-style 实战"、"CSS 锚点定位完全指南"、"view-transition 跨页面过渡"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **剩余工具矩阵内链补齐待下轮处理**：约 47 个工具页（编码转换 / 数据格式 / 网络工具等）尚未补齐内链网络。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录
+
+---
+
+## 第 86 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 86 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：CSS 工具矩阵内链网络补齐（SEO 内链优化）
+**Commit**：68b7535
+**Push**：338eeff..68b7535 HEAD -> main
+
+### 完成任务
+1. ✅ 制定 CSS 工具矩阵 6 分组策略（颜色 5 / 形状 4 / 动效 4 / 布局 5 / 现代CSS语法 7 / CSS新特性 6）
+2. ✅ 31 个 CSS 工具页全部补齐"相关工具"内链区块（同组互链 + 跨组精选互补，每页 7-9 条链接）
+3. ✅ 统一类名规范为 BEM 风格 `.related-tools__list`，替换历史遗留 `.related-tools-list` / `.related-links`
+4. ✅ 清理 4 个文件（subgrid/anchor-positioning/position-area/starting-style）的本地冗余样式定义
+5. ✅ 类型检查通过（0 errors）、构建成功（866 页面）、内链覆盖率验证 31/31 工具页达标
+6. ✅ Git 提交推送完成（1 次提交，31 文件改动，+404 / -145）
+
+### 当前规模
+- **工具**：107 个（无变化）
+- **博客**：102 篇（无变化）
+- **页面**：866 页（无变化）
+- **内链网络累计**：图像矩阵（9）+ 加密哈希矩阵（9）+ 文本处理矩阵（11）+ CSS 矩阵（31）= 60 个工具页形成完整内链网络
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 剩余工具矩阵内链补齐（编码转换 / 数据格式 / 网络工具等约 47 个工具页）
+3. 图像工具矩阵继续扩充（metadata 打包 / 图片对比 / 批量清理）
+4. EXIF 编辑器增强（IPTC/XMP 支持 + 批量处理）
+5. 长尾 SEO 内容补充
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 剩余工具矩阵内链补齐待下轮处理（约 47 个工具页）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 87 轮 · 编码转换/数据格式/网络工具矩阵内链网络补齐（SEO 内链优化）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 86 轮（commit 68b7535）：CSS 工具矩阵内链补齐完成，107 工具 + 102 博客 + 866 页面，内链网络累计 60 个工具页
+- 第 86 轮下轮建议第 2 项明确指向本轮方向："剩余工具矩阵内链补齐（编码转换 / 数据格式 / 网络工具等约 47 个工具页）"
+- 工作树状态：第 86 轮 commit 68b7535 已 push，本轮聚焦 3 个高密度矩阵（编码转换 + 数据格式 + 网络）
+
+## 本轮聚焦方向
+**编码转换矩阵（10）+ 数据格式矩阵（13）+ 网络工具矩阵（7）共 30 个工具页内链网络补齐**
+
+承接第 86 轮"剩余工具矩阵内链补齐"建议，本轮选择规模最大、协同性最强的 3 个矩阵集中处理：
+- **编码转换矩阵（10）**：base64 / base32 / hex / url / html-entities / punycode / morse / ascii-art / html-to-markdown / markdown
+- **数据格式矩阵（13）**：json / json-to-ts / json-to-xml / xml-to-json / jsonpath / json-schema / yaml / yaml-schema / toml / toml-schema / csv-json / csv-markdown / sql
+- **网络工具矩阵（7）**：ip / dns / http-status / http-headers / http-request / user-agent / mime（与第 84 轮已完成的 tls 共同构成 8 个工具的网络矩阵）
+
+理由：
+- **SEO 内链协同**：同矩阵工具语义高度相关，互链可传递主题权重，提升矩阵整体在搜索引擎中的可见度
+- **用户组合使用**：编码场景常需多工具组合（Base64 编码 → URL 安全变体 → HTTP 请求构造），数据格式场景亦然（JSON 格式化 → TS 类型生成 → Schema 校验），网络工具场景（IP → DNS → TLS → HTTP）链路紧密
+- **历史遗留清理**：4 个网络工具页（dns / http-headers / http-request / user-agent）存在旧 `related-links` 类区块（非 BEM 规范），本轮统一替换为 `related-tools` + `related-tools__list`
+- **低成本高收益**：纯增量内链，无功能逻辑变更，复用第 84 轮已建立的 `.related-tools` 全局样式
+
+## 内链策略
+
+### 编码转换矩阵（10 个工具）
+- 同矩阵全量互链（每页链接到其他 9 个工具，排除自身）
+- 跨矩阵精选 1 个最相关工具（如 base64 → base64-image，base32 → uuid，url → http-request 等）
+- 单页链接总数：10 条
+
+### 数据格式矩阵（13 个工具）
+- 3 子分组策略：JSON 系（6）/ 配置文件系（4）/ 表格 SQL 系（3）
+- 同子组全量互链（5+3+2 = 最多 5 个）
+- 跨子组精选 1-3 个其他子组代表
+- 跨矩阵精选 1 个最相关工具
+- 单页链接总数：6-9 条
+
+### 网络工具矩阵（7 个新工具 + tls 已完成 = 8）
+- 同矩阵全量互链（每页链接到其他 6 个新工具 + tls = 7 个）
+- 跨矩阵精选 1 个最相关工具
+- 单页链接总数：8 条
+
+## 完成任务
+
+### 单元 1：编码转换矩阵 10 个工具页内链补齐
+- 每个工具页在 FAQ 区块后追加 `<section class="related-tools" aria-labelledby="related-title">` 区块
+- 涉及文件：base64.astro / base32.astro / hex.astro / url.astro / html-entities.astro / punycode.astro / morse.astro / ascii-art.astro / html-to-markdown.astro / markdown.astro
+- html-to-markdown.astro 结构特殊（含内联 `<style>` 块在 `</section>` 之前），插入点调整为 `</style>` 之后
+
+### 单元 2：数据格式矩阵 13 个工具页内链补齐
+- 同上结构，按 3 子分组策略链接
+- 涉及文件：json.astro / json-to-ts.astro / json-to-xml.astro / xml-to-json.astro / jsonpath.astro / json-schema.astro / yaml.astro / yaml-schema.astro / toml.astro / toml-schema.astro / csv-json.astro / csv-markdown.astro / sql.astro
+
+### 单元 3：网络工具矩阵 7 个工具页内链补齐 + 旧区块替换
+- ip / http-status / mime 三个文件使用标准追加模式
+- dns / http-headers / http-request / user-agent 四个文件存在历史 `related-links` 旧区块（非 BEM 规范），统一替换为 `related-tools` + `related-tools__list`
+- 每页链接到矩阵内其他 7 个工具（含 tls）+ 1 个跨矩阵精选
+
+### 单元 4：验证与提交
+- `npm run check`：0 errors / 0 warnings / 4 hints（hints 均为既有遗留：seo-audit.mjs 未使用 import、clipboard.ts deprecated execCommand，与本轮无关）
+- `npm run build`：866 页面构建成功（27.12s）
+- 内链覆盖率验证：30/30 工具页全部包含 `class="related-tools"` 区块
+- 全站内链覆盖率：91/107 工具页（85%），剩余 16 个待下轮处理
+- Git 提交：1 次（bd6a47c），已 push 到 origin/main
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：866 页面构建成功，无错误
+- ✅ 内链覆盖率：本轮 30/30 + 全站 91/107（85%）
+- ✅ 旧区块清理：4 个文件（dns / http-headers / http-request / user-agent）的 `related-links` 已替换为 `related-tools`，无遗留
+- ✅ 样式复用：所有新增区块使用第 84 轮已建立的 `.related-tools` 全局样式，无新增样式依赖
+- ✅ 语义化 HTML：`<section aria-labelledby="related-title">` + `<ul class="related-tools__list">` 结构
+- ✅ 链接数量控制：编码矩阵 10 条 / 数据格式矩阵 6-9 条 / 网络矩阵 8 条，兼顾 SEO 与阅读体验
+- ✅ 所有代码注释、UI 文案使用中文
+
+## 修改文件清单
+
+### commit bd6a47c（30 文件，+420 / -32）
+
+**编码转换矩阵（10 文件）**：
+- `src/pages/base64.astro` / `src/pages/base32.astro` / `src/pages/hex.astro`
+- `src/pages/url.astro` / `src/pages/html-entities.astro` / `src/pages/punycode.astro`
+- `src/pages/morse.astro` / `src/pages/ascii-art.astro`
+- `src/pages/html-to-markdown.astro`（特殊插入点：`</style>` 之后）
+- `src/pages/markdown.astro`
+
+**数据格式矩阵（13 文件）**：
+- `src/pages/json.astro` / `src/pages/json-to-ts.astro` / `src/pages/json-to-xml.astro`
+- `src/pages/xml-to-json.astro` / `src/pages/jsonpath.astro` / `src/pages/json-schema.astro`
+- `src/pages/yaml.astro` / `src/pages/yaml-schema.astro`
+- `src/pages/toml.astro` / `src/pages/toml-schema.astro`
+- `src/pages/csv-json.astro` / `src/pages/csv-markdown.astro` / `src/pages/sql.astro`
+
+**网络工具矩阵（7 文件，含 4 个旧区块替换）**：
+- `src/pages/ip.astro`（标准追加）
+- `src/pages/dns.astro`（替换 related-links → related-tools）
+- `src/pages/http-status.astro`（标准追加）
+- `src/pages/http-headers.astro`（替换 related-links → related-tools）
+- `src/pages/http-request.astro`（替换 related-links → related-tools）
+- `src/pages/user-agent.astro`（替换 related-links → related-tools）
+- `src/pages/mime.astro`（标准追加）
+
+## 进度沉淀
+- Git：commit bd6a47c 已 push（68b7535..bd6a47c HEAD -> main）
+- 当前规模：107 工具 + 102 博客 + 866 页面（无变化，本轮纯内链优化）
+- 内链网络累计：图像矩阵（9）+ 加密哈希矩阵（9）+ 文本处理矩阵（11）+ CSS 矩阵（31）+ 编码转换矩阵（10）+ 数据格式矩阵（13）+ 网络工具矩阵（8，含第 84 轮的 tls）= 91 个工具页形成完整内链网络
+- 全站内链覆盖率：91/107（85%）
+
+## 问题与发现
+1. **历史遗留 `related-links` 类区块**：4 个网络工具页（dns / http-headers / http-request / user-agent）存在早期版本的 `related-links` 类区块（非 BEM 规范）。本轮统一替换为 `related-tools` + `related-tools__list`，与第 86 轮 CSS 矩阵清理历史遗留的方式一致。下轮可考虑扫描全站是否还有其他工具页存在类似遗留（如 round 87 未处理的 16 个工具页中可能有）。
+2. **html-to-markdown.astro 结构特殊**：该文件将内联 `<style>` 块放在 `<section class="container">` 内部（FAQ 之后、`</section>` 之前），与其他工具页的标准模式不同。本轮调整插入点为 `</style>` 之后，保持视觉布局一致。
+3. **数据格式矩阵 13 个工具的子分组策略**：将 13 个工具按 JSON 系（6）/ 配置文件系（4）/ 表格 SQL 系（3）3 个子组分类，每组工具链接到同子组其他工具 + 跨子组代表 + 1 个跨矩阵精选。单页链接数控制在 6-9 条，避免列表过长影响阅读体验。此策略可复用于未来其他大规模矩阵。
+4. **并行任务文件隔离**：工作期间发现 `src/pages/qr.astro` 和 `memory/20260718/topics.md` 有未提交改动（非本轮工作），严格遵守规范"仅添加本次修改的文件"，未将它们纳入本轮提交。
+5. **PowerShell 编码问题**：PowerShell 默认输出 GBK 编码，导致读取中文时出现乱码。使用 `Get-Content -Raw -Encoding UTF8` 可正确读取 UTF-8 文件内容。此为 Windows 环境下的可复用模式。
+
+## 下轮建议（第 87 轮产出）
+1. **剩余 16 个工具矩阵内链补齐**（本轮遗留）：
+   - 时间日期矩阵（4）：cron / time-unit / timestamp / timezone
+   - 代码格式化矩阵（3）：css-formatter / html-formatter / js-formatter
+   - 正则与代码调试矩阵（3）：regex / regex-benchmark / diff
+   - 数学数字矩阵（3）：ieee754 / number-base / trigonometric
+   - 遗漏工具（3）：background（CSS）/ text-wrap（文本处理，第 85 轮遗漏）/ qr（图像处理，并行任务修改中）
+2. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 11 天，仍未获取访问数据
+3. **图像工具矩阵继续扩充**（第 83 轮遗留）：metadata 打包工具 / 图片对比工具 / 批量清理工具
+4. **EXIF 编辑器增强**（第 83 轮遗留）：IPTC/XMP 支持 + 批量处理 + 预设保存
+5. **长尾 SEO 内容补充**：基于编码转换 / 数据格式 / 网络工具矩阵，拓展"JSON Schema 校验最佳实践"、"HTTP 状态码 SEO 影响"、"URL 编码与 SEO 友好"等长尾关键词落地页
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 11 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **剩余 16 个工具矩阵内链补齐待下轮处理**：可在 1 轮内完成（规模小于本轮）。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录
+
+---
+
+## 第 87 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 87 轮（2026-07-19）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：编码转换 / 数据格式 / 网络工具矩阵内链网络补齐（SEO 内链优化）
+**Commit**：bd6a47c
+**Push**：68b7535..bd6a47c HEAD -> main
+
+### 完成任务
+1. ✅ 编码转换矩阵 10 个工具页（base64/base32/hex/url/html-entities/punycode/morse/ascii-art/html-to-markdown/markdown）补齐"相关工具"内链区块，每页 10 条链接
+2. ✅ 数据格式矩阵 13 个工具页（json/json-to-ts/json-to-xml/xml-to-json/jsonpath/json-schema/yaml/yaml-schema/toml/toml-schema/csv-json/csv-markdown/sql）补齐"相关工具"内链区块，按 3 子分组策略每页 6-9 条链接
+3. ✅ 网络工具矩阵 7 个工具页（ip/dns/http-status/http-headers/http-request/user-agent/mime）补齐"相关工具"内链区块，每页 8 条链接
+4. ✅ 替换 dns/http-headers/http-request/user-agent 四个文件的旧 `related-links` 区块为 `related-tools` + `related-tools__list` BEM 规范
+5. ✅ 类型检查通过（0 errors）、构建成功（866 页面）、内链覆盖率验证 30/30 工具页达标
+6. ✅ Git 提交推送完成（1 次提交，30 文件改动，+420 / -32）
+
+### 当前规模
+- **工具**：107 个（无变化）
+- **博客**：102 篇（无变化）
+- **页面**：866 页（无变化）
+- **内链网络累计**：图像（9）+ 加密哈希（9）+ 文本处理（11）+ CSS（31）+ 编码转换（10）+ 数据格式（13）+ 网络工具（8，含 tls）= 91 个工具页形成完整内链网络（85%）
+
+### 下轮优先级
+1. 剩余 16 个工具矩阵内链补齐（时间日期 4 + 代码格式化 3 + 正则调试 3 + 数学数字 3 + 遗漏 3）
+2. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+3. 图像工具矩阵继续扩充（metadata 打包 / 图片对比 / 批量清理）
+4. EXIF 编辑器增强（IPTC/XMP 支持 + 批量处理）
+5. 长尾 SEO 内容补充
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 剩余 16 个工具矩阵内链补齐待下轮处理（规模小于本轮，可在 1 轮内完成）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
