@@ -234,9 +234,11 @@ END:VCARD</code></pre>
     font-weight: 500;
   }
 
+  /* 拾色器：44x44 触控目标，对齐 colortool 与 WCAG 2.2 最小尺寸推荐 */
   .qrtool__color-picker {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     padding: 0;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
@@ -245,12 +247,18 @@ END:VCARD</code></pre>
   }
 
   .qrtool__color-picker::-webkit-color-swatch-wrapper {
-    padding: 2px;
+    padding: 4px;
   }
 
   .qrtool__color-picker::-webkit-color-swatch {
     border: none;
-    border-radius: 2px;
+    border-radius: 4px;
+  }
+
+  /* Firefox 拾色器内部样式：与 WebKit 保持一致，避免跨浏览器视觉差异 */
+  .qrtool__color-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 4px;
   }
 
   .qrtool__color-text {
@@ -405,11 +413,7 @@ END:VCARD</code></pre>
       padding: 16px;
     }
 
-    /* 移动端颜色选择器加大触控目标，符合 44x44 无障碍推荐最小尺寸 */
-    .qrtool__color-picker {
-      width: 40px;
-      height: 40px;
-    }
+    /* 颜色选择器已在桌面端统一为 44x44（WCAG 2.2 最小触控目标），移动端无需再放大 */
   }
 
   @media (max-width: 375px) {
