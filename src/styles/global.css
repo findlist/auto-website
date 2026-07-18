@@ -858,6 +858,76 @@ button {
   color: var(--color-primary);
 }
 
+/* ============ 相关工具内链区块 ============ */
+/* 工具页底部"相关工具"列表：统一全站图像工具矩阵的内链视觉风格，
+   解决各页面使用 .related-tools 类但无样式定义、依赖原生 ul 默认样式的问题。
+   设计原则：与 FAQ 折叠面板视觉同源（边框 + 柔和背景 + 圆角），保证页面底部节奏一致。 */
+.related-tools {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+}
+
+.related-tools h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.related-tools__list,
+.related-tools ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px 16px;
+}
+
+.related-tools li {
+  margin: 0;
+  padding: 6px 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-text-soft);
+}
+
+.related-tools a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 3px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.related-tools a:hover {
+  /* hover 时仅加下划线，颜色保持主色，避免引入不存在的令牌变量 */
+  text-decoration: underline;
+}
+
+/* 键盘焦点：与全站表单/按钮一致的 box-shadow 反馈 */
+.related-tools a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary-ring);
+}
+
+/* 移动端：单列布局，避免 240px 最小宽度在 375px 屏幕下挤压 */
+@media (max-width: 480px) {
+  .related-tools {
+    margin: 32px auto;
+    padding: 16px;
+  }
+  .related-tools__list,
+  .related-tools ul {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ============ 复制成功反馈动画 ============ */
 /* 复制按钮成功后短暂变绿 + 弹性缩放 + 发光，给用户明确的操作反馈 */
 @keyframes copy-flash {
