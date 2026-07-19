@@ -1,0 +1,1147 @@
+---
+import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
+import MetadataBundleTool from '../components/MetadataBundleTool.tsx';
+
+const meta: SiteMeta = {
+  title: '图片元数据打包工具 - 批量提取 EXIF / IPTC / XMP / ICC 并生成隐私分析报告（JSON / Markdown / CSV / ZIP）',
+  description:
+    '在线图片元数据打包工具：批量上传 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP，一次性提取 EXIF / IPTC / XMP / ICC Profile 全部元数据，自动检测 GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图等 5 类隐私敏感字段并给出风险等级与清理建议。支持 JSON / Markdown / CSV / ZIP 四种格式报告导出，ZIP 包内含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv，纯浏览器本地打包零依赖。提供风险等级筛选、单图折叠详情、处理进度实时显示、暗色模式与移动端响应式。基于 exifr 库全本地解析，零上传、零追踪、可离线使用，适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '图片元数据打包工具',
+    description: '在线图片元数据打包工具，批量提取 EXIF / IPTC / XMP / ICC 元数据，自动检测 5 类隐私敏感字段并生成风险报告，支持 JSON / Markdown / CSV / ZIP 四种格式导出，全本地处理零上传。',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Any (Web Browser)',
+    inLanguage: 'zh-CN',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+    },
+  },
+};
+---
+<BaseLayout meta={meta}>
+  <section class="container">
+    <div class="page-hero page-hero--tool">
+      <h1>图片元数据打包工具</h1>
+      <p>
+        纯本地处理的<strong>在线图片元数据批量打包工具</strong>，一次性提取图片的
+        <strong>EXIF / IPTC / XMP / ICC Profile</strong> 全部元数据，
+        自动检测 <strong>GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图</strong> 5 类隐私敏感字段，
+        给出风险等级（高 / 中 / 低）与逐项清理建议。
+        支持 <strong>JSON / Markdown / CSV / ZIP</strong> 四种格式报告导出：
+        JSON 便于程序解析、Markdown 便于人类阅读、CSV 便于表格分析、
+        <strong>ZIP 完整包</strong>含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv，
+        纯浏览器原生 API 打包零依赖。
+        支持批量上传、处理进度实时显示、风险等级筛选、单图折叠详情查看，
+        提供<strong>暗色模式</strong>与<strong>移动端响应式</strong>。
+        基于 exifr 库全本地解析，<strong>零上传、零追踪、可离线使用</strong>，
+        适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。
+      </p>
+    </div>
+
+    <!-- client:load 让 React 岛屿在页面加载时立即水合，保证拖拽与粘贴交互即时可用 -->
+    <MetadataBundleTool client:load />
+
+    <!-- 常见问题：补充 SEO 内容 + 解决核心用户疑问 -->
+    <section class="json-faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">常见问题</h2>
+
+      <details>
+        <summary>支持哪些图片格式？能解析哪些元数据？</summary>
+        <p>
+          本工具支持以下 8 种图片格式：
+          <strong>JPEG / PNG / WebP / TIFF / HEIC / HEIF / GIF / AVIF / BMP</strong>，
+          单文件最大 <strong>100MB</strong>。
+          解析的元数据维度包括：
+          <br />
+          - <strong>EXIF</strong>：相机制造商、型号、镜头、拍摄参数（光圈、快门、ISO、焦距）、GPS 定位、拍摄时间、方向、分辨率、色彩空间、软件签名、MakerNote 等<br />
+          - <strong>IPTC</strong>：作者、版权、标题、描述、关键词、地点、新闻稿元数据等<br />
+          - <strong>XMP</strong>：基于 RDF/XML 的扩展元数据（Adobe 系列软件常用）<br />
+          - <strong>ICC Profile</strong>：色彩配置文件信息（名称与字节数）<br />
+          - <strong>文件基础信息</strong>：文件大小、MIME 类型、最后修改时间、图片宽高、格式、色彩空间、方向<br />
+          <br />
+          解析基于 <code>exifr</code> 库，全部在浏览器本地完成，无任何网络请求。
+        </p>
+      </details>
+
+      <details>
+        <summary>隐私风险分析能检测哪些敏感字段？风险等级如何划分？</summary>
+        <p>
+          本工具自动检测 5 类隐私敏感字段，并按严重程度划分风险等级：
+          <br />
+          - <strong>GPS 定位（高风险）</strong>：GPSLatitude / GPSLongitude / GPSAltitude / GPSImgDirection 等 GPS 相关字段，可精确定位拍摄位置，分享前务必清理<br />
+          - <strong>设备序列号（中风险）</strong>：BodySerialNumber / LensSerialNumber / CameraSerialNumber / InternalSerialNumber，可用于设备溯源<br />
+          - <strong>个人信息（中风险）</strong>：Artist / Copyright / Author / OwnerName / Credit / Contact / By-line / CaptionWriter 等作者版权与联系方式字段<br />
+          - <strong>软件签名（低风险）</strong>：Software / MakerNote / ProcessingSoftware / HostComputer / Publisher，可能含相机内部数据或编辑历史<br />
+          - <strong>内嵌缩略图（低风险）</strong>：Thumbnail / ThumbnailImage / IFD1 / PreviewImage，JPEG 内嵌缩略图可能含原图压缩版<br />
+          <br />
+          <strong>综合风险等级</strong>取最高严重程度：含 GPS 字段为高风险，含序列号或个人信息为中风险，仅含软件签名或缩略图为低风险，无任何敏感字段为低风险。每个隐私发现都附有清理建议，可参考使用 EXIF 编辑器工具进行清理。
+        </p>
+      </details>
+
+      <details>
+        <summary>四种导出格式分别适合什么场景？</summary>
+        <p>
+          本工具提供 JSON / Markdown / CSV / ZIP 四种格式报告：
+          <br />
+          - <strong>JSON</strong>：结构化数据，包含完整 BundleSummary（含每图完整报告 + 隐私分析 + 统计汇总），便于程序解析、CI/CD 集成、数据库存储<br />
+          - <strong>Markdown</strong>：人类可读的报告，含概览统计表格、各图详情、隐私发现清单、EXIF 关键字段（前 20 项），适合文档归档、团队分享、报告粘贴<br />
+          - <strong>CSV</strong>：表格格式，一行一图，含 16 列（序号、文件名、大小、MIME、修改时间、宽高、格式、色彩空间、风险等级、5 类隐私命中、解析错误），适合 Excel 分析、批量筛选、统计对比<br />
+          - <strong>ZIP 完整包</strong>：归档所有内容，包含每图独立 JSON（含完整元数据）+ manifest.json（汇总）+ README.txt（用户友好说明）+ summary.md（Markdown 报告）+ summary.csv（CSV 报告），适合一次性归档、长期保存、跨工具协作<br />
+          <br />
+          ZIP 采用 STORE 模式打包（无压缩），原因：JSON / Markdown / CSV 均为文本文件，ZIP 内主要是结构化数据，DEFLATE 压缩收益微小（&lt;5%），STORE 实现简单且打包速度快。ZIP 文件名格式为 <code>metadata-bundle-YYYYMMDD.zip</code>。
+        </p>
+      </details>
+
+      <details>
+        <summary>与 EXIF 信息查看器、EXIF 元数据编辑器有何差异？</summary>
+        <p>
+          三个工具互补，各有侧重：
+          <br />
+          - <strong>EXIF 信息查看器</strong>：单图只读查看，提供分类视图（图片属性 / 相机信息 / 拍摄参数 / GPS / 时间 / 软件版权）与 JSON 原始数据视图，适合快速浏览单张图片的详细 EXIF 信息<br />
+          - <strong>EXIF 元数据编辑器</strong>：单图 JPEG 编辑，支持删除 GPS / 相机信息 / 拍摄参数 / 软件信息 / MakerNote / 缩略图 / 修改拍摄时间等 7 种编辑操作，自实现 JPEG 二进制结构操作，适合照片分享前清理敏感字段<br />
+          - <strong>图片元数据打包工具（本工具）</strong>：批量处理 + 隐私分析 + 报告导出，支持一次上传多张图片自动批量提取 EXIF / IPTC / XMP / ICC 元数据，自动检测 5 类隐私敏感字段并给出风险等级，提供 JSON / Markdown / CSV / ZIP 四种格式报告导出，适合批量元数据审计、合规归档、CI/CD 回归测试<br />
+          <br />
+          典型工作流：先用<strong>本工具</strong>批量扫描所有图片识别风险，再用<strong>EXIF 编辑器</strong>针对性清理高风险图片，最后用<strong>EXIF 查看器</strong>验证清理结果。
+        </p>
+      </details>
+
+      <details>
+        <summary>批量处理速度如何？是否会卡死浏览器？</summary>
+        <p>
+          本工具采用<strong>顺序处理</strong>而非并行，原因：①exifr 解析大图较占内存，并行可能触发浏览器内存限制；②顺序处理便于进度回调与取消控制；③单图解析通常 &lt; 200ms，批量 50 张约 10 秒可接受。
+          <br /><br />
+          为避免卡死浏览器，本工具做了以下优化：
+          <br />
+          - 单文件大小上限 <strong>100MB</strong>，超过拒绝处理<br />
+          - 跳过 IFD1（缩略图 IFD）解析，避免不必要的内存占用<br />
+          - 跳过 Photoshop / JFIF / userCamera 等非核心段<br />
+          - 处理进度实时显示（当前序号 / 总数 + 文件名 + 进度条）<br />
+          - exifr 动态导入，避免 SSR 阶段加载<br />
+          - 解析失败不抛出，记录 parseError 后继续下一张，保证批量处理不中断<br />
+          <br />
+          如果您的图片很多（如 100+ 张），建议分批处理（每批 30-50 张），避免长时间占用浏览器。
+        </p>
+      </details>
+
+      <details>
+        <summary>ZIP 打包是纯本地实现吗？会泄露图片数据吗？</summary>
+        <p>
+          <strong>完全本地处理，零上传零追踪</strong>。
+          <br /><br />
+          - 解析阶段：基于 <code>exifr</code> 库在浏览器本地解析图片二进制数据，无任何网络请求<br />
+          - 分析阶段：隐私字段检测、风险等级计算、统计汇总全部在浏览器内存中完成<br />
+          - 打包阶段：ZIP 采用<strong>纯浏览器原生 API</strong>实现（CRC32 查找表 + Uint8Array + DataView + Blob + TextEncoder），<strong>无第三方 ZIP 库依赖</strong><br />
+          - 下载阶段：使用 <code>URL.createObjectURL</code> + 隐藏 <code>&lt;a&gt;</code> 标签触发浏览器原生下载，2 秒后释放 ObjectURL<br />
+          <br />
+          ZIP 实现细节：
+          <br />
+          - 压缩方法：<strong>STORE</strong>（无压缩），原因：JSON / Markdown / CSV 均为文本，DEFLATE 压缩收益微小，STORE 实现简单且打包速度快<br />
+          - 文件名编码：<strong>UTF-8</strong>（通用标志位 11 置位），支持中文文件名<br />
+          - 文件名安全：替换 <code>\ / : * ? " &lt; &gt; |</code> 及控制字符为下划线，长度限制 60 字符，跨平台兼容<br />
+          - CRC32 校验：使用 IEEE 802.3 多项式 0xedb88320 标准算法，确保解压软件可正确识别<br />
+        </p>
+      </details>
+
+      <details>
+        <summary>处理失败如何排查？常见错误有哪些？</summary>
+        <p>
+          处理失败的图片会在报告列表中显示"解析失败"红色徽章，并在展开详情中显示具体错误信息。常见错误：
+          <br />
+          - <strong>exifr 加载失败</strong>：浏览器网络异常或 CDN 不可用，刷新页面重试<br />
+          - <strong>解析失败：No Exif segment found</strong>：图片本身不含 EXIF 段（如 PNG 截图、GIF 动图），属正常情况，不会影响其他图片处理<br />
+          - <strong>解析失败：Invalid JPEG</strong>：文件损坏或扩展名与实际格式不符（如把 PNG 重命名为 .jpg）<br />
+          - <strong>解析失败：Unsupported format</strong>：exifr 7.x 暂不支持的格式（如某些 HEIC 变体）<br />
+          - <strong>文件大小超过上限</strong>：单文件 &gt; 100MB，建议压缩后再处理<br />
+          <br />
+          失败的图片仍会出现在报告中（带 parseError 字段），但不会影响其他图片的处理与统计。CSV 报告的"解析错误"列会记录具体错误，便于排查。
+        </p>
+      </details>
+
+      <details>
+        <summary>能否用于商业用途？是否需要署名？</summary>
+        <p>
+          本工具基于 <code>exifr</code> 库（MIT 许可证）开发，工具本身遵循项目 LICENSE。
+          生成的报告内容归用户所有，可自由用于商业场景（包括但不限于：合规审计、CI/CD 集成、内部归档、客户交付）。
+          <br /><br />
+          报告中的 README.txt 会标注生成工具与站点链接，便于追溯，但用户可自行删除。
+          建议在合规场景保留追溯信息，便于审计验证。
+        </p>
+      </details>
+    </section>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* 图片元数据打包工具专属样式：mdb 命名空间 */
+  .mdb {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 上传区 */
+  .mdb__upload {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mdb__dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 32px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-soft);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+    outline: none;
+  }
+
+  .mdb__dropzone:hover,
+  .mdb__dropzone:focus-visible,
+  .mdb__dropzone--over {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+
+  .mdb__dropzone-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+
+  .mdb__dropzone-text {
+    font-size: 16px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+  }
+
+  .mdb__dropzone-hint {
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .mdb__file-input {
+    display: none;
+  }
+
+  /* 错误提示 */
+  .mdb__error {
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.08);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: var(--radius-sm);
+    color: #c0392b;
+    font-size: 13px;
+  }
+
+  .mdb__error pre {
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: inherit;
+    font-size: 12px;
+  }
+
+  /* 文件列表 */
+  .mdb__files {
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mdb__files-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .mdb__files-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .mdb__count {
+    color: var(--color-text-soft, #6b7280);
+    font-weight: 400;
+    font-size: 13px;
+  }
+
+  .mdb__files-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mdb__file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .mdb__file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+
+  .mdb__file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mdb__file-size {
+    flex-shrink: 0;
+    color: var(--color-text-soft, #6b7280);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mdb__file-type {
+    flex-shrink: 0;
+    color: var(--color-text-soft, #6b7280);
+    font-size: 12px;
+    font-family: monospace;
+  }
+
+  /* 按钮 */
+  .mdb__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 36px;
+  }
+
+  .mdb__btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .mdb__btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .mdb__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .mdb__btn--primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .mdb__btn--primary:hover:not(:disabled) {
+    background: var(--color-primary-dark, var(--color-primary));
+    color: white;
+  }
+
+  .mdb__btn--secondary {
+    background: var(--color-bg-soft);
+    border-color: var(--color-border);
+  }
+
+  .mdb__btn--ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .mdb__btn--icon {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    min-height: 28px;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .mdb__btn--icon:hover:not(:disabled) {
+    color: #c0392b;
+    border-color: transparent;
+  }
+
+  /* 处理进度 */
+  .mdb__progress {
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mdb__progress-bar {
+    height: 8px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+
+  .mdb__progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.2s;
+  }
+
+  .mdb__progress-text {
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 处理结果 */
+  .mdb__result {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* 概览统计 */
+  .mdb__overview {
+    padding: 20px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mdb__overview-title {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .mdb__overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .mdb__stat {
+    padding: 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+  }
+
+  .mdb__stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mdb__stat-value--warn {
+    color: #e67e22;
+  }
+
+  .mdb__stat-label {
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+    margin-top: 4px;
+  }
+
+  .mdb__subtitle {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  /* 风险统计 */
+  .mdb__risk-stats {
+    margin-bottom: 16px;
+  }
+
+  .mdb__risk-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .mdb__risk-stat {
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    border: 1px solid;
+  }
+
+  .mdb__risk-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mdb__risk-stat-label {
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* 风险等级徽章 */
+  .mdb__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+
+  .mdb__badge--high {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #c0392b;
+  }
+
+  .mdb__risk-stat.mdb__badge--high,
+  .mdb__risk-stat .mdb__risk-stat-value {
+    /* 风险统计卡片样式 */
+  }
+
+  .mdb__risk-stat.mdb__badge--high .mdb__risk-stat-value,
+  .mdb__risk-stat.mdb__badge--high {
+    color: #c0392b;
+    background: rgba(231, 76, 60, 0.08);
+    border-color: rgba(231, 76, 60, 0.3);
+  }
+
+  .mdb__badge--medium {
+    background: rgba(230, 126, 34, 0.1);
+    border-color: rgba(230, 126, 34, 0.4);
+    color: #e67e22;
+  }
+
+  .mdb__risk-stat.mdb__badge--medium .mdb__risk-stat-value,
+  .mdb__risk-stat.mdb__badge--medium {
+    color: #e67e22;
+    background: rgba(230, 126, 34, 0.08);
+    border-color: rgba(230, 126, 34, 0.3);
+  }
+
+  .mdb__badge--low {
+    background: rgba(46, 204, 113, 0.1);
+    border-color: rgba(46, 204, 113, 0.4);
+    color: #27ae60;
+  }
+
+  .mdb__risk-stat.mdb__badge--low .mdb__risk-stat-value,
+  .mdb__risk-stat.mdb__badge--low {
+    color: #27ae60;
+    background: rgba(46, 204, 113, 0.08);
+    border-color: rgba(46, 204, 113, 0.3);
+  }
+
+  .mdb__badge--error {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #c0392b;
+  }
+
+  /* 类别与格式统计 */
+  .mdb__category-stats,
+  .mdb__format-stats {
+    margin-bottom: 16px;
+  }
+
+  .mdb__category-list,
+  .mdb__format-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px;
+  }
+
+  .mdb__category-item,
+  .mdb__format-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+
+  .mdb__category-count,
+  .mdb__format-count {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-primary);
+  }
+
+  /* 导出按钮组 */
+  .mdb__export-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 风险筛选器 */
+  .mdb__filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mdb__filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .mdb__filter-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 28px;
+  }
+
+  .mdb__filter-btn:hover:not(.mdb__filter-btn--active) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .mdb__filter-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .mdb__filter-btn--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .mdb__filter-btn--high.mdb__filter-btn--active {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: white;
+  }
+
+  .mdb__filter-btn--medium.mdb__filter-btn--active {
+    background: #e67e22;
+    border-color: #e67e22;
+    color: white;
+  }
+
+  .mdb__filter-btn--low.mdb__filter-btn--active {
+    background: #27ae60;
+    border-color: #27ae60;
+    color: white;
+  }
+
+  /* 报告列表 */
+  .mdb__report-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mdb__empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-soft, #6b7280);
+    background: var(--color-bg-soft);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mdb__report-item {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .mdb__report-item--high {
+    border-left: 4px solid #c0392b;
+  }
+
+  .mdb__report-item--medium {
+    border-left: 4px solid #e67e22;
+  }
+
+  .mdb__report-item--low {
+    border-left: 4px solid #27ae60;
+  }
+
+  .mdb__report-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .mdb__report-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .mdb__report-toggle:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mdb__report-arrow {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .mdb__report-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .mdb__report-size,
+  .mdb__report-dim {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 报告详情 */
+  .mdb__report-detail {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .mdb__detail-section {
+    padding-top: 16px;
+  }
+
+  .mdb__detail-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .mdb__detail-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .mdb__detail-grid dt {
+    color: var(--color-text-soft, #6b7280);
+    font-weight: 500;
+  }
+
+  .mdb__detail-grid dd {
+    margin: 0;
+    color: var(--color-text);
+    word-break: break-word;
+  }
+
+  .mdb__detail-grid--code {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .mdb__field-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 30%) 1fr;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--color-border);
+    font-size: 12px;
+  }
+
+  .mdb__field-row:last-child {
+    border-bottom: none;
+  }
+
+  .mdb__field-row dt {
+    font-family: monospace;
+    color: var(--color-text-soft, #6b7280);
+    word-break: break-all;
+  }
+
+  .mdb__field-row dd {
+    font-family: monospace;
+    word-break: break-all;
+  }
+
+  .mdb__field-more {
+    padding: 8px 0;
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+    font-style: italic;
+  }
+
+  .mdb__detail-error {
+    padding: 8px 12px;
+    background: rgba(231, 76, 60, 0.08);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: var(--radius-sm);
+    color: #c0392b;
+    font-size: 13px;
+  }
+
+  .mdb__detail-empty {
+    padding: 12px;
+    text-align: center;
+    color: var(--color-text-soft, #6b7280);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* 隐私发现列表 */
+  .mdb__findings-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mdb__finding {
+    padding: 10px 12px;
+    background: var(--color-bg-soft);
+    border-left: 3px solid;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+
+  .mdb__finding--high {
+    border-left-color: #c0392b;
+    background: rgba(231, 76, 60, 0.05);
+  }
+
+  .mdb__finding--medium {
+    border-left-color: #e67e22;
+    background: rgba(230, 126, 34, 0.05);
+  }
+
+  .mdb__finding--low {
+    border-left-color: #27ae60;
+    background: rgba(46, 204, 113, 0.05);
+  }
+
+  .mdb__finding-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .mdb__finding-category {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: 13px;
+  }
+
+  .mdb__finding-field {
+    font-family: monospace;
+    font-size: 11px;
+    padding: 1px 6px;
+    background: var(--color-bg);
+    border-radius: 3px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  .mdb__finding-desc {
+    color: var(--color-text);
+    margin-bottom: 4px;
+  }
+
+  .mdb__finding-rec {
+    font-size: 12px;
+    color: var(--color-text-soft, #6b7280);
+  }
+
+  /* 空状态 */
+  .mdb__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    background: var(--color-bg-soft);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .mdb__empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .mdb__empty-text {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .mdb__empty-hint {
+    margin: 0;
+    max-width: 560px;
+    font-size: 13px;
+    color: var(--color-text-soft, #6b7280);
+    line-height: 1.6;
+  }
+
+  /* 响应式 768px */
+  @media (max-width: 768px) {
+    .mdb__overview-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mdb__risk-stats-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .mdb__risk-stat {
+      padding: 10px 6px;
+    }
+
+    .mdb__risk-stat-value {
+      font-size: 20px;
+    }
+
+    .mdb__files-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .mdb__files-actions {
+      justify-content: stretch;
+    }
+
+    .mdb__files-actions .mdb__btn {
+      flex: 1;
+    }
+
+    .mdb__file-item {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mdb__file-type {
+      display: none;
+    }
+
+    .mdb__export-bar {
+      flex-direction: column;
+    }
+
+    .mdb__export-bar .mdb__btn {
+      width: 100%;
+    }
+
+    .mdb__report-header {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .mdb__field-row {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+
+    .mdb__file-list {
+      max-height: 200px;
+    }
+  }
+
+  /* 响应式 480px */
+  @media (max-width: 480px) {
+    .mdb__dropzone {
+      min-height: 160px;
+      padding: 20px 16px;
+    }
+
+    .mdb__dropzone-icon {
+      font-size: 32px;
+    }
+
+    .mdb__dropzone-text {
+      font-size: 14px;
+    }
+
+    .mdb__dropzone-hint {
+      font-size: 11px;
+    }
+
+    .mdb__overview-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .mdb__stat {
+      padding: 10px 6px;
+    }
+
+    .mdb__stat-value {
+      font-size: 18px;
+    }
+
+    .mdb__risk-stats-grid {
+      gap: 6px;
+    }
+
+    .mdb__risk-stat {
+      padding: 8px 4px;
+    }
+
+    .mdb__risk-stat-value {
+      font-size: 18px;
+    }
+
+    .mdb__risk-stat-label,
+    .mdb__stat-label {
+      font-size: 11px;
+    }
+
+    .mdb__report-toggle {
+      font-size: 13px;
+    }
+
+    .mdb__btn {
+      padding: 6px 12px;
+      font-size: 13px;
+      min-height: 32px;
+    }
+  }
+
+  /* 暗色模式适配 */
+  :global([data-theme='dark']) .mdb__badge--high,
+  :global([data-theme='dark']) .mdb__risk-stat.mdb__badge--high {
+    color: #ff7b6b;
+    background: rgba(231, 76, 60, 0.18);
+    border-color: rgba(231, 76, 60, 0.5);
+  }
+
+  :global([data-theme='dark']) .mdb__badge--medium,
+  :global([data-theme='dark']) .mdb__risk-stat.mdb__badge--medium {
+    color: #ffa56b;
+    background: rgba(230, 126, 34, 0.18);
+    border-color: rgba(230, 126, 34, 0.5);
+  }
+
+  :global([data-theme='dark']) .mdb__badge--low,
+  :global([data-theme='dark']) .mdb__risk-stat.mdb__badge--low {
+    color: #6be0a0;
+    background: rgba(46, 204, 113, 0.18);
+    border-color: rgba(46, 204, 113, 0.5);
+  }
+
+  :global([data-theme='dark']) .mdb__error,
+  :global([data-theme='dark']) .mdb__detail-error {
+    color: #ff7b6b;
+    background: rgba(231, 76, 60, 0.15);
+    border-color: rgba(231, 76, 60, 0.4);
+  }
+
+  :global([data-theme='dark']) .mdb__finding--high {
+    background: rgba(231, 76, 60, 0.1);
+  }
+
+  :global([data-theme='dark']) .mdb__finding--medium {
+    background: rgba(230, 126, 34, 0.1);
+  }
+
+  :global([data-theme='dark']) .mdb__finding--low {
+    background: rgba(46, 204, 113, 0.1);
+  }
+
+  :global([data-theme='dark']) .mdb__filter-btn--high.mdb__filter-btn--active {
+    background: #ff7b6b;
+    border-color: #ff7b6b;
+    color: #1f1f1f;
+  }
+
+  :global([data-theme='dark']) .mdb__filter-btn--medium.mdb__filter-btn--active {
+    background: #ffa56b;
+    border-color: #ffa56b;
+    color: #1f1f1f;
+  }
+
+  :global([data-theme='dark']) .mdb__filter-btn--low.mdb__filter-btn--active {
+    background: #6be0a0;
+    border-color: #6be0a0;
+    color: #1f1f1f;
+  }
+</style>

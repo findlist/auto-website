@@ -8,7 +8,7 @@ const meta: SiteMeta = {
   title: '工具盒子 - 零广告全本地处理的中文开发者工具集',
   // meta description 控制在 ~80 中文字符内，避免 Google 截断与关键词堆砌误判
   description:
-    '面向中文开发者的 107 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
+    '面向中文开发者的 108 个在线工具集：编码转换、文本处理、加密哈希、CSS 设计、图片处理等。全本地处理，零广告零追踪，数据不出浏览器。',
 };
 
 // 获取最新 3 篇博客文章
@@ -417,6 +417,15 @@ const tools = [
     available: true,
     category: '图片处理',
     keywords: 'exif 查看 exif 信息 图片元数据 照片信息 拍摄参数 相机型号 gps 定位 光圈 快门 iso 焦距 iptc xmp 图片信息 元数据解析',
+  },
+  {
+    href: '/metadata-bundle',
+    title: '图片元数据打包工具',
+    desc: '在线图片元数据批量打包工具：支持 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP 批量上传，一次性提取 EXIF / IPTC / XMP / ICC Profile 全部元数据，自动检测 GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图 5 类隐私敏感字段并给出风险等级与清理建议。提供 JSON / Markdown / CSV / ZIP 四种格式报告导出，ZIP 包含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv，纯浏览器原生 API 打包零依赖。基于 exifr 库全本地解析，零上传零追踪，适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。',
+    badge: '可用',
+    available: true,
+    category: '图片处理',
+    keywords: '图片元数据 打包 批量 exif iptc xmp icc 隐私分析 gps 设备序列号 个人信息 软件签名 缩略图 风险等级 清理建议 json markdown csv zip 报告 导出 合规审计 回归测试',
   },
   {
     href: '/svg-optimizer',
@@ -1047,7 +1056,7 @@ const features = [
     <div class="container hero__inner">
       <h1>干净 · 高效 · 不打扰的<br /><span class="hero__accent">中文开发者在线工具集</span></h1>
       <p class="hero__lead">
-        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 107 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
+        告别广告满天飞的老工具站。JSON、Base64、JWT、正则、时间戳、UUID 等 108 个工具，全部在浏览器本地处理，秒开、零上传、零追踪。
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="/json/">立即使用 JSON 工具</a>
