@@ -1164,6 +1164,126 @@ function loadHtmlImage(image: SourceImage | string): Promise<HTMLImageElement> {
 }
 
 /* ============================================================
+ *  区域放大：三联合成图导出
+ *  将 A / B / 差异图 三张放大后的区域图水平并排合成单张 PNG
+ *  便于一次性下载归档、贴入报告、分享给团队
+ * ============================================================ */
+
+/** 合成图配置项 */
+export interface ComposeTripleOptions {
+  /** 三张图的标题（默认 ['图片 A', '图片 B', '差异图']） */
+  labels?: [string, string, string];
+  /** 单张图之间的间隔像素，默认 16 */
+  gap?: number;
+  /** 标题栏高度像素，默认 28 */
+  labelBarHeight?: number;
+  /** 合成图四周 padding 像素，默认 16 */
+  padding?: number;
+  /** 背景色，默认白色（便于打印与文档粘贴） */
+  background?: string;
+  /** 标题栏背景色，默认浅灰 */
+  labelBg?: string;
+  /** 标题栏文字色 */
+  labelColor?: string;
+  /** 输出 MIME，默认 image/png */
+  mime?: string;
+}
+
+/**
+ * 将三张图水平并排合成单张 PNG dataUrl
+ *
+ * 设计要点：
+ *  - 三张图等宽排列，高度按各自原始比例计算（保证不变形）
+ *  - 每张图顶部渲染标题栏（便于脱离上下文识别）
+ *  - 三张图高度可能不同（如宽高比差异），按最高一张对齐底部
+ *  - 使用 high 质量图像平滑，避免缩放锯齿
+ *
+ * @param images 三张图的 dataUrl 数组（A / B / 差异图）
+ * @param options 可选配置
+ */
+export async function composeTripleImages(
+  images: [string, string, string],
+  options: ComposeTripleOptions = {},
+): Promise<string> {
+  const {
+    labels = ['图片 A', '图片 B', '差异图'],
+    gap = 16,
+    labelBarHeight = 28,
+    padding = 16,
+    background = '#ffffff',
+    labelBg = '#f5f5f5',
+    labelColor = '#333333',
+    mime = 'image/png',
+  } = options;
+
+  if (images.length !== 3) {
+    throw new Error('合成图需要 3 张图片（A / B / 差异图）');
+  }
+
+  // 并行加载三张图，复用 loadHtmlImage
+  const [imgA, imgB, imgDiff] = await Promise.all([
+    loadHtmlImage(images[0]),
+    loadHtmlImage(images[1]),
+    loadHtmlImage(images[2]),
+  ]);
+  const loaded = [imgA, imgB, imgDiff];
+
+  // 计算每张图等宽渲染时的目标宽度
+  // 策略：取三张图原始宽度的最小值作为目标宽度，避免较小图被放大过度失真
+  const targetW = Math.min(imgA.naturalWidth, imgB.naturalWidth, imgDiff.naturalWidth);
+
+  // 计算每张图等宽渲染时的高度（保持原始比例）
+  const renderHeight = (img: HTMLImageElement) => {
+    if (img.naturalWidth <= 0) return 0;
+    return Math.round((img.naturalHeight / img.naturalWidth) * targetW);
+  };
+  const heights = loaded.map(renderHeight);
+  const maxRenderH = Math.max(...heights);
+
+  // 合成画布尺寸：padding + 三列等宽 + 两个 gap + 标题栏 + 底部对齐余量
+  const canvasW = padding * 2 + targetW * 3 + gap * 2;
+  const canvasH = padding + labelBarHeight + maxRenderH + padding;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+
+  // 1. 背景
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // 2. 每张图：标题栏 + 等宽绘制
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+
+  loaded.forEach((img, i) => {
+    const x = padding + (targetW + gap) * i;
+    const renderH = heights[i];
+
+    // 标题栏背景
+    ctx.fillStyle = labelBg;
+    ctx.fillRect(x, padding, targetW, labelBarHeight);
+
+    // 标题栏文字
+    ctx.fillStyle = labelColor;
+    ctx.font = '14px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText(labels[i], x + 12, padding + labelBarHeight / 2);
+
+    // 图片绘制（按原比例等宽缩放，高度居中底部对齐）
+    const yImg = padding + labelBarHeight + (maxRenderH - renderH);
+    ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x, yImg, targetW, renderH);
+  });
+
+  return canvas.toDataURL(mime);
+}
+
+/* ============================================================
  *  ZIP 打包：批量差异图归档下载
  *  采用 STORE 模式（无压缩），原因：
  *  - 差异图为 PNG（已压缩），再压缩收益微小

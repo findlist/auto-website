@@ -14,6 +14,7 @@ import {
   composeSideBySide,
   formatBytes,
   extractRegionDataUrl,
+  composeTripleImages,
   ACCEPTED_MIMES,
   DEFAULT_GRID_SIZE,
   MAX_BATCH_PAIRS,
@@ -1628,10 +1629,17 @@ const INITIAL_TRIPLE: TripleLoadState = {
   urlDiff: '',
 };
 
-/** 放大输出尺寸（最长边） */
-const ZOOM_TARGET_SIZE = 480;
+/** 基础放大输出尺寸（最长边，对应 1x 倍率） */
+const ZOOM_BASE_SIZE = 320;
 /** 区域四周扩展像素（参考坐标系单位） */
 const ZOOM_PADDING = 12;
+
+/** 放大倍率档位（1x / 2x / 4x），对应 targetSize = 320 / 640 / 1280 */
+const ZOOM_MULTIPLIERS: ReadonlyArray<{ value: number; label: string }> = [
+  { value: 1, label: '1×' },
+  { value: 2, label: '2×' },
+  { value: 4, label: '4×' },
+];
 
 function RegionZoomModal({
   regions,
@@ -1644,6 +1652,13 @@ function RegionZoomModal({
   onClose,
   onNavigate,
 }: RegionZoomModalProps) {
+  // 放大倍率（1 / 2 / 4），影响 targetSize 与下载合成图清晰度
+  const [zoomMultiplier, setZoomMultiplier] = useState<number>(2);
+  // 三联合成图下载状态：idle / zipping / error
+  const [composeState, setComposeState] = useState<{ loading: boolean; error: string }>({
+    loading: false,
+    error: '',
+  });
   const [state, setState] = useState<TripleLoadState>(INITIAL_TRIPLE);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -1651,7 +1666,7 @@ function RegionZoomModal({
   const region = regions[currentIndex];
   const total = regions.length;
 
-  /** 并行提取三联区域，每次切换区域时触发 */
+  /** 并行提取三联区域，每次切换区域或放大倍率时触发 */
   useEffect(() => {
     if (!region) return;
     let cancelled = false;
@@ -1659,7 +1674,9 @@ function RegionZoomModal({
     (async () => {
       try {
         // 三联并行提取，共享同一区域坐标与参考坐标系
-        const refOpts = { refWidth: diffWidth, refHeight: diffHeight, targetSize: ZOOM_TARGET_SIZE, padding: ZOOM_PADDING };
+        // targetSize 随放大倍率线性增长，1x=320 / 2x=640 / 4x=1280
+        const targetSize = ZOOM_BASE_SIZE * zoomMultiplier;
+        const refOpts = { refWidth: diffWidth, refHeight: diffHeight, targetSize, padding: ZOOM_PADDING };
         const [urlA, urlB, urlDiff] = await Promise.all([
           extractRegionDataUrl(sourceA, region, refOpts),
           extractRegionDataUrl(sourceB, region, refOpts),
@@ -1675,7 +1692,7 @@ function RegionZoomModal({
     return () => {
       cancelled = true;
     };
-  }, [region, sourceA, sourceB, diffDataUrl, diffWidth, diffHeight]);
+  }, [region, sourceA, sourceB, diffDataUrl, diffWidth, diffHeight, zoomMultiplier]);
 
   /** 键盘导航：ESC 关闭、← / → 切换区域 */
   useEffect(() => {
@@ -1708,6 +1725,31 @@ function RegionZoomModal({
     [onClose],
   );
 
+  /** 下载三联合成图：复用已提取的 urlA/urlB/urlDiff，水平并排合成 PNG */
+  const handleDownloadTriple = useCallback(async () => {
+    if (composeState.loading) return;
+    if (!state.urlA || !state.urlB || !state.urlDiff) return;
+    setComposeState({ loading: true, error: '' });
+    try {
+      // 标签包含图片文件名与差异图说明，便于脱离上下文识别
+      const labels: [string, string, string] = [
+        `图片 A · ${sourceA.file.name}`,
+        `图片 B · ${sourceB.file.name}`,
+        '差异图（红色高亮）',
+      ];
+      const dataUrl = await composeTripleImages([state.urlA, state.urlB, state.urlDiff], { labels });
+      // 文件名：region-{序号}-triple-compare.png，序号从 1 开始便于用户识别
+      const filename = `region-${currentIndex + 1}-triple-compare.png`;
+      downloadDataUrl(dataUrl, filename);
+      setComposeState({ loading: false, error: '' });
+    } catch (e) {
+      setComposeState({
+        loading: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }, [composeState.loading, state.urlA, state.urlB, state.urlDiff, sourceA.file.name, sourceB.file.name, currentIndex]);
+
   if (!region) return null;
 
   return (
@@ -1719,7 +1761,7 @@ function RegionZoomModal({
       onClick={handleOverlayClick}
     >
       <div className="imgcmp__zoom-dialog" ref={dialogRef}>
-        {/* 顶部：标题 + 关闭按钮 */}
+        {/* 顶部：标题 + 元信息 + 关闭按钮 */}
         <header className="imgcmp__zoom-header">
           <div className="imgcmp__zoom-title-wrap">
             <h2 id="imgcmp-zoom-title" className="imgcmp__zoom-title">
@@ -1732,6 +1774,27 @@ function RegionZoomModal({
               <span className="imgcmp__zoom-divider">·</span>
               密度 {region.density}% · 强度 {region.avgIntensity}
             </p>
+          </div>
+          {/* 放大倍率切换器：role=radiogroup 无障碍 */}
+          <div
+            className="imgcmp__zoom-scale"
+            role="radiogroup"
+            aria-label="放大倍率"
+          >
+            {ZOOM_MULTIPLIERS.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                role="radio"
+                aria-checked={zoomMultiplier === m.value}
+                className={`imgcmp__zoom-scale-btn${zoomMultiplier === m.value ? ' imgcmp__zoom-scale-btn--active' : ''}`}
+                onClick={() => setZoomMultiplier(m.value)}
+                disabled={state.loading}
+                title={`放大至 ${ZOOM_BASE_SIZE * m.value}px 最长边`}
+              >
+                {m.label}
+              </button>
+            ))}
           </div>
           <button
             ref={closeBtnRef}
@@ -1766,7 +1829,7 @@ function RegionZoomModal({
           )}
         </div>
 
-        {/* 底部：导航按钮 */}
+        {/* 底部：导航按钮 + 下载合成图按钮 + 提示 */}
         <footer className="imgcmp__zoom-footer">
           <button
             type="button"
@@ -1776,6 +1839,16 @@ function RegionZoomModal({
             aria-label="上一个区域（←）"
           >
             ← 上一个
+          </button>
+          <button
+            type="button"
+            className="imgcmp__zoom-download"
+            onClick={handleDownloadTriple}
+            disabled={state.loading || composeState.loading || !!state.error || !state.urlA}
+            aria-label="下载三联合成图（A/B/差异图并排 PNG）"
+            title="将 A / B / 差异图三张放大图水平并排合成为单张 PNG 下载"
+          >
+            {composeState.loading ? '合成中…' : '⬇ 下载三联合成图'}
           </button>
           <span className="imgcmp__zoom-hint">使用 ← → 切换区域，ESC 关闭</span>
           <button
@@ -1788,6 +1861,11 @@ function RegionZoomModal({
             下一个 →
           </button>
         </footer>
+        {composeState.error && (
+          <div className="imgcmp__zoom-compose-error" role="alert">
+            合成图下载失败：{composeState.error}
+          </div>
+        )}
       </div>
     </div>
   );
