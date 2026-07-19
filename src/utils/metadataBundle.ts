@@ -14,10 +14,13 @@
  *  - 本工具：批量处理 + 隐私分析 + 报告导出，聚焦"打包归档"与"隐私风险评估"
  *
  * 设计原则：
- *  - 不引入第三方 ZIP 库，自行实现 ZIP STORE 模式（CRC32 + 局部头 + 中央目录 + EOCD）
+ *  - ZIP 写入器与文件名安全工具复用公共模块 src/utils/zipWriter.ts（与 imageCompare 共享）
  *  - 复用 exifr 库（已在依赖中）解析多格式 metadata
  *  - 文件名安全：替换不安全字符 + 长度限制，跨平台兼容
  */
+
+// 复用公共 ZIP 写入器：报告归档打包使用 STORE 模式零依赖实现
+import { ZipWriter, sanitizeFileName } from './zipWriter';
 
 // ============================================================
 // 类型定义
@@ -720,135 +723,11 @@ export function buildCsvReport(summary: BundleSummary): string {
 }
 
 // ============================================================
-// ZIP 打包（纯浏览器原生 API，零依赖）
+// ZIP 打包
 // ============================================================
 
-/** CRC32 查找表（IEEE 802.3 多项式 0xedb88320） */
-const CRC32_TABLE: Uint32Array = (() => {
-  const table = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    table[i] = c;
-  }
-  return table;
-})();
-
-/** 计算 CRC32 校验码 */
-function crc32(data: Uint8Array): number {
-  let crc = 0xffffffff;
-  for (let i = 0; i < data.length; i++) {
-    crc = CRC32_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-/** Zip 文件条目 */
-interface ZipEntry {
-  nameBytes: Uint8Array;
-  data: Uint8Array;
-  crc: number;
-  localOffset: number;
-}
-
-/** Zip 写入器（STORE 模式，无压缩） */
-class ZipWriter {
-  private entries: ZipEntry[] = [];
-  private chunks: Uint8Array[] = [];
-  private offset = 0;
-
-  /** 添加文件到 ZIP */
-  addFile(name: string, data: Uint8Array): void {
-    const nameBytes = new TextEncoder().encode(name);
-    const crc = crc32(data);
-
-    // 局部文件头（30 字节固定 + 文件名）
-    const header = new Uint8Array(30 + nameBytes.length);
-    const view = new DataView(header.buffer);
-    view.setUint32(0, 0x04034b50, true); // 局部文件头签名
-    view.setUint16(4, 20, true); // 解压所需版本（2.0）
-    view.setUint16(6, 0x0800, true); // 通用标志位 11 置位（UTF-8 文件名）
-    view.setUint16(8, 0, true); // 压缩方法 0 = STORE
-    view.setUint16(10, 0, true); // 修改时间
-    view.setUint16(12, 0, true); // 修改日期
-    view.setUint32(14, crc, true); // CRC32
-    view.setUint32(18, data.length, true); // 压缩后大小
-    view.setUint32(22, data.length, true); // 压缩前大小
-    view.setUint16(26, nameBytes.length, true); // 文件名长度
-    view.setUint16(28, 0, true); // 额外字段长度
-    header.set(nameBytes, 30);
-
-    this.entries.push({ nameBytes, data, crc, localOffset: this.offset });
-    this.chunks.push(header, data);
-    this.offset += header.length + data.length;
-  }
-
-  /** 完成 ZIP 构建，返回 Blob */
-  finish(): Blob {
-    // 中央目录
-    const centralChunks: Uint8Array[] = [];
-    let centralSize = 0;
-    for (const entry of this.entries) {
-      const central = new Uint8Array(46 + entry.nameBytes.length);
-      const view = new DataView(central.buffer);
-      view.setUint32(0, 0x02014b50, true); // 中央目录头签名
-      view.setUint16(4, 20, true); // 版本
-      view.setUint16(6, 20, true); // 解压所需版本
-      view.setUint16(8, 0x0800, true); // 通用标志位
-      view.setUint16(10, 0, true); // 压缩方法
-      view.setUint16(12, 0, true); // 修改时间
-      view.setUint16(14, 0, true); // 修改日期
-      view.setUint32(16, entry.crc, true); // CRC32
-      view.setUint32(20, entry.data.length, true); // 压缩后大小
-      view.setUint32(24, entry.data.length, true); // 压缩前大小
-      view.setUint16(28, entry.nameBytes.length, true); // 文件名长度
-      view.setUint16(30, 0, true); // 额外字段长度
-      view.setUint16(32, 0, true); // 文件注释长度
-      view.setUint16(34, 0, true); // 起始磁盘号
-      view.setUint16(36, 0, true); // 内部属性
-      view.setUint32(38, 0, true); // 外部属性
-      view.setUint32(42, entry.localOffset, true); // 局部头偏移
-      central.set(entry.nameBytes, 46);
-      centralChunks.push(central);
-      centralSize += central.length;
-    }
-
-    // EOCD（结束中央目录记录）
-    const eocd = new Uint8Array(22);
-    const eocdView = new DataView(eocd.buffer);
-    eocdView.setUint32(0, 0x06054b50, true); // EOCD 签名
-    eocdView.setUint16(4, 0, true); // 磁盘号
-    eocdView.setUint16(6, 0, true); // 起始磁盘号
-    eocdView.setUint16(8, this.entries.length, true); // 中央目录条目数（本磁盘）
-    eocdView.setUint16(10, this.entries.length, true); // 中央目录条目数（总）
-    eocdView.setUint32(12, centralSize, true); // 中央目录大小
-    eocdView.setUint32(16, this.offset, true); // 中央目录起始偏移
-    eocdView.setUint16(20, 0, true); // 注释长度
-
-    // 合并所有块
-    const allChunks = [...this.chunks, ...centralChunks, eocd];
-    const totalLength = allChunks.reduce((sum, c) => sum + c.length, 0);
-    const result = new Uint8Array(totalLength);
-    let pos = 0;
-    for (const chunk of allChunks) {
-      result.set(chunk, pos);
-      pos += chunk.length;
-    }
-
-    // TS 5.7 严格类型：Uint8Array<ArrayBufferLike> 不能直接作为 BlobPart，需显式转换为 ArrayBuffer
-    return new Blob([result.buffer as ArrayBuffer], { type: 'application/zip' });
-  }
-}
-
-/** 替换文件名中的不安全字符 */
-function sanitizeFileName(name: string, maxLen = 80): string {
-  return name
-    .replace(/[\\/:*?"<>|]/g, '_')
-    .replace(/[\x00-\x1f]/g, '_')
-    .slice(0, maxLen);
-}
+// ZipWriter 与 sanitizeFileName 已抽取到公共模块 src/utils/zipWriter.ts，
+// 供 metadataBundle 与 imageCompare 共享，消除代码重复。
 
 /**
  * 构建元数据 ZIP 包
