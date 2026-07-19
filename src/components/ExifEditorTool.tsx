@@ -29,6 +29,16 @@ import {
   HEX_DUMP_MAX_BYTES,
   type PngMetaSnapshot,
   type PngChunkInfo,
+  // WebP 相关导入（第 112 轮新增）
+  isWebpFile,
+  parseWebpChunks,
+  applyWebpEdits,
+  applyWebpEditsBatch,
+  extractWebpMetaSnapshot,
+  buildWebpEditedFilename,
+  buildWebpBatchEditedFilename,
+  type WebpMetaSnapshot,
+  type WebpChunkInfo,
   type EditOperation,
   type EditResult,
   type EditPreset,
@@ -38,21 +48,22 @@ import { createZipFile, type ZipEntry } from '../utils/imageCrop';
 import { formatBytes, downloadBlob } from '../utils/imageConvert';
 
 /**
- * EXIF / PNG 元数据编辑器
+ * EXIF / PNG / WebP 元数据编辑器
  * 全部在浏览器本地操作文件二进制结构，不发起任何网络请求。
  *
  * 功能：
  *  - 支持 JPEG 文件的 EXIF 元数据编辑（删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间）
  *  - 支持 PNG 文件的元数据清理（删除 tEXt / iTXt / tIME / eXIf 等辅助 chunk，修改 tIME 时间）
- *  - 一键清除全部元数据（JPEG 移除 APP1 EXIF 段 / PNG 仅保留关键 chunk）
+ *  - 支持 WebP 文件的 EXIF 元数据编辑（删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间）
+ *  - 一键清除全部元数据（JPEG 移除 APP1 EXIF 段 / PNG 仅保留关键 chunk / WebP 删除 EXIF + XMP + ICCP chunk）
  *  - 编辑前后元数据对比，可视化展示被删除/修改的字段
  *  - 编辑结果实时预览 + 一键下载
  *  - 批量处理多文件并打包 ZIP 下载
  *  - 编辑预设保存与导入导出
  */
 
-/** 文件类型：JPEG / PNG / 其他 */
-type FileType = 'jpeg' | 'png' | 'unknown';
+/** 文件类型：JPEG / PNG / WebP / 其他 */
+type FileType = 'jpeg' | 'png' | 'webp' | 'unknown';
 
 /** 编辑前后的元数据快照（用于对比展示） */
 interface MetaSnapshot {
@@ -178,6 +189,10 @@ export default function ExifEditorTool() {
   const [pngSnapshot, setPngSnapshot] = useState<PngMetaSnapshot | null>(null);
   /** PNG 编辑前的原始快照（用于编辑前后对比展示，编辑后保持不变） */
   const [originalPngSnapshot, setOriginalPngSnapshot] = useState<PngMetaSnapshot | null>(null);
+  /** WebP 元数据快照（仅在 fileType === 'webp' 时有值，编辑后会更新为编辑后快照） */
+  const [webpSnapshot, setWebpSnapshot] = useState<WebpMetaSnapshot | null>(null);
+  /** WebP 编辑前的原始快照（用于编辑前后对比展示，编辑后保持不变） */
+  const [originalWebpSnapshot, setOriginalWebpSnapshot] = useState<WebpMetaSnapshot | null>(null);
   const [hasExif, setHasExif] = useState<boolean>(false);
   /** JPEG 兼容标志：用于复用现有 UI 判断逻辑（PNG 不支持时按 JPEG 路径走） */
   const [hasJpeg, setHasJpeg] = useState<boolean>(false);
@@ -239,21 +254,26 @@ export default function ExifEditorTool() {
     setEditedMeta(null);
     setPngSnapshot(null);
     setOriginalPngSnapshot(null);
+    setWebpSnapshot(null);
+    setOriginalWebpSnapshot(null);
 
     // 文件类型识别
     const isJpeg = f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name);
     const isPng = f.type === 'image/png' || /\.png$/i.test(f.name);
+    const isWebp = f.type === 'image/webp' || /\.webp$/i.test(f.name);
 
-    if (!isJpeg && !isPng) {
+    if (!isJpeg && !isPng && !isWebp) {
       setFile(f);
       setFileUrl(URL.createObjectURL(f));
       setParsedMeta(null);
       setPngSnapshot(null);
       setOriginalPngSnapshot(null);
+      setWebpSnapshot(null);
+      setOriginalWebpSnapshot(null);
       setHasExif(false);
       setHasJpeg(false);
       setFileType('unknown');
-      setError('当前仅支持 JPEG 与 PNG 文件。WebP / TIFF / HEIC 等格式的元数据编辑暂不支持，请上传 JPEG 或 PNG 图片。');
+      setError('当前仅支持 JPEG / PNG / WebP 文件。TIFF / HEIC 等格式的元数据编辑暂不支持，请上传 JPEG / PNG / WebP 图片。');
       return;
     }
 
@@ -287,7 +307,7 @@ export default function ExifEditorTool() {
         // 用 exifr 解析元数据（用于对比展示）
         const parsed = await exifr.parse(f, { tiff: true, exif: true, gps: true });
         setParsedMeta(parsed || null);
-      } else {
+      } else if (isPng) {
         // PNG 路径：解析 chunks
         setFileType('png');
         setHasJpeg(false);
@@ -303,10 +323,35 @@ export default function ExifEditorTool() {
         setOriginalPngSnapshot(snapshot);
         setParsedMeta(null);
         setHasExif(snapshot.hasExif);
+      } else {
+        // WebP 路径：解析 RIFF chunks
+        setFileType('webp');
+        setHasJpeg(false);
+        if (!isWebpFile(bytes)) {
+          setError('文件扩展名是 .webp 但 RIFF/WEBP 文件头不匹配，可能不是有效的 WebP 文件');
+          return;
+        }
+        const chunks = parseWebpChunks(bytes);
+        const snapshot = extractWebpMetaSnapshot(chunks);
+        setWebpSnapshot(snapshot);
+        setOriginalWebpSnapshot(snapshot);
+        setHasExif(snapshot.hasExif);
+        // 用 exifr 解析 EXIF 字段（exifr 原生支持 WebP，复用 JPEG 的 buildSnapshot 展示路径）
+        // 仅在含 EXIF chunk 时调用，避免无 EXIF 时无谓解析
+        let webpParsed: Record<string, unknown> | null = null;
+        if (snapshot.hasExif) {
+          try {
+            webpParsed = await exifr.parse(f, { tiff: true, exif: true, gps: true });
+          } catch {
+            webpParsed = null;
+          }
+        }
+        setParsedMeta(webpParsed);
       }
     } catch (err) {
       setParsedMeta(null);
       setPngSnapshot(null);
+      setWebpSnapshot(null);
       setHasExif(false);
       setError(`解析文件失败：${err instanceof Error ? err.message : String(err)}`);
     }
@@ -378,19 +423,21 @@ export default function ExifEditorTool() {
   // 批量处理逻辑（第 89 轮新增）
   // ============================================================
 
-  /** 加载批量文件（保留 JPEG 与 PNG，校验大小） */
+  /** 加载批量文件（保留 JPEG / PNG / WebP，校验大小） */
   const handleBatchFiles = useCallback((fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    // 接受 JPEG 与 PNG 两种格式，按文件类型分流处理
+    // 接受 JPEG / PNG / WebP 三种格式，按文件类型分流处理
     const acceptedFiles = Array.from(fileList).filter(
       (f) =>
         f.type === 'image/jpeg' ||
         f.type === 'image/png' ||
+        f.type === 'image/webp' ||
         /\.jpe?g$/i.test(f.name) ||
-        /\.png$/i.test(f.name),
+        /\.png$/i.test(f.name) ||
+        /\.webp$/i.test(f.name),
     );
     if (acceptedFiles.length === 0) {
-      setBatchError('未选择 JPEG / PNG 文件。批量处理仅支持 JPEG 与 PNG 格式。');
+      setBatchError('未选择 JPEG / PNG / WebP 文件。批量处理仅支持 JPEG / PNG / WebP 格式。');
       return;
     }
     const oversized = acceptedFiles.filter((f) => f.size > MAX_FILE_SIZE);
@@ -447,8 +494,8 @@ export default function ExifEditorTool() {
 
   /**
    * 执行批量编辑（并行读取字节，串行应用编辑避免主线程阻塞）
-   * 文件类型分流：JPEG 走 applyEditsBatch，PNG 走 applyPngEditsBatch，
-   * 两批独立处理后合并结果，保持与单文件模式相同的处理语义。
+   * 文件类型分流：JPEG 走 applyEditsBatch，PNG 走 applyPngEditsBatch，WebP 走 applyWebpEditsBatch，
+   * 三批独立处理后合并结果，保持与单文件模式相同的处理语义。
    */
   const runBatchEdit = useCallback(async () => {
     if (batchFiles.length === 0 || activeOps.length === 0) return;
@@ -458,28 +505,34 @@ export default function ExifEditorTool() {
       const buffers = await Promise.all(batchFiles.map((f) => f.arrayBuffer()));
       const allBytes = buffers.map((b) => new Uint8Array(b));
       const allNames = batchFiles.map((f) => f.name);
-      // 按文件签名分流到 JPEG / PNG 两个队列
+      // 按文件签名分流到 JPEG / PNG / WebP 三个队列
       const jpegIdx: number[] = [];
       const pngIdx: number[] = [];
+      const webpIdx: number[] = [];
       for (let i = 0; i < allBytes.length; i++) {
         const bytes = allBytes[i];
         if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) {
           jpegIdx.push(i);
         } else if (isPngFile(bytes)) {
           pngIdx.push(i);
+        } else if (isWebpFile(bytes)) {
+          webpIdx.push(i);
         }
-        // 其他格式忽略（applyEditsBatch / applyPngEditsBatch 内部会标记 skipped）
+        // 其他格式忽略（applyEditsBatch / applyPngEditsBatch / applyWebpEditsBatch 内部会标记 skipped）
       }
-      // 并行处理两批（实际串行，因 await 顺序执行）
+      // 并行处理三批（实际串行，因 await 顺序执行）
       const jpegBytes = jpegIdx.map((i) => allBytes[i]);
       const jpegNames = jpegIdx.map((i) => allNames[i]);
       const pngBytes = pngIdx.map((i) => allBytes[i]);
       const pngNames = pngIdx.map((i) => allNames[i]);
-      const [jpegSummary, pngSummary] = await Promise.all([
+      const webpBytes = webpIdx.map((i) => allBytes[i]);
+      const webpNames = webpIdx.map((i) => allNames[i]);
+      const [jpegSummary, pngSummary, webpSummary] = await Promise.all([
         jpegBytes.length > 0 ? applyEditsBatch(jpegBytes, jpegNames, activeOps) : null,
         pngBytes.length > 0 ? applyPngEditsBatch(pngBytes, pngNames, activeOps) : null,
+        webpBytes.length > 0 ? applyWebpEditsBatch(webpBytes, webpNames, activeOps) : null,
       ]);
-      // 合并两批结果，按原顺序还原
+      // 合并三批结果，按原顺序还原
       const mergedItems = new Array(batchFiles.length);
       if (jpegSummary) {
         jpegSummary.items.forEach((item, i) => {
@@ -491,7 +544,12 @@ export default function ExifEditorTool() {
           mergedItems[pngIdx[i]] = item;
         });
       }
-      // 未分流处理的文件标记为 skipped（理论上不会发生，因 JPEG 与 PNG 已涵盖）
+      if (webpSummary) {
+        webpSummary.items.forEach((item, i) => {
+          mergedItems[webpIdx[i]] = item;
+        });
+      }
+      // 未分流处理的文件标记为 skipped（理论上不会发生，因 JPEG / PNG / WebP 已涵盖）
       for (let i = 0; i < mergedItems.length; i++) {
         if (!mergedItems[i]) {
           mergedItems[i] = {
@@ -502,12 +560,19 @@ export default function ExifEditorTool() {
         }
       }
       const totalSavedBytes =
-        (jpegSummary?.totalSavedBytes ?? 0) + (pngSummary?.totalSavedBytes ?? 0);
+        (jpegSummary?.totalSavedBytes ?? 0) +
+        (pngSummary?.totalSavedBytes ?? 0) +
+        (webpSummary?.totalSavedBytes ?? 0);
       const totalElapsedMs =
-        (jpegSummary?.totalElapsedMs ?? 0) + (pngSummary?.totalElapsedMs ?? 0);
-      const succeeded = (jpegSummary?.succeeded ?? 0) + (pngSummary?.succeeded ?? 0);
-      const skipped = (jpegSummary?.skipped ?? 0) + (pngSummary?.skipped ?? 0);
-      const failed = (jpegSummary?.failed ?? 0) + (pngSummary?.failed ?? 0);
+        (jpegSummary?.totalElapsedMs ?? 0) +
+        (pngSummary?.totalElapsedMs ?? 0) +
+        (webpSummary?.totalElapsedMs ?? 0);
+      const succeeded =
+        (jpegSummary?.succeeded ?? 0) + (pngSummary?.succeeded ?? 0) + (webpSummary?.succeeded ?? 0);
+      const skipped =
+        (jpegSummary?.skipped ?? 0) + (pngSummary?.skipped ?? 0) + (webpSummary?.skipped ?? 0);
+      const failed =
+        (jpegSummary?.failed ?? 0) + (pngSummary?.failed ?? 0) + (webpSummary?.failed ?? 0);
       setBatchResult({
         total: batchFiles.length,
         succeeded,
@@ -536,12 +601,15 @@ export default function ExifEditorTool() {
       return;
     }
     const entries: ZipEntry[] = successItems.map((it, idx) => {
-      // 根据文件扩展名判断类型（PNG 文件扩展名以 .png 结尾）
+      // 根据文件扩展名判断类型（PNG / WebP 文件扩展名以 .png / .webp 结尾）
       const isPng = /\.png$/i.test(it.fileName);
+      const isWebp = /\.webp$/i.test(it.fileName);
       const name = isPng
         ? buildPngBatchEditedFilename(it.fileName, idx, successItems.length)
-        : buildBatchEditedFilename(it.fileName, idx, successItems.length);
-      const mime = isPng ? 'image/png' : 'image/jpeg';
+        : isWebp
+          ? buildWebpBatchEditedFilename(it.fileName, idx, successItems.length)
+          : buildBatchEditedFilename(it.fileName, idx, successItems.length);
+      const mime = isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg';
       return {
         name,
         blob: new Blob([it.result!.bytes as BlobPart], { type: mime }),
@@ -625,7 +693,7 @@ export default function ExifEditorTool() {
     if (importInputRef.current) importInputRef.current.value = '';
   }, []);
 
-  /** 执行编辑（根据 fileType 分流到 JPEG / PNG 处理路径） */
+  /** 执行编辑（根据 fileType 分流到 JPEG / PNG / WebP 处理路径） */
   const runEdit = useCallback(async () => {
     if (!file || activeOps.length === 0) return;
     setEditing(true);
@@ -633,12 +701,22 @@ export default function ExifEditorTool() {
     try {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      // 根据文件类型选择处理函数
-      const editFn = fileType === 'png' ? applyPngEdits : applyEdits;
+      // 根据文件类型选择处理函数：三路分流 JPEG / PNG / WebP
+      const editFn =
+        fileType === 'png'
+          ? applyPngEdits
+          : fileType === 'webp'
+            ? applyWebpEdits
+            : applyEdits;
       const result = editFn(bytes, activeOps);
       setEditResult(result);
       // 生成 Blob URL，保留原 mime 类型
-      const mime = fileType === 'png' ? 'image/png' : 'image/jpeg';
+      const mime =
+        fileType === 'png'
+          ? 'image/png'
+          : fileType === 'webp'
+            ? 'image/webp'
+            : 'image/jpeg';
       const blob = new Blob([result.bytes as BlobPart], { type: mime });
       const url = URL.createObjectURL(blob);
       if (editedUrl) URL.revokeObjectURL(editedUrl);
@@ -653,6 +731,27 @@ export default function ExifEditorTool() {
           setEditedMeta(null);
         } catch {
           setPngSnapshot(null);
+        }
+      } else if (fileType === 'webp') {
+        // WebP 路径：重新解析 RIFF chunks 提取快照（同步），并尝试用 exifr 解析 EXIF 字段
+        try {
+          const newChunks = parseWebpChunks(result.bytes);
+          const newSnapshot = extractWebpMetaSnapshot(newChunks);
+          setWebpSnapshot(newSnapshot);
+          // 仅在含 EXIF chunk 时重新解析字段级元数据
+          if (newSnapshot.hasExif) {
+            try {
+              const reparsed = await exifr.parse(blob, { tiff: true, exif: true, gps: true });
+              setEditedMeta(reparsed || null);
+            } catch {
+              setEditedMeta(null);
+            }
+          } else {
+            setEditedMeta(null);
+          }
+        } catch {
+          setWebpSnapshot(null);
+          setEditedMeta(null);
         }
       } else {
         // JPEG 路径：用 exifr 重新解析
@@ -676,7 +775,9 @@ export default function ExifEditorTool() {
     const filename =
       fileType === 'png'
         ? buildPngEditedFilename(file.name)
-        : buildEditedFilename(file.name);
+        : fileType === 'webp'
+          ? buildWebpEditedFilename(file.name)
+          : buildEditedFilename(file.name);
     downloadBlob(editedUrl, filename);
   }, [editedUrl, file, fileType]);
 
@@ -695,6 +796,8 @@ export default function ExifEditorTool() {
     setEditedMeta(null);
     setPngSnapshot(null);
     setOriginalPngSnapshot(null);
+    setWebpSnapshot(null);
+    setOriginalWebpSnapshot(null);
     setEditResult(null);
     setEditedUrl('');
     setHasExif(false);
@@ -705,8 +808,10 @@ export default function ExifEditorTool() {
   }, [fileUrl, editedUrl]);
 
   // 渲染：原始与编辑后快照
-  // JPEG 走 exifr 解析结果，PNG 走 chunk 解析结果
+  // JPEG / WebP 走 exifr 解析结果（WebP 复用 JPEG 的 IFD 字段展示路径）
+  // PNG 走 chunk 解析结果
   // PNG 编辑前快照基于 originalPngSnapshot（编辑后保持不变），编辑后快照基于 pngSnapshot（runEdit 中更新）
+  // WebP 编辑前快照基于 parsedMeta（exifr 解析的原文件 EXIF），编辑后快照基于 editedMeta
   const beforeSnap = useMemo(() => {
     if (fileType === 'png') return buildPngSnapshot(originalPngSnapshot);
     return buildSnapshot(parsedMeta);
@@ -724,8 +829,13 @@ export default function ExifEditorTool() {
     if (fileType === 'png') {
       return EDIT_OPERATIONS.filter((op) => PNG_SUPPORTED_OPS.has(op.type));
     }
+    // JPEG 与 WebP 均支持全部操作（WebP EXIF chunk 复用 JPEG IFD 结构）
+    // WebP 无 EXIF chunk 时仅保留 removeAll（其他操作依赖 IFD 结构）
+    if (fileType === 'webp' && !hasExif) {
+      return EDIT_OPERATIONS.filter((op) => op.type === 'removeAll');
+    }
     return EDIT_OPERATIONS;
-  }, [fileType]);
+  }, [fileType, hasExif]);
 
   /** 是否可执行编辑（有可用操作 + 文件类型支持 + 有元数据可处理） */
   const canEdit = useMemo<boolean>(() => {
@@ -733,8 +843,9 @@ export default function ExifEditorTool() {
     if (fileType === 'unknown') return false;
     if (fileType === 'jpeg') return hasJpeg && hasExif;
     if (fileType === 'png') return pngSnapshot !== null && pngSnapshot.metaChunkCount > 0;
+    if (fileType === 'webp') return webpSnapshot !== null && webpSnapshot.metaChunkCount > 0;
     return false;
-  }, [file, fileType, hasJpeg, hasExif, pngSnapshot]);
+  }, [file, fileType, hasJpeg, hasExif, pngSnapshot, webpSnapshot]);
 
   return (
     <div className="exifedit__container">
@@ -770,7 +881,7 @@ export default function ExifEditorTool() {
         onDrop={onDrop}
         role="button"
         tabIndex={0}
-        aria-label="点击或拖入 JPEG 或 PNG 图片"
+        aria-label="点击或拖入 JPEG / PNG / WebP 图片"
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -782,10 +893,10 @@ export default function ExifEditorTool() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
           onChange={handleFileSelect}
           className="exifedit__file-input"
-          aria-label="选择 JPEG 或 PNG 图片"
+          aria-label="选择 JPEG / PNG / WebP 图片"
         />
         <div className="exifedit__dropzone-content">
           <div className="exifedit__dropzone-icon" aria-hidden="true">📷</div>
@@ -795,19 +906,24 @@ export default function ExifEditorTool() {
                 <strong>{file.name}</strong>
                 <span className="exifedit__file-meta">
                   {formatBytes(file.size)}
-                  {fileType === 'unknown' && ' · 非 JPEG/PNG'}
+                  {fileType === 'unknown' && ' · 非 JPEG/PNG/WebP'}
                   {fileType === 'jpeg' && (hasExif ? ' · JPEG · 含 EXIF' : ' · JPEG · 无 EXIF')}
                   {fileType === 'png' && pngSnapshot && (
                     pngSnapshot.metaChunkCount > 0
                       ? ` · PNG · ${pngSnapshot.metaChunkCount} 个元数据 chunk`
                       : ' · PNG · 无元数据 chunk'
                   )}
+                  {fileType === 'webp' && webpSnapshot && (
+                    webpSnapshot.metaChunkCount > 0
+                      ? ` · WebP · ${webpSnapshot.metaChunkCount} 个元数据 chunk${webpSnapshot.hasExif ? '（含 EXIF）' : ''}`
+                      : ' · WebP · 无元数据 chunk'
+                  )}
                 </span>
               </>
             ) : (
               <>
-                <strong>点击或拖入 JPEG 或 PNG 图片</strong>
-                <span className="exifedit__file-meta">支持 JPEG / PNG，最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理</span>
+                <strong>点击或拖入 JPEG / PNG / WebP 图片</strong>
+                <span className="exifedit__file-meta">支持 JPEG / PNG / WebP，最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理</span>
               </>
             )}
           </div>
@@ -849,13 +965,22 @@ export default function ExifEditorTool() {
             <div className="exifedit__ops">
               <h3 className="exifedit__section-title">编辑操作</h3>
               {fileType === 'unknown' && (
-                <p className="exifedit__hint">当前文件不是 JPEG / PNG，无法编辑元数据。请上传 JPEG 或 PNG 图片。</p>
+                <p className="exifedit__hint">当前文件不是 JPEG / PNG / WebP，无法编辑元数据。请上传 JPEG / PNG / WebP 图片。</p>
               )}
               {fileType === 'jpeg' && !hasExif && (
                 <p className="exifedit__hint">该 JPEG 不含 EXIF 段，无需编辑。</p>
               )}
               {fileType === 'png' && pngSnapshot && pngSnapshot.metaChunkCount === 0 && (
                 <p className="exifedit__hint">该 PNG 不含任何元数据 chunk（仅有 IHDR/IDAT/IEND），无需编辑。</p>
+              )}
+              {fileType === 'webp' && webpSnapshot && webpSnapshot.metaChunkCount === 0 && (
+                <p className="exifedit__hint">该 WebP 不含任何元数据 chunk（仅有 VP8/VP8L/VP8X 位流），无需编辑。</p>
+              )}
+              {fileType === 'webp' && webpSnapshot && webpSnapshot.metaChunkCount > 0 && !webpSnapshot.hasExif && (
+                <p className="exifedit__hint">
+                  该 WebP 仅含 XMP / ICCP 元数据 chunk（无 EXIF chunk），仅支持「清除全部 EXIF」操作。
+                  其他操作依赖 EXIF IFD 结构，已在列表中隐藏。
+                </p>
               )}
               {canEdit && (
                 <>
@@ -864,6 +989,12 @@ export default function ExifEditorTool() {
                       PNG 模式支持的操作：删除全部元数据 / 删除个人信息（Author/Copyright/Artist 等 tEXt 条目）/
                       删除软件信息（Software tEXt 条目）/ 修改最后修改时间（tIME chunk）。
                       GPS / MakerNote / 缩略图操作不适用于 PNG（已在列表中隐藏）。
+                    </p>
+                  )}
+                  {fileType === 'webp' && webpSnapshot?.hasExif && (
+                    <p className="exifedit__hint">
+                      WebP 模式支持全部 EXIF 编辑操作（与 JPEG 一致，WebP EXIF chunk 复用 JPEG IFD 结构）。
+                      「清除全部 EXIF」会同时删除 EXIF / XMP / ICCP 三类元数据 chunk。
                     </p>
                   )}
                   <div className="exifedit__op-list">
@@ -901,7 +1032,7 @@ export default function ExifEditorTool() {
                                     value={dateTimeValue}
                                     onChange={(e) => setDateTimeValue(e.target.value)}
                                     placeholder="YYYY:MM:DD HH:MM:SS"
-                                    aria-label={fileType === 'png' ? '最后修改时间' : '拍摄时间'}
+                                    aria-label={fileType === 'png' ? '最后修改时间' : fileType === 'webp' ? '拍摄时间（WebP EXIF）' : '拍摄时间'}
                                   />
                                 )}
                               </div>
@@ -1030,7 +1161,7 @@ export default function ExifEditorTool() {
               </div>
             )}
 
-            {/* 元数据对比 */}
+            {/* 元数据对比（JPEG / WebP 走字段级展示；PNG 走 chunk 级展示） */}
             {(parsedMeta || editedMeta || (fileType === 'png' && (originalPngSnapshot || pngSnapshot))) && (
               <div className="exifedit__compare">
                 <h3 className="exifedit__section-title">元数据对比</h3>
@@ -1077,6 +1208,42 @@ export default function ExifEditorTool() {
                     </h4>
                     {editResult && pngSnapshot ? (
                       <PngChunkListView chunks={pngSnapshot.chunks} />
+                    ) : (
+                      <p className="exifedit__hint">点击"执行编辑"查看结果</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* WebP chunk 列表对比（仅 WebP 模式显示，与 PNG 复用同一组件） */}
+            {fileType === 'webp' && originalWebpSnapshot && (
+              <div className="exifedit__chunks">
+                <h3 className="exifedit__section-title">WebP chunk 列表</h3>
+                <p className="exifedit__hint">
+                  共 {originalWebpSnapshot.totalChunks} 个 chunk（其中 {originalWebpSnapshot.metaChunkCount} 个元数据 chunk：
+                  {originalWebpSnapshot.hasExif ? ' EXIF' : ''}
+                  {originalWebpSnapshot.hasXmp ? ' XMP' : ''}
+                  {originalWebpSnapshot.hasIccp ? ' ICCP' : ''}
+                  ）。
+                  {editResult && (
+                    <>
+                      编辑后共 {webpSnapshot?.totalChunks ?? 0} 个 chunk（其中 {webpSnapshot?.metaChunkCount ?? 0} 个元数据 chunk），
+                      减少 {originalWebpSnapshot.totalChunks - (webpSnapshot?.totalChunks ?? originalWebpSnapshot.totalChunks)} 个。
+                    </>
+                  )}
+                </p>
+                <div className="exifedit__compare-grid">
+                  <div className="exifedit__compare-col">
+                    <h4 className="exifedit__compare-title">编辑前（{originalWebpSnapshot.totalChunks} chunk）</h4>
+                    <WebpChunkListView chunks={originalWebpSnapshot.chunks} />
+                  </div>
+                  <div className="exifedit__compare-col">
+                    <h4 className="exifedit__compare-title">
+                      编辑后（{editResult ? `${webpSnapshot?.totalChunks ?? 0} chunk` : '—'}）
+                    </h4>
+                    {editResult && webpSnapshot ? (
+                      <WebpChunkListView chunks={webpSnapshot.chunks} />
                     ) : (
                       <p className="exifedit__hint">点击"执行编辑"查看结果</p>
                     )}
@@ -1344,8 +1511,12 @@ function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
 /**
  * chunk hex dump 子组件（第 109 轮新增）
  * 仅在辅助 chunk 展开时渲染，使用 formatHexDump 格式化原始字节
+ * 第 112 轮：泛化为 chunk 通用组件，PNG / WebP 共用（仅需 data + type 字段）
  */
-function ChunkHexDump({ chunk }: { chunk: PngChunkInfo }) {
+interface ChunkHexDumpProps {
+  chunk: { data: Uint8Array; type: string };
+}
+function ChunkHexDump({ chunk }: ChunkHexDumpProps) {
   // useMemo 避免每次渲染重新计算 hex dump（chunk.data 不变时结果稳定）
   const dump = useMemo(() => formatHexDump(chunk.data), [chunk.data]);
 
@@ -1373,6 +1544,172 @@ function ChunkHexDump({ chunk }: { chunk: PngChunkInfo }) {
       <p className="exifedit__chunk-hex-hint">
         共 {dump.totalBytes} 字节 · 截断阈值 {HEX_DUMP_MAX_BYTES} 字节 · 偏移量与字节均为 hex 大写
       </p>
+    </div>
+  );
+}
+
+/** WebP chunk 分类中文说明（用于徽章 tooltip 与辅助文本，第 112 轮新增） */
+const WEBP_CHUNK_CATEGORY_LABEL: Record<string, string> = {
+  'VP8 ': 'VP8 有损位流（关键）',
+  VP8L: 'VP8L 无损位流（关键）',
+  VP8X: 'VP8X 扩展格式（关键）',
+  EXIF: 'EXIF 元数据',
+  'XMP ': 'XMP 元数据',
+  ICCP: 'ICC 色彩配置',
+  ALPH: 'Alpha 透明通道（关键）',
+  ANIM: '动画控制（关键）',
+  ANMF: '动画帧（关键）',
+  OTHER: '其他 chunk',
+};
+
+/**
+ * WebP chunk 列表视图组件（第 112 轮新增）
+ * 与 PngChunkListView 结构对齐，复用同一套样式与交互逻辑：
+ *  - 按类型或摘要搜索过滤
+ *  - 辅助 chunk（EXIF / XMP / ICCP）可点击展开查看 hex dump
+ *  - 关键 chunk（VP8 / VP8L / VP8X / ALPH / ANIM / ANMF）不可展开
+ */
+function WebpChunkListView({ chunks }: { chunks: WebpChunkInfo[] }) {
+  // 搜索关键词状态
+  const [query, setQuery] = useState('');
+  const filterId = useId();
+  // 展开的 chunk key 集合
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+
+  // 过滤后的 chunk 列表
+  const filteredChunks = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return chunks;
+    return chunks.filter((chunk) => {
+      if (chunk.type.toLowerCase().includes(trimmed)) return true;
+      const summary = chunk.summary ?? WEBP_CHUNK_CATEGORY_LABEL[chunk.category] ?? '';
+      return summary.toLowerCase().includes(trimmed);
+    });
+  }, [chunks, query]);
+
+  /** 生成 chunk 唯一 key */
+  const getChunkKey = useCallback((chunk: WebpChunkInfo, idx: number) => {
+    return `${chunk.type}-${chunk.offset}-${idx}`;
+  }, []);
+
+  /** 切换 chunk 展开/折叠（仅辅助 chunk 可展开） */
+  const toggleExpand = useCallback((chunk: WebpChunkInfo, idx: number) => {
+    if (chunk.isCritical) return;
+    const key = getChunkKey(chunk, idx);
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, [getChunkKey]);
+
+  /** 键盘事件：Enter / Space 触发展开/折叠 */
+  const handleChunkKeyDown = useCallback(
+    (e: React.KeyboardEvent, chunk: WebpChunkInfo, idx: number) => {
+      if (chunk.isCritical) return;
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        toggleExpand(chunk, idx);
+      }
+    },
+    [toggleExpand],
+  );
+
+  if (chunks.length === 0) {
+    return <p className="exifedit__hint">无 chunk</p>;
+  }
+
+  return (
+    <div className="exifedit__chunk-list-wrapper">
+      {chunks.length > 1 && (
+        <div className="exifedit__chunk-filter">
+          <label className="exifedit__chunk-filter-label" htmlFor={filterId}>
+            🔍
+          </label>
+          <input
+            id={filterId}
+            type="search"
+            className="exifedit__chunk-filter-input"
+            placeholder={`过滤 ${chunks.length} 个 chunk（按类型或摘要）…`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="过滤 WebP chunk 列表"
+          />
+          {query && (
+            <button
+              type="button"
+              className="exifedit__chunk-filter-clear"
+              onClick={() => setQuery('')}
+              aria-label="清除过滤"
+              title="清除过滤"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+      {query.trim() && (
+        <p className="exifedit__chunk-filter-count" role="status">
+          匹配 {filteredChunks.length} / {chunks.length} 个 chunk
+        </p>
+      )}
+      {filteredChunks.length === 0 ? (
+        <p className="exifedit__hint exifedit__chunk-empty">无匹配 chunk，请尝试其他关键词</p>
+      ) : (
+        <div className="exifedit__chunk-list" role="table" aria-label="WebP chunk 列表">
+          <div className="exifedit__chunk-row exifedit__chunk-row--head" role="row">
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="columnheader">#</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="columnheader">类型</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="columnheader">字节</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="columnheader">摘要</span>
+          </div>
+          {filteredChunks.map((chunk, idx) => {
+            const key = getChunkKey(chunk, idx);
+            const expanded = expandedKeys.has(key);
+            const canExpand = !chunk.isCritical && chunk.dataLength > 0;
+            return (
+              <Fragment key={key}>
+                <div
+                  className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}${canExpand ? ' exifedit__chunk-row--clickable' : ''}${expanded ? ' exifedit__chunk-row--expanded' : ''}`}
+                  role="row"
+                  tabIndex={canExpand ? 0 : undefined}
+                  aria-expanded={canExpand ? expanded : undefined}
+                  aria-label={canExpand ? `${chunk.type} chunk${expanded ? '（已展开 hex dump，按 Enter 折叠）' : '（按 Enter 展开 hex dump）'}` : undefined}
+                  onClick={canExpand ? () => toggleExpand(chunk, idx) : undefined}
+                  onKeyDown={canExpand ? (e) => handleChunkKeyDown(e, chunk, idx) : undefined}
+                >
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
+                    <span
+                      className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
+                      title={WEBP_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+                    >
+                      {chunk.type}
+                    </span>
+                  </span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
+                    {chunk.dataLength}
+                  </span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
+                    {canExpand && (
+                      <span className="exifedit__chunk-toggle" aria-hidden="true">
+                        {expanded ? '▼' : '▶'}
+                      </span>
+                    )}
+                    {chunk.summary ?? WEBP_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
+                  </span>
+                </div>
+                {/* hex dump 展开内容（仅辅助 chunk 且 expanded 时渲染） */}
+                {canExpand && expanded && <ChunkHexDump chunk={chunk} />}
+              </Fragment>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1465,7 +1802,7 @@ function BatchPanel(props: BatchPanelProps) {
         onDrop={onBatchDrop}
         role="button"
         tabIndex={0}
-        aria-label="点击或拖入多个 JPEG 或 PNG 图片"
+        aria-label="点击或拖入多个 JPEG / PNG / WebP 图片"
         onClick={() => batchInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -1477,18 +1814,18 @@ function BatchPanel(props: BatchPanelProps) {
         <input
           ref={batchInputRef}
           type="file"
-          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
           multiple
           onChange={onBatchSelect}
           className="exifedit__file-input"
-          aria-label="选择多个 JPEG 或 PNG 图片"
+          aria-label="选择多个 JPEG / PNG / WebP 图片"
         />
         <div className="exifedit__dropzone-content">
           <div className="exifedit__dropzone-icon" aria-hidden="true">📦</div>
           <div className="exifedit__dropzone-text">
-            <strong>点击或拖入多个 JPEG 或 PNG 图片</strong>
+            <strong>点击或拖入多个 JPEG / PNG / WebP 图片</strong>
             <span className="exifedit__file-meta">
-              支持 JPEG / PNG，单文件最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理
+              支持 JPEG / PNG / WebP，单文件最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理
             </span>
           </div>
         </div>

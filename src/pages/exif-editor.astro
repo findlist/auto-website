@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ExifEditorTool from '../components/ExifEditorTool.tsx';
 
 const meta: SiteMeta = {
-  title: 'EXIF / PNG 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
+  title: 'EXIF / PNG / WebP 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
   description:
-    '在线 EXIF / PNG 元数据编辑器：JPEG 删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，PNG 清理 tEXt / zTXt（自动解压）/ iTXt（含压缩 iTXt 自动解压）/ tIME / eXIf chunk，修改拍摄时间，一键清除全部元数据。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。编辑前后元数据与 chunk 列表可视化对比（支持按类型或摘要搜索过滤，辅助 chunk 可点击展开查看原始字节 hex dump），直接操作二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
+    '在线 EXIF / PNG / WebP 元数据编辑器：JPEG / WebP 删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，PNG 清理 tEXt / zTXt（自动解压）/ iTXt（含压缩 iTXt 自动解压）/ tIME / eXIf chunk，WebP 删除 EXIF / XMP / ICCP chunk，修改拍摄时间，一键清除全部元数据。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。编辑前后元数据与 chunk 列表可视化对比（支持按类型或摘要搜索过滤，辅助 chunk 可点击展开查看原始字节 hex dump），直接操作二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'EXIF / PNG 元数据编辑器',
-    description: '在线元数据编辑工具，支持 JPEG EXIF（删除 GPS、个人信息、MakerNote、缩略图）与 PNG 元数据（清理 tEXt / zTXt 自动解压 / iTXt 含压缩 iTXt 自动解压 / tIME / eXIf chunk）的编辑，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，编辑前后 chunk 列表可视化对比（按类型或摘要搜索过滤，辅助 chunk 可点击展开查看原始字节 hex dump），全本地处理二进制结构。',
+    name: 'EXIF / PNG / WebP 元数据编辑器',
+    description: '在线元数据编辑工具，支持 JPEG / WebP EXIF（删除 GPS、个人信息、MakerNote、缩略图）、PNG 元数据（清理 tEXt / zTXt 自动解压 / iTXt 含压缩 iTXt 自动解压 / tIME / eXIf chunk）、WebP 元数据（删除 EXIF / XMP / ICCP chunk）的编辑，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，编辑前后 chunk 列表可视化对比（按类型或摘要搜索过滤，辅助 chunk 可点击展开查看原始字节 hex dump），全本地处理二进制结构。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -25,7 +25,7 @@ const meta: SiteMeta = {
 <BaseLayout meta={meta}>
   <section class="container">
     <div class="page-hero page-hero--tool">
-      <h1>EXIF / PNG 元数据编辑器</h1>
+      <h1>EXIF / PNG / WebP 元数据编辑器</h1>
       <p>
         纯本地处理的<strong>在线元数据编辑器</strong>，直接操作图片二进制结构。
         <strong>JPEG</strong>：支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
@@ -34,8 +34,10 @@ const meta: SiteMeta = {
         <strong>PNG</strong>：支持<strong>清理 tEXt / zTXt（自动解压）/ iTXt（含压缩 iTXt 自动解压）文本元数据</strong>（Software / Author / Copyright / Description 等）、
         <strong>修改 tIME 时间</strong>、<strong>清除 eXIf chunk</strong>、<strong>仅保留关键 chunk</strong>，
         <strong>编辑前后 chunk 列表可视化对比（按类型或摘要搜索过滤，辅助 chunk 可点击展开查看原始字节 hex dump）</strong>。
+        <strong>WebP</strong>：支持<strong>编辑 RIFF 容器内的 EXIF chunk</strong>（复用 JPEG IFD 结构，全部 EXIF 操作可用）、
+        <strong>清除全部元数据</strong>（同时删除 EXIF / XMP / ICCP chunk），chunk 列表与 hex dump 同样可用。
         支持<strong>批量处理多文件</strong>并打包 ZIP 下载，<strong>编辑预设保存与导入导出</strong>。
-        不修改图像压缩数据（JPEG SOS..EOI / PNG IDAT），<strong>保证图像质量无损</strong>。
+        不修改图像压缩数据（JPEG SOS..EOI / PNG IDAT / WebP VP8 位流），<strong>保证图像质量无损</strong>。
         编辑前后元数据可视化对比，一目了然。在浏览器本地完成全部操作，<strong>零上传、零追踪、可离线使用</strong>。
       </p>
     </div>
@@ -52,18 +54,21 @@ const meta: SiteMeta = {
           <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。本工具自主实现图片
           二进制结构解析与重建：文件通过 <code>FileReader.arrayBuffer()</code> 读取为字节，
           对 JPEG 按标记（marker）顺序遍历段结构，定位 APP1 EXIF 段，解析 TIFF / IFD 字段树；
-          对 PNG 按 chunk 顺序遍历，识别 tEXt / iTXt / tIME / eXIf 等辅助 chunk。
-          按编辑操作修改字节并修正结构（JPEG 修正 IFD 条目计数 / PNG 重算每个 chunk 的 CRC32），
-          最后重建字节流。全程零网络请求，可在浏览器开发者工具 Network 面板确认。
+          对 PNG 按 chunk 顺序遍历，识别 tEXt / iTXt / tIME / eXIf 等辅助 chunk；
+          对 WebP 按 RIFF 容器遍历 chunk，识别 EXIF / XMP / ICCP 等元数据 chunk。
+          按编辑操作修改字节并修正结构（JPEG 修正 IFD 条目计数 / PNG 重算每个 chunk 的 CRC32 /
+          WebP 重算 RIFF 文件大小字段），最后重建字节流。全程零网络请求，可在浏览器开发者工具 Network 面板确认。
         </p>
       </details>
       <details>
         <summary>EXIF 编辑会损失图像质量吗？</summary>
         <p>
           <strong>不会</strong>。本工具仅修改图片的元数据段，不触碰图像压缩数据：
-          JPEG 不修改 SOS 扫描数据段到 EOI 之间的压缩字节流，PNG 不修改 IDAT 压缩数据 chunk。
+          JPEG 不修改 SOS 扫描数据段到 EOI 之间的压缩字节流，PNG 不修改 IDAT 压缩数据 chunk，
+          WebP 不修改 VP8 / VP8L / VP8X 等位流 chunk。
           JPEG 的图像质量由 DCT 量化与哈夫曼编码决定，PNG 的图像质量由 IDAT 中的 zlib 压缩流决定，
-          这些数据完整保留。编辑后的图像与原图在像素级别完全一致，仅元数据字段被删除或修改。
+          WebP 的图像质量由 VP8 / VP8L 位流决定，这些数据完整保留。
+          编辑后的图像与原图在像素级别完全一致，仅元数据字段被删除或修改。
           可以理解为"换了个文件头"，图像本体不变。
         </p>
       </details>
@@ -71,22 +76,24 @@ const meta: SiteMeta = {
         <summary>支持哪些编辑操作？分别删除什么字段？</summary>
         <p>
           本工具支持 7 种编辑操作（按文件类型自动启用其中适用的子集）：<br />
-          - <strong>删除 GPS 定位</strong>（仅 JPEG）：移除 IFD0 中的 GPSIFDPointer（0x8825）与整个 GPSIFD，
+          - <strong>删除 GPS 定位</strong>（JPEG 与 WebP）：移除 IFD0 中的 GPSIFDPointer（0x8825）与整个 GPSIFD，
             包括 GPSLatitude / GPSLongitude / GPSAltitude / GPSImgDirection 等所有 GPS 标签<br />
-          - <strong>删除个人信息</strong>（JPEG 与 PNG）：JPEG 移除 Artist / Copyright / BodySerialNumber /
+          - <strong>删除个人信息</strong>（JPEG / PNG / WebP）：JPEG / WebP 移除 Artist / Copyright / BodySerialNumber /
             CameraOwnerName / LensSerialNumber 等身份相关字段；PNG 移除 Author / Artist / Copyright / Source
             等 tEXt / zTXt / iTXt 关键字（含压缩的 zTXt/iTXt，按关键字过滤无需解压）<br />
-          - <strong>删除 MakerNote</strong>（仅 JPEG）：移除 ExifIFD 中的 MakerNote（0x927C），
+          - <strong>删除 MakerNote</strong>（JPEG 与 WebP）：移除 ExifIFD 中的 MakerNote（0x927C），
             厂商原始数据块通常体积较大，删除可显著减小文件<br />
-          - <strong>删除缩略图</strong>（仅 JPEG）：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
+          - <strong>删除缩略图</strong>（JPEG 与 WebP）：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
             将 IFD0 的 nextIfdPointer 置 0<br />
-          - <strong>删除软件信息</strong>（JPEG 与 PNG）：JPEG 移除 Software 标签（0x0131），
+          - <strong>删除软件信息</strong>（JPEG / PNG / WebP）：JPEG / WebP 移除 Software 标签（0x0131），
             如 "Adobe Photoshop CC 2024" 等编辑器痕迹；PNG 移除关键字为 Software 的 tEXt / zTXt / iTXt 条目<br />
-          - <strong>修改拍摄时间</strong>（JPEG 与 PNG）：JPEG 同步修改 DateTime / DateTimeOriginal /
+          - <strong>修改拍摄时间</strong>（JPEG / PNG / WebP）：JPEG / WebP 同步修改 DateTime / DateTimeOriginal /
             DateTimeDigitized 三个字段；PNG 修改或插入 tIME chunk（7 字节：年/月/日/时/分/秒）<br />
-          - <strong>清除全部 EXIF</strong>（JPEG 与 PNG）：JPEG 移除整个 APP1 EXIF 段；
-            PNG 仅保留 IHDR / PLTE / IDAT / IEND 等关键 chunk，移除所有辅助 chunk<br />
-          <strong>上传 PNG 时</strong>，不适用操作（GPS / MakerNote / 缩略图）会自动从操作列表中隐藏。
+          - <strong>清除全部 EXIF</strong>（JPEG / PNG / WebP）：JPEG 移除整个 APP1 EXIF 段；
+            PNG 仅保留 IHDR / PLTE / IDAT / IEND 等关键 chunk，移除所有辅助 chunk；
+            WebP 删除 EXIF / XMP / ICCP 三类元数据 chunk，仅保留 VP8 / VP8L / VP8X 等位流 chunk<br />
+          <strong>上传 PNG 时</strong>，不适用操作（GPS / MakerNote / 缩略图）会自动从操作列表中隐藏。<br />
+          <strong>上传无 EXIF chunk 的 WebP 时</strong>（仅含 XMP / ICCP），仅保留「清除全部 EXIF」操作。
         </p>
       </details>
       <details>
@@ -99,6 +106,7 @@ const meta: SiteMeta = {
           - <code>2026-07-18T14:30:00</code>（ISO 8601 风格）<br />
           JPEG 修改会同步写入 IFD0.DateTime（0x0132）、ExifIFD.DateTimeOriginal（0x9003）、
           ExifIFD.DateTimeDigitized（0x9004）三个字段，确保各查看器显示一致。<br />
+          <strong>WebP 文件</strong>与 JPEG 一致，同步修改上述三个字段（WebP EXIF chunk 复用 JPEG IFD 结构）。<br />
           <strong>PNG 文件</strong>则会删除原有的 tIME chunk（若存在），在 IEND 之前插入新的 tIME chunk
           （7 字节：年 2 字节大端 + 月/日/时/分/秒各 1 字节）。
         </p>
@@ -134,8 +142,36 @@ const meta: SiteMeta = {
             并提示"完整数据请下载原文件查看"。<br />
           <strong>支持差异</strong>：PNG 不支持 GPS / MakerNote / 缩略图操作（PNG 容器无对应字段），
             上传 PNG 时操作列表会自动隐藏这些不适用项。<br />
-          <strong>其他格式</strong>（WebP / TIFF / HEIC）暂不支持，建议先用
-          <a href="/image-convert">图片格式转换工具</a> 转为 JPEG 或 PNG 再编辑。
+          <strong>其他格式</strong>（TIFF / HEIC）暂不支持，建议先用
+          <a href="/image-convert">图片格式转换工具</a> 转为 JPEG / PNG / WebP 再编辑。
+        </p>
+      </details>
+      <details>
+        <summary>WebP 文件如何处理？与 JPEG 编辑有什么差异？</summary>
+        <p>
+          <strong>本工具支持 WebP 格式的元数据编辑</strong>（第 112 轮新增）。WebP 使用 RIFF 容器格式，
+          元数据通过独立 chunk 承载，主要包括：<br />
+          - <strong>EXIF chunk</strong>：与 JPEG APP1 EXIF 段格式完全一致（'Exif\0\0' 前缀 + TIFF 头 + IFD 树），
+            是 WebP 中 EXIF 元数据的主要载体<br />
+          - <strong>XMP chunk</strong>：XML 格式的可扩展元数据平台<br />
+          - <strong>ICCP chunk</strong>：ICC 色彩配置文件<br />
+          <strong>编辑策略</strong>：<br />
+          - <strong>有 EXIF chunk 的 WebP</strong>：复用 JPEG 的 IFD 编辑逻辑（parseExifSegment 解析 →
+            applyEdits 操作 → rebuildExifPayload 重建），全部 7 种编辑操作可用（与 JPEG 完全一致）。
+            编辑时仅替换 EXIF chunk 数据，不触碰 VP8 / VP8L / VP8X / ALPH 等位流 chunk<br />
+          - <strong>无 EXIF chunk 的 WebP</strong>（仅含 XMP / ICCP）：仅支持「清除全部 EXIF」操作
+            （会同时删除 EXIF / XMP / ICCP 三类元数据 chunk），其他操作因依赖 IFD 结构自动隐藏<br />
+          - <strong>清除全部 EXIF</strong>：删除所有 EXIF / XMP / ICCP chunk，仅保留 VP8 / VP8L / VP8X / ALPH / ANIM / ANMF
+            等关键位流 chunk<br />
+          <strong>与 JPEG 的差异</strong>：<br />
+          - WebP chunk 无 CRC32 校验（与 PNG 不同），重建时仅重算 RIFF 文件大小字段（4 字节小端）<br />
+          - WebP EXIF chunk 数据若为奇数长度，需补 1 字节 0x00 padding（RIFF 规范要求 chunk 起始偏移为偶数）<br />
+          - WebP 不修改 VP8 / VP8L / VP8X 位流，保证图像质量无损（与 JPEG 不修改 SOS..EOI 同理）<br />
+          - 部分非标准 WebP 文件的 EXIF chunk 数据可能直接以 TIFF 头（'II' / 'MM'）开头，缺少 'Exif\0\0' 前缀，
+            本工具会自动补齐前缀后再解析，兼容性良好<br />
+          <strong>chunk 列表与 hex dump</strong>：上传 WebP 后右侧会展示完整 chunk 列表（与 PNG 一致的 UI），
+          关键 chunk（VP8 / VP8L / VP8X / ALPH / ANIM / ANMF）以蓝色徽章标记，
+          辅助 chunk（EXIF / XMP / ICCP）以灰色徽章标记，可点击展开查看 hex dump。
         </p>
       </details>
       <details>
@@ -144,13 +180,14 @@ const meta: SiteMeta = {
           两者效果相近但实现不同：<br />
           - <strong>清除全部 EXIF</strong>：JPEG 直接移除整个 APP1 EXIF 段（marker + length + payload），
             PNG 仅保留 IHDR / PLTE / IDAT / IEND 关键 chunk 移除所有辅助 chunk，
-            最彻底，体积节省最大。但 JPEG 会同时丢失 IFD0 中可能想保留的 Orientation（方向）等基础字段，
+            WebP 删除 EXIF / XMP / ICCP 三类元数据 chunk（仅保留 VP8 / VP8L / VP8X 等位流 chunk），
+            最彻底，体积节省最大。但 JPEG / WebP 会同时丢失 IFD0 中可能想保留的 Orientation（方向）等基础字段，
             可能导致部分图片显示方向异常<br />
-          - <strong>单独勾选删除操作</strong>：JPEG 保留 APP1 段结构，仅置零被删除条目的 tag 并修正计数，
+          - <strong>单独勾选删除操作</strong>：JPEG / WebP 保留 EXIF 段结构，仅置零被删除条目的 tag 并修正计数，
             可选择性删除敏感字段而保留 Orientation 等基础字段，更精细；
             PNG 保留其他辅助 chunk（如 cHRM / sRGB / pHYs / iCCP 等颜色管理 chunk），仅删除被勾选的 tEXt / iTXt / tIME<br />
           <strong>建议</strong>：日常使用优先勾选"删除 GPS + 个人信息 + MakerNote"组合
-          （JPEG）或"删除个人信息 + 软件信息"组合（PNG），
+          （JPEG / WebP）或"删除个人信息 + 软件信息"组合（PNG），
           既保护隐私又保留图像基础元数据；需要彻底清除时再选"清除全部 EXIF"。
         </p>
       </details>
@@ -196,8 +233,13 @@ const meta: SiteMeta = {
           保留 8 字节签名 + 关键 chunk（IHDR / PLTE / IDAT / IEND）顺序 + 辅助 chunk 位置约束，
           每个保留的 chunk 都重算 CRC32。生成的 PNG 文件结构完全合法，
           所有主流看图软件均可正常解析与显示。<br />
-          极少数老旧或非标准的 EXIF 读取器可能仍尝试解析 JPEG 置零的条目（虽然 tag=0 应被跳过），
-          若遇到兼容问题，建议改用"清除全部 EXIF"直接移除整个 APP1 段。
+          <strong>WebP</strong>：采用"chunk 替换"策略，仅替换 EXIF chunk 数据或删除辅助 chunk，
+          保留 RIFF 文件头与 VP8 / VP8L / VP8X 等位流 chunk 不变，重算 RIFF 文件大小字段。
+          奇数长度的 EXIF chunk 自动补 1 字节 0x00 padding（RIFF 规范要求）。
+          生成的 WebP 文件结构完全合法，所有主流看图软件（Chrome / Firefox / Edge / Safari /
+          Windows 照片 / macOS 预览等）均可正常解析与显示。<br />
+          极少数老旧或非标准的 EXIF 读取器可能仍尝试解析 JPEG / WebP 置零的条目（虽然 tag=0 应被跳过），
+          若遇到兼容问题，建议改用"清除全部 EXIF"直接移除整个 APP1 段（JPEG）或 EXIF chunk（WebP）。
         </p>
       </details>
       <details>
@@ -207,8 +249,9 @@ const meta: SiteMeta = {
           单文件大小限制为 50MB，总数据量受浏览器内存限制（通常 1-2GB）。<br />
           处理速度参考：单个 JPEG（含 GPS + MakerNote + 缩略图，约 5MB）的编辑耗时通常在 5-30ms 之间；
           单个 PNG（含 tEXt / tIME，约 5MB）的编辑耗时通常在 5-25ms 之间（PNG 因需重算 CRC32 略有开销）；
+          单个 WebP（含 EXIF chunk，约 5MB）的编辑耗时通常在 5-25ms 之间（与 JPEG 接近，复用 IFD 编辑逻辑）；
           批量处理 100 个文件的总耗时通常在 1-3 秒内。<br />
-          <strong>处理策略</strong>：批量处理时按文件签名自动分流到 JPEG / PNG 两个队列并行处理，
+          <strong>处理策略</strong>：批量处理时按文件签名自动分流到 JPEG / PNG / WebP 三个队列并行处理，
           每处理 5 个文件会通过 <code>setTimeout(0)</code> 让出主线程一次，
           避免长时间阻塞 UI；单文件异常不会中断整批处理，会在结果列表中标记为失败。
           处理完成后可一键打包为 ZIP 下载（采用 STORE 模式无压缩，避免重复编码图像数据）。
@@ -232,13 +275,13 @@ const meta: SiteMeta = {
         <p>
           <strong>批量处理与单文件模式共享同一组编辑操作配置</strong>。<br />
           典型工作流：<br />
-          1. 在「单文件编辑」Tab 中上传一张代表性图片（JPEG 或 PNG），勾选所需的编辑操作
-          （如 JPEG 选删除 GPS + 个人信息 + MakerNote，PNG 选删除个人信息 + 软件信息）<br />
+          1. 在「单文件编辑」Tab 中上传一张代表性图片（JPEG / PNG / WebP），勾选所需的编辑操作
+          （如 JPEG / WebP 选删除 GPS + 个人信息 + MakerNote，PNG 选删除个人信息 + 软件信息）<br />
           2. 切换到「批量处理」Tab，顶部「当前编辑操作」会显示已勾选的操作列表<br />
-          3. 添加多个 JPEG / PNG 文件（可混合添加），点击「执行批量编辑」<br />
+          3. 添加多个 JPEG / PNG / WebP 文件（可混合添加），点击「执行批量编辑」<br />
           4. 处理完成后可下载 ZIP 包，包含全部成功处理的结果文件<br />
-          <strong>批量分流</strong>：批量处理时按文件签名（JPEG SOI 0xFFD8 / PNG 8 字节签名）自动分流到
-          JPEG / PNG 两个队列分别处理，再按原顺序合并结果。同一批可混合 JPEG 与 PNG。<br />
+          <strong>批量分流</strong>：批量处理时按文件签名（JPEG SOI 0xFFD8 / PNG 8 字节签名 / WebP RIFF 文件头）
+          自动分流到 JPEG / PNG / WebP 三个队列分别处理，再按原顺序合并结果。同一批可混合 JPEG / PNG / WebP。<br />
           <strong>预设加速</strong>：若经常使用相同的编辑组合，可在「编辑预设」面板保存为预设
           （如命名"分享前清理"），下次直接点击「应用」按钮恢复配置，无需重复勾选。
         </p>
@@ -250,10 +293,10 @@ const meta: SiteMeta = {
           - <strong><a href="/exif">EXIF 信息查看器</a></strong>：基于 exifr 库只读解析，
             支持 JPEG / PNG / WebP / TIFF / HEIC 多格式，查看完整 EXIF / IPTC / XMP / ICC 元数据，
             用于"看看这张图有哪些元数据"<br />
-          - <strong>EXIF / PNG 元数据编辑器（本工具）</strong>：自主实现二进制结构操作，
-            支持 JPEG 与 PNG，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
+          - <strong>EXIF / PNG / WebP 元数据编辑器（本工具）</strong>：自主实现二进制结构操作，
+            支持 JPEG / PNG / WebP，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
           <strong>典型工作流</strong>：先用 EXIF 查看器确认图片含哪些元数据 → 用本工具按需删除
-          GPS / 个人信息 / MakerNote（JPEG）或 tEXt / zTXt / iTXt / tIME（PNG）→ 下载编辑后的图片 →
+          GPS / 个人信息 / MakerNote（JPEG / WebP）或 tEXt / zTXt / iTXt / tIME（PNG）→ 下载编辑后的图片 →
           再次用查看器验证删除结果。
         </p>
       </details>
