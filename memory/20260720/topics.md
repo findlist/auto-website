@@ -2614,4 +2614,112 @@
 - **决策**：`git add file1 file2 file3 file4 file5` 精确暂存，工作树中其他并行任务产物（bug-check / style-opt / topics-archive）未被暂存
 - **依据**：规范第 8 节硬性约束第 2 条明确禁止 `git add -A`，避免混入其他任务产物
 
+## 第 112 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 112 轮（2026-07-20）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：EXIF 编辑器新增 WebP 格式元数据编辑支持（功能增强）
+**Commit**：d83283f
+**Push**：ae53df5..d83283f HEAD -> main
+
+### 完成任务
+1. ✅ `src/utils/exifEditor.ts` 新增 WebP 模块（+624 行）：
+   - `isWebpFile` RIFF/WEBP 文件头识别
+   - `parseWebpChunks` RIFF 容器 chunk 顺序遍历（含奇数长度 padding 处理）
+   - `extractWebpMetaSnapshot` 元数据快照提取（EXIF / XMP / ICCP 检测）
+   - `applyWebpEdits` / `applyWebpEditsBatch` 编辑应用（复用 JPEG parseExifSegment + rebuildExifPayload）
+   - `buildWebpEditedFilename` / `buildWebpBatchEditedFilename` 文件名生成
+   - `normalizeWebpExifPayload` 兼容非标准 EXIF chunk（自动补 'Exif\0\0' 前缀）
+   - `rebuildWebp` RIFF 文件大小字段重算（4 字节小端，offset 4-7）
+2. ✅ `src/components/ExifEditorTool.tsx` 三路分流 + WebP UI（+437 / -86）：
+   - `loadFile` 新增 WebP 分支：exifr 原生 WebP 解析复用 JPEG buildSnapshot 展示路径
+   - `runEdit` 三路分流：`fileType === 'webp' ? applyWebpEdits : fileType === 'png' ? applyPngEdits : applyEdits`
+   - 编辑后 WebP chunk 重新解析与元数据 re-parse
+   - `handleDownload` 三路文件名分流
+   - `handleClear` 新增 WebP 状态重置
+   - `availableOps` WebP 无 EXIF chunk 时仅保留 removeAll
+   - `canEdit` WebP 条件：`webpSnapshot !== null && webpSnapshot.metaChunkCount > 0`
+   - Dropzone 与 BatchPanel accept/aria-label/文案更新支持 WebP
+   - 操作提示文案针对 WebP 三态（无元数据 / 无 EXIF / 有 EXIF）细化
+   - 新增 `WEBP_CHUNK_CATEGORY_LABEL` 常量（VP8 / VP8L / VP8X / EXIF / XMP / ICCP / ALPH / ANIM / ANMF / OTHER）
+   - 新增 `WebpChunkListView` 组件（与 PngChunkListView 同构：搜索过滤 + 展开折叠 hex dump + 键盘无障碍）
+   - `ChunkHexDump` 通过结构类型泛化，同时接受 PNG 与 WebP chunk
+3. ✅ `src/pages/exif-editor.astro` SEO 文案与 FAQ 更新（+115 / -86）：
+   - title / description / jsonLd 补充 WebP
+   - Hero h1 与段落文案补充 WebP 能力
+   - 「本地处理」FAQ 补充 WebP RIFF chunk 遍历与文件大小字段重算
+   - 「图像质量」FAQ 补充 WebP VP8 / VP8L / VP8X 位流保护说明
+   - 「支持哪些编辑操作」FAQ 全面更新：每项操作标注 JPEG/WebP 或 JPEG/PNG/WebP 适用性
+   - 「修改拍摄时间」FAQ 补充 WebP 复用 JPEG IFD 结构说明
+   - 「PNG 文件如何处理」FAQ 中"其他格式"从"WebP / TIFF / HEIC"改为"TIFF / HEIC"
+   - 新增「WebP 文件如何处理？与 JPEG 编辑有什么差异？」FAQ 条目（编辑策略 / 与 JPEG 差异 / chunk 列表与 hex dump）
+   - 「清除全部 EXIF」FAQ 补充 WebP EXIF/XMP/ICCP chunk 删除
+   - 「兼容性」FAQ 补充 WebP chunk 替换策略与 padding 规则
+   - 「批量处理」FAQ 补充 WebP 速度参考与三路队列分流
+   - 「批量选择操作」FAQ 补充 WebP 工作流与三路签名分流
+   - 「EXIF 查看器区别」FAQ 提及 WebP 支持
+4. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，均为既有遗留）
+5. ✅ 构建成功（966 页面 31.67s，页面数无变化）
+6. ✅ Git 提交推送完成（1 次提交，3 文件改动，+1090 / -86）
+
+### 当前规模
+- **工具**：109 个（无变化，本轮为既有工具能力扩展）
+- **博客**：117 篇（无变化）
+- **页面**：966 页（无变化）
+- **EXIF 编辑器支持格式**：JPEG + PNG + WebP（三种主流格式全覆盖，TIFF / HEIC 仍不支持）
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 内链网络质量审计（109 工具 + 117 博客的内链密度，识别孤立页面与内链稀疏区域）
+3. `downloadBlob` 签名统一评估（imageConvert URL 版 / ImageCompressTool 局部 URL 版 / QrTool 三参数版）
+4. 长尾 SEO 内容补充（WebP EXIF 编辑教程 / PNG 文件结构查看器 / JSON Lines 与文件夹上传关键词扩展）
+5. EXIF 编辑器 chunk 列表进一步增强（按 chunk 类型快速过滤 / 按字节数排序 / hex 大小写切换）
+6. metadata-bundle 自定义隐私字段（当前敏感字段配置表为硬编码，可开放用户自定义）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- `downloadBlob` 仍有 3 处不同签名实现未统一（imageConvert URL 版 / ImageCompressTool 局部 URL 版 / QrTool 三参数版）
+- TIFF / HEIC 仍不支持 EXIF 编辑（建议用户先转码为 JPEG / PNG / WebP 再编辑）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+### 关键技术决策
+
+#### 1. WebP EXIF chunk 复用 JPEG IFD 编辑逻辑
+- **决策**：WebP EXIF chunk 数据格式与 JPEG APP1 EXIF 段完全一致（'Exif\0\0' 前缀 + TIFF 头 + IFD 树），直接复用 JPEG 的 `parseExifSegment` + `rebuildExifPayload`
+- **依据**：规范要求避免重复代码；两种容器的 EXIF 载荷格式规范一致；复用降低维护成本与 bug 面
+- **启示**：跨容器格式复用应优先识别"载荷格式同构"，仅外层包装逻辑各自实现
+
+#### 2. 无 EXIF chunk 的 WebP 仅支持 removeAll
+- **决策**：当 WebP 仅含 XMP / ICCP chunk 而无 EXIF chunk 时，`availableOps` 过滤为仅 `removeAll`
+- **依据**：removeGps / removePersonal / removeMakerNote / removeThumbnail / setDateTime 均依赖 IFD 结构，无 EXIF chunk 则无 IFD 可编辑；removeAll 通过删除 EXIF / XMP / ICCP 三类元数据 chunk 实现彻底清理
+- **启示**：操作能力应按文件实际内容动态启用，而非按文件类型静态绑定
+
+#### 3. WebP 字段级元数据展示复用 exifr 原生 WebP 支持
+- **决策**：WebP 有 EXIF chunk 时调用 `exifr.parse(f, { tiff, exif, gps })`，复用 JPEG 的 `buildSnapshot` 展示路径
+- **依据**：exifr 库原生支持 WebP RIFF 容器解析，无需自行实现 IFD 字段映射；与 JPEG 展示一致降低 UI 分支复杂度
+- **启示**：第三方库能力应优先调研利用，避免自行实现已有能力
+
+#### 4. ChunkHexDump 通过结构类型泛化接受 PNG 与 WebP
+- **决策**：`ChunkHexDump` 的 props 类型从 `PngChunkInfo` 改为 `{ data: Uint8Array; type: string }` 结构类型，同时接受 PNG 与 WebP chunk
+- **依据**：两种 chunk 类型都具备 `data: Uint8Array` 与 `type: string` 字段；结构类型避免引入联合类型与冗余类型守卫；符合"避免不必要抽象"原则
+- **启示**：组件复用可通过结构类型而非泛型抽象实现，更轻量
+
+#### 5. WebP 奇数长度 EXIF chunk 自动补 padding
+- **决策**：`rebuildWebp` 中 EXIF chunk 数据长度为奇数时，自动补 1 字节 0x00 padding
+- **依据**：RIFF 规范要求 chunk 起始偏移为偶数，奇数长度 chunk 必须补 padding；生成的 WebP 文件才能被主流看图软件正常解析
+- **启示**：二进制格式重建必须严格遵循规范对齐要求，否则会产生兼容性问题
+
+#### 6. 三路文件类型分流而非统一抽象
+- **决策**：`runEdit` / `handleDownload` / `loadFile` 等关键路径采用 `fileType === 'webp' ? ... : fileType === 'png' ? ... : ...` 三元分流，未抽象统一接口
+- **依据**：三种格式的容器结构、编辑策略、解析路径差异显著，强行抽象会引入参数膨胀与分支内部条件复杂度；当前三种格式已接近稳定，未来扩展（TIFF / HEIC）应单独评估
+- **启示**：抽象应基于"调用模式同构"而非"概念相近"，三元分流在分支数 ≤ 4 时可读性优于过度抽象
+
+#### 7. 非标准 WebP EXIF chunk 自动补 'Exif\0\0' 前缀
+- **决策**：`normalizeWebpExifPayload` 检测 EXIF chunk 数据若以 TIFF 头（'II' / 'MM'）开头，自动在前面补 'Exif\0\0' 6 字节前缀
+- **依据**：部分非标准 WebP 文件的 EXIF chunk 数据缺少 'Exif\0\0' 前缀，直接传给 `parseExifSegment` 会按偏移错位解析；补齐前缀后兼容性良好
+- **启示**：二进制格式解析应容错处理非标准实现，提升真实世界文件兼容率
+
 
