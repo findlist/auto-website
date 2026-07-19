@@ -853,6 +853,13 @@ export async function compareImagePairsBatch(
 /**
  * 文件配对结果（统一结构，兼容顺序配对与前缀配对）
  */
+export interface PrefixGroup {
+  /** 前缀 key（最后一个分隔符之前的部分，统一用下划线重新连接） */
+  prefix: string;
+  /** 该前缀下的所有文件（组内已按文件名自然排序） */
+  files: File[];
+}
+
 export interface FilePairResult {
   /** 配对成功的文件对列表 */
   pairs: File[][];
@@ -861,7 +868,57 @@ export interface FilePairResult {
   /** 未配对的文件列表（前缀模式下可能有） */
   unmatched?: File[];
   /** 前缀分组信息（仅前缀模式提供，便于 UI 展示） */
-  groups?: { prefix: string; files: File[] }[];
+  groups?: PrefixGroup[];
+}
+
+/**
+ * 前缀配对选项
+ */
+export interface PrefixPairOptions {
+  /**
+   * 自定义分隔符字符串（每个字符均作为独立分隔符）
+   * - 留空或仅空白时使用默认分隔符 `_ - . 空格`
+   * - 长度限制 16 字符，超出部分截断
+   * - 仅接受可见 ASCII 字符（0x20-0x7E），其他字符忽略
+   * - 自动转义正则元字符（如 `.` `+` `*` `?` 等），用户无需关心
+   */
+  customSeparators?: string;
+}
+
+/** 自定义分隔符最大长度 */
+const MAX_SEPARATORS_LEN = 16;
+
+/**
+ * 将用户输入的分隔符字符串构建为正则表达式
+ * - 每个字符作为独立分隔符（如 `_-.` 匹配 `_` 或 `-` 或 `.`）
+ * - 自动转义字符类内的特殊字符（] \\ ^ -），避免注入风险
+ * - 仅接受可见 ASCII 字符（0x20-0x7E），其他字符忽略
+ * - 空字符串或仅空白时回退到默认分隔符（下划线 / 连字符 / 点号 / 任意空白）
+ */
+function buildSeparatorRegex(separators?: string): RegExp {
+  const input = (separators ?? '').trim();
+  if (input.length === 0) {
+    return /[_\-.\s]+/;
+  }
+  // 长度截断
+  const truncated = input.slice(0, MAX_SEPARATORS_LEN);
+  // 过滤可见 ASCII 字符（0x20-0x7E）
+  const chars = Array.from(truncated).filter((ch) => {
+    const code = ch.charCodeAt(0);
+    return code >= 0x20 && code <= 0x7e;
+  });
+  if (chars.length === 0) {
+    return /[_\-.\s]+/;
+  }
+  // 字符类内仅需转义 ] \\ ^ - 四个字符
+  const escapeRegex = (ch: string) => {
+    if (ch === ']' || ch === '\\\\' || ch === '^' || ch === '-') {
+      return `\\\\${ch}`;
+    }
+    return ch;
+  };
+  const escaped = chars.map(escapeRegex).join('');
+  return new RegExp(`[${escaped}]+`);
 }
 
 /**
@@ -898,7 +955,7 @@ export function pairFilesSequentially(
   return { pairs };
 }
 
-/** 文件名分隔符：用于切分前缀 key */
+/** 文件名分隔符：用于切分前缀 key（默认下划线、连字符、点号、空白） */
 const FILENAME_SEPARATORS = /[_\-.\s]+/;
 
 /**
@@ -922,10 +979,14 @@ function getFileStem(fileName: string): string {
  *  - `test_001_a` → `test_001`
  *  - `icon.a` → `icon`
  *  - `README` → `README`（无分隔符时使用完整 stem）
+ *
+ * @param fileName 文件名
+ * @param separators 可选的自定义分隔符正则（未提供时使用默认 FILENAME_SEPARATORS）
  */
-function getFilePrefixKey(fileName: string): string {
+function getFilePrefixKey(fileName: string, separators?: RegExp): string {
   const stem = getFileStem(fileName);
-  const match = stem.split(FILENAME_SEPARATORS).filter(Boolean);
+  const sep = separators ?? FILENAME_SEPARATORS;
+  const match = stem.split(sep).filter(Boolean);
   if (match.length <= 1) {
     return stem;
   }
@@ -946,10 +1007,19 @@ function getFilePrefixKey(fileName: string): string {
  *  - 设计稿 before/after 对比：`homepage_before.png` vs `homepage_after.png`
  *  - 回归测试截图配对：`test_001_expected.png` vs `test_001_actual.png`
  *
+ * 自定义分隔符：
+ *  - 默认分隔符：下划线、连字符、点号、空白
+ *  - 通过 options.customSeparators 可传入自定义字符序列（每个字符作为独立分隔符）
+ *  - 例：传入 `.@` 时，`logo@v1.png` 与 `logo.v2.png` 会归到前缀 `logo`
+ *
  * @param files 文件列表
+ * @param options 可选配置（含自定义分隔符）
  * @returns 配对结果（含未配对文件与分组信息）
  */
-export function pairFilesByNamePrefix(files: File[]): FilePairResult {
+export function pairFilesByNamePrefix(
+  files: File[],
+  options?: PrefixPairOptions,
+): FilePairResult {
   if (files.length === 0) {
     return { pairs: [], warning: '未选择任何文件' };
   }
@@ -957,10 +1027,13 @@ export function pairFilesByNamePrefix(files: File[]): FilePairResult {
     return { pairs: [], warning: '至少需要 2 个文件才能配对' };
   }
 
+  // 根据用户输入构建分隔符正则（自定义或默认）
+  const separatorRegex = buildSeparatorRegex(options?.customSeparators);
+
   // 1. 按前缀 key 分组
   const groupMap = new Map<string, File[]>();
   for (const file of files) {
-    const key = getFilePrefixKey(file.name);
+    const key = getFilePrefixKey(file.name, separatorRegex);
     const group = groupMap.get(key);
     if (group) {
       group.push(file);
@@ -970,7 +1043,7 @@ export function pairFilesByNamePrefix(files: File[]): FilePairResult {
   }
 
   // 2. 组内按文件名自然排序（保证配对结果稳定可预测）
-  const groups: { prefix: string; files: File[] }[] = [];
+  const groups: PrefixGroup[] = [];
   for (const [prefix, groupFiles] of groupMap) {
     groupFiles.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN-u-co-pinyin'));
     groups.push({ prefix, files: groupFiles });

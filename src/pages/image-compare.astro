@@ -5,12 +5,12 @@ import ImageCompareTool from '../components/ImageCompareTool.tsx';
 const meta: SiteMeta = {
   title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 区域放大 / 批量对比）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图，提供 1× / 2× / 4× 三档放大倍率（最长边 320 / 640 / 1280px），支持下载三联合成图（A / B / 差异图水平并排合成为单张 PNG，含标题栏，便于一次性归档与报告粘贴），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对，提供两种配对方式：顺序配对（第 1+2、3+4...）与前缀配对（按文件名前缀自动分组，同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo），未配对文件单独标记不参与对比；队列处理输出汇总报告，支持批量 JSON 导出与 ZIP 打包下载所有差异图（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），适用于 CI/CD 截图回归测试批量执行与归档场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图，提供 1× / 2× / 4× 三档放大倍率（最长边 320 / 640 / 1280px），支持下载三联合成图（A / B / 差异图水平并排合成为单张 PNG，含标题栏，便于一次性归档与报告粘贴），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对，提供两种配对方式：顺序配对（第 1+2、3+4...）与前缀配对（按文件名前缀自动分组，同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo，支持自定义分隔符与分组预览，未配对文件单独标记不参与对比）；队列处理输出汇总报告，支持批量 JSON 导出与 ZIP 打包下载所有差异图（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），适用于 CI/CD 截图回归测试批量执行与归档场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比支持 1×/2×/4× 三档放大倍率与三联合成图下载，批量对比支持顺序配对与前缀配对两种方式，ZIP 打包下载所有差异图，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比支持 1×/2×/4× 三档放大倍率与三联合成图下载，批量对比支持顺序配对与前缀配对两种方式（前缀配对支持自定义分隔符与分组预览），ZIP 打包下载所有差异图，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -37,7 +37,8 @@ const meta: SiteMeta = {
         支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
         <strong>批量对比模式</strong>支持上传多张图片自动两两配对，提供两种配对方式：
         <strong>顺序配对</strong>（第 1+2、3+4...）与<strong>前缀配对</strong>（按文件名前缀自动分组，
-        同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo，未配对文件单独标记不参与对比），
+        同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo，支持<strong>自定义分隔符</strong>与
+        <strong>分组预览</strong>，未配对文件单独标记不参与对比），
         队列处理输出汇总报告，支持<strong>批量 JSON 导出</strong>与
         <strong>ZIP 打包下载所有差异图</strong>（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），
         适用于 CI/CD 截图回归测试批量执行与归档场景。
@@ -252,6 +253,25 @@ const meta: SiteMeta = {
           （v1 vs v2），剩余文件（v3）标记为未配对，并显示警告。<br />
           <strong>建议工作流</strong>：版本对比建议使用前缀配对（如 <code>logo_v1.png</code> + <code>logo_v2.png</code>）；
           无明确命名规则时使用顺序配对，并在文件管理器中按目标配对顺序重命名文件后全选拖入。
+        </p>
+      </details>
+      <details>
+        <summary>前缀配对如何自定义分隔符？如何预览分组结果？</summary>
+        <p>
+          前缀配对模式下，可在「配对方式」切换器下方的「自定义分隔符」开关中启用自定义分隔符。<br />
+          <strong>自定义分隔符输入</strong>：在输入框中输入字符序列，<strong>每个字符均作为独立分隔符</strong>。
+          例如输入 <code>_-.@</code>，则文件名中的下划线、连字符、点号、@ 符号都会被识别为分隔符。
+          最长 16 字符，仅接受可见 ASCII 字符（0x20-0x7E），其他字符会被自动过滤。<br />
+          <strong>转义安全</strong>：输入的字符会自动转义字符类内的特殊字符（<code>]</code>、<code>\\</code>、<code>^</code>、<code>-</code>），无需担心注入风险。<br />
+          <strong>留空回退</strong>：输入框为空或仅空白时，自动使用默认分隔符（下划线 / 连字符 / 点号 / 空白）。<br />
+          <strong>分组预览</strong>：点击「预览分组」按钮可展开所有前缀分组卡片，每张卡片显示：
+          前缀 key（蓝色左边框，单文件组为红色、超过 2 个文件组为橙色）、文件数量与配对数、
+          每对配对（A/B 角色标签 + 文件名 + vs 分隔符）、未配对文件（红色「未配对」标签）。<br />
+          <strong>典型场景</strong>：
+          - <strong>版本号分隔符</strong>：默认 <code>_ - .</code> 已覆盖多数版本命名（<code>logo_v1.png</code>、<code>homepage-2.png</code>）
+          - <strong>自定义符号</strong>：使用 <code>@</code> 或 <code>#</code> 作为分隔符（<code>logo@v1.png</code> vs <code>logo@v2.png</code> → 前缀 <code>logo</code>）
+          - <strong>多字符组合</strong>：输入 <code>_-.@#</code> 同时识别多种分隔符
+          - <strong>调试命名</strong>：通过分组预览可快速定位哪些文件因命名问题无法配对
         </p>
       </details>
       <details>
@@ -1501,6 +1521,252 @@ const meta: SiteMeta = {
     line-height: 1.4;
   }
 
+  /* ============================================================
+   *  自定义分隔符 + 分组预览（仅前缀模式显示）
+   * ============================================================ */
+
+  /* 配对选项容器：水平布局，左侧自定义分隔符 / 右侧预览按钮 */
+  .imgcmp__pair-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 12px;
+    padding: 10px 12px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  /* 自定义分隔符区：左侧开关 + 输入框 + 提示 */
+  .imgcmp__pair-separator {
+    flex: 1 1 280px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .imgcmp__pair-separator-toggle {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .imgcmp__pair-separator-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+    accent-color: #5b8cff;
+  }
+
+  .imgcmp__pair-separator-input {
+    flex: 0 1 160px;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    min-height: 32px;
+  }
+
+  .imgcmp__pair-separator-input:focus-visible {
+    outline: 2px solid #5b8cff;
+    outline-offset: 2px;
+    border-color: #5b8cff;
+  }
+
+  .imgcmp__pair-separator-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .imgcmp__pair-separator-hint {
+    flex: 1 1 200px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.4;
+  }
+
+  /* 预览按钮：紧凑的次按钮 */
+  .imgcmp__pair-preview-btn {
+    flex: 0 0 auto;
+  }
+
+  /* ============================================================
+   *  前缀分组预览列表
+   * ============================================================ */
+
+  .imgcmp__pair-groups {
+    margin: 0 0 12px;
+    padding: 12px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .imgcmp__pair-groups-header {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__pair-groups-unmatched {
+    color: #e67e22;
+    font-weight: 500;
+  }
+
+  .imgcmp__pair-groups-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+  }
+
+  /* 单个分组卡片 */
+  .imgcmp__pair-group {
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid #5b8cff;
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  /* 单文件组：红色左边框 */
+  .imgcmp__pair-group--odd {
+    border-left-color: #e74c3c;
+  }
+
+  /* 超过 2 个文件组：橙色左边框 */
+  .imgcmp__pair-group--over2 {
+    border-left-color: #e67e22;
+  }
+
+  .imgcmp__pair-group-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .imgcmp__pair-group-prefix {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+
+  .imgcmp__pair-group-count {
+    font-size: 12px;
+    color: var(--color-text-soft);
+  }
+
+  .imgcmp__pair-group-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .imgcmp__pair-group-badge--odd {
+    background: rgba(231, 76, 60, 0.12);
+    color: #c0392b;
+  }
+
+  .imgcmp__pair-group-badge--over2 {
+    background: rgba(230, 126, 34, 0.12);
+    color: #b8651a;
+  }
+
+  .imgcmp__pair-group-files {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* 单个配对行：A 文件名 vs B 文件名 */
+  .imgcmp__pair-group-pair {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text);
+    line-height: 1.4;
+  }
+
+  .imgcmp__pair-group-pair--leftover {
+    opacity: 0.7;
+  }
+
+  .imgcmp__pair-group-role {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  .imgcmp__pair-group-role--a {
+    background: rgba(91, 140, 255, 0.18);
+    color: #2c5fd6;
+  }
+
+  .imgcmp__pair-group-role--b {
+    background: rgba(46, 204, 113, 0.18);
+    color: #1d8a4f;
+  }
+
+  .imgcmp__pair-group-role--none {
+    background: rgba(231, 76, 60, 0.12);
+    color: #c0392b;
+    min-width: 56px;
+  }
+
+  .imgcmp__pair-group-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  .imgcmp__pair-group-vs {
+    flex: 0 0 auto;
+    color: var(--color-text-soft);
+    font-size: 11px;
+    font-style: italic;
+  }
+
   /* 未配对文件样式（前缀模式下未匹配到同前缀的文件） */
   .imgcmp__batch-file-item--unmatched {
     opacity: 0.65;
@@ -1778,6 +2044,25 @@ const meta: SiteMeta = {
     .imgcmp__batch-item-percent {
       flex: 0 0 auto;
     }
+
+    /* 自定义分隔符区在 768px 以下换行展示 */
+    .imgcmp__pair-separator-hint {
+      flex: 1 1 100%;
+    }
+
+    .imgcmp__pair-separator-input {
+      flex: 1 1 160px;
+    }
+
+    /* 分组预览按钮在窄屏占满整行 */
+    .imgcmp__pair-preview-btn {
+      flex: 1 1 100%;
+    }
+
+    /* 分组卡片配对行换行更紧凑 */
+    .imgcmp__pair-group-pair {
+      flex-wrap: wrap;
+    }
   }
 
   /* 响应式：480px 以下 */
@@ -1804,6 +2089,29 @@ const meta: SiteMeta = {
     .imgcmp__batch-item-stats {
       flex-direction: column;
       gap: 4px;
+    }
+
+    /* 自定义分隔符输入框与字号在窄屏缩小 */
+    .imgcmp__pair-separator-input {
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+
+    .imgcmp__pair-separator-toggle {
+      font-size: 12px;
+    }
+
+    /* 分组卡片字号缩小 */
+    .imgcmp__pair-group-prefix {
+      font-size: 12px;
+    }
+
+    .imgcmp__pair-group-pair {
+      font-size: 11px;
+    }
+
+    .imgcmp__pair-groups-list {
+      max-height: 360px;
     }
   }
 
@@ -1855,6 +2163,53 @@ const meta: SiteMeta = {
 
   :global([data-theme="dark"]) .imgcmp__batch-item-error {
     color: #ff7b6b;
+  }
+
+  /* 暗色模式：自定义分隔符 + 分组预览 */
+  :global([data-theme="dark"]) .imgcmp__pair-options {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-separator-input {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--color-text);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-groups {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group-role--a {
+    background: rgba(91, 140, 255, 0.25);
+    color: #8fb3ff;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group-role--b {
+    background: rgba(46, 204, 113, 0.22);
+    color: #6ddc91;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group-role--none {
+    background: rgba(231, 76, 60, 0.25);
+    color: #ff7b6b;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group-badge--odd {
+    background: rgba(231, 76, 60, 0.25);
+    color: #ff7b6b;
+  }
+
+  :global([data-theme="dark"]) .imgcmp__pair-group-badge--over2 {
+    background: rgba(230, 126, 34, 0.25);
+    color: #ffa860;
   }
 
   /* ============================================================

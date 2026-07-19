@@ -24,6 +24,7 @@ import {
   type DiffResultWithRegions,
   type BatchCompareSummary,
   type FilePairResult,
+  type PrefixGroup,
 } from '../utils/imageCompare';
 
 /** 应用模式：单图对比 / 批量对比 */
@@ -1036,6 +1037,12 @@ function BatchCompareMode() {
   const [zipError, setZipError] = useState<string>('');
   // 配对模式：顺序配对（第 1+2、3+4...）/ 前缀配对（按文件名前缀自动分组）
   const [pairMode, setPairMode] = useState<PairMode>('sequential');
+  // 自定义分隔符（仅前缀配对模式生效）：用户输入的字符序列，每个字符作为独立分隔符
+  const [customSeparators, setCustomSeparators] = useState<string>('');
+  // 是否启用自定义分隔符（关闭时使用默认 _ - . 空格）
+  const [useCustomSeparators, setUseCustomSeparators] = useState<boolean>(false);
+  // 是否展开前缀分组预览（仅前缀模式生效）
+  const [showGroupsPreview, setShowGroupsPreview] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -1079,7 +1086,7 @@ function BatchCompareMode() {
 
     // 根据当前配对模式调用不同配对函数
     const pairResult = pairMode === 'prefix'
-      ? pairFilesByNamePrefix(files)
+      ? pairFilesByNamePrefix(files, useCustomSeparators ? { customSeparators } : undefined)
       : pairFilesSequentially(files);
     const filePairs = pairResult.pairs;
     const warning = pairResult.warning;
@@ -1135,7 +1142,7 @@ function BatchCompareMode() {
     } finally {
       setComputing(false);
     }
-  }, [files, threshold, pairMode]);
+  }, [files, threshold, pairMode, useCustomSeparators, customSeparators]);
 
   /** 导出批量对比 JSON 报告 */
   const handleExportBatchJson = useCallback(() => {
@@ -1178,9 +1185,9 @@ function BatchCompareMode() {
       return { pairs: [] };
     }
     return pairMode === 'prefix'
-      ? pairFilesByNamePrefix(files)
+      ? pairFilesByNamePrefix(files, useCustomSeparators ? { customSeparators } : undefined)
       : pairFilesSequentially(files);
-  }, [files, pairMode]);
+  }, [files, pairMode, useCustomSeparators, customSeparators]);
 
   const pairPreview = pairResult.pairs;
 
@@ -1241,7 +1248,7 @@ function BatchCompareMode() {
         </div>
         <div className="imgcmp__batch-drop-hint">
           {pairMode === 'prefix'
-            ? `按文件名前缀自动配对（同前缀的两两配对），最多 ${MAX_BATCH_PAIRS} 对`
+            ? `按文件名前缀自动配对（同前缀的两两配对），支持自定义分隔符与分组预览，最多 ${MAX_BATCH_PAIRS} 对`
             : `文件按选择顺序两两配对（第 1+2、3+4...），最多 ${MAX_BATCH_PAIRS} 对`}
         </div>
       </div>
@@ -1277,6 +1284,120 @@ function BatchCompareMode() {
               ? '同前缀自动分组（如 logo_v1.png + logo_v2.png → 前缀 logo）'
               : '按选择顺序两两配对'}
           </span>
+        </div>
+      )}
+
+      {/* 自定义分隔符与分组预览（仅前缀模式显示） */}
+      {files.length > 0 && pairMode === 'prefix' && (
+        <div className="imgcmp__pair-options">
+          <div className="imgcmp__pair-separator">
+            <label className="imgcmp__pair-separator-toggle">
+              <input
+                type="checkbox"
+                checked={useCustomSeparators}
+                onChange={(e) => setUseCustomSeparators(e.target.checked)}
+                disabled={computing}
+              />
+              <span>自定义分隔符</span>
+            </label>
+            {useCustomSeparators && (
+              <>
+                <input
+                  type="text"
+                  className="imgcmp__pair-separator-input"
+                  value={customSeparators}
+                  onChange={(e) => setCustomSeparators(e.target.value)}
+                  placeholder="如 _-. 或 @#"
+                  maxLength={16}
+                  disabled={computing}
+                  aria-label="自定义分隔符（每个字符作为独立分隔符）"
+                  title="输入字符序列，每个字符作为独立分隔符。最长 16 字符，仅接受可见 ASCII 字符。留空则使用默认 _ - . 空格"
+                />
+                <span className="imgcmp__pair-separator-hint">
+                  {customSeparators.trim()
+                    ? `分隔符：${Array.from(customSeparators.trim()).filter((ch) => ch.charCodeAt(0) >= 0x20 && ch.charCodeAt(0) <= 0x7e).map((ch) => ch === ' ' ? '空格' : ch).join(' / ')}`
+                    : '当前为空，将使用默认分隔符 _ - . 空格'}
+                </span>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            className="imgcmp__btn imgcmp__btn--small imgcmp__pair-preview-btn"
+            onClick={() => setShowGroupsPreview((v) => !v)}
+            aria-expanded={showGroupsPreview}
+            aria-controls="imgcmp-pair-groups"
+            disabled={computing || !pairResult.groups || pairResult.groups.length === 0}
+            title={showGroupsPreview ? '收起分组预览' : '展开查看前缀分组结果（每个分组的文件列表与配对结果）'}
+          >
+            {showGroupsPreview ? '收起分组预览' : '预览分组'}
+          </button>
+        </div>
+      )}
+
+      {/* 前缀分组预览（仅前缀模式 + 展开时显示） */}
+      {files.length > 0 && pairMode === 'prefix' && showGroupsPreview && pairResult.groups && (
+        <div id="imgcmp-pair-groups" className="imgcmp__pair-groups">
+          <div className="imgcmp__pair-groups-header">
+            共 {pairResult.groups.length} 个前缀分组
+            {unmatchedFiles.length > 0 && (
+              <span className="imgcmp__pair-groups-unmatched"> / {unmatchedFiles.length} 个未配对</span>
+            )}
+          </div>
+          <ol className="imgcmp__pair-groups-list">
+            {pairResult.groups.map((group: PrefixGroup, groupIdx: number) => {
+              // 计算该分组内的配对（前两个 A/B、剩余为未配对）
+              const pairsInGroup: { a: File; b: File }[] = [];
+              for (let i = 0; i + 1 < group.files.length; i += 2) {
+                pairsInGroup.push({ a: group.files[i], b: group.files[i + 1] });
+              }
+              const leftover = group.files.length % 2 === 1 ? group.files[group.files.length - 1] : null;
+              const isOdd = group.files.length === 1;
+              const isOver2 = group.files.length > 2;
+              return (
+                <li
+                  key={`group-${groupIdx}-${group.prefix}`}
+                  className={`imgcmp__pair-group${isOdd ? ' imgcmp__pair-group--odd' : ''}${isOver2 ? ' imgcmp__pair-group--over2' : ''}`}
+                >
+                  <div className="imgcmp__pair-group-header">
+                    <span className="imgcmp__pair-group-prefix" title={`前缀：${group.prefix}`}>
+                      {group.prefix || '（无前缀）'}
+                    </span>
+                    <span className="imgcmp__pair-group-count">
+                      {group.files.length} 个文件 / {pairsInGroup.length} 对
+                    </span>
+                    {isOdd && (
+                      <span className="imgcmp__pair-group-badge imgcmp__pair-group-badge--odd">
+                        无法配对
+                      </span>
+                    )}
+                    {isOver2 && (
+                      <span className="imgcmp__pair-group-badge imgcmp__pair-group-badge--over2">
+                        超过 2 个
+                      </span>
+                    )}
+                  </div>
+                  <ul className="imgcmp__pair-group-files">
+                    {pairsInGroup.map((pair, pairIdx) => (
+                      <li key={`pair-${groupIdx}-${pairIdx}`} className="imgcmp__pair-group-pair">
+                        <span className="imgcmp__pair-group-role imgcmp__pair-group-role--a">A</span>
+                        <span className="imgcmp__pair-group-name" title={pair.a.name}>{pair.a.name}</span>
+                        <span className="imgcmp__pair-group-vs">vs</span>
+                        <span className="imgcmp__pair-group-role imgcmp__pair-group-role--b">B</span>
+                        <span className="imgcmp__pair-group-name" title={pair.b.name}>{pair.b.name}</span>
+                      </li>
+                    ))}
+                    {leftover && (
+                      <li className="imgcmp__pair-group-pair imgcmp__pair-group-pair--leftover">
+                        <span className="imgcmp__pair-group-role imgcmp__pair-group-role--none">未配对</span>
+                        <span className="imgcmp__pair-group-name" title={leftover.name}>{leftover.name}</span>
+                      </li>
+                    )}
+                  </ul>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       )}
 
