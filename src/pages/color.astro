@@ -139,6 +139,7 @@ const meta: SiteMeta = {
         <li><a href="/box-shadow">CSS 阴影生成器</a> — 阴影颜色与颜色值协同</li>
         <li><a href="/text-shadow">CSS 文字阴影生成器</a> — 文字颜色与阴影颜色协同</li>
         <li><a href="/filter">CSS 滤镜生成器</a> — 颜色滤镜与调色</li>
+        <li><a href="/background">CSS 背景生成器</a> — 背景颜色与多层背景叠加</li>
       </ul>
     </section>
 
@@ -370,6 +371,11 @@ const meta: SiteMeta = {
   .colortool__copy-btn:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+  }
+
+  /* 按下时轻微下沉，给用户即时操作反馈（与 tu__copy-btn:active 模式一致） */
+  .colortool__copy-btn:active {
+    transform: translateY(1px);
   }
 
   /* 调色板区 */
