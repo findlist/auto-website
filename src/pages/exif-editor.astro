@@ -5,12 +5,12 @@ import ExifEditorTool from '../components/ExifEditorTool.tsx';
 const meta: SiteMeta = {
   title: 'EXIF / PNG 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
   description:
-    '在线 EXIF / PNG 元数据编辑器：JPEG 删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，PNG 清理 tEXt / zTXt（自动解压）/ iTXt / tIME / eXIf chunk，修改拍摄时间，一键清除全部元数据。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。编辑前后元数据与 chunk 列表可视化对比，直接操作二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
+    '在线 EXIF / PNG 元数据编辑器：JPEG 删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，PNG 清理 tEXt / zTXt（自动解压）/ iTXt（含压缩 iTXt 自动解压）/ tIME / eXIf chunk，修改拍摄时间，一键清除全部元数据。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。编辑前后元数据与 chunk 列表可视化对比（支持按类型或摘要搜索过滤），直接操作二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'EXIF / PNG 元数据编辑器',
-    description: '在线元数据编辑工具，支持 JPEG EXIF（删除 GPS、个人信息、MakerNote、缩略图）与 PNG 元数据（清理 tEXt / zTXt 自动解压 / iTXt / tIME / eXIf chunk）的编辑，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，编辑前后 chunk 列表可视化对比，全本地处理二进制结构。',
+    description: '在线元数据编辑工具，支持 JPEG EXIF（删除 GPS、个人信息、MakerNote、缩略图）与 PNG 元数据（清理 tEXt / zTXt 自动解压 / iTXt 含压缩 iTXt 自动解压 / tIME / eXIf chunk）的编辑，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，编辑前后 chunk 列表可视化对比（按类型或摘要搜索过滤），全本地处理二进制结构。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -31,9 +31,9 @@ const meta: SiteMeta = {
         <strong>JPEG</strong>：支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
         <strong>删除 MakerNote</strong>、<strong>删除缩略图</strong>、<strong>删除软件信息</strong>、
         <strong>修改拍摄时间</strong>、<strong>一键清除全部 EXIF</strong>。
-        <strong>PNG</strong>：支持<strong>清理 tEXt / zTXt（自动解压）/ iTXt 文本元数据</strong>（Software / Author / Copyright / Description 等）、
+        <strong>PNG</strong>：支持<strong>清理 tEXt / zTXt（自动解压）/ iTXt（含压缩 iTXt 自动解压）文本元数据</strong>（Software / Author / Copyright / Description 等）、
         <strong>修改 tIME 时间</strong>、<strong>清除 eXIf chunk</strong>、<strong>仅保留关键 chunk</strong>，
-        <strong>编辑前后 chunk 列表可视化对比</strong>。
+        <strong>编辑前后 chunk 列表可视化对比（按类型或摘要搜索过滤）</strong>。
         支持<strong>批量处理多文件</strong>并打包 ZIP 下载，<strong>编辑预设保存与导入导出</strong>。
         不修改图像压缩数据（JPEG SOS..EOI / PNG IDAT），<strong>保证图像质量无损</strong>。
         编辑前后元数据可视化对比，一目了然。在浏览器本地完成全部操作，<strong>零上传、零追踪、可离线使用</strong>。
@@ -75,13 +75,13 @@ const meta: SiteMeta = {
             包括 GPSLatitude / GPSLongitude / GPSAltitude / GPSImgDirection 等所有 GPS 标签<br />
           - <strong>删除个人信息</strong>（JPEG 与 PNG）：JPEG 移除 Artist / Copyright / BodySerialNumber /
             CameraOwnerName / LensSerialNumber 等身份相关字段；PNG 移除 Author / Artist / Copyright / Source
-            等 tEXt / iTXt 关键字<br />
+            等 tEXt / zTXt / iTXt 关键字（含压缩的 zTXt/iTXt，按关键字过滤无需解压）<br />
           - <strong>删除 MakerNote</strong>（仅 JPEG）：移除 ExifIFD 中的 MakerNote（0x927C），
             厂商原始数据块通常体积较大，删除可显著减小文件<br />
           - <strong>删除缩略图</strong>（仅 JPEG）：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
             将 IFD0 的 nextIfdPointer 置 0<br />
           - <strong>删除软件信息</strong>（JPEG 与 PNG）：JPEG 移除 Software 标签（0x0131），
-            如 "Adobe Photoshop CC 2024" 等编辑器痕迹；PNG 移除关键字为 Software 的 tEXt / iTXt 条目<br />
+            如 "Adobe Photoshop CC 2024" 等编辑器痕迹；PNG 移除关键字为 Software 的 tEXt / zTXt / iTXt 条目<br />
           - <strong>修改拍摄时间</strong>（JPEG 与 PNG）：JPEG 同步修改 DateTime / DateTimeOriginal /
             DateTimeDigitized 三个字段；PNG 修改或插入 tIME chunk（7 字节：年/月/日/时/分/秒）<br />
           - <strong>清除全部 EXIF</strong>（JPEG 与 PNG）：JPEG 移除整个 APP1 EXIF 段；
@@ -114,11 +114,18 @@ const meta: SiteMeta = {
             tIME（最后修改时间）、eXIf（PNG 1.5+ 扩展的 EXIF chunk，实际使用率低）。
             <strong>zTXt 为 zlib 压缩文本</strong>，本工具使用浏览器原生 DecompressionStream('deflate') 自动解压后展示内容，
             与 tEXt 一同按关键字分组参与编辑（removePersonal / removeSoftware 同样适用于 zTXt）。
-            因 PNG chunk 通过 CRC32 校验关联，本工具采用"过滤重建"策略——
+            <strong>iTXt 为国际化文本（UTF-8 编码，可压缩）</strong>，本工具同样支持自动解压：
+            未压缩 iTXt 直接 UTF-8 解码；压缩 iTXt（compressionFlag=1）使用与 zTXt 相同的 DecompressionStream('deflate')
+            解压路径，解压后按 UTF-8 解码（注意 iTXt 文本编码为 UTF-8，与 zTXt 的 Latin1 不同）。
+            iTXt 关键字在压缩数据之前为 Latin1 ASCII，applyPngEdits 中按关键字过滤时无需解压，保持同步避免性能损失。<br />
+          因 PNG chunk 通过 CRC32 校验关联，本工具采用"过滤重建"策略——
             过滤掉要删除的 chunk，重建时为每个保留的 chunk 重算 CRC32，保证文件结构合法<br />
-          <strong>chunk 列表对比</strong>：上传 PNG 后右侧会展示完整 chunk 列表（类型 / 字节数 / 摘要），
+          <strong>chunk 列表对比与搜索过滤</strong>：上传 PNG 后右侧会展示完整 chunk 列表（类型 / 字节数 / 摘要），
             关键 chunk（IHDR / PLTE / IDAT / IEND）以蓝色徽章标记，辅助 chunk 以灰色徽章标记。
-            编辑前后并排展示，可直观看到被删除的 chunk 与 chunk 总数变化。<br />
+            编辑前后并排展示，可直观看到被删除的 chunk 与 chunk 总数变化。
+            <strong>支持按 chunk 类型（如 "tEXt" / "IDAT"）或摘要内容（如 "Author" / "默认背景色"）实时搜索过滤</strong>，
+            输入框位于列表上方，输入即过滤，显示匹配数量，无匹配时显示空状态提示。
+            搜索大小写不敏感，同时匹配类型代码与摘要内容，便于在大型 PNG 中快速定位特定 chunk。<br />
           <strong>支持差异</strong>：PNG 不支持 GPS / MakerNote / 缩略图操作（PNG 容器无对应字段），
             上传 PNG 时操作列表会自动隐藏这些不适用项。<br />
           <strong>其他格式</strong>（WebP / TIFF / HEIC）暂不支持，建议先用
@@ -210,7 +217,7 @@ const meta: SiteMeta = {
           - <strong>EXIF / PNG 元数据编辑器（本工具）</strong>：自主实现二进制结构操作，
             支持 JPEG 与 PNG，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
           <strong>典型工作流</strong>：先用 EXIF 查看器确认图片含哪些元数据 → 用本工具按需删除
-          GPS / 个人信息 / MakerNote（JPEG）或 tEXt / iTXt / tIME（PNG）→ 下载编辑后的图片 →
+          GPS / 个人信息 / MakerNote（JPEG）或 tEXt / zTXt / iTXt / tIME（PNG）→ 下载编辑后的图片 →
           再次用查看器验证删除结果。
         </p>
       </details>
@@ -713,13 +720,101 @@ const meta: SiteMeta = {
   }
 
   /* ============================================================
-     PNG chunk 列表（第 107 轮新增）
+     PNG chunk 列表（第 107 轮新增，第 108 轮新增搜索过滤）
      ============================================================ */
   .exifedit__chunks {
     padding: 12px;
     border: 1px solid var(--color-border, #e5e7eb);
     border-radius: var(--radius-md, 8px);
     background: var(--color-bg, #fff);
+  }
+
+  /* chunk 列表外层包裹（包含搜索框 + 表格） */
+  .exifedit__chunk-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* 搜索过滤条：图标 + 输入框 + 清除按钮 */
+  .exifedit__chunk-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: var(--color-bg-soft, #f3f4f6);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+  }
+
+  .exifedit__chunk-filter-label {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    user-select: none;
+  }
+
+  .exifedit__chunk-filter-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg, #fff);
+    color: var(--color-text);
+    font-size: 12px;
+    font-family: inherit;
+    min-height: 28px;
+  }
+
+  .exifedit__chunk-filter-input:focus {
+    outline: 2px solid var(--color-primary, #3b82f6);
+    outline-offset: 1px;
+    border-color: var(--color-primary, #3b82f6);
+  }
+
+  /* 清除按钮：紧凑圆形 ✕ */
+  .exifedit__chunk-filter-clear {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 50%;
+    background: var(--color-bg, #fff);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .exifedit__chunk-filter-clear:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+
+  .exifedit__chunk-filter-clear:focus-visible {
+    outline: 2px solid var(--color-primary, #3b82f6);
+    outline-offset: 1px;
+  }
+
+  /* 匹配数量提示 */
+  .exifedit__chunk-filter-count {
+    margin: 0;
+    padding: 2px 6px;
+    font-size: 11px;
+    color: var(--color-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  /* 无匹配空状态 */
+  .exifedit__chunk-empty {
+    padding: 12px 6px;
+    text-align: center;
+    font-style: italic;
   }
 
   .exifedit__chunk-list {
@@ -1218,6 +1313,19 @@ const meta: SiteMeta = {
       max-height: 280px;
     }
 
+    /* chunk 搜索过滤：移动端紧凑尺寸 */
+    .exifedit__chunk-filter-input {
+      font-size: 11px;
+      padding: 3px 6px;
+      min-height: 24px;
+    }
+
+    .exifedit__chunk-filter-clear {
+      width: 22px;
+      height: 22px;
+      font-size: 11px;
+    }
+
     /* Tab：移动端紧凑显示，单行文本 */
     .exifedit__tab {
       padding: 10px 8px;
@@ -1334,6 +1442,34 @@ const meta: SiteMeta = {
       background: rgba(59, 130, 246, 0.2);
       color: #93c5fd;
       border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    /* chunk 搜索过滤暗色 */
+    .exifedit__chunk-filter {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .exifedit__chunk-filter-input {
+      background: #1f2937;
+      color: #e5e7eb;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .exifedit__chunk-filter-input::placeholder {
+      color: #6b7280;
+    }
+
+    .exifedit__chunk-filter-clear {
+      background: #1f2937;
+      color: #9ca3af;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .exifedit__chunk-filter-clear:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.4);
     }
 
     .exifedit__datetime {

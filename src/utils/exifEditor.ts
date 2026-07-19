@@ -1003,15 +1003,15 @@ export function nowExifDateTime(): string {
 //
 // PNG 元数据存储位置：
 //  - tEXt：关键字 + \0 + 文本（Latin1），如 "Author"、"Copyright"、"Software"、"Title"
-//  - zTXt：压缩文本（zlib 压缩，需解压才能读取）
-//  - iTXt：国际化文本（UTF-8，可压缩，含语言标签）
+//  - zTXt：压缩文本（zlib 压缩，本工具使用 DecompressionStream 自动解压）
+//  - iTXt：国际化文本（UTF-8，可压缩，含语言标签；本工具支持未压缩与 zlib 压缩两种）
 //  - tIME：最后修改时间（7 字节：year2 + month1 + day1 + hour1 + minute1 + second1）
 //  - eXIf：EXIF 数据（PNG 1.5+ 扩展，结构同 JPEG 的 APP1 EXIF payload）
 //
 // 本工具的 PNG 操作映射（与 JPEG 操作语义对齐）：
 //  - removeAll：删除所有元数据 chunk（tEXt / zTXt / iTXt / tIME / eXIf）
-//  - removePersonal：删除 tEXt/iTXt 中关键字为 Author/Copyright/Artist 等的条目
-//  - removeSoftware：删除 tEXt 中关键字为 Software 的条目
+//  - removePersonal：删除 tEXt/zTXt/iTXt 中关键字为 Author/Copyright/Artist 等的条目
+//  - removeSoftware：删除 tEXt/zTXt/iTXt 中关键字为 Software 的条目
 //  - setDateTime：修改或新增 tIME chunk
 //  - removeGps / removeMakerNote / removeThumbnail：PNG 不适用（UI 中隐藏）
 
@@ -1157,11 +1157,16 @@ export function parseTextChunk(data: Uint8Array): PngTextEntry | null {
 }
 
 /**
- * 解析 iTXt chunk 数据
+ * 解析 iTXt chunk 数据（异步，因压缩的 iTXt 需调用 DecompressionStream 解压）
  * 格式：keyword \0 compressionFlag(1) compressionMethod(1) languageTag \0 translatedKeyword \0 text(UTF-8)
- * 本工具仅解析未压缩的 iTXt，压缩的 iTXt 返回原始信息
+ *
+ * compressionFlag=0：未压缩，文本为 UTF-8
+ * compressionFlag=1：压缩文本，compressionMethod 仅 0（zlib/deflate）合法
+ *   - 使用浏览器原生 DecompressionStream('deflate') 解压（与 zTXt 同路径）
+ *   - 解压后按 UTF-8 解码（iTXt 规范，与 zTXt 的 Latin1 不同）
+ *   - 不支持 DecompressionStream 时返回占位文本，不阻塞流程
  */
-export function parseITxtChunk(data: Uint8Array): PngTextEntry | null {
+export async function parseITxtChunk(data: Uint8Array): Promise<PngTextEntry | null> {
   // 第一个 \0 分隔 keyword
   const nullIdx = data.indexOf(0);
   if (nullIdx < 0) return null;
@@ -1169,7 +1174,7 @@ export function parseITxtChunk(data: Uint8Array): PngTextEntry | null {
   if (!keyword) return null;
   if (data.length < nullIdx + 2) return { keyword, text: '' };
   const compressionFlag = data[nullIdx + 1];
-  // const compressionMethod = data[nullIdx + 2];
+  const compressionMethod = data[nullIdx + 2];
   // 跳过 compressionFlag(1) + compressionMethod(1)
   let p = nullIdx + 3;
   // languageTag \0
@@ -1181,12 +1186,39 @@ export function parseITxtChunk(data: Uint8Array): PngTextEntry | null {
   if (transEnd < 0) return { keyword, text: '' };
   p = transEnd + 1;
   // 剩余为 text（UTF-8 编码）
-  if (compressionFlag !== 0) {
-    // 压缩的 iTXt 不解析，返回提示
-    return { keyword, text: '[压缩的 iTXt，未解析]' };
+  if (compressionFlag === 0) {
+    // 未压缩：直接 UTF-8 解码
+    const text = new TextDecoder('utf-8').decode(data.subarray(p));
+    return { keyword, text };
   }
-  const text = new TextDecoder('utf-8').decode(data.subarray(p));
-  return { keyword, text };
+  // 压缩的 iTXt：仅 compressionMethod=0（zlib/deflate）合法
+  if (compressionMethod !== 0) {
+    return { keyword, text: `[未知压缩方法 ${compressionMethod}，未解析]` };
+  }
+  const compressed = data.subarray(p);
+  if (compressed.length === 0) return { keyword, text: '' };
+  try {
+    const decompressed = await inflateZlib(compressed);
+    // iTXt 文本为 UTF-8 编码（PNG 规范，与 zTXt 的 Latin1 不同）
+    const text = new TextDecoder('utf-8').decode(decompressed);
+    return { keyword, text };
+  } catch (err) {
+    return {
+      keyword,
+      text: `[解压失败：${err instanceof Error ? err.message : String(err)}]`,
+    };
+  }
+}
+
+/**
+ * 仅解析 iTXt 的关键字（不解压），用于编辑时按关键字过滤
+ * iTXt 格式中 keyword 在 compressionFlag/compressionMethod 之前为 Latin1 ASCII，
+ * 无需解压即可读取，保持 applyPngEdits 同步避免性能损失（与 zTXt 同设计）
+ */
+function readITxtKeyword(data: Uint8Array): string {
+  const nullIdx = data.indexOf(0);
+  if (nullIdx < 0) return '';
+  return new TextDecoder('latin1').decode(data.subarray(0, nullIdx)).trim();
 }
 
 /**
@@ -1397,7 +1429,8 @@ export async function extractPngMetaSnapshot(chunks: PngChunk[]): Promise<PngMet
         break;
       }
       case 'iTXt': {
-        const entry = parseITxtChunk(chunk.data);
+        // 解析 iTXt 文本（异步，压缩的 iTXt 需调用 DecompressionStream）
+        const entry = await parseITxtChunk(chunk.data);
         if (entry) {
           textEntries.push(entry);
           summary = `${entry.keyword}${entry.text ? ': ' + truncateText(entry.text, 60) : ''}`;
@@ -1512,13 +1545,15 @@ function isSoftwareKeyword(keyword: string): boolean {
  *
  * 策略：
  *  - removeAll：删除所有辅助 chunk（仅保留 IHDR/PLTE/IDAT/IEND）
- *  - removePersonal：删除 tEXt/iTXt 中关键字为 Author/Copyright 等的条目
- *  - removeSoftware：删除 tEXt 中关键字为 Software 的条目
+ *  - removePersonal：删除 tEXt/zTXt/iTXt 中关键字为 Author/Copyright 等的条目
+ *  - removeSoftware：删除 tEXt/zTXt/iTXt 中关键字为 Software 的条目
  *  - setDateTime：替换或新增 tIME chunk
  *  - removeGps/removeMakerNote/removeThumbnail：PNG 不适用，跳过
  *
  * 注意：PNG chunk 删除采用"过滤重建"策略（与 JPEG 的"原地置零"不同），
  * 因为 PNG chunk 之间通过 CRC32 校验关联，原地修改会破坏 CRC。
+ * 注意：zTXt/iTXt 关键字读取无需解压（keyword 在压缩数据之前），
+ * 保持本函数同步避免性能损失（解压仅在 extractPngMetaSnapshot 中用于 UI 展示）。
  */
 export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[]): EditResult {
   const startTime = performance.now();
@@ -1529,13 +1564,16 @@ export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[])
 
   const chunks = parsePngChunks(pngBytes);
   const textEntriesByChunk = new Map<PngChunk, PngTextEntry | null>();
-  // 预解析所有 tEXt/iTXt chunk（含关键字）+ zTXt（仅关键字，不解压）
-  // zTXt 关键字在压缩数据之前为 Latin1 ASCII，无需解压即可读取
+  // 预解析所有 tEXt chunk（含关键字与文本）+ zTXt/iTXt（仅关键字，不解压）
+  // zTXt/iTXt 关键字在压缩数据之前为 Latin1 ASCII，无需解压即可读取，
+  // applyPngEdits 仅需关键字即可按 removePersonal/removeSoftware 过滤，保持同步避免性能损失
   for (const chunk of chunks) {
     if (chunk.category === 'tEXt') {
       textEntriesByChunk.set(chunk, parseTextChunk(chunk.data));
     } else if (chunk.category === 'iTXt') {
-      textEntriesByChunk.set(chunk, parseITxtChunk(chunk.data));
+      // iTXt 关键字读取无需解压（keyword 在 compressionFlag 之前）
+      const keyword = readITxtKeyword(chunk.data);
+      textEntriesByChunk.set(chunk, keyword ? { keyword, text: '' } : null);
     } else if (chunk.category === 'zTXt') {
       const keyword = readZTxtKeyword(chunk.data);
       textEntriesByChunk.set(chunk, keyword ? { keyword, text: '' } : null);

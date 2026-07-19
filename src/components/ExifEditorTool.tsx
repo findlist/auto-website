@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
 import exifr from 'exifr';
 import {
   applyEdits,
@@ -1169,42 +1169,109 @@ const PNG_CHUNK_CATEGORY_LABEL: Record<string, string> = {
   OTHER: '其他辅助 chunk',
 };
 
-/** PNG chunk 列表视图组件：以表格形式展示 chunk 列表，区分关键/辅助 chunk */
+/**
+ * PNG chunk 列表视图组件：以表格形式展示 chunk 列表，区分关键/辅助 chunk
+ * 支持按 chunk 类型或摘要内容搜索过滤（第 108 轮新增）
+ * - 搜索框使用 aria-label 与 placeholder，输入实时过滤
+ * - 过滤匹配 chunk 类型（如 "tEXt"）或摘要内容（如 "Author"）
+ * - 显示匹配数量与总数量，无匹配时显示空状态提示
+ */
 function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
+  // 搜索关键词状态（空字符串表示不过滤）
+  const [query, setQuery] = useState('');
+  // 唯一 ID（避免编辑前后两个列表的 input id 冲突）
+  const filterId = useId();
+
+  // 过滤后的 chunk 列表（按类型或摘要匹配，大小写不敏感）
+  const filteredChunks = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return chunks;
+    return chunks.filter((chunk) => {
+      // 匹配 chunk 类型（如 "tEXt" / "IDAT"）
+      if (chunk.type.toLowerCase().includes(trimmed)) return true;
+      // 匹配摘要内容（如 "Author: 张三" / "默认背景色"）
+      const summary = chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '';
+      return summary.toLowerCase().includes(trimmed);
+    });
+  }, [chunks, query]);
+
+  // 空状态：原始无 chunk
   if (chunks.length === 0) {
     return <p className="exifedit__hint">无 chunk</p>;
   }
+
   return (
-    <div className="exifedit__chunk-list" role="table" aria-label="PNG chunk 列表">
-      <div className="exifedit__chunk-row exifedit__chunk-row--head" role="row">
-        <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="columnheader">#</span>
-        <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="columnheader">类型</span>
-        <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="columnheader">字节</span>
-        <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="columnheader">摘要</span>
-      </div>
-      {chunks.map((chunk, idx) => (
-        <div
-          key={`${chunk.type}-${idx}`}
-          className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}`}
-          role="row"
-        >
-          <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
-          <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
-            <span
-              className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
-              title={PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+    <div className="exifedit__chunk-list-wrapper">
+      {/* 搜索过滤输入框（仅在 chunk 数量较多时显示，避免单 chunk 时噪音） */}
+      {chunks.length > 1 && (
+        <div className="exifedit__chunk-filter">
+          <label className="exifedit__chunk-filter-label" htmlFor={filterId}>
+            🔍
+          </label>
+          <input
+            id={filterId}
+            type="search"
+            className="exifedit__chunk-filter-input"
+            placeholder={`过滤 ${chunks.length} 个 chunk（按类型或摘要）…`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="过滤 chunk 列表"
+          />
+          {query && (
+            <button
+              type="button"
+              className="exifedit__chunk-filter-clear"
+              onClick={() => setQuery('')}
+              aria-label="清除过滤"
+              title="清除过滤"
             >
-              {chunk.type}
-            </span>
-          </span>
-          <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
-            {chunk.dataLength}
-          </span>
-          <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
-            {chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
-          </span>
+              ✕
+            </button>
+          )}
         </div>
-      ))}
+      )}
+      {/* 匹配数量提示（仅在过滤时显示） */}
+      {query.trim() && (
+        <p className="exifedit__chunk-filter-count" role="status">
+          匹配 {filteredChunks.length} / {chunks.length} 个 chunk
+        </p>
+      )}
+      {/* chunk 表格 */}
+      {filteredChunks.length === 0 ? (
+        <p className="exifedit__hint exifedit__chunk-empty">无匹配 chunk，请尝试其他关键词</p>
+      ) : (
+        <div className="exifedit__chunk-list" role="table" aria-label="PNG chunk 列表">
+          <div className="exifedit__chunk-row exifedit__chunk-row--head" role="row">
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="columnheader">#</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="columnheader">类型</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="columnheader">字节</span>
+            <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="columnheader">摘要</span>
+          </div>
+          {filteredChunks.map((chunk, idx) => (
+            <div
+              key={`${chunk.type}-${chunk.offset}-${idx}`}
+              className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}`}
+              role="row"
+            >
+              <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
+              <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
+                <span
+                  className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
+                  title={PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+                >
+                  {chunk.type}
+                </span>
+              </span>
+              <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
+                {chunk.dataLength}
+              </span>
+              <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
+                {chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
