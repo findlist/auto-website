@@ -825,34 +825,6 @@ export async function buildMetadataZip(summary: BundleSummary): Promise<Blob> {
   return zip.finish();
 }
 
-// ============================================================
-// 下载辅助
-// ============================================================
-
-/**
- * 触发浏览器下载
- *
- * 使用 ObjectURL + 隐藏 a 标签触发下载，2 秒后释放 ObjectURL
- */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // 异步释放，避免下载未完成时被回收
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-/** 文本下载（基于 Blob 构造） */
-export function downloadText(text: string, filename: string, mime = 'text/plain'): void {
-  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-  downloadBlob(blob, filename);
-}
-
 /** 生成带时间戳的文件名 */
 export function timestampedFilename(prefix: string, ext: string): string {
   const now = new Date();

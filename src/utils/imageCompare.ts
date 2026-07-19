@@ -342,29 +342,6 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-/**
- * 触发文件下载
- */
-export function downloadDataUrl(dataUrl: string, filename: string): void {
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-/**
- * 触发文本文件下载（用于 JSON 导出）
- */
-export function downloadText(text: string, filename: string, mime = 'application/json'): void {
-  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-  const url = URL.createObjectURL(blob);
-  downloadDataUrl(url, filename);
-  // 异步释放，避免下载未完成时回收
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 /* ============================================================
  *  增强能力：差异区域聚类 + JSON 导出
  * ============================================================ */
@@ -1449,11 +1426,4 @@ export async function buildBatchDiffImagesZip(summary: BatchCompareSummary): Pro
   writer.addFile('README.txt', new TextEncoder().encode(readmeLines.join('\n')));
 
   return writer.finish();
-}
-
-/** 下载 Blob 为文件（异步释放 ObjectURL，避免下载未完成时回收） */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  downloadDataUrl(url, filename);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }

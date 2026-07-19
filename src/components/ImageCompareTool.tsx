@@ -8,9 +8,6 @@ import {
   buildDiffExportJson,
   buildBatchExportJson,
   buildBatchDiffImagesZip,
-  downloadDataUrl,
-  downloadText,
-  downloadBlob,
   composeSideBySide,
   formatBytes,
   extractRegionDataUrl,
@@ -26,6 +23,7 @@ import {
   type FilePairResult,
   type PrefixGroup,
 } from '../utils/imageCompare';
+import { downloadBlob, downloadDataUrl, downloadText } from '../utils/download';
 
 /** 应用模式：单图对比 / 批量对比 */
 type AppMode = 'single' | 'batch';

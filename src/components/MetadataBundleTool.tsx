@@ -6,8 +6,6 @@ import {
   buildMarkdownReport,
   buildCsvReport,
   buildMetadataZip,
-  downloadBlob,
-  downloadText,
   timestampedFilename,
   MAX_FILE_SIZE,
   SUPPORTED_MIME_TYPES,
@@ -18,6 +16,7 @@ import {
   type RiskLevel,
   type Severity,
 } from '../utils/metadataBundle';
+import { downloadBlob, downloadText } from '../utils/download';
 
 /**
  * 图片元数据打包工具
