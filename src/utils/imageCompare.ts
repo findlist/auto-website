@@ -848,6 +848,20 @@ export async function compareImagePairsBatch(
 }
 
 /**
+ * 文件配对结果（统一结构，兼容顺序配对与前缀配对）
+ */
+export interface FilePairResult {
+  /** 配对成功的文件对列表 */
+  pairs: File[][];
+  /** 警告信息（如未配对文件、分组异常等） */
+  warning?: string;
+  /** 未配对的文件列表（前缀模式下可能有） */
+  unmatched?: File[];
+  /** 前缀分组信息（仅前缀模式提供，便于 UI 展示） */
+  groups?: { prefix: string; files: File[] }[];
+}
+
+/**
  * 将文件列表按顺序两两配对
  * 策略：files[0]+files[1]、files[2]+files[3]...
  *
@@ -858,7 +872,7 @@ export async function compareImagePairsBatch(
  */
 export function pairFilesSequentially(
   files: File[],
-): { pairs: File[][]; warning?: string } {
+): FilePairResult {
   if (files.length === 0) {
     return { pairs: [], warning: '未选择任何文件' };
   }
@@ -879,6 +893,137 @@ export function pairFilesSequentially(
     };
   }
   return { pairs };
+}
+
+/** 文件名分隔符：用于切分前缀 key */
+const FILENAME_SEPARATORS = /[_\-.\s]+/;
+
+/**
+ * 提取文件名 stem（去扩展名）
+ * 例：`logo_v1.png` → `logo_v1`；`homepage-before.jpeg` → `homepage-before`
+ */
+function getFileStem(fileName: string): string {
+  const lastDot = fileName.lastIndexOf('.');
+  // 仅识别最后一个点且不是首字符（隐藏文件如 `.gitignore` 视为无扩展名）
+  if (lastDot > 0) {
+    return fileName.slice(0, lastDot);
+  }
+  return fileName;
+}
+
+/**
+ * 计算文件名的前缀 key
+ * 策略：去掉扩展名后，取最后一个分隔符之前的部分
+ *  - `logo_v1` → `logo`
+ *  - `homepage-before` → `homepage`
+ *  - `test_001_a` → `test_001`
+ *  - `icon.a` → `icon`
+ *  - `README` → `README`（无分隔符时使用完整 stem）
+ */
+function getFilePrefixKey(fileName: string): string {
+  const stem = getFileStem(fileName);
+  const match = stem.split(FILENAME_SEPARATORS).filter(Boolean);
+  if (match.length <= 1) {
+    return stem;
+  }
+  // 去掉最后一个 token，剩余部分用下划线重新连接（统一分隔符便于分组聚合）
+  return match.slice(0, -1).join('_');
+}
+
+/**
+ * 将文件列表按文件名前缀自动配对
+ * 策略：
+ *  1. 提取每个文件的 stem（去扩展名）
+ *  2. 计算前缀 key（最后一个分隔符之前的部分）
+ *  3. 按前缀 key 分组，组内按文件名自然排序（保证结果稳定可预测）
+ *  4. 每组按顺序两两配对（与顺序配对一致），剩余文件收集到 unmatched
+ *
+ * 适用场景：
+ *  - 同一设计的多版本对比：`logo_v1.png` vs `logo_v2.png`
+ *  - 设计稿 before/after 对比：`homepage_before.png` vs `homepage_after.png`
+ *  - 回归测试截图配对：`test_001_expected.png` vs `test_001_actual.png`
+ *
+ * @param files 文件列表
+ * @returns 配对结果（含未配对文件与分组信息）
+ */
+export function pairFilesByNamePrefix(files: File[]): FilePairResult {
+  if (files.length === 0) {
+    return { pairs: [], warning: '未选择任何文件' };
+  }
+  if (files.length < 2) {
+    return { pairs: [], warning: '至少需要 2 个文件才能配对' };
+  }
+
+  // 1. 按前缀 key 分组
+  const groupMap = new Map<string, File[]>();
+  for (const file of files) {
+    const key = getFilePrefixKey(file.name);
+    const group = groupMap.get(key);
+    if (group) {
+      group.push(file);
+    } else {
+      groupMap.set(key, [file]);
+    }
+  }
+
+  // 2. 组内按文件名自然排序（保证配对结果稳定可预测）
+  const groups: { prefix: string; files: File[] }[] = [];
+  for (const [prefix, groupFiles] of groupMap) {
+    groupFiles.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN-u-co-pinyin'));
+    groups.push({ prefix, files: groupFiles });
+  }
+  // 组间按前缀字典序排序，保证 UI 展示稳定
+  groups.sort((a, b) => a.prefix.localeCompare(b.prefix, 'zh-Hans-CN-u-co-pinyin'));
+
+  // 3. 每组按顺序两两配对，收集未配对文件
+  const pairs: File[][] = [];
+  const unmatched: File[] = [];
+  const oddGroupPrefixes: string[] = [];
+  const over2GroupPrefixes: string[] = [];
+
+  for (const group of groups) {
+    const { prefix, files: groupFiles } = group;
+    if (groupFiles.length === 1) {
+      // 单文件组无法配对
+      unmatched.push(...groupFiles);
+      oddGroupPrefixes.push(prefix);
+      continue;
+    }
+    if (groupFiles.length > 2) {
+      // 超过 2 个文件的组：前两个配对，剩余进入未配对
+      over2GroupPrefixes.push(`${prefix}（${groupFiles.length} 个）`);
+    }
+    for (let i = 0; i + 1 < groupFiles.length; i += 2) {
+      pairs.push([groupFiles[i], groupFiles[i + 1]]);
+    }
+    if (groupFiles.length % 2 === 1) {
+      unmatched.push(groupFiles[groupFiles.length - 1]);
+    }
+  }
+
+  // 4. 生成警告信息（按情况组合，便于用户理解）
+  const warnings: string[] = [];
+  if (over2GroupPrefixes.length > 0) {
+    warnings.push(`以下前缀分组超过 2 个文件，已按文件名排序后顺序配对，剩余文件忽略：${over2GroupPrefixes.join('、')}`);
+  }
+  if (oddGroupPrefixes.length > 0) {
+    warnings.push(`以下前缀分组仅有 1 个文件无法配对：${oddGroupPrefixes.join('、')}`);
+  }
+  if (pairs.length === 0) {
+    return {
+      pairs: [],
+      warning: '按文件名前缀配对失败：未找到任何可配对的同前缀文件，请改用顺序配对或检查文件命名',
+      unmatched,
+      groups,
+    };
+  }
+
+  return {
+    pairs,
+    warning: warnings.length > 0 ? warnings.join('；') : undefined,
+    unmatched,
+    groups,
+  };
 }
 
 /**

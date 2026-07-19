@@ -4,6 +4,7 @@ import {
   compareImagesDiffWithRegions,
   compareImagePairsBatch,
   pairFilesSequentially,
+  pairFilesByNamePrefix,
   buildDiffExportJson,
   buildBatchExportJson,
   buildBatchDiffImagesZip,
@@ -21,10 +22,14 @@ import {
   type DiffRegion,
   type DiffResultWithRegions,
   type BatchCompareSummary,
+  type FilePairResult,
 } from '../utils/imageCompare';
 
 /** 应用模式：单图对比 / 批量对比 */
 type AppMode = 'single' | 'batch';
+
+/** 批量对比的配对模式：顺序配对 / 前缀配对 */
+type PairMode = 'sequential' | 'prefix';
 
 /**
  * 图片对比工具
@@ -1028,6 +1033,8 @@ function BatchCompareMode() {
   const [zipping, setZipping] = useState(false);
   // ZIP 打包错误提示（独立于对比错误，便于定位）
   const [zipError, setZipError] = useState<string>('');
+  // 配对模式：顺序配对（第 1+2、3+4...）/ 前缀配对（按文件名前缀自动分组）
+  const [pairMode, setPairMode] = useState<PairMode>('sequential');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -1069,7 +1076,12 @@ function BatchCompareMode() {
       return;
     }
 
-    const { pairs: filePairs, warning } = pairFilesSequentially(files);
+    // 根据当前配对模式调用不同配对函数
+    const pairResult = pairMode === 'prefix'
+      ? pairFilesByNamePrefix(files)
+      : pairFilesSequentially(files);
+    const filePairs = pairResult.pairs;
+    const warning = pairResult.warning;
     setPairWarning(warning ?? '');
 
     if (filePairs.length === 0) {
@@ -1122,7 +1134,7 @@ function BatchCompareMode() {
     } finally {
       setComputing(false);
     }
-  }, [files, threshold]);
+  }, [files, threshold, pairMode]);
 
   /** 导出批量对比 JSON 报告 */
   const handleExportBatchJson = useCallback(() => {
@@ -1159,12 +1171,31 @@ function BatchCompareMode() {
     setExpandedIdx((current) => (current === idx ? -1 : idx));
   }, []);
 
-  // 配对预览（基于当前文件列表）
-  const pairPreview = useMemo(() => {
-    if (files.length < 2) return [];
-    const { pairs } = pairFilesSequentially(files);
-    return pairs;
-  }, [files]);
+  // 配对预览（基于当前文件列表与配对模式）
+  const pairResult = useMemo<FilePairResult>(() => {
+    if (files.length < 2) {
+      return { pairs: [] };
+    }
+    return pairMode === 'prefix'
+      ? pairFilesByNamePrefix(files)
+      : pairFilesSequentially(files);
+  }, [files, pairMode]);
+
+  const pairPreview = pairResult.pairs;
+
+  // 构建文件索引 → 配对信息（pairIdx / role）映射，用于文件列表的角色标签显示
+  // File 对象作为 Map key 基于引用相等，配对函数返回的 File 与 files 数组中是同一引用
+  const filePairInfoMap = useMemo(() => {
+    const map = new Map<File, { pairIdx: number; role: 'A' | 'B' }>();
+    pairPreview.forEach((pair, pairIdx) => {
+      if (pair[0]) map.set(pair[0], { pairIdx, role: 'A' });
+      if (pair[1]) map.set(pair[1], { pairIdx, role: 'B' });
+    });
+    return map;
+  }, [pairPreview]);
+
+  // 未配对文件列表（仅前缀模式下可能存在）
+  const unmatchedFiles = pairResult.unmatched ?? [];
 
   return (
     <div className="imgcmp__batch">
@@ -1208,9 +1239,45 @@ function BatchCompareMode() {
           {computing ? `处理中... (${progress.current}/${progress.total})` : '点击或拖拽多个图片文件'}
         </div>
         <div className="imgcmp__batch-drop-hint">
-          文件按选择顺序两两配对（第 1+2、3+4...），最多 {MAX_BATCH_PAIRS} 对
+          {pairMode === 'prefix'
+            ? `按文件名前缀自动配对（同前缀的两两配对），最多 ${MAX_BATCH_PAIRS} 对`
+            : `文件按选择顺序两两配对（第 1+2、3+4...），最多 ${MAX_BATCH_PAIRS} 对`}
         </div>
       </div>
+
+      {/* 配对模式切换器（仅在有文件时显示） */}
+      {files.length > 0 && (
+        <div className="imgcmp__pair-mode" role="radiogroup" aria-label="批量配对模式">
+          <span className="imgcmp__pair-mode-label">配对方式：</span>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={pairMode === 'sequential'}
+            className={`imgcmp__pair-mode-btn${pairMode === 'sequential' ? ' imgcmp__pair-mode-btn--active' : ''}`}
+            onClick={() => setPairMode('sequential')}
+            disabled={computing}
+            title="按选择顺序两两配对：第 1+2、3+4..."
+          >
+            顺序配对
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={pairMode === 'prefix'}
+            className={`imgcmp__pair-mode-btn${pairMode === 'prefix' ? ' imgcmp__pair-mode-btn--active' : ''}`}
+            onClick={() => setPairMode('prefix')}
+            disabled={computing}
+            title="按文件名前缀自动配对：去掉扩展名与最后一个分隔符后的部分作为前缀，同前缀的两两配对"
+          >
+            前缀配对
+          </button>
+          <span className="imgcmp__pair-mode-hint">
+            {pairMode === 'prefix'
+              ? '同前缀自动分组（如 logo_v1.png + logo_v2.png → 前缀 logo）'
+              : '按选择顺序两两配对'}
+          </span>
+        </div>
+      )}
 
       {/* 文件列表 */}
       {files.length > 0 && (
@@ -1221,6 +1288,11 @@ function BatchCompareMode() {
               {pairPreview.length > 0 && (
                 <span className="imgcmp__batch-files-pairs">
                   {' '}/ 将配对为 {pairPreview.length} 对
+                </span>
+              )}
+              {pairMode === 'prefix' && unmatchedFiles.length > 0 && (
+                <span className="imgcmp__batch-files-unmatched">
+                  {' '}/ {unmatchedFiles.length} 个未配对
                 </span>
               )}
             </span>
@@ -1235,17 +1307,28 @@ function BatchCompareMode() {
           </div>
           <ol className="imgcmp__batch-files-list">
             {files.map((file, idx) => {
-              // 判断该文件在配对中的位置（A 或 B）
-              const pairIdx = Math.floor(idx / 2);
-              const roleInPair = idx % 2 === 0 ? 'A' : 'B';
+              // 通过配对映射查找该文件在配对中的位置（A 或 B）
+              const info = filePairInfoMap.get(file);
+              const isMatched = Boolean(info);
+              const pairIdx = info?.pairIdx ?? -1;
+              const roleInPair = info?.role ?? 'A';
               return (
-                <li key={`file-${idx}-${file.name}`} className="imgcmp__batch-file-item">
+                <li
+                  key={`file-${idx}-${file.name}`}
+                  className={`imgcmp__batch-file-item${isMatched ? '' : ' imgcmp__batch-file-item--unmatched'}`}
+                >
                   <span className="imgcmp__batch-file-index">{idx + 1}</span>
                   <span className="imgcmp__batch-file-name" title={file.name}>{file.name}</span>
                   <span className="imgcmp__batch-file-meta">{formatBytes(file.size)}</span>
-                  <span className={`imgcmp__batch-file-role imgcmp__batch-file-role--${roleInPair.toLowerCase()}`}>
-                    对{pairIdx + 1}-{roleInPair}
-                  </span>
+                  {isMatched ? (
+                    <span className={`imgcmp__batch-file-role imgcmp__batch-file-role--${roleInPair.toLowerCase()}`}>
+                      对{pairIdx + 1}-{roleInPair}
+                    </span>
+                  ) : (
+                    <span className="imgcmp__batch-file-role imgcmp__batch-file-role--none" title="该文件未匹配到同前缀文件，将不参与对比">
+                      未配对
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="imgcmp__batch-file-remove"

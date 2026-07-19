@@ -5,12 +5,12 @@ import ImageCompareTool from '../components/ImageCompareTool.tsx';
 const meta: SiteMeta = {
   title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 区域放大 / 批量对比）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图（最长边放大至 480px），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告，支持批量 JSON 导出与 ZIP 打包下载所有差异图（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），适用于 CI/CD 截图回归测试批量执行与归档场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图（最长边放大至 480px），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对，提供两种配对方式：顺序配对（第 1+2、3+4...）与前缀配对（按文件名前缀自动分组，同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo），未配对文件单独标记不参与对比；队列处理输出汇总报告，支持批量 JSON 导出与 ZIP 打包下载所有差异图（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），适用于 CI/CD 截图回归测试批量执行与归档场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比，批量对比与队列处理，ZIP 打包下载所有差异图，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比，批量对比支持顺序配对与前缀配对两种方式，ZIP 打包下载所有差异图，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -35,7 +35,9 @@ const meta: SiteMeta = {
         并自动<strong>检测差异区域</strong>（网格分块 + 并查集连通合并，框选位置并列表展示），
         支持<strong>区域放大查看</strong>（双击差异区域弹 modal 三联对比 A/B/差异图，键盘 ← → 切换区域，便于小区域细节定位），
         支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
-        <strong>批量对比模式</strong>支持上传多张图片自动两两配对（第 1+2、3+4...），
+        <strong>批量对比模式</strong>支持上传多张图片自动两两配对，提供两种配对方式：
+        <strong>顺序配对</strong>（第 1+2、3+4...）与<strong>前缀配对</strong>（按文件名前缀自动分组，
+        同前缀的两两配对，如 logo_v1.png + logo_v2.png → 前缀 logo，未配对文件单独标记不参与对比），
         队列处理输出汇总报告，支持<strong>批量 JSON 导出</strong>与
         <strong>ZIP 打包下载所有差异图</strong>（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），
         适用于 CI/CD 截图回归测试批量执行与归档场景。
@@ -231,19 +233,25 @@ const meta: SiteMeta = {
         </p>
       </details>
       <details>
-        <summary>批量对比的配对策略是什么？能否自定义配对？</summary>
+        <summary>批量对比的配对策略是什么？支持哪些配对方式？</summary>
         <p>
-          当前批量对比采用<strong>顺序两两配对</strong>策略：按用户选择文件的顺序，
-          第 1 个与第 2 个配对、第 3 个与第 4 个配对，以此类推。
-          这种策略简单直观，用户可以通过<strong>调整文件选择顺序</strong>或<strong>移除单个文件</strong>
-          来控制配对方式。<br />
-          <strong>奇数个文件处理</strong>：若文件数为奇数，最后一个文件无法配对，
-          页面会显示警告提示「最后一个文件『xxx』无法配对，已忽略」，但其他对仍会正常对比。<br />
-          <strong>为何不提供文件名自动配对？</strong>文件名配对（如 a-1.png vs b-1.png）需要约定命名规则，
-          不同用户习惯差异大，且容易因命名不一致导致配对错误。顺序配对让用户完全控制配对方式，
-          透明可预期。<br />
-          <strong>建议工作流</strong>：在文件管理器中按目标配对顺序重命名文件（如 01-a.png、01-b.png、
-          02-a.png、02-b.png），然后全选拖入即可按预期配对。
+          批量对比支持<strong>两种配对方式</strong>，可在文件列表上方的「配对方式」切换器中选择：<br />
+          <strong>1. 顺序配对（默认）</strong>：按用户选择文件的顺序两两配对，第 1 个与第 2 个、第 3 个与第 4 个...
+          适合文件已按目标配对顺序排列的场景。可通过调整文件选择顺序或移除单个文件来控制配对方式。<br />
+          <strong>2. 前缀配对</strong>：按文件名前缀自动分组，同前缀的两两配对。
+          前缀提取规则：去掉文件扩展名后，取最后一个分隔符（<code>_ - . 空格</code>）之前的部分作为前缀。
+          例如：<code>logo_v1.png</code> + <code>logo_v2.png</code> → 前缀 <code>logo</code>；
+          <code>homepage-before.png</code> + <code>homepage-after.png</code> → 前缀 <code>homepage</code>；
+          <code>test_001_expected.png</code> + <code>test_001_actual.png</code> → 前缀 <code>test_001</code>。
+          适合版本对比、before/after 对比、回归测试截图配对等场景，免去手动排序的麻烦。<br />
+          <strong>未配对文件处理</strong>：前缀配对模式下，若某前缀分组只有 1 个文件（无同前缀伙伴），
+          或某分组文件数为奇数，剩余文件会在文件列表中标记为「未配对」（红色虚线边框），不参与对比。
+          顺序配对模式下，奇数个文件时最后一个会被忽略并显示警告。<br />
+          <strong>分组超过 2 个文件</strong>：前缀配对模式下，若某前缀分组超过 2 个文件
+          （如 <code>v1</code>、<code>v2</code>、<code>v3</code>），会按文件名排序后顺序两两配对
+          （v1 vs v2），剩余文件（v3）标记为未配对，并显示警告。<br />
+          <strong>建议工作流</strong>：版本对比建议使用前缀配对（如 <code>logo_v1.png</code> + <code>logo_v2.png</code>）；
+          无明确命名规则时使用顺序配对，并在文件管理器中按目标配对顺序重命名文件后全选拖入。
         </p>
       </details>
       <details>
@@ -1146,6 +1154,13 @@ const meta: SiteMeta = {
       justify-content: center;
     }
 
+    /* 配对模式提示在窄屏占满整行，避免挤压按钮 */
+    .imgcmp__pair-mode-hint {
+      flex: 1 1 100%;
+      min-width: 0;
+      margin-top: 2px;
+    }
+
     .imgcmp__stats {
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
@@ -1402,6 +1417,91 @@ const meta: SiteMeta = {
   .imgcmp__batch-files-pairs {
     color: var(--color-text-soft);
     font-weight: 400;
+  }
+
+  .imgcmp__batch-files-unmatched {
+    color: #e67e22;
+    font-weight: 500;
+  }
+
+  /* 配对模式切换器 */
+  .imgcmp__pair-mode {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .imgcmp__pair-mode-label {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__pair-mode-btn {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    min-height: 32px;
+  }
+
+  .imgcmp__pair-mode-btn:hover:not(:disabled) {
+    border-color: var(--color-primary, #5b8cff);
+    color: var(--color-text);
+  }
+
+  .imgcmp__pair-mode-btn--active {
+    background: rgba(91, 140, 255, 0.12);
+    border-color: #5b8cff;
+    color: #5b8cff;
+  }
+
+  .imgcmp__pair-mode-btn--active:hover:not(:disabled) {
+    background: rgba(91, 140, 255, 0.18);
+    color: #4a7ce8;
+  }
+
+  .imgcmp__pair-mode-btn:focus-visible {
+    outline: 2px solid #5b8cff;
+    outline-offset: 2px;
+  }
+
+  .imgcmp__pair-mode-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .imgcmp__pair-mode-hint {
+    flex: 1 1 auto;
+    min-width: 200px;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    line-height: 1.4;
+  }
+
+  /* 未配对文件样式（前缀模式下未匹配到同前缀的文件） */
+  .imgcmp__batch-file-item--unmatched {
+    opacity: 0.65;
+    background: rgba(231, 76, 60, 0.04);
+    border-style: dashed;
+  }
+
+  .imgcmp__batch-file-role--none {
+    background: rgba(231, 76, 60, 0.12);
+    color: #c0392b;
   }
 
   .imgcmp__batch-files-list {
