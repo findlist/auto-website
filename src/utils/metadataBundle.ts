@@ -675,6 +675,29 @@ export function buildMarkdownReport(summary: BundleSummary): string {
   return lines.join('\n');
 }
 
+/**
+ * 生成 JSON Lines 报告（NDJSON 格式，每行一个独立 JSON 对象）
+ *
+ * 与 buildJsonReport 的差异：
+ *  - buildJsonReport：输出完整 BundleSummary（含统计汇总 + reports 数组），单 JSON 文档
+ *  - buildJsonLinesReport：每行一个 ImageMetadataReport，无统计汇总，便于流式处理
+ *
+ * 适用场景：
+ *  - 日志聚合系统（ELK / Loki / Fluentd）按行采集与索引
+ *  - 大数据管道（Kafka / Spark Streaming）逐行消费
+ *  - 增量处理：可只读取前 N 行而无需解析整个 JSON 文档
+ *  - 命令行管道：`cat reports.jsonl | jq -c 'select(.privacy.riskLevel=="high")'`
+ *
+ * 设计决策：
+ *  - 每行严格一个 JSON 对象，行尾 \n，符合 NDJSON 规范（https://github.com/ndjson/ndjson-spec）
+ *  - 不输出汇总信息（BundleSummary 的统计字段），如需汇总用 buildJsonReport
+ *  - 失败的图片（含 parseError）也输出，保留完整数据便于排查
+ *  - 字符串内嵌的换行符会被 JSON.stringify 转义为 \n，不会破坏行结构
+ */
+export function buildJsonLinesReport(summary: BundleSummary): string {
+  return summary.reports.map((r) => JSON.stringify(r)).join('\n') + '\n';
+}
+
 /** CSV 字段转义（含逗号、引号、换行需加双引号包裹） */
 function csvEscape(value: string): string {
   if (/[",\n\r]/.test(value)) {
@@ -738,6 +761,7 @@ export function buildCsvReport(summary: BundleSummary): string {
  *  - README.txt（用户友好的说明文档）
  *  - summary.md（人类可读的 Markdown 报告）
  *  - summary.csv（表格分析报告）
+ *  - summary.jsonl（NDJSON 流式格式，每行一个图片报告，便于日志聚合与大数据管道）
  */
 export async function buildMetadataZip(summary: BundleSummary): Promise<Blob> {
   const zip = new ZipWriter();
@@ -766,9 +790,10 @@ export async function buildMetadataZip(summary: BundleSummary): Promise<Blob> {
     '',
     '文件说明：',
     '  - XXX_文件名.json    每张图片的完整元数据与隐私分析',
-    '  - manifest.json      批量处理汇总（结构化）',
+    '  - manifest.json      批量处理汇总（结构化，含统计与全部报告）',
     '  - summary.md         人类可读的 Markdown 报告',
-    '  - summary.csv        表格分析报告（Excel 可打开）',
+    '  - summary.csv        表格分析报告（Excel 可打开，一行一图）',
+    '  - summary.jsonl      NDJSON 流式格式（每行一个图片报告，便于日志聚合与大数据管道）',
     '',
     '隐私风险等级：',
     '  - 高 (high)    包含 GPS 定位信息，分享前务必清理',
@@ -793,6 +818,9 @@ export async function buildMetadataZip(summary: BundleSummary): Promise<Blob> {
 
   // summary.csv
   zip.addFile('summary.csv', encoder.encode(buildCsvReport(summary)));
+
+  // summary.jsonl（NDJSON 格式，便于流式处理）
+  zip.addFile('summary.jsonl', encoder.encode(buildJsonLinesReport(summary)));
 
   return zip.finish();
 }

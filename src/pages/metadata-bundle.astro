@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import MetadataBundleTool from '../components/MetadataBundleTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片元数据打包工具 - 批量提取 EXIF / IPTC / XMP / ICC 并生成隐私分析报告（JSON / Markdown / CSV / ZIP）',
+  title: '图片元数据打包工具 - 批量提取 EXIF / IPTC / XMP / ICC 并生成隐私分析报告（JSON / JSON Lines / Markdown / CSV / ZIP）',
   description:
-    '在线图片元数据打包工具：批量上传 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP，一次性提取 EXIF / IPTC / XMP / ICC Profile 全部元数据，自动检测 GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图等 5 类隐私敏感字段并给出风险等级与清理建议。支持 JSON / Markdown / CSV / ZIP 四种格式报告导出，ZIP 包内含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv，纯浏览器本地打包零依赖。提供风险等级筛选、单图折叠详情、处理进度实时显示、暗色模式与移动端响应式。基于 exifr 库全本地解析，零上传、零追踪、可离线使用，适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。',
+    '在线图片元数据打包工具：支持选择文件夹递归批量上传 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP，一次性提取 EXIF / IPTC / XMP / ICC Profile 全部元数据，自动检测 GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图等 5 类隐私敏感字段并给出风险等级与清理建议。支持 JSON / JSON Lines (NDJSON) / Markdown / CSV / ZIP 五种格式报告导出，ZIP 包内含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv + summary.jsonl，纯浏览器本地打包零依赖。JSON Lines 格式每行一个图片报告，便于 ELK / Loki 日志聚合与 Kafka / Spark Streaming 大数据管道流式消费。提供风险等级筛选、单图折叠详情、处理进度实时显示、暗色模式与移动端响应式。基于 exifr 库全本地解析，零上传、零追踪、可离线使用，适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片元数据打包工具',
-    description: '在线图片元数据打包工具，批量提取 EXIF / IPTC / XMP / ICC 元数据，自动检测 5 类隐私敏感字段并生成风险报告，支持 JSON / Markdown / CSV / ZIP 四种格式导出，全本地处理零上传。',
+    description: '在线图片元数据打包工具，支持文件夹递归批量上传，提取 EXIF / IPTC / XMP / ICC 元数据，自动检测 5 类隐私敏感字段并生成风险报告，支持 JSON / JSON Lines / Markdown / CSV / ZIP 五种格式导出，全本地处理零上传。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -27,15 +27,16 @@ const meta: SiteMeta = {
     <div class="page-hero page-hero--tool">
       <h1>图片元数据打包工具</h1>
       <p>
-        纯本地处理的<strong>在线图片元数据批量打包工具</strong>，一次性提取图片的
-        <strong>EXIF / IPTC / XMP / ICC Profile</strong> 全部元数据，
+        纯本地处理的<strong>在线图片元数据批量打包工具</strong>，支持<strong>选择文件夹递归上传</strong>，
+        一次性提取图片的 <strong>EXIF / IPTC / XMP / ICC Profile</strong> 全部元数据，
         自动检测 <strong>GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图</strong> 5 类隐私敏感字段，
         给出风险等级（高 / 中 / 低）与逐项清理建议。
-        支持 <strong>JSON / Markdown / CSV / ZIP</strong> 四种格式报告导出：
-        JSON 便于程序解析、Markdown 便于人类阅读、CSV 便于表格分析、
-        <strong>ZIP 完整包</strong>含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv，
+        支持 <strong>JSON / JSON Lines (NDJSON) / Markdown / CSV / ZIP</strong> 五种格式报告导出：
+        JSON 便于程序解析、<strong>JSON Lines 每行一个图片报告便于日志聚合与大数据管道流式消费</strong>、
+        Markdown 便于人类阅读、CSV 便于表格分析、
+        <strong>ZIP 完整包</strong>含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv + summary.jsonl，
         纯浏览器原生 API 打包零依赖。
-        支持批量上传、处理进度实时显示、风险等级筛选、单图折叠详情查看，
+        支持批量上传、文件夹递归扫描、处理进度实时显示、风险等级筛选、单图折叠详情查看，
         提供<strong>暗色模式</strong>与<strong>移动端响应式</strong>。
         基于 exifr 库全本地解析，<strong>零上传、零追踪、可离线使用</strong>，
         适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。
@@ -83,16 +84,54 @@ const meta: SiteMeta = {
       </details>
 
       <details>
-        <summary>四种导出格式分别适合什么场景？</summary>
+        <summary>五种导出格式分别适合什么场景？</summary>
         <p>
-          本工具提供 JSON / Markdown / CSV / ZIP 四种格式报告：
+          本工具提供 JSON / JSON Lines / Markdown / CSV / ZIP 五种格式报告：
           <br />
           - <strong>JSON</strong>：结构化数据，包含完整 BundleSummary（含每图完整报告 + 隐私分析 + 统计汇总），便于程序解析、CI/CD 集成、数据库存储<br />
+          - <strong>JSON Lines (NDJSON)</strong>：每行一个独立 JSON 对象（一个图片报告），无统计汇总，便于日志聚合系统（ELK / Loki / Fluentd）按行采集与索引、大数据管道（Kafka / Spark Streaming）逐行消费、增量处理（可只读取前 N 行而无需解析整个 JSON 文档）、命令行管道（<code>cat reports.jsonl | jq -c 'select(.privacy.riskLevel=="high")'</code>）<br />
           - <strong>Markdown</strong>：人类可读的报告，含概览统计表格、各图详情、隐私发现清单、EXIF 关键字段（前 20 项），适合文档归档、团队分享、报告粘贴<br />
           - <strong>CSV</strong>：表格格式，一行一图，含 16 列（序号、文件名、大小、MIME、修改时间、宽高、格式、色彩空间、风险等级、5 类隐私命中、解析错误），适合 Excel 分析、批量筛选、统计对比<br />
-          - <strong>ZIP 完整包</strong>：归档所有内容，包含每图独立 JSON（含完整元数据）+ manifest.json（汇总）+ README.txt（用户友好说明）+ summary.md（Markdown 报告）+ summary.csv（CSV 报告），适合一次性归档、长期保存、跨工具协作<br />
+          - <strong>ZIP 完整包</strong>：归档所有内容，包含每图独立 JSON（含完整元数据）+ manifest.json（汇总）+ README.txt（用户友好说明）+ summary.md（Markdown 报告）+ summary.csv（CSV 报告）+ summary.jsonl（NDJSON 报告），适合一次性归档、长期保存、跨工具协作<br />
           <br />
-          ZIP 采用 STORE 模式打包（无压缩），原因：JSON / Markdown / CSV 均为文本文件，ZIP 内主要是结构化数据，DEFLATE 压缩收益微小（&lt;5%），STORE 实现简单且打包速度快。ZIP 文件名格式为 <code>metadata-bundle-YYYYMMDD.zip</code>。
+          ZIP 采用 STORE 模式打包（无压缩），原因：JSON / Markdown / CSV / JSON Lines 均为文本文件，ZIP 内主要是结构化数据，DEFLATE 压缩收益微小（&lt;5%），STORE 实现简单且打包速度快。ZIP 文件名格式为 <code>metadata-bundle-YYYYMMDD.zip</code>，JSON Lines 文件名格式为 <code>metadata-bundle-YYYYMMDD.jsonl</code>。
+        </p>
+      </details>
+
+      <details>
+        <summary>能否批量上传整个文件夹？递归处理子目录吗？</summary>
+        <p>
+          支持批量上传整个文件夹。<strong>点击上传区的「🗂️ 选择整个文件夹（递归上传）」按钮</strong>，在弹出的文件夹选择对话框中选定一个目录，浏览器会递归收集该目录及所有子目录下的全部文件，本工具会自动过滤出支持的图片文件（JPEG / PNG / WebP / TIFF / HEIC / HEIF / GIF / AVIF / BMP），非图片文件会被跳过并在上传区下方显示「已从所选文件夹跳过 N 个非图片文件」提示。
+          <br /><br />
+          实现基于浏览器原生的 <code>webkitdirectory</code> 属性（Chrome / Edge / Firefox / Safari 均支持），无需插件或额外权限。典型用途：
+          <br />
+          - 批量扫描相册文件夹（如手机导出的 DCIM 目录）进行隐私审计<br />
+          - 批量处理设计稿文件夹（含子项目子目录）的元数据归档<br />
+          - CI/CD 流水线中对构建产物目录做元数据回归测试<br />
+          <br />
+          单文件大小上限仍为 <strong>100MB</strong>，超过上限的文件会被跳过。如文件夹内图片数量很多（如 100+ 张），建议分批处理（每批 30-50 张），避免长时间占用浏览器。
+        </p>
+      </details>
+
+      <details>
+        <summary>JSON Lines (NDJSON) 格式与普通 JSON 有何差异？何时选用？</summary>
+        <p>
+          <strong>JSON Lines（又称 NDJSON，Newline Delimited JSON）</strong>是每行一个独立 JSON 对象的文本格式，符合 <a href="https://github.com/ndjson/ndjson-spec" rel="noopener" target="_blank">NDJSON 规范</a>，与普通 JSON 的核心差异：
+          <br />
+          - <strong>结构</strong>：普通 JSON 是单个文档（本工具输出含统计汇总 + reports 数组的 BundleSummary）；JSON Lines 每行一个图片报告，无统计汇总<br />
+          - <strong>解析方式</strong>：普通 JSON 需一次性读入内存解析整个文档；JSON Lines 可逐行流式解析，内存占用恒定<br />
+          - <strong>追加写入</strong>：普通 JSON 不支持追加（需重写整个文档）；JSON Lines 可直接在文件末尾追加新行<br />
+          - <strong>容错性</strong>：普通 JSON 任一语法错误会导致整个文档解析失败；JSON Lines 单行错误只影响该行，其他行可正常解析<br />
+          <br />
+          <strong>何时选用 JSON Lines</strong>：
+          <br />
+          - 日志聚合系统（ELK / Loki / Fluentd）按行采集与索引，每行作为一个独立事件<br />
+          - 大数据管道（Kafka / Spark Streaming / Flink）逐行消费，无需等待完整文档<br />
+          - 增量处理：可只读取前 N 行而无需解析整个 JSON 文档<br />
+          - 命令行管道：<code>cat metadata-bundle-20260720.jsonl | jq -c 'select(.privacy.riskLevel=="high")'</code> 筛选高风险图片<br />
+          - 长期归档：可追加新数据而不重写整个文件，便于增量归档<br />
+          <br />
+          本工具输出的 JSON Lines 文件每行严格一个 ImageMetadataReport 对象（含文件名、文件大小、MIME、修改时间、图片信息、EXIF / IPTC / XMP / ICC 原始数据、隐私分析结果、解析错误、解析耗时），行尾 <code>\n</code>，字符串内嵌的换行符会被 JSON.stringify 转义为 <code>\n</code> 不会破坏行结构，文件扩展名为 <code>.jsonl</code>，MIME 类型为 <code>application/x-ndjson</code>。
         </p>
       </details>
 
@@ -258,6 +297,38 @@ const meta: SiteMeta = {
   .mdb__dropzone-hint {
     font-size: 12px;
     color: var(--color-text-soft, #6b7280);
+  }
+
+  /* 文件夹选择按钮：在 dropzone 内部，link 风格不抢主操作焦点 */
+  .mdb__folder-btn {
+    margin-top: 12px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-soft, #6b7280);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .mdb__folder-btn:hover,
+  .mdb__folder-btn:focus-visible {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-soft);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-primary-ring);
+  }
+
+  /* 文件夹跳过提示：柔和色，与 error 视觉层次区分 */
+  .mdb__folder-skipped {
+    padding: 8px 14px;
+    background: rgba(243, 156, 18, 0.08);
+    border: 1px solid rgba(243, 156, 18, 0.3);
+    border-radius: var(--radius-sm);
+    color: #9a6a00;
+    font-size: 13px;
   }
 
   .mdb__file-input {
@@ -1143,6 +1214,13 @@ const meta: SiteMeta = {
     color: #ff7b6b;
     background: rgba(231, 76, 60, 0.15);
     border-color: rgba(231, 76, 60, 0.4);
+  }
+
+  /* 暗色模式：文件夹跳过提示色温适配 */
+  :global([data-theme='dark']) .mdb__folder-skipped {
+    color: #f5b94a;
+    background: rgba(243, 156, 18, 0.15);
+    border-color: rgba(243, 156, 18, 0.4);
   }
 
   :global([data-theme='dark']) .mdb__finding--high {

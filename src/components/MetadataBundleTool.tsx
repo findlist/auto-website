@@ -1,7 +1,8 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   bundleParse,
   buildJsonReport,
+  buildJsonLinesReport,
   buildMarkdownReport,
   buildCsvReport,
   buildMetadataZip,
@@ -115,9 +116,22 @@ export default function MetadataBundleTool() {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   // 风险筛选
   const [riskFilter, setRiskFilter] = useState<RiskLevel | 'all'>('all');
+  // 文件夹上传跳过的非图片文件数（仅作友好提示，不阻断流程）
+  const [folderSkipped, setFolderSkipped] = useState<number | null>(null);
 
   // 文件输入引用
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 文件夹输入引用（webkitdirectory 为非标准属性，通过 ref + setAttribute 设置以保持 TS 类型干净）
+  const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // 设置文件夹 input 的非标准属性（webkitdirectory / directory）
+  // 浏览器支持：Chrome / Edge / Firefox / Safari，使用 setAttribute 避免 TS 类型报错
+  useEffect(() => {
+    const el = folderInputRef.current;
+    if (!el) return;
+    el.setAttribute('webkitdirectory', '');
+    el.setAttribute('directory', '');
+  }, []);
 
   /** 处理新增文件 */
   const handleAddFiles = useCallback((newFiles: FileList | File[]) => {
@@ -147,6 +161,8 @@ export default function MetadataBundleTool() {
       setFiles((prev) => [...prev, ...validFiles]);
       // 重置已有结果，避免新旧数据混淆
       setSummary(null);
+      // 文件夹跳过提示仅在文件夹上传当次有效，后续手动添加文件时清除
+      setFolderSkipped(null);
     }
   }, []);
 
@@ -158,6 +174,32 @@ export default function MetadataBundleTool() {
       e.target.value = '';
     }
   }, [handleAddFiles]);
+
+  /**
+   * 文件夹选择 change 事件
+   *
+   * webkitdirectory 模式下浏览器会递归收集文件夹内所有文件（含子目录），
+   * 这里先预过滤出支持的图片文件再交给 handleAddFiles，避免大量非图片文件
+   * 触发 handleAddFiles 的 errors 累加污染 UI。
+   */
+  const handleFolderInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const all = Array.from(e.target.files);
+    const imageFiles = all.filter((f) => isSupportedFile(f) && isFileSizeValid(f));
+    const skipped = all.length - imageFiles.length;
+    setFolderSkipped(skipped > 0 ? skipped : null);
+    if (imageFiles.length > 0) {
+      handleAddFiles(imageFiles);
+    } else {
+      setError(`所选文件夹未发现支持的图片文件（共扫描 ${all.length} 个文件）`);
+    }
+    e.target.value = '';
+  }, [handleAddFiles]);
+
+  /** 触发文件夹选择对话框 */
+  const handlePickFolder = useCallback(() => {
+    folderInputRef.current?.click();
+  }, []);
 
   /** 拖拽事件处理 */
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -190,6 +232,7 @@ export default function MetadataBundleTool() {
     setSummary(null);
     setError(null);
     setExpandedIdx(null);
+    setFolderSkipped(null);
   }, []);
 
   /** 执行批量解析 */
@@ -233,6 +276,18 @@ export default function MetadataBundleTool() {
     if (!summary) return;
     const text = buildCsvReport(summary);
     downloadText(text, timestampedFilename('metadata-bundle', 'csv'), 'text/csv');
+  }, [summary]);
+
+  /**
+   * 下载 JSON Lines 报告（NDJSON 格式）
+   *
+   * 每行一个图片报告，便于日志聚合系统（ELK / Loki）与大数据管道
+   *（Kafka / Spark Streaming）逐行消费，也可通过 `jq -c` 命令行管道筛选。
+   */
+  const handleDownloadJsonLines = useCallback(() => {
+    if (!summary) return;
+    const text = buildJsonLinesReport(summary);
+    downloadText(text, timestampedFilename('metadata-bundle', 'jsonl'), 'application/x-ndjson');
   }, [summary]);
 
   /** 下载 ZIP 包 */
@@ -295,6 +350,18 @@ export default function MetadataBundleTool() {
           <div className="mdb__dropzone-hint">
             支持 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP，单文件最大 {formatBytes(MAX_FILE_SIZE)}
           </div>
+          {/* 文件夹选择按钮：阻止冒泡避免触发 dropzone 整体点击 */}
+          <button
+            type="button"
+            className="mdb__folder-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePickFolder();
+            }}
+            title="递归上传文件夹内所有图片（含子目录），非图片文件自动跳过"
+          >
+            🗂️ 选择整个文件夹（递归上传）
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -304,7 +371,22 @@ export default function MetadataBundleTool() {
             className="mdb__file-input"
             aria-label="文件选择"
           />
+          {/* 文件夹 input：webkitdirectory 属性通过 ref + setAttribute 设置（见 useEffect） */}
+          <input
+            ref={folderInputRef}
+            type="file"
+            multiple
+            onChange={handleFolderInputChange}
+            className="mdb__file-input"
+            aria-label="选择文件夹"
+          />
         </div>
+
+        {folderSkipped !== null && folderSkipped > 0 && (
+          <div className="mdb__folder-skipped" role="status">
+            已从所选文件夹跳过 <strong>{folderSkipped}</strong> 个非图片文件
+          </div>
+        )}
 
         {error && (
           <div className="mdb__error" role="alert">
@@ -452,7 +534,7 @@ export default function MetadataBundleTool() {
               className="mdb__btn mdb__btn--primary"
               onClick={handleDownloadZip}
               disabled={zipping}
-              title="ZIP 包含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv"
+              title="ZIP 包含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv + summary.jsonl"
             >
               {zipping ? '打包中...' : '⬇ 下载 ZIP 完整包'}
             </button>
@@ -460,13 +542,23 @@ export default function MetadataBundleTool() {
               type="button"
               className="mdb__btn mdb__btn--secondary"
               onClick={handleDownloadJson}
+              title="结构化 JSON 文档，含统计汇总与全部报告，便于程序解析"
             >
               ⬇ JSON
             </button>
             <button
               type="button"
               className="mdb__btn mdb__btn--secondary"
+              onClick={handleDownloadJsonLines}
+              title="NDJSON 格式，每行一个图片报告，便于日志聚合（ELK / Loki）与大数据管道（Kafka / Spark Streaming）"
+            >
+              ⬇ JSON Lines
+            </button>
+            <button
+              type="button"
+              className="mdb__btn mdb__btn--secondary"
               onClick={handleDownloadMarkdown}
+              title="人类可读的 Markdown 报告，含概览统计与各图详情"
             >
               ⬇ Markdown
             </button>
@@ -474,6 +566,7 @@ export default function MetadataBundleTool() {
               type="button"
               className="mdb__btn mdb__btn--secondary"
               onClick={handleDownloadCsv}
+              title="表格格式，一行一图，含 16 列，适合 Excel 分析"
             >
               ⬇ CSV
             </button>
