@@ -992,6 +992,686 @@ export function nowExifDateTime(): string {
 }
 
 // ============================================================
+// PNG 元数据处理（第 106 轮新增）
+// ============================================================
+//
+// PNG 文件结构与 JPEG 不同：
+//  - 8 字节签名（89 50 4E 47 0D 0A 1A 0A）
+//  - 后跟多个 chunk：长度(4 BE) + 类型(4 ASCII) + 数据 + CRC(4)
+//  - 关键 chunk：IHDR / PLTE / IDAT / IEND（不可删除）
+//  - 辅助 chunk：tEXt / zTXt / iTXt / tIME / eXIf / bKGD / pHYs 等
+//
+// PNG 元数据存储位置：
+//  - tEXt：关键字 + \0 + 文本（Latin1），如 "Author"、"Copyright"、"Software"、"Title"
+//  - zTXt：压缩文本（zlib 压缩，需解压才能读取）
+//  - iTXt：国际化文本（UTF-8，可压缩，含语言标签）
+//  - tIME：最后修改时间（7 字节：year2 + month1 + day1 + hour1 + minute1 + second1）
+//  - eXIf：EXIF 数据（PNG 1.5+ 扩展，结构同 JPEG 的 APP1 EXIF payload）
+//
+// 本工具的 PNG 操作映射（与 JPEG 操作语义对齐）：
+//  - removeAll：删除所有元数据 chunk（tEXt / zTXt / iTXt / tIME / eXIf）
+//  - removePersonal：删除 tEXt/iTXt 中关键字为 Author/Copyright/Artist 等的条目
+//  - removeSoftware：删除 tEXt 中关键字为 Software 的条目
+//  - setDateTime：修改或新增 tIME chunk
+//  - removeGps / removeMakerNote / removeThumbnail：PNG 不适用（UI 中隐藏）
+
+/** PNG 8 字节签名 */
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** PNG chunk 类型分类（按关键性与功能分组） */
+export type PngChunkCategory =
+  | 'IHDR' // 图像头（关键，不可删除）
+  | 'PLTE' // 调色板（关键，不可删除）
+  | 'IDAT' // 图像数据（关键，不可删除）
+  | 'IEND' // 结束标记（关键，不可删除）
+  | 'tEXt' // 文本元数据
+  | 'zTXt' // 压缩文本元数据
+  | 'iTXt' // 国际化文本元数据
+  | 'tIME' // 最后修改时间
+  | 'eXIf' // EXIF 数据（PNG 1.5+ 扩展）
+  | 'bKGD' // 默认背景色
+  | 'pHYs' // 物理像素尺寸（DPI）
+  | 'cHRM' // 色度坐标
+  | 'gAMA' // Gamma 校正
+  | 'iCCP' // ICC 配置
+  | 'sRGB' // sRGB 标志
+  | 'OTHER'; // 其他辅助 chunk
+
+/** PNG chunk 结构 */
+export interface PngChunk {
+  /** chunk 类型代码（4 字节 ASCII） */
+  type: string;
+  /** chunk 类型分类 */
+  category: PngChunkCategory;
+  /** chunk 数据长度（不含长度字段、类型字段、CRC） */
+  dataLength: number;
+  /** chunk 数据（不含 CRC） */
+  data: Uint8Array;
+  /** chunk 在文件中的起始偏移（含长度字段） */
+  offset: number;
+  /** chunk 总字节数（4 + 4 + dataLength + 4） */
+  totalLength: number;
+}
+
+/** 判断是否为 PNG 文件（基于 8 字节签名） */
+export function isPngFile(bytes: Uint8Array): boolean {
+  if (bytes.length < 8) return false;
+  for (let i = 0; i < 8; i++) {
+    if (bytes[i] !== PNG_SIGNATURE[i]) return false;
+  }
+  return true;
+}
+
+/** 分类 PNG chunk 类型 */
+function categorizePngChunk(type: string): PngChunkCategory {
+  const known: Record<string, PngChunkCategory> = {
+    IHDR: 'IHDR',
+    PLTE: 'PLTE',
+    IDAT: 'IDAT',
+    IEND: 'IEND',
+    tEXt: 'tEXt',
+    zTXt: 'zTXt',
+    iTXt: 'iTXt',
+    tIME: 'tIME',
+    eXIf: 'eXIf',
+    bKGD: 'bKGD',
+    pHYs: 'pHYs',
+    cHRM: 'cHRM',
+    gAMA: 'gAMA',
+    iCCP: 'iCCP',
+    sRGB: 'sRGB',
+  };
+  return known[type] ?? 'OTHER';
+}
+
+/**
+ * 解析 PNG chunk 结构
+ * 按顺序遍历所有 chunk，IEND 之后的内容忽略
+ */
+export function parsePngChunks(bytes: Uint8Array): PngChunk[] {
+  if (!isPngFile(bytes)) {
+    throw new Error('不是有效的 PNG 文件（签名不匹配）');
+  }
+  const chunks: PngChunk[] = [];
+  let i = 8; // 跳过 8 字节签名
+  const len = bytes.length;
+  while (i < len) {
+    // 至少需要 4(长度) + 4(类型) + 4(CRC) = 12 字节
+    if (i + 12 > len) break;
+    // 读取长度（4 字节大端无符号）
+    const dataLength = (
+      ((bytes[i] << 24) >>> 0) +
+      (bytes[i + 1] << 16) +
+      (bytes[i + 2] << 8) +
+      bytes[i + 3]
+    ) >>> 0;
+    // 读取类型（4 字节 ASCII）
+    const type = String.fromCharCode(
+      bytes[i + 4],
+      bytes[i + 5],
+      bytes[i + 6],
+      bytes[i + 7],
+    );
+    // 校验数据范围
+    if (i + 12 + dataLength > len) break;
+    const data = bytes.subarray(i + 8, i + 8 + dataLength);
+    const totalLength = 12 + dataLength; // length(4) + type(4) + data + crc(4)
+    chunks.push({
+      type,
+      category: categorizePngChunk(type),
+      dataLength,
+      data,
+      offset: i,
+      totalLength,
+    });
+    i += totalLength;
+    // IEND 是最后一个 chunk
+    if (type === 'IEND') break;
+  }
+  return chunks;
+}
+
+/** PNG tEXt/iTXt 条目解析结果 */
+export interface PngTextEntry {
+  /** 关键字（1-79 字节 ASCII） */
+  keyword: string;
+  /** 文本内容 */
+  text: string;
+}
+
+/**
+ * 解析 tEXt chunk 数据
+ * 格式：keyword(1-79 bytes ASCII) \0 text(Latin1, 可选)
+ */
+export function parseTextChunk(data: Uint8Array): PngTextEntry | null {
+  const nullIdx = data.indexOf(0);
+  if (nullIdx < 0) {
+    // 无分隔符，全部作为关键字
+    const keyword = new TextDecoder('latin1').decode(data).trim();
+    return keyword ? { keyword, text: '' } : null;
+  }
+  const keyword = new TextDecoder('latin1').decode(data.subarray(0, nullIdx)).trim();
+  if (!keyword) return null;
+  const text = new TextDecoder('latin1').decode(data.subarray(nullIdx + 1));
+  return { keyword, text };
+}
+
+/**
+ * 解析 iTXt chunk 数据
+ * 格式：keyword \0 compressionFlag(1) compressionMethod(1) languageTag \0 translatedKeyword \0 text(UTF-8)
+ * 本工具仅解析未压缩的 iTXt，压缩的 iTXt 返回原始信息
+ */
+export function parseITxtChunk(data: Uint8Array): PngTextEntry | null {
+  // 第一个 \0 分隔 keyword
+  const nullIdx = data.indexOf(0);
+  if (nullIdx < 0) return null;
+  const keyword = new TextDecoder('latin1').decode(data.subarray(0, nullIdx)).trim();
+  if (!keyword) return null;
+  if (data.length < nullIdx + 2) return { keyword, text: '' };
+  const compressionFlag = data[nullIdx + 1];
+  // const compressionMethod = data[nullIdx + 2];
+  // 跳过 compressionFlag(1) + compressionMethod(1)
+  let p = nullIdx + 3;
+  // languageTag \0
+  const langEnd = data.indexOf(0, p);
+  if (langEnd < 0) return { keyword, text: '' };
+  p = langEnd + 1;
+  // translatedKeyword \0 (UTF-8)
+  const transEnd = data.indexOf(0, p);
+  if (transEnd < 0) return { keyword, text: '' };
+  p = transEnd + 1;
+  // 剩余为 text（UTF-8 编码）
+  if (compressionFlag !== 0) {
+    // 压缩的 iTXt 不解析，返回提示
+    return { keyword, text: '[压缩的 iTXt，未解析]' };
+  }
+  const text = new TextDecoder('utf-8').decode(data.subarray(p));
+  return { keyword, text };
+}
+
+/** PNG tIME chunk 解析结果 */
+export interface PngTimeEntry {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+}
+
+/**
+ * 解析 tIME chunk 数据
+ * 格式：year(2 BE) + month(1) + day(1) + hour(1) + minute(1) + second(1) = 7 字节
+ */
+export function parseTimeChunk(data: Uint8Array): PngTimeEntry | null {
+  if (data.length < 7) return null;
+  return {
+    year: (data[0] << 8) | data[1],
+    month: data[2],
+    day: data[3],
+    hour: data[4],
+    minute: data[5],
+    second: data[6],
+  };
+}
+
+/** 将 PngTimeEntry 格式化为 'YYYY:MM:DD HH:MM:SS'（与 EXIF 时间格式一致，便于复用 UI） */
+export function formatPngTime(time: PngTimeEntry): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${time.year}:${pad(time.month)}:${pad(time.day)} ${pad(time.hour)}:${pad(time.minute)}:${pad(time.second)}`;
+}
+
+/** 从 EXIF 时间字符串解析为 PngTimeEntry（用于 setDateTime 操作） */
+function parseExifTimeToPng(dateTime: string): PngTimeEntry | null {
+  const m = dateTime.match(/^(\d{4})[-:](\d{2})[-:](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m;
+  return {
+    year: parseInt(y, 10),
+    month: parseInt(mo, 10),
+    day: parseInt(d, 10),
+    hour: parseInt(h, 10),
+    minute: parseInt(mi, 10),
+    second: parseInt(s, 10),
+  };
+}
+
+/** 构造 tIME chunk 数据（7 字节） */
+function buildTimeChunkData(time: PngTimeEntry): Uint8Array {
+  const out = new Uint8Array(7);
+  out[0] = (time.year >> 8) & 0xff;
+  out[1] = time.year & 0xff;
+  out[2] = time.month & 0xff;
+  out[3] = time.day & 0xff;
+  out[4] = time.hour & 0xff;
+  out[5] = time.minute & 0xff;
+  out[6] = time.second & 0xff;
+  return out;
+}
+
+/** PNG 元数据快照（与 JPEG MetaSnapshot 兼容格式，便于复用 UI 组件） */
+export interface PngMetaSnapshot {
+  /** 文本元数据条目列表（tEXt + iTXt，按 chunk 顺序） */
+  textEntries: PngTextEntry[];
+  /** 最后修改时间（tIME chunk，可选） */
+  lastModified: PngTimeEntry | null;
+  /** 是否包含 eXIf chunk（PNG 1.5+ 扩展） */
+  hasExif: boolean;
+  /** 是否包含 zTXt chunk（压缩文本，未解析） */
+  hasCompressedText: boolean;
+  /** chunk 总数 */
+  totalChunks: number;
+  /** 元数据 chunk 数量（不含 IHDR/PLTE/IDAT/IEND） */
+  metaChunkCount: number;
+}
+
+/**
+ * 提取 PNG 元数据快照
+ * 解析 tEXt/iTXt/tIME/eXIf 等 chunk，返回与 JPEG 兼容的快照结构
+ */
+export function extractPngMetaSnapshot(chunks: PngChunk[]): PngMetaSnapshot {
+  const textEntries: PngTextEntry[] = [];
+  let lastModified: PngTimeEntry | null = null;
+  let hasExif = false;
+  let hasCompressedText = false;
+  let metaChunkCount = 0;
+
+  for (const chunk of chunks) {
+    switch (chunk.category) {
+      case 'tEXt': {
+        const entry = parseTextChunk(chunk.data);
+        if (entry) textEntries.push(entry);
+        metaChunkCount++;
+        break;
+      }
+      case 'iTXt': {
+        const entry = parseITxtChunk(chunk.data);
+        if (entry) textEntries.push(entry);
+        metaChunkCount++;
+        break;
+      }
+      case 'zTXt':
+        hasCompressedText = true;
+        metaChunkCount++;
+        break;
+      case 'tIME':
+        lastModified = parseTimeChunk(chunk.data);
+        metaChunkCount++;
+        break;
+      case 'eXIf':
+        hasExif = true;
+        metaChunkCount++;
+        break;
+      case 'bKGD':
+      case 'pHYs':
+      case 'cHRM':
+      case 'gAMA':
+      case 'iCCP':
+      case 'sRGB':
+      case 'OTHER':
+        // 其他辅助 chunk 也计入元数据
+        metaChunkCount++;
+        break;
+      default:
+        // 关键 chunk（IHDR/PLTE/IDAT/IEND）不计入
+        break;
+    }
+  }
+
+  return {
+    textEntries,
+    lastModified,
+    hasExif,
+    hasCompressedText,
+    totalChunks: chunks.length,
+    metaChunkCount,
+  };
+}
+
+/** PNG 编辑操作适用的关键字集合（用于 removePersonal / removeSoftware） */
+const PNG_PERSONAL_KEYWORDS = new Set([
+  'Author',
+  'Artist',
+  'Copyright',
+  'Creation Time',
+  'Source',
+  'Comment',
+]);
+const PNG_SOFTWARE_KEYWORDS = new Set(['Software']);
+
+/** 判断 tEXt 条目是否属于个人信息系统关键字 */
+function isPersonalKeyword(keyword: string): boolean {
+  // 关键字大小写不敏感匹配
+  return PNG_PERSONAL_KEYWORDS.has(keyword);
+}
+
+/** 判断 tEXt 条目是否属于软件信息关键字 */
+function isSoftwareKeyword(keyword: string): boolean {
+  return PNG_SOFTWARE_KEYWORDS.has(keyword);
+}
+
+/**
+ * 应用编辑操作到 PNG 字节
+ *
+ * 策略：
+ *  - removeAll：删除所有辅助 chunk（仅保留 IHDR/PLTE/IDAT/IEND）
+ *  - removePersonal：删除 tEXt/iTXt 中关键字为 Author/Copyright 等的条目
+ *  - removeSoftware：删除 tEXt 中关键字为 Software 的条目
+ *  - setDateTime：替换或新增 tIME chunk
+ *  - removeGps/removeMakerNote/removeThumbnail：PNG 不适用，跳过
+ *
+ * 注意：PNG chunk 删除采用"过滤重建"策略（与 JPEG 的"原地置零"不同），
+ * 因为 PNG chunk 之间通过 CRC32 校验关联，原地修改会破坏 CRC。
+ */
+export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[]): EditResult {
+  const startTime = performance.now();
+  const originalSize = pngBytes.length;
+  const removedFields: FieldLocation[] = [];
+  const modifiedFields: FieldLocation[] = [];
+  const appliedOps: EditOperation[] = [];
+
+  const chunks = parsePngChunks(pngBytes);
+  const textEntriesByChunk = new Map<PngChunk, PngTextEntry | null>();
+  // 预解析所有 tEXt/iTXt chunk，避免重复解析
+  for (const chunk of chunks) {
+    if (chunk.category === 'tEXt') {
+      textEntriesByChunk.set(chunk, parseTextChunk(chunk.data));
+    } else if (chunk.category === 'iTXt') {
+      textEntriesByChunk.set(chunk, parseITxtChunk(chunk.data));
+    }
+  }
+
+  // 操作语义解析
+  const removeAll = operations.some((op) => op.type === 'removeAll');
+  const removePersonal = operations.some((op) => op.type === 'removePersonal');
+  const removeSoftware = operations.some((op) => op.type === 'removeSoftware');
+  const setDateTimeOp = operations.find((op) => op.type === 'setDateTime');
+
+  if (removeAll) appliedOps.push({ type: 'removeAll' });
+  if (removePersonal) appliedOps.push({ type: 'removePersonal' });
+  if (removeSoftware) appliedOps.push({ type: 'removeSoftware' });
+  if (setDateTimeOp && setDateTimeOp.dateTime) {
+    appliedOps.push({ type: 'setDateTime', dateTime: setDateTimeOp.dateTime });
+  }
+
+  // 过滤 chunk
+  const keptChunks: PngChunk[] = [];
+  let timeReplaced = false;
+
+  for (const chunk of chunks) {
+    // 关键 chunk 始终保留
+    if (
+      chunk.category === 'IHDR' ||
+      chunk.category === 'PLTE' ||
+      chunk.category === 'IDAT' ||
+      chunk.category === 'IEND'
+    ) {
+      keptChunks.push(chunk);
+      continue;
+    }
+
+    // removeAll：所有辅助 chunk 全部删除
+    if (removeAll) {
+      if (chunk.category === 'eXIf') {
+        removedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'eXIf (all EXIF)' });
+      } else if (chunk.category === 'tIME') {
+        removedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'tIME (last modified)' });
+      } else if (chunk.category === 'tEXt' || chunk.category === 'iTXt') {
+        const entry = textEntriesByChunk.get(chunk);
+        if (entry) {
+          removedFields.push({ ifd: 'ifd0', tag: 0, tagName: `${chunk.type}: ${entry.keyword}` });
+        } else {
+          removedFields.push({ ifd: 'ifd0', tag: 0, tagName: `${chunk.type}` });
+        }
+      } else {
+        removedFields.push({ ifd: 'ifd0', tag: 0, tagName: chunk.type });
+      }
+      continue;
+    }
+
+    // tEXt/iTXt：按关键字过滤
+    if (chunk.category === 'tEXt' || chunk.category === 'iTXt') {
+      const entry = textEntriesByChunk.get(chunk);
+      if (entry) {
+        if (removePersonal && isPersonalKeyword(entry.keyword)) {
+          removedFields.push({ ifd: 'ifd0', tag: 0, tagName: `${chunk.type}: ${entry.keyword}` });
+          continue;
+        }
+        if (removeSoftware && isSoftwareKeyword(entry.keyword)) {
+          removedFields.push({ ifd: 'ifd0', tag: 0, tagName: `${chunk.type}: ${entry.keyword}` });
+          continue;
+        }
+      }
+      keptChunks.push(chunk);
+      continue;
+    }
+
+    // tIME：若 setDateTime 则替换原 chunk（先删除，后续在 IEND 前插入新 chunk）
+    if (chunk.category === 'tIME' && setDateTimeOp && setDateTimeOp.dateTime) {
+      const newTime = parseExifTimeToPng(setDateTimeOp.dateTime);
+      if (newTime) {
+        removedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'tIME (old)' });
+        modifiedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'tIME (new)' });
+        timeReplaced = true;
+        continue;
+      }
+    }
+
+    // 其他辅助 chunk 默认保留
+    keptChunks.push(chunk);
+  }
+
+  // 若 setDateTime 但原文件无 tIME chunk，则新增
+  if (setDateTimeOp && setDateTimeOp.dateTime && !timeReplaced) {
+    const newTime = parseExifTimeToPng(setDateTimeOp.dateTime);
+    if (newTime) {
+      modifiedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'tIME (new)' });
+    }
+  }
+
+  // 重建 PNG：插入新 tIME chunk（在 IEND 之前）
+  const finalChunks = insertTimeChunkBeforeIend(keptChunks, setDateTimeOp?.dateTime);
+
+  const newBytes = rebuildPng(finalChunks);
+  const elapsedMs = performance.now() - startTime;
+
+  return {
+    bytes: newBytes,
+    originalSize,
+    editedSize: newBytes.length,
+    savedBytes: originalSize - newBytes.length,
+    appliedOps,
+    removedFields,
+    modifiedFields,
+    elapsedMs,
+  };
+}
+
+/**
+ * 在 IEND chunk 之前插入新的 tIME chunk
+ * 若 dateTime 为空或解析失败则原样返回
+ * 若已存在 tIME chunk（理论上已被 setDateTime 删除），仍会插入新值
+ */
+function insertTimeChunkBeforeIend(
+  chunks: PngChunk[],
+  dateTime?: string,
+): PngChunk[] {
+  if (!dateTime) return chunks;
+  const newTime = parseExifTimeToPng(dateTime);
+  if (!newTime) return chunks;
+  const timeData = buildTimeChunkData(newTime);
+  const newChunk: PngChunk = {
+    type: 'tIME',
+    category: 'tIME',
+    dataLength: 7,
+    data: timeData,
+    offset: 0, // 新 chunk 偏移在重建时计算
+    totalLength: 12 + 7,
+  };
+  // 找到 IEND 位置，在它之前插入
+  const iendIdx = chunks.findIndex((c) => c.category === 'IEND');
+  if (iendIdx < 0) {
+    return [...chunks, newChunk];
+  }
+  const result = [...chunks];
+  result.splice(iendIdx, 0, newChunk);
+  return result;
+}
+
+/**
+ * 重建 PNG 字节流
+ * 按顺序拼接：签名 + chunks（长度 + 类型 + 数据 + CRC）
+ * CRC32 计算覆盖类型 + 数据
+ */
+function rebuildPng(chunks: PngChunk[]): Uint8Array {
+  // 总长度：8 字节签名 + 每个 chunk (12 + dataLength)
+  let totalLen = 8;
+  for (const chunk of chunks) {
+    totalLen += chunk.totalLength;
+  }
+  const out = new Uint8Array(totalLen);
+  // 写入签名
+  for (let i = 0; i < 8; i++) {
+    out[i] = PNG_SIGNATURE[i];
+  }
+  let p = 8;
+  for (const chunk of chunks) {
+    // 长度（4 字节大端）
+    out[p++] = (chunk.dataLength >>> 24) & 0xff;
+    out[p++] = (chunk.dataLength >> 16) & 0xff;
+    out[p++] = (chunk.dataLength >> 8) & 0xff;
+    out[p++] = chunk.dataLength & 0xff;
+    // 类型（4 字节 ASCII）
+    const typeBytes = new TextEncoder().encode(chunk.type);
+    if (typeBytes.length !== 4) {
+      throw new Error(`无效的 PNG chunk 类型：${chunk.type}（长度 ${typeBytes.length}）`);
+    }
+    out.set(typeBytes, p);
+    const typeStart = p; // 用于 CRC 计算
+    p += 4;
+    // 数据
+    out.set(chunk.data, p);
+    p += chunk.dataLength;
+    // CRC（4 字节，覆盖类型 + 数据）
+    const crc = crc32(out, typeStart, 4 + chunk.dataLength);
+    out[p++] = (crc >>> 24) & 0xff;
+    out[p++] = (crc >> 16) & 0xff;
+    out[p++] = (crc >> 8) & 0xff;
+    out[p++] = crc & 0xff;
+  }
+  return out;
+}
+
+/**
+ * CRC32 计算（IEEE 802.3 多项式，与 PNG 规范一致）
+ * 使用预计算表加速（首次调用时初始化）
+ */
+let crcTable: Uint32Array | null = null;
+
+function getCrcTable(): Uint32Array {
+  if (crcTable) return crcTable;
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[n] = c >>> 0;
+  }
+  crcTable = table;
+  return table;
+}
+
+/** 计算字节流的 CRC32（IEEE 802.3） */
+function crc32(bytes: Uint8Array, start: number, length: number): number {
+  const table = getCrcTable();
+  let crc = 0xffffffff;
+  for (let i = 0; i < length; i++) {
+    crc = table[(crc ^ bytes[start + i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** 生成 PNG 编辑后的文件名（保留 .png 扩展名） */
+export function buildPngEditedFilename(originalName: string): string {
+  const dotIdx = originalName.lastIndexOf('.');
+  const base = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
+  return `${base}-edited.png`;
+}
+
+/** 批量处理时的 PNG 文件名（带序号） */
+export function buildPngBatchEditedFilename(
+  originalName: string,
+  index: number,
+  total: number,
+): string {
+  const dotIdx = originalName.lastIndexOf('.');
+  const base = dotIdx > 0 ? originalName.slice(0, dotIdx) : originalName;
+  if (total === 1) return `${base}-edited.png`;
+  const padLen = String(total).length;
+  const idx = String(index + 1).padStart(padLen, '0');
+  return `${base}-edited-${idx}.png`;
+}
+
+/**
+ * 批量应用 PNG 编辑操作到多个 PNG 文件
+ * 设计与 applyEditsBatch（JPEG 版本）对齐
+ */
+export async function applyPngEditsBatch(
+  files: Uint8Array[],
+  fileNames: string[],
+  operations: EditOperation[],
+): Promise<BatchEditSummary> {
+  const startTime = performance.now();
+  const items: BatchItemResult[] = [];
+  let succeeded = 0;
+  let skipped = 0;
+  let failed = 0;
+  let totalSavedBytes = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const bytes = files[i];
+    const fileName = fileNames[i] ?? `file-${i + 1}.png`;
+
+    // 校验 PNG 签名，提前跳过非 PNG 文件
+    if (!isPngFile(bytes)) {
+      items.push({ fileName, status: 'skipped', message: '非 PNG 文件，已跳过' });
+      skipped++;
+      continue;
+    }
+
+    try {
+      const result = applyPngEdits(bytes, operations);
+      items.push({ fileName, status: 'success', result });
+      succeeded++;
+      totalSavedBytes += result.savedBytes;
+    } catch (err) {
+      items.push({
+        fileName,
+        status: 'error',
+        message: err instanceof Error ? err.message : '未知错误',
+      });
+      failed++;
+    }
+
+    // 每 5 个文件让出主线程，避免批量处理时阻塞 UI 渲染
+    if ((i + 1) % 5 === 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  return {
+    total: files.length,
+    succeeded,
+    skipped,
+    failed,
+    totalSavedBytes,
+    totalElapsedMs: performance.now() - startTime,
+    items,
+  };
+}
+
+// ============================================================
 // 文件名生成
 // ============================================================
 

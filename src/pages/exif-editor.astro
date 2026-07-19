@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ExifEditorTool from '../components/ExifEditorTool.tsx';
 
 const meta: SiteMeta = {
-  title: 'EXIF 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
+  title: 'EXIF / PNG 元数据编辑器 - 在线删除 GPS / 个人信息 / 批量处理 / 修改拍摄时间',
   description:
-    '在线 EXIF 元数据编辑器：删除 GPS 定位 / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间，一键清除全部 EXIF。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。直接操作 JPEG 二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
+    '在线 EXIF / PNG 元数据编辑器：JPEG 删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，PNG 清理 tEXt / iTXt / tIME / eXIf chunk，修改拍摄时间，一键清除全部元数据。支持批量处理多文件并打包 ZIP 下载，支持编辑预设保存与导入导出。直接操作二进制结构，不修改图像压缩数据，保证图像质量无损。全本地处理，零上传零追踪，适用于隐私保护、防盗图、合规发布等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'EXIF 元数据编辑器',
-    description: '在线 EXIF 元数据编辑工具，支持删除 GPS、个人信息、MakerNote、缩略图，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，全本地处理 JPEG 二进制结构。',
+    name: 'EXIF / PNG 元数据编辑器',
+    description: '在线元数据编辑工具，支持 JPEG EXIF（删除 GPS、个人信息、MakerNote、缩略图）与 PNG 元数据（清理 tEXt / iTXt / tIME / eXIf chunk）的编辑，修改拍摄时间，批量处理多文件并打包 ZIP 下载，编辑预设保存与导入导出，全本地处理二进制结构。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -25,14 +25,16 @@ const meta: SiteMeta = {
 <BaseLayout meta={meta}>
   <section class="container">
     <div class="page-hero page-hero--tool">
-      <h1>EXIF 元数据编辑器</h1>
+      <h1>EXIF / PNG 元数据编辑器</h1>
       <p>
-        纯本地处理的<strong>在线 EXIF 元数据编辑器</strong>，直接操作 JPEG 二进制结构。
-        支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
+        纯本地处理的<strong>在线元数据编辑器</strong>，直接操作图片二进制结构。
+        <strong>JPEG</strong>：支持<strong>删除 GPS 定位</strong>、<strong>删除个人信息</strong>（Artist / Copyright / 序列号）、
         <strong>删除 MakerNote</strong>、<strong>删除缩略图</strong>、<strong>删除软件信息</strong>、
         <strong>修改拍摄时间</strong>、<strong>一键清除全部 EXIF</strong>。
+        <strong>PNG</strong>：支持<strong>清理 tEXt / iTXt 文本元数据</strong>（Software / Author / Copyright / Description 等）、
+        <strong>修改 tIME 时间</strong>、<strong>清除 eXIf chunk</strong>、<strong>仅保留关键 chunk</strong>。
         支持<strong>批量处理多文件</strong>并打包 ZIP 下载，<strong>编辑预设保存与导入导出</strong>。
-        不修改图像压缩数据（SOS..EOI），<strong>保证图像质量无损</strong>。
+        不修改图像压缩数据（JPEG SOS..EOI / PNG IDAT），<strong>保证图像质量无损</strong>。
         编辑前后元数据可视化对比，一目了然。在浏览器本地完成全部操作，<strong>零上传、零追踪、可离线使用</strong>。
       </p>
     </div>
@@ -46,18 +48,20 @@ const meta: SiteMeta = {
       <details>
         <summary>EXIF 编辑是否在本地处理？会上传图片吗？</summary>
         <p>
-          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。本工具自主实现 JPEG
+          <strong>是的，全部在浏览器本地处理，图片不离开浏览器</strong>。本工具自主实现图片
           二进制结构解析与重建：文件通过 <code>FileReader.arrayBuffer()</code> 读取为字节，
-          按 JPEG 标记（marker）顺序遍历段结构，定位 APP1 EXIF 段，解析 TIFF / IFD 字段树，
-          按编辑操作修改字节并修正 IFD 条目计数，最后重建 JPEG 字节流。
-          全程零网络请求，可在浏览器开发者工具 Network 面板确认。
+          对 JPEG 按标记（marker）顺序遍历段结构，定位 APP1 EXIF 段，解析 TIFF / IFD 字段树；
+          对 PNG 按 chunk 顺序遍历，识别 tEXt / iTXt / tIME / eXIf 等辅助 chunk。
+          按编辑操作修改字节并修正结构（JPEG 修正 IFD 条目计数 / PNG 重算每个 chunk 的 CRC32），
+          最后重建字节流。全程零网络请求，可在浏览器开发者工具 Network 面板确认。
         </p>
       </details>
       <details>
         <summary>EXIF 编辑会损失图像质量吗？</summary>
         <p>
-          <strong>不会</strong>。本工具仅修改 JPEG 的元数据段（APP1 EXIF 段），不触碰图像压缩数据
-          （SOS 扫描数据段到 EOI 之间的压缩字节流）。JPEG 的图像质量由 DCT 量化与哈夫曼编码决定，
+          <strong>不会</strong>。本工具仅修改图片的元数据段，不触碰图像压缩数据：
+          JPEG 不修改 SOS 扫描数据段到 EOI 之间的压缩字节流，PNG 不修改 IDAT 压缩数据 chunk。
+          JPEG 的图像质量由 DCT 量化与哈夫曼编码决定，PNG 的图像质量由 IDAT 中的 zlib 压缩流决定，
           这些数据完整保留。编辑后的图像与原图在像素级别完全一致，仅元数据字段被删除或修改。
           可以理解为"换了个文件头"，图像本体不变。
         </p>
@@ -65,68 +69,85 @@ const meta: SiteMeta = {
       <details>
         <summary>支持哪些编辑操作？分别删除什么字段？</summary>
         <p>
-          本工具支持 7 种编辑操作：<br />
-          - <strong>删除 GPS 定位</strong>：移除 IFD0 中的 GPSIFDPointer（0x8825）与整个 GPSIFD，
+          本工具支持 7 种编辑操作（按文件类型自动启用其中适用的子集）：<br />
+          - <strong>删除 GPS 定位</strong>（仅 JPEG）：移除 IFD0 中的 GPSIFDPointer（0x8825）与整个 GPSIFD，
             包括 GPSLatitude / GPSLongitude / GPSAltitude / GPSImgDirection 等所有 GPS 标签<br />
-          - <strong>删除个人信息</strong>：移除 Artist / Copyright / BodySerialNumber /
-            CameraOwnerName / LensSerialNumber 等身份相关字段<br />
-          - <strong>删除 MakerNote</strong>：移除 ExifIFD 中的 MakerNote（0x927C），
+          - <strong>删除个人信息</strong>（JPEG 与 PNG）：JPEG 移除 Artist / Copyright / BodySerialNumber /
+            CameraOwnerName / LensSerialNumber 等身份相关字段；PNG 移除 Author / Artist / Copyright / Source
+            等 tEXt / iTXt 关键字<br />
+          - <strong>删除 MakerNote</strong>（仅 JPEG）：移除 ExifIFD 中的 MakerNote（0x927C），
             厂商原始数据块通常体积较大，删除可显著减小文件<br />
-          - <strong>删除缩略图</strong>：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
+          - <strong>删除缩略图</strong>（仅 JPEG）：移除 IFD1（缩略图 IFD）及其嵌入的 JPEG 缩略图数据，
             将 IFD0 的 nextIfdPointer 置 0<br />
-          - <strong>删除软件信息</strong>：移除 Software 标签（0x0131），
-            如 "Adobe Photoshop CC 2024" 等编辑器痕迹<br />
-          - <strong>修改拍摄时间</strong>：同步修改 DateTime / DateTimeOriginal / DateTimeDigitized
-            三个时间字段为指定值（格式 YYYY:MM:DD HH:MM:SS）<br />
-          - <strong>清除全部 EXIF</strong>：直接移除整个 APP1 EXIF 段，仅保留图像压缩数据
+          - <strong>删除软件信息</strong>（JPEG 与 PNG）：JPEG 移除 Software 标签（0x0131），
+            如 "Adobe Photoshop CC 2024" 等编辑器痕迹；PNG 移除关键字为 Software 的 tEXt / iTXt 条目<br />
+          - <strong>修改拍摄时间</strong>（JPEG 与 PNG）：JPEG 同步修改 DateTime / DateTimeOriginal /
+            DateTimeDigitized 三个字段；PNG 修改或插入 tIME chunk（7 字节：年/月/日/时/分/秒）<br />
+          - <strong>清除全部 EXIF</strong>（JPEG 与 PNG）：JPEG 移除整个 APP1 EXIF 段；
+            PNG 仅保留 IHDR / PLTE / IDAT / IEND 等关键 chunk，移除所有辅助 chunk<br />
+          <strong>上传 PNG 时</strong>，不适用操作（GPS / MakerNote / 缩略图）会自动从操作列表中隐藏。
         </p>
       </details>
       <details>
         <summary>修改拍摄时间支持哪些格式？</summary>
         <p>
-          <strong>EXIF 时间标准格式为 <code>YYYY:MM:DD HH:MM:SS</code></strong>（注意是冒号分隔日期）。
+          <strong>JPEG EXIF 时间标准格式为 <code>YYYY:MM:DD HH:MM:SS</code></strong>（注意是冒号分隔日期）。
           本工具同时支持以下输入格式：<br />
           - <code>2026:07:18 14:30:00</code>（标准 EXIF 格式）<br />
           - <code>2026-07-18 14:30:00</code>（ISO 风格分隔符）<br />
           - <code>2026-07-18T14:30:00</code>（ISO 8601 风格）<br />
-          修改会同步写入 IFD0.DateTime（0x0132）、ExifIFD.DateTimeOriginal（0x9003）、
-          ExifIFD.DateTimeDigitized（0x9004）三个字段，确保各查看器显示一致。
+          JPEG 修改会同步写入 IFD0.DateTime（0x0132）、ExifIFD.DateTimeOriginal（0x9003）、
+          ExifIFD.DateTimeDigitized（0x9004）三个字段，确保各查看器显示一致。<br />
+          <strong>PNG 文件</strong>则会删除原有的 tIME chunk（若存在），在 IEND 之前插入新的 tIME chunk
+          （7 字节：年 2 字节大端 + 月/日/时/分/秒各 1 字节）。
         </p>
       </details>
       <details>
-        <summary>为什么只支持 JPEG？PNG / WebP / TIFF 不能编辑吗？</summary>
+        <summary>PNG 文件如何处理？与 JPEG 编辑有什么差异？</summary>
         <p>
-          <strong>EXIF 主要载体是 JPEG</strong>。虽然 PNG / WebP / TIFF 也可以嵌入 EXIF，
-          但它们的容器格式与 JPEG 不同：<br />
-          - <strong>PNG</strong>：通过 eXIf 块嵌入 EXIF（PNG 1.5 扩展），实际使用率极低<br />
-          - <strong>WebP</strong>：通过 RIFF 容器的 EXIF chunk 嵌入，结构复杂<br />
-          - <strong>TIFF</strong>：本身就是 TIFF 容器，EXIF 直接作为 IFD，编辑逻辑与 JPEG 不同<br />
-          - <strong>HEIC</strong>：苹果主推格式，EXIF 嵌入 HEIF 容器，浏览器端解析困难<br />
-          本工具聚焦 JPEG（市占率最高的 EXIF 载体），其他格式建议先用 <a href="/image-convert">图片格式转换工具</a>
-          转为 JPEG 再编辑。
+          <strong>本工具同时支持 JPEG 与 PNG 两种格式的元数据编辑</strong>，但两者容器格式与元数据机制差异较大：<br />
+          - <strong>JPEG</strong>：通过 APP1 段嵌入 EXIF（含 GPS / 拍摄参数 / 个人信息 / 缩略图 / MakerNote），
+            是 EXIF 的主要载体。本工具采用"原地置零 + 修正 IFD 计数"策略，保留段结构，可选择性删除字段<br />
+          - <strong>PNG</strong>：元数据通过辅助 chunk 承载，主要包括：
+            tEXt / zTXt / iTXt（文本元数据，常见关键字 Software / Author / Copyright / Title / Description / Source）、
+            tIME（最后修改时间）、eXIf（PNG 1.5+ 扩展的 EXIF chunk，实际使用率低）。
+            因 PNG chunk 通过 CRC32 校验关联，本工具采用"过滤重建"策略——
+            过滤掉要删除的 chunk，重建时为每个保留的 chunk 重算 CRC32，保证文件结构合法<br />
+          <strong>支持差异</strong>：PNG 不支持 GPS / MakerNote / 缩略图操作（PNG 容器无对应字段），
+            上传 PNG 时操作列表会自动隐藏这些不适用项。<br />
+          <strong>其他格式</strong>（WebP / TIFF / HEIC）暂不支持，建议先用
+          <a href="/image-convert">图片格式转换工具</a> 转为 JPEG 或 PNG 再编辑。
         </p>
       </details>
       <details>
         <summary>"清除全部 EXIF" 与单独勾选所有删除操作有什么区别？</summary>
         <p>
           两者效果相近但实现不同：<br />
-          - <strong>清除全部 EXIF</strong>：直接移除整个 APP1 EXIF 段（marker + length + payload），
-            最彻底，体积节省最大。但会同时丢失 IFD0 中可能想保留的 Orientation（方向）等基础字段，
-            可能导致部分图片显示方向异常。<br />
-          - <strong>单独勾选删除操作</strong>：保留 APP1 段结构，仅置零被删除条目的 tag 并修正计数，
-            可选择性删除敏感字段而保留 Orientation 等基础字段，更精细。<br />
-          <strong>建议</strong>：日常使用优先勾选"删除 GPS + 个人信息 + MakerNote"组合，
+          - <strong>清除全部 EXIF</strong>：JPEG 直接移除整个 APP1 EXIF 段（marker + length + payload），
+            PNG 仅保留 IHDR / PLTE / IDAT / IEND 关键 chunk 移除所有辅助 chunk，
+            最彻底，体积节省最大。但 JPEG 会同时丢失 IFD0 中可能想保留的 Orientation（方向）等基础字段，
+            可能导致部分图片显示方向异常<br />
+          - <strong>单独勾选删除操作</strong>：JPEG 保留 APP1 段结构，仅置零被删除条目的 tag 并修正计数，
+            可选择性删除敏感字段而保留 Orientation 等基础字段，更精细；
+            PNG 保留其他辅助 chunk（如 cHRM / sRGB / pHYs / iCCP 等颜色管理 chunk），仅删除被勾选的 tEXt / iTXt / tIME<br />
+          <strong>建议</strong>：日常使用优先勾选"删除 GPS + 个人信息 + MakerNote"组合
+          （JPEG）或"删除个人信息 + 软件信息"组合（PNG），
           既保护隐私又保留图像基础元数据；需要彻底清除时再选"清除全部 EXIF"。
         </p>
       </details>
       <details>
-        <summary>编辑后的 JPEG 兼容性如何？所有看图软件都能正常打开吗？</summary>
+        <summary>编辑后的图片兼容性如何？所有看图软件都能正常打开吗？</summary>
         <p>
-          <strong>兼容性良好</strong>。本工具采用"原地修改"策略：保留 JPEG 段顺序、保留 IFD 字节结构、
+          <strong>兼容性良好</strong>。<br />
+          <strong>JPEG</strong>：采用"原地修改"策略，保留 JPEG 段顺序、保留 IFD 字节结构、
           仅置零被删除条目的 tag 字段并修正 IFD 计数。这是 EXIF 规范允许的处理方式，
           所有主流看图软件（Windows 照片、macOS 预览、Adobe 系列、Google Photos、各手机相册）
           均能正确识别与跳过空条目。<br />
-          极少数老旧或非标准的 EXIF 读取器可能仍尝试解析置零的条目（虽然 tag=0 应被跳过），
+          <strong>PNG</strong>：采用"过滤重建"策略，重建时严格遵循 PNG 规范——
+          保留 8 字节签名 + 关键 chunk（IHDR / PLTE / IDAT / IEND）顺序 + 辅助 chunk 位置约束，
+          每个保留的 chunk 都重算 CRC32。生成的 PNG 文件结构完全合法，
+          所有主流看图软件均可正常解析与显示。<br />
+          极少数老旧或非标准的 EXIF 读取器可能仍尝试解析 JPEG 置零的条目（虽然 tag=0 应被跳过），
           若遇到兼容问题，建议改用"清除全部 EXIF"直接移除整个 APP1 段。
         </p>
       </details>
@@ -135,9 +156,11 @@ const meta: SiteMeta = {
         <p>
           <strong>本工具未设置硬性文件数量上限</strong>，但建议单批不超过 200 个文件以获得最佳体验。
           单文件大小限制为 50MB，总数据量受浏览器内存限制（通常 1-2GB）。<br />
-          处理速度参考：单个 JPEG（含 GPS + MakerNote + 缩略图，约 5MB）的编辑耗时通常在 5-30ms 之间，
+          处理速度参考：单个 JPEG（含 GPS + MakerNote + 缩略图，约 5MB）的编辑耗时通常在 5-30ms 之间；
+          单个 PNG（含 tEXt / tIME，约 5MB）的编辑耗时通常在 5-25ms 之间（PNG 因需重算 CRC32 略有开销）；
           批量处理 100 个文件的总耗时通常在 1-3 秒内。<br />
-          <strong>处理策略</strong>：每处理 5 个文件会通过 <code>setTimeout(0)</code> 让出主线程一次，
+          <strong>处理策略</strong>：批量处理时按文件签名自动分流到 JPEG / PNG 两个队列并行处理，
+          每处理 5 个文件会通过 <code>setTimeout(0)</code> 让出主线程一次，
           避免长时间阻塞 UI；单文件异常不会中断整批处理，会在结果列表中标记为失败。
           处理完成后可一键打包为 ZIP 下载（采用 STORE 模式无压缩，避免重复编码图像数据）。
         </p>
@@ -160,10 +183,13 @@ const meta: SiteMeta = {
         <p>
           <strong>批量处理与单文件模式共享同一组编辑操作配置</strong>。<br />
           典型工作流：<br />
-          1. 在「单文件编辑」Tab 中上传一张代表性 JPEG，勾选所需的编辑操作（如删除 GPS + 个人信息 + MakerNote）<br />
+          1. 在「单文件编辑」Tab 中上传一张代表性图片（JPEG 或 PNG），勾选所需的编辑操作
+          （如 JPEG 选删除 GPS + 个人信息 + MakerNote，PNG 选删除个人信息 + 软件信息）<br />
           2. 切换到「批量处理」Tab，顶部「当前编辑操作」会显示已勾选的操作列表<br />
-          3. 添加多个 JPEG 文件，点击「执行批量编辑」<br />
+          3. 添加多个 JPEG / PNG 文件（可混合添加），点击「执行批量编辑」<br />
           4. 处理完成后可下载 ZIP 包，包含全部成功处理的结果文件<br />
+          <strong>批量分流</strong>：批量处理时按文件签名（JPEG SOI 0xFFD8 / PNG 8 字节签名）自动分流到
+          JPEG / PNG 两个队列分别处理，再按原顺序合并结果。同一批可混合 JPEG 与 PNG。<br />
           <strong>预设加速</strong>：若经常使用相同的编辑组合，可在「编辑预设」面板保存为预设
           （如命名"分享前清理"），下次直接点击「应用」按钮恢复配置，无需重复勾选。
         </p>
@@ -175,10 +201,11 @@ const meta: SiteMeta = {
           - <strong><a href="/exif">EXIF 信息查看器</a></strong>：基于 exifr 库只读解析，
             支持 JPEG / PNG / WebP / TIFF / HEIC 多格式，查看完整 EXIF / IPTC / XMP / ICC 元数据，
             用于"看看这张图有哪些元数据"<br />
-          - <strong>EXIF 元数据编辑器（本工具）</strong>：自主实现 JPEG 结构操作，
-            仅支持 JPEG，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
+          - <strong>EXIF / PNG 元数据编辑器（本工具）</strong>：自主实现二进制结构操作，
+            支持 JPEG 与 PNG，支持删除 / 修改元数据字段，用于"删除某些敏感元数据"<br />
           <strong>典型工作流</strong>：先用 EXIF 查看器确认图片含哪些元数据 → 用本工具按需删除
-          GPS / 个人信息 / MakerNote → 下载编辑后的图片 → 再次用查看器验证删除结果。
+          GPS / 个人信息 / MakerNote（JPEG）或 tEXt / iTXt / tIME（PNG）→ 下载编辑后的图片 →
+          再次用查看器验证删除结果。
         </p>
       </details>
     </section>

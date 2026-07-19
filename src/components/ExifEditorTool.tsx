@@ -16,6 +16,16 @@ import {
   touchPreset,
   exportPresets,
   importPresets,
+  // PNG 相关导入（第 106 轮新增）
+  isPngFile,
+  parsePngChunks,
+  applyPngEdits,
+  applyPngEditsBatch,
+  extractPngMetaSnapshot,
+  formatPngTime,
+  buildPngEditedFilename,
+  buildPngBatchEditedFilename,
+  type PngMetaSnapshot,
   type EditOperation,
   type EditResult,
   type EditPreset,
@@ -25,17 +35,21 @@ import { createZipFile, type ZipEntry } from '../utils/imageCrop';
 import { formatBytes, downloadBlob } from '../utils/imageConvert';
 
 /**
- * EXIF 元数据编辑器
- * 全部在浏览器本地操作 JPEG 二进制结构，不发起任何网络请求。
+ * EXIF / PNG 元数据编辑器
+ * 全部在浏览器本地操作文件二进制结构，不发起任何网络请求。
  *
  * 功能：
- *  - 支持 JPEG 文件的 EXIF 元数据编辑（其他格式提示用户）
- *  - 删除 GPS 定位 / 个人信息 / MakerNote / 缩略图 / 软件信息
- *  - 修改拍摄时间（DateTime / DateTimeOriginal / DateTimeDigitized）
- *  - 一键清除全部 EXIF（移除整个 APP1 段）
+ *  - 支持 JPEG 文件的 EXIF 元数据编辑（删除 GPS / 个人信息 / MakerNote / 缩略图 / 软件信息，修改拍摄时间）
+ *  - 支持 PNG 文件的元数据清理（删除 tEXt / iTXt / tIME / eXIf 等辅助 chunk，修改 tIME 时间）
+ *  - 一键清除全部元数据（JPEG 移除 APP1 EXIF 段 / PNG 仅保留关键 chunk）
  *  - 编辑前后元数据对比，可视化展示被删除/修改的字段
  *  - 编辑结果实时预览 + 一键下载
+ *  - 批量处理多文件并打包 ZIP 下载
+ *  - 编辑预设保存与导入导出
  */
+
+/** 文件类型：JPEG / PNG / 其他 */
+type FileType = 'jpeg' | 'png' | 'unknown';
 
 /** 编辑前后的元数据快照（用于对比展示） */
 interface MetaSnapshot {
@@ -54,6 +68,16 @@ const GROUPS: { title: string; icon: string; tags: string[] }[] = [
   { title: '个人信息', icon: '👤', tags: ['Artist', 'Copyright', 'BodySerialNumber', 'CameraOwnerName', 'LensSerialNumber'] },
 ];
 
+/** PNG 文本元数据关键字分组（用于将 PNG tEXt 条目映射到 MetaSnapshot 分组） */
+const PNG_KEYWORD_GROUPS: { groupTitle: string; icon: string; keywords: string[] }[] = [
+  { groupTitle: 'PNG 软件信息', icon: '🖥', keywords: ['Software'] },
+  { groupTitle: 'PNG 个人信息', icon: '👤', keywords: ['Author', 'Artist', 'Copyright', 'Source'] },
+  { groupTitle: 'PNG 描述信息', icon: '📝', keywords: ['Title', 'Description', 'Comment'] },
+];
+
+/** PNG 支持的编辑操作（与 JPEG 操作集对齐，仅保留 PNG 适用的子集） */
+const PNG_SUPPORTED_OPS = new Set(['removeAll', 'removePersonal', 'removeSoftware', 'setDateTime']);
+
 /** 从 exifr 解析结果提取分组快照 */
 function buildSnapshot(parsed: Record<string, unknown> | null): MetaSnapshot {
   if (!parsed) return {};
@@ -69,6 +93,49 @@ function buildSnapshot(parsed: Record<string, unknown> | null): MetaSnapshot {
     if (Object.keys(items).length > 0) {
       result[group.title] = items;
     }
+  }
+  return result;
+}
+
+/**
+ * 从 PNG 元数据快照构造 MetaSnapshot（与 JPEG 同构，便于复用 UI 组件）
+ * 将 tEXt/iTXt 条目按关键字分组，tIME 单独归入时间分组
+ */
+function buildPngSnapshot(snapshot: PngMetaSnapshot | null): MetaSnapshot {
+  if (!snapshot) return {};
+  const result: MetaSnapshot = {};
+  // 按 PNG_KEYWORD_GROUPS 分组文本条目
+  for (const group of PNG_KEYWORD_GROUPS) {
+    const items: Record<string, string> = {};
+    for (const entry of snapshot.textEntries) {
+      if (group.keywords.includes(entry.keyword)) {
+        items[entry.keyword] = entry.text || '(空)';
+      }
+    }
+    if (Object.keys(items).length > 0) {
+      result[group.groupTitle] = items;
+    }
+  }
+  // 未匹配到分组的条目归入"其他文本"
+  const matchedKeywords = new Set(PNG_KEYWORD_GROUPS.flatMap((g) => g.keywords));
+  const otherEntries = snapshot.textEntries.filter((e) => !matchedKeywords.has(e.keyword));
+  if (otherEntries.length > 0) {
+    const items: Record<string, string> = {};
+    for (const entry of otherEntries) {
+      items[entry.keyword] = entry.text || '(空)';
+    }
+    result['PNG 其他文本'] = items;
+  }
+  // 时间信息
+  if (snapshot.lastModified) {
+    result['PNG 时间信息'] = { 'Last Modified (tIME)': formatPngTime(snapshot.lastModified) };
+  }
+  // EXIF 与压缩文本标记
+  if (snapshot.hasExif) {
+    result['PNG EXIF'] = { eXIf: '存在（PNG 1.5+ 扩展，可用"清除全部"删除）' };
+  }
+  if (snapshot.hasCompressedText) {
+    result['PNG 压缩文本'] = { zTXt: '存在（未解析内容，可用"清除全部"删除）' };
   }
   return result;
 }
@@ -98,8 +165,13 @@ export default function ExifEditorTool() {
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string>('');
   const [parsedMeta, setParsedMeta] = useState<Record<string, unknown> | null>(null);
+  /** PNG 元数据快照（仅在 fileType === 'png' 时有值） */
+  const [pngSnapshot, setPngSnapshot] = useState<PngMetaSnapshot | null>(null);
   const [hasExif, setHasExif] = useState<boolean>(false);
+  /** JPEG 兼容标志：用于复用现有 UI 判断逻辑（PNG 不支持时按 JPEG 路径走） */
   const [hasJpeg, setHasJpeg] = useState<boolean>(false);
+  /** 当前加载文件类型：jpeg / png / unknown */
+  const [fileType, setFileType] = useState<FileType>('unknown');
 
   // 编辑操作状态
   const [checkedOps, setCheckedOps] = useState<Set<string>>(
@@ -154,17 +226,21 @@ export default function ExifEditorTool() {
     setEditResult(null);
     setEditedUrl('');
     setEditedMeta(null);
+    setPngSnapshot(null);
 
-    // 文件类型校验：仅支持 JPEG
-    const isJpeg =
-      f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name);
-    if (!isJpeg) {
+    // 文件类型识别
+    const isJpeg = f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name);
+    const isPng = f.type === 'image/png' || /\.png$/i.test(f.name);
+
+    if (!isJpeg && !isPng) {
       setFile(f);
       setFileUrl(URL.createObjectURL(f));
       setParsedMeta(null);
+      setPngSnapshot(null);
       setHasExif(false);
       setHasJpeg(false);
-      setError('当前仅支持 JPEG 文件。PNG / WebP / TIFF 等格式的 EXIF 编辑暂不支持，请上传 JPEG 图片。');
+      setFileType('unknown');
+      setError('当前仅支持 JPEG 与 PNG 文件。WebP / TIFF / HEIC 等格式的元数据编辑暂不支持，请上传 JPEG 或 PNG 图片。');
       return;
     }
 
@@ -177,26 +253,45 @@ export default function ExifEditorTool() {
     setFile(f);
     const url = URL.createObjectURL(f);
     setFileUrl(url);
-    setHasJpeg(true);
 
     try {
-      // 读取文件字节，检查 EXIF 段是否存在
       const buf = await f.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      let exifExists = false;
-      try {
-        const segments = parseJpegSegments(bytes);
-        exifExists = segments.some((s) => isExifSegment(s));
-      } catch {
-        // 段解析失败，仍尝试 exifr 解析
-      }
-      setHasExif(exifExists);
 
-      // 用 exifr 解析元数据（用于对比展示）
-      const parsed = await exifr.parse(f, { tiff: true, exif: true, gps: true });
-      setParsedMeta(parsed || null);
+      if (isJpeg) {
+        // JPEG 路径：解析 APP1 EXIF 段
+        setFileType('jpeg');
+        setHasJpeg(true);
+        let exifExists = false;
+        try {
+          const segments = parseJpegSegments(bytes);
+          exifExists = segments.some((s) => isExifSegment(s));
+        } catch {
+          // 段解析失败，仍尝试 exifr 解析
+        }
+        setHasExif(exifExists);
+
+        // 用 exifr 解析元数据（用于对比展示）
+        const parsed = await exifr.parse(f, { tiff: true, exif: true, gps: true });
+        setParsedMeta(parsed || null);
+      } else {
+        // PNG 路径：解析 chunks
+        setFileType('png');
+        setHasJpeg(false);
+        setHasExif(false);
+        if (!isPngFile(bytes)) {
+          setError('文件扩展名是 .png 但签名不匹配，可能不是有效的 PNG 文件');
+          return;
+        }
+        const chunks = parsePngChunks(bytes);
+        const snapshot = extractPngMetaSnapshot(chunks);
+        setPngSnapshot(snapshot);
+        setParsedMeta(null);
+        setHasExif(snapshot.hasExif);
+      }
     } catch (err) {
       setParsedMeta(null);
+      setPngSnapshot(null);
       setHasExif(false);
       setError(`解析文件失败：${err instanceof Error ? err.message : String(err)}`);
     }
@@ -268,17 +363,22 @@ export default function ExifEditorTool() {
   // 批量处理逻辑（第 89 轮新增）
   // ============================================================
 
-  /** 加载批量文件（仅保留 JPEG，校验大小） */
+  /** 加载批量文件（保留 JPEG 与 PNG，校验大小） */
   const handleBatchFiles = useCallback((fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    const jpegFiles = Array.from(fileList).filter(
-      (f) => f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name),
+    // 接受 JPEG 与 PNG 两种格式，按文件类型分流处理
+    const acceptedFiles = Array.from(fileList).filter(
+      (f) =>
+        f.type === 'image/jpeg' ||
+        f.type === 'image/png' ||
+        /\.jpe?g$/i.test(f.name) ||
+        /\.png$/i.test(f.name),
     );
-    if (jpegFiles.length === 0) {
-      setBatchError('未选择 JPEG 文件。批量处理仅支持 JPEG 格式。');
+    if (acceptedFiles.length === 0) {
+      setBatchError('未选择 JPEG / PNG 文件。批量处理仅支持 JPEG 与 PNG 格式。');
       return;
     }
-    const oversized = jpegFiles.filter((f) => f.size > MAX_FILE_SIZE);
+    const oversized = acceptedFiles.filter((f) => f.size > MAX_FILE_SIZE);
     if (oversized.length > 0) {
       setBatchError(
         `${oversized.length} 个文件超过 ${formatBytes(MAX_FILE_SIZE)} 限制：${oversized.map((f) => f.name).join(', ')}`,
@@ -287,7 +387,7 @@ export default function ExifEditorTool() {
     }
     setBatchError('');
     setBatchResult(null);
-    setBatchFiles((prev) => [...prev, ...jpegFiles]);
+    setBatchFiles((prev) => [...prev, ...acceptedFiles]);
   }, []);
 
   /** 批量文件选择 */
@@ -330,17 +430,78 @@ export default function ExifEditorTool() {
     if (batchInputRef.current) batchInputRef.current.value = '';
   }, []);
 
-  /** 执行批量编辑（并行读取字节，串行应用编辑避免主线程阻塞） */
+  /**
+   * 执行批量编辑（并行读取字节，串行应用编辑避免主线程阻塞）
+   * 文件类型分流：JPEG 走 applyEditsBatch，PNG 走 applyPngEditsBatch，
+   * 两批独立处理后合并结果，保持与单文件模式相同的处理语义。
+   */
   const runBatchEdit = useCallback(async () => {
     if (batchFiles.length === 0 || activeOps.length === 0) return;
     setBatchRunning(true);
     setBatchError('');
     try {
       const buffers = await Promise.all(batchFiles.map((f) => f.arrayBuffer()));
-      const bytesList = buffers.map((b) => new Uint8Array(b));
-      const names = batchFiles.map((f) => f.name);
-      const summary = await applyEditsBatch(bytesList, names, activeOps);
-      setBatchResult(summary);
+      const allBytes = buffers.map((b) => new Uint8Array(b));
+      const allNames = batchFiles.map((f) => f.name);
+      // 按文件签名分流到 JPEG / PNG 两个队列
+      const jpegIdx: number[] = [];
+      const pngIdx: number[] = [];
+      for (let i = 0; i < allBytes.length; i++) {
+        const bytes = allBytes[i];
+        if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+          jpegIdx.push(i);
+        } else if (isPngFile(bytes)) {
+          pngIdx.push(i);
+        }
+        // 其他格式忽略（applyEditsBatch / applyPngEditsBatch 内部会标记 skipped）
+      }
+      // 并行处理两批（实际串行，因 await 顺序执行）
+      const jpegBytes = jpegIdx.map((i) => allBytes[i]);
+      const jpegNames = jpegIdx.map((i) => allNames[i]);
+      const pngBytes = pngIdx.map((i) => allBytes[i]);
+      const pngNames = pngIdx.map((i) => allNames[i]);
+      const [jpegSummary, pngSummary] = await Promise.all([
+        jpegBytes.length > 0 ? applyEditsBatch(jpegBytes, jpegNames, activeOps) : null,
+        pngBytes.length > 0 ? applyPngEditsBatch(pngBytes, pngNames, activeOps) : null,
+      ]);
+      // 合并两批结果，按原顺序还原
+      const mergedItems = new Array(batchFiles.length);
+      if (jpegSummary) {
+        jpegSummary.items.forEach((item, i) => {
+          mergedItems[jpegIdx[i]] = item;
+        });
+      }
+      if (pngSummary) {
+        pngSummary.items.forEach((item, i) => {
+          mergedItems[pngIdx[i]] = item;
+        });
+      }
+      // 未分流处理的文件标记为 skipped（理论上不会发生，因 JPEG 与 PNG 已涵盖）
+      for (let i = 0; i < mergedItems.length; i++) {
+        if (!mergedItems[i]) {
+          mergedItems[i] = {
+            fileName: allNames[i],
+            status: 'skipped',
+            message: '未知文件类型，已跳过',
+          };
+        }
+      }
+      const totalSavedBytes =
+        (jpegSummary?.totalSavedBytes ?? 0) + (pngSummary?.totalSavedBytes ?? 0);
+      const totalElapsedMs =
+        (jpegSummary?.totalElapsedMs ?? 0) + (pngSummary?.totalElapsedMs ?? 0);
+      const succeeded = (jpegSummary?.succeeded ?? 0) + (pngSummary?.succeeded ?? 0);
+      const skipped = (jpegSummary?.skipped ?? 0) + (pngSummary?.skipped ?? 0);
+      const failed = (jpegSummary?.failed ?? 0) + (pngSummary?.failed ?? 0);
+      setBatchResult({
+        total: batchFiles.length,
+        succeeded,
+        skipped,
+        failed,
+        totalSavedBytes,
+        totalElapsedMs,
+        items: mergedItems,
+      });
     } catch (err) {
       setBatchError(`批量处理失败：${err instanceof Error ? err.message : String(err)}`);
     } finally {
@@ -348,7 +509,10 @@ export default function ExifEditorTool() {
     }
   }, [batchFiles, activeOps]);
 
-  /** 下载批量结果为 ZIP（复用 imageCrop 的 createZipFile，STORE 模式无压缩） */
+  /**
+   * 下载批量结果为 ZIP（复用 imageCrop 的 createZipFile，STORE 模式无压缩）
+   * 根据每个文件的类型选择对应的文件名生成器与 mime 类型
+   */
   const downloadBatchZip = useCallback(async () => {
     if (!batchResult) return;
     const successItems = batchResult.items.filter((it) => it.status === 'success' && it.result);
@@ -356,10 +520,18 @@ export default function ExifEditorTool() {
       setBatchError('没有可下载的成功处理结果');
       return;
     }
-    const entries: ZipEntry[] = successItems.map((it, idx) => ({
-      name: buildBatchEditedFilename(it.fileName, idx, successItems.length),
-      blob: new Blob([it.result!.bytes as BlobPart], { type: 'image/jpeg' }),
-    }));
+    const entries: ZipEntry[] = successItems.map((it, idx) => {
+      // 根据文件扩展名判断类型（PNG 文件扩展名以 .png 结尾）
+      const isPng = /\.png$/i.test(it.fileName);
+      const name = isPng
+        ? buildPngBatchEditedFilename(it.fileName, idx, successItems.length)
+        : buildBatchEditedFilename(it.fileName, idx, successItems.length);
+      const mime = isPng ? 'image/png' : 'image/jpeg';
+      return {
+        name,
+        blob: new Blob([it.result!.bytes as BlobPart], { type: mime }),
+      };
+    });
     await createZipFile(entries, `exif-edited-${Date.now()}.zip`);
   }, [batchResult]);
 
@@ -438,7 +610,7 @@ export default function ExifEditorTool() {
     if (importInputRef.current) importInputRef.current.value = '';
   }, []);
 
-  /** 执行编辑 */
+  /** 执行编辑（根据 fileType 分流到 JPEG / PNG 处理路径） */
   const runEdit = useCallback(async () => {
     if (!file || activeOps.length === 0) return;
     setEditing(true);
@@ -446,36 +618,55 @@ export default function ExifEditorTool() {
     try {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
-      const result = applyEdits(bytes, activeOps);
+      // 根据文件类型选择处理函数
+      const editFn = fileType === 'png' ? applyPngEdits : applyEdits;
+      const result = editFn(bytes, activeOps);
       setEditResult(result);
-      // 生成 Blob URL
-      const blob = new Blob([result.bytes as BlobPart], { type: 'image/jpeg' });
+      // 生成 Blob URL，保留原 mime 类型
+      const mime = fileType === 'png' ? 'image/png' : 'image/jpeg';
+      const blob = new Blob([result.bytes as BlobPart], { type: mime });
       const url = URL.createObjectURL(blob);
       if (editedUrl) URL.revokeObjectURL(editedUrl);
       setEditedUrl(url);
       // 重新解析编辑后的元数据
-      try {
-        const reparsed = await exifr.parse(blob, { tiff: true, exif: true, gps: true });
-        setEditedMeta(reparsed || null);
-      } catch {
-        setEditedMeta(null);
+      if (fileType === 'png') {
+        // PNG 路径：重新解析 chunks 提取快照
+        try {
+          const newChunks = parsePngChunks(result.bytes);
+          setPngSnapshot(extractPngMetaSnapshot(newChunks));
+          setEditedMeta(null);
+        } catch {
+          setPngSnapshot(null);
+        }
+      } else {
+        // JPEG 路径：用 exifr 重新解析
+        try {
+          const reparsed = await exifr.parse(blob, { tiff: true, exif: true, gps: true });
+          setEditedMeta(reparsed || null);
+        } catch {
+          setEditedMeta(null);
+        }
       }
     } catch (err) {
       setError(`编辑失败：${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setEditing(false);
     }
-  }, [file, activeOps, editedUrl]);
+  }, [file, activeOps, editedUrl, fileType]);
 
-  /** 下载编辑后文件 */
+  /** 下载编辑后文件（根据 fileType 选择文件名生成器） */
   const handleDownload = useCallback(() => {
     if (!editedUrl || !file) return;
-    downloadBlob(editedUrl, buildEditedFilename(file.name));
-  }, [editedUrl, file]);
+    const filename =
+      fileType === 'png'
+        ? buildPngEditedFilename(file.name)
+        : buildEditedFilename(file.name);
+    downloadBlob(editedUrl, filename);
+  }, [editedUrl, file, fileType]);
 
   /** 加载示例提示 */
   const handleSample = useCallback(() => {
-    setError('请上传一张含 EXIF 信息的 JPEG 照片（如手机拍摄的原片）以体验编辑功能。本工具不会上传任何数据。');
+    setError('请上传一张含 EXIF 信息的 JPEG 照片（如手机拍摄的原片）或含 tEXt 元数据的 PNG 图片以体验编辑功能。本工具不会上传任何数据。');
   }, []);
 
   /** 清空 */
@@ -486,17 +677,46 @@ export default function ExifEditorTool() {
     setFileUrl('');
     setParsedMeta(null);
     setEditedMeta(null);
+    setPngSnapshot(null);
     setEditResult(null);
     setEditedUrl('');
     setHasExif(false);
     setHasJpeg(false);
+    setFileType('unknown');
     setError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [fileUrl, editedUrl]);
 
-  // 渲染：原始与编辑后快照
-  const beforeSnap = useMemo(() => buildSnapshot(parsedMeta), [parsedMeta]);
-  const afterSnap = useMemo(() => buildSnapshot(editedMeta), [editedMeta]);
+  // 渲染：原始与编辑后快照（JPEG 走 exifr 解析结果，PNG 走 chunk 解析结果）
+  const beforeSnap = useMemo(() => {
+    if (fileType === 'png') return buildPngSnapshot(pngSnapshot);
+    return buildSnapshot(parsedMeta);
+  }, [fileType, pngSnapshot, parsedMeta]);
+  const afterSnap = useMemo(() => {
+    if (fileType === 'png') {
+      // PNG 编辑后状态：editResult 存在表示已编辑，afterSnap 应基于"假设的清理后状态"展示
+      // 简化策略：编辑后 pngSnapshot 已更新（runEdit 中已 setPngSnapshot），直接复用
+      return editResult ? buildPngSnapshot(pngSnapshot) : {};
+    }
+    return buildSnapshot(editedMeta);
+  }, [fileType, pngSnapshot, editResult, editedMeta]);
+
+  /** 当前文件类型下可用的编辑操作列表（PNG 隐藏不适用的操作） */
+  const availableOps = useMemo(() => {
+    if (fileType === 'png') {
+      return EDIT_OPERATIONS.filter((op) => PNG_SUPPORTED_OPS.has(op.type));
+    }
+    return EDIT_OPERATIONS;
+  }, [fileType]);
+
+  /** 是否可执行编辑（有可用操作 + 文件类型支持 + 有元数据可处理） */
+  const canEdit = useMemo<boolean>(() => {
+    if (!file) return false;
+    if (fileType === 'unknown') return false;
+    if (fileType === 'jpeg') return hasJpeg && hasExif;
+    if (fileType === 'png') return pngSnapshot !== null && pngSnapshot.metaChunkCount > 0;
+    return false;
+  }, [file, fileType, hasJpeg, hasExif, pngSnapshot]);
 
   return (
     <div className="exifedit__container">
@@ -532,7 +752,7 @@ export default function ExifEditorTool() {
         onDrop={onDrop}
         role="button"
         tabIndex={0}
-        aria-label="点击或拖入 JPEG 图片"
+        aria-label="点击或拖入 JPEG 或 PNG 图片"
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -544,10 +764,10 @@ export default function ExifEditorTool() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,.jpg,.jpeg"
+          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
           onChange={handleFileSelect}
           className="exifedit__file-input"
-          aria-label="选择 JPEG 图片"
+          aria-label="选择 JPEG 或 PNG 图片"
         />
         <div className="exifedit__dropzone-content">
           <div className="exifedit__dropzone-icon" aria-hidden="true">📷</div>
@@ -557,14 +777,19 @@ export default function ExifEditorTool() {
                 <strong>{file.name}</strong>
                 <span className="exifedit__file-meta">
                   {formatBytes(file.size)}
-                  {!hasJpeg && ' · 非 JPEG'}
-                  {hasJpeg && (hasExif ? ' · 含 EXIF' : ' · 无 EXIF')}
+                  {fileType === 'unknown' && ' · 非 JPEG/PNG'}
+                  {fileType === 'jpeg' && (hasExif ? ' · JPEG · 含 EXIF' : ' · JPEG · 无 EXIF')}
+                  {fileType === 'png' && pngSnapshot && (
+                    pngSnapshot.metaChunkCount > 0
+                      ? ` · PNG · ${pngSnapshot.metaChunkCount} 个元数据 chunk`
+                      : ' · PNG · 无元数据 chunk'
+                  )}
                 </span>
               </>
             ) : (
               <>
-                <strong>点击或拖入 JPEG 图片</strong>
-                <span className="exifedit__file-meta">仅支持 JPEG，最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理</span>
+                <strong>点击或拖入 JPEG 或 PNG 图片</strong>
+                <span className="exifedit__file-meta">支持 JPEG / PNG，最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理</span>
               </>
             )}
           </div>
@@ -605,18 +830,28 @@ export default function ExifEditorTool() {
             {/* 编辑操作配置 */}
             <div className="exifedit__ops">
               <h3 className="exifedit__section-title">编辑操作</h3>
-              {!hasJpeg && (
-                <p className="exifedit__hint">当前文件不是 JPEG，无法编辑 EXIF。请上传 JPEG 图片。</p>
+              {fileType === 'unknown' && (
+                <p className="exifedit__hint">当前文件不是 JPEG / PNG，无法编辑元数据。请上传 JPEG 或 PNG 图片。</p>
               )}
-              {hasJpeg && !hasExif && (
+              {fileType === 'jpeg' && !hasExif && (
                 <p className="exifedit__hint">该 JPEG 不含 EXIF 段，无需编辑。</p>
               )}
-              {hasJpeg && hasExif && (
+              {fileType === 'png' && pngSnapshot && pngSnapshot.metaChunkCount === 0 && (
+                <p className="exifedit__hint">该 PNG 不含任何元数据 chunk（仅有 IHDR/IDAT/IEND），无需编辑。</p>
+              )}
+              {canEdit && (
                 <>
+                  {fileType === 'png' && (
+                    <p className="exifedit__hint">
+                      PNG 模式支持的操作：删除全部元数据 / 删除个人信息（Author/Copyright/Artist 等 tEXt 条目）/
+                      删除软件信息（Software tEXt 条目）/ 修改最后修改时间（tIME chunk）。
+                      GPS / MakerNote / 缩略图操作不适用于 PNG（已在列表中隐藏）。
+                    </p>
+                  )}
                   <div className="exifedit__op-list">
-                    {EDIT_OPERATIONS.map((op) => {
+                    {availableOps.map((op) => {
                       const checked = checkedOps.has(op.type);
-                      const disabled = !hasExif;
+                      const disabled = false;
                       return (
                         <label
                           key={op.type}
@@ -648,7 +883,7 @@ export default function ExifEditorTool() {
                                     value={dateTimeValue}
                                     onChange={(e) => setDateTimeValue(e.target.value)}
                                     placeholder="YYYY:MM:DD HH:MM:SS"
-                                    aria-label="拍摄时间"
+                                    aria-label={fileType === 'png' ? '最后修改时间' : '拍摄时间'}
                                   />
                                 )}
                               </div>
@@ -954,7 +1189,7 @@ function BatchPanel(props: BatchPanelProps) {
         onDrop={onBatchDrop}
         role="button"
         tabIndex={0}
-        aria-label="点击或拖入多个 JPEG 图片"
+        aria-label="点击或拖入多个 JPEG 或 PNG 图片"
         onClick={() => batchInputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -966,18 +1201,18 @@ function BatchPanel(props: BatchPanelProps) {
         <input
           ref={batchInputRef}
           type="file"
-          accept="image/jpeg,.jpg,.jpeg"
+          accept="image/jpeg,image/png,.jpg,.jpeg,.png"
           multiple
           onChange={onBatchSelect}
           className="exifedit__file-input"
-          aria-label="选择多个 JPEG 图片"
+          aria-label="选择多个 JPEG 或 PNG 图片"
         />
         <div className="exifedit__dropzone-content">
           <div className="exifedit__dropzone-icon" aria-hidden="true">📦</div>
           <div className="exifedit__dropzone-text">
-            <strong>点击或拖入多个 JPEG 图片</strong>
+            <strong>点击或拖入多个 JPEG 或 PNG 图片</strong>
             <span className="exifedit__file-meta">
-              仅支持 JPEG，单文件最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理
+              支持 JPEG / PNG，单文件最大 {formatBytes(MAX_FILE_SIZE)}，全本地处理
             </span>
           </div>
         </div>
