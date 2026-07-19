@@ -5,12 +5,12 @@ import ImageCompareTool from '../components/ImageCompareTool.tsx';
 const meta: SiteMeta = {
   title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 区域放大 / 批量对比）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图（最长边放大至 480px），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告与批量 JSON 导出，适用于 CI/CD 截图回归测试批量执行场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图（最长边放大至 480px），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告，支持批量 JSON 导出与 ZIP 打包下载所有差异图（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），适用于 CI/CD 截图回归测试批量执行与归档场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比，批量对比与队列处理，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比，批量对比与队列处理，ZIP 打包下载所有差异图，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -36,7 +36,9 @@ const meta: SiteMeta = {
         支持<strong>区域放大查看</strong>（双击差异区域弹 modal 三联对比 A/B/差异图，键盘 ← → 切换区域，便于小区域细节定位），
         支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
         <strong>批量对比模式</strong>支持上传多张图片自动两两配对（第 1+2、3+4...），
-        队列处理输出汇总报告与<strong>批量 JSON 导出</strong>，适用于 CI/CD 截图回归测试批量执行场景。
+        队列处理输出汇总报告，支持<strong>批量 JSON 导出</strong>与
+        <strong>ZIP 打包下载所有差异图</strong>（含 manifest.json 与 README.txt，纯浏览器本地打包零上传），
+        适用于 CI/CD 截图回归测试批量执行与归档场景。
         支持<strong>阈值调节</strong>（0-100，可切换严格/默认/宽松三档预设）。
         基于 Canvas API 的 ImageData 在浏览器本地完成对比，<strong>零上传、零追踪、可离线使用</strong>，
         适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。
@@ -259,6 +261,28 @@ const meta: SiteMeta = {
           解析 meta.success / meta.failed 判断整体通过率 → 解析 items[].stats.diffPercent
           定位差异最大的配对 → 失败时附上批量 JSON 与差异图作为证据。
           文件名格式为 <code>image-compare-batch-YYYYMMDD.json</code>。
+        </p>
+      </details>
+      <details>
+        <summary>批量对比的 ZIP 打包下载包含什么？如何使用？</summary>
+        <p>
+          ZIP 打包下载是批量对比模式的<strong>归档导出能力</strong>，将所有成功对比的差异图一次性打包为
+          ZIP 文件下载，避免逐对展开下载的繁琐操作。<br />
+          - <strong>触发方式</strong>：批量对比完成后（至少 1 对成功），结果区操作栏出现
+          「下载全部差异图 ZIP」按钮，点击即可在浏览器本地打包下载<br />
+          - <strong>ZIP 内容</strong>：每个成功配对的差异图（PNG 格式），文件名格式为
+          <code>pair-001_&lt;A文件名&gt;__vs__&lt;B文件名&gt;_diff.png</code>；
+          <code>manifest.json</code>（与批量 JSON 导出内容一致，含元信息、统计、区域列表）；
+          <code>README.txt</code>（说明 ZIP 内容与差异图图例）<br />
+          - <strong>纯本地打包</strong>：ZIP 在浏览器中使用原生 API 构造（CRC32 + STORE 模式），
+          <strong>无第三方依赖、无网络请求</strong>，差异图不会上传到任何服务器<br />
+          - <strong>压缩方式</strong>：采用 STORE 模式（无压缩），因为差异图为 PNG（已压缩），
+          再用 DEFLATE 压缩收益微小且增加计算开销，STORE 模式打包速度更快<br />
+          - <strong>文件名安全</strong>：源文件名中的特殊字符（<code>\ / : * ? " &lt; &gt; |</code>
+          及控制字符）会被替换为下划线，文件名长度限制为 40 字符，保证跨平台解压兼容<br />
+          - <strong>典型用途</strong>：CI/CD 回归测试结果归档、设计稿版本对比留档、
+          A/B 测试素材差异证据收集、批量质量审计报告交付<br />
+          文件名格式为 <code>image-compare-batch-YYYYMMDD.zip</code>。
         </p>
       </details>
       <details>
@@ -625,6 +649,19 @@ const meta: SiteMeta = {
     border-color: #e74c3c;
     background: rgba(231, 76, 60, 0.06);
     color: #c0392b;
+  }
+
+  /* ZIP 打包错误提示：与操作按钮同区域，醒目但不抢主操作焦点 */
+  .imgcmp__batch-zip-error {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    min-height: 36px;
+    font-size: 13px;
+    color: #c0392b;
+    background: rgba(231, 76, 60, 0.08);
+    border: 1px solid rgba(231, 76, 60, 0.25);
+    border-radius: var(--radius-md);
   }
 
   /* 结果展示区 */
@@ -1101,6 +1138,12 @@ const meta: SiteMeta = {
 
     .imgcmp__btn {
       width: 100%;
+    }
+
+    /* 错误提示在移动端占满整行，保持与按钮对齐 */
+    .imgcmp__batch-zip-error {
+      width: 100%;
+      justify-content: center;
     }
 
     .imgcmp__stats {

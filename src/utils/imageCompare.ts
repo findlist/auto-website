@@ -1017,3 +1017,247 @@ function loadHtmlImage(image: SourceImage | string): Promise<HTMLImageElement> {
     img.src = url;
   });
 }
+
+/* ============================================================
+ *  ZIP 打包：批量差异图归档下载
+ *  采用 STORE 模式（无压缩），原因：
+ *  - 差异图为 PNG（已压缩），再压缩收益微小
+ *  - 实现简单（无 DEFLATE 算法），代码体积可控
+ *  - 兼容所有主流解压软件（Windows 资源管理器 / macOS Finder / unzip）
+ * ============================================================ */
+
+/** CRC32 查找表（IEEE 802.3 多项式 0xedb88320，懒加载） */
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) {
+      // 标准位运算：LSB 优先，多项式反向
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[i] = c >>> 0;
+  }
+  return table;
+})();
+
+/** 计算 Uint8Array 的 CRC32 校验码（IEEE 802.3） */
+function crc32(data: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (let i = 0; i < data.length; i++) {
+    crc = CRC32_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** ZIP 文件项（局部头 + 文件数据，用于构建中央目录） */
+interface ZipEntry {
+  /** 文件名（UTF-8 字节） */
+  nameBytes: Uint8Array;
+  /** 文件数据 */
+  data: Uint8Array;
+  /** CRC32 校验码 */
+  crc: number;
+  /** 局部头在整个 ZIP 中的偏移 */
+  localOffset: number;
+}
+
+/**
+ * 简易 ZIP 写入器（仅 STORE 模式，无压缩）
+ *
+ * ZIP 格式实现要点：
+ *  - 每个文件由「局部文件头 + 文件数据」组成，按顺序拼接
+ *  - 所有文件写入完成后，追加「中央目录」+「中央目录结束记录」
+ *  - 文件名使用 UTF-8 编码（通用标志位 11 置位）
+ *  - 时间戳统一为 0（不设置修改时间），保持实现简洁
+ *
+ * 兼容性：通过 Windows 资源管理器、macOS Finder、Linux unzip 测试
+ */
+class ZipWriter {
+  private entries: ZipEntry[] = [];
+  private chunks: Uint8Array[] = [];
+  private offset = 0;
+
+  /** 添加文件到 ZIP */
+  addFile(name: string, data: Uint8Array): void {
+    const nameBytes = new TextEncoder().encode(name);
+    const crc = crc32(data);
+
+    // 局部文件头（30 字节固定 + 文件名）
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const dv = new DataView(localHeader.buffer);
+    dv.setUint32(0, 0x04034b50, true);          // 局部头签名
+    dv.setUint16(4, 20, true);                  // 解压所需版本（2.0）
+    dv.setUint16(6, 0x0800, true);              // 通用标志：位 11 = UTF-8 文件名
+    dv.setUint16(8, 0, true);                   // 压缩方法：0 = STORE
+    dv.setUint16(10, 0, true);                  // 文件修改时间（0 = 不设置）
+    dv.setUint16(12, 0, true);                  // 文件修改日期（0 = 不设置）
+    dv.setUint32(14, crc, true);                // CRC-32
+    dv.setUint32(18, data.length, true);        // 压缩后大小
+    dv.setUint32(22, data.length, true);        // 压缩前大小
+    dv.setUint16(26, nameBytes.length, true);   // 文件名长度
+    dv.setUint16(28, 0, true);                  // 额外字段长度
+    localHeader.set(nameBytes, 30);
+
+    this.entries.push({
+      nameBytes,
+      data,
+      crc,
+      localOffset: this.offset,
+    });
+
+    this.chunks.push(localHeader);
+    this.offset += localHeader.length;
+    this.chunks.push(data);
+    this.offset += data.length;
+  }
+
+  /** 完成 ZIP 构建，返回 Blob（application/zip） */
+  finish(): Blob {
+    // 中央目录：每个文件一项（46 字节固定 + 文件名）
+    const centralChunks: Uint8Array[] = [];
+    let centralSize = 0;
+    for (const entry of this.entries) {
+      const header = new Uint8Array(46 + entry.nameBytes.length);
+      const dv = new DataView(header.buffer);
+      dv.setUint32(0, 0x02014b50, true);            // 中央文件头签名
+      dv.setUint16(4, 20, true);                    // 版本由
+      dv.setUint16(6, 20, true);                    // 解压所需版本
+      dv.setUint16(8, 0x0800, true);                // 通用标志：UTF-8
+      dv.setUint16(10, 0, true);                    // 压缩方法：STORE
+      dv.setUint16(12, 0, true);                    // 修改时间
+      dv.setUint16(14, 0, true);                    // 修改日期
+      dv.setUint32(16, entry.crc, true);            // CRC-32
+      dv.setUint32(20, entry.data.length, true);    // 压缩后大小
+      dv.setUint32(24, entry.data.length, true);    // 压缩前大小
+      dv.setUint16(28, entry.nameBytes.length, true); // 文件名长度
+      dv.setUint16(30, 0, true);                    // 额外字段长度
+      dv.setUint16(32, 0, true);                    // 文件注释长度
+      dv.setUint16(34, 0, true);                    // 磁盘号
+      dv.setUint16(36, 0, true);                    // 内部属性
+      dv.setUint32(38, 0, true);                    // 外部属性
+      dv.setUint32(42, entry.localOffset, true);    // 局部头偏移
+      header.set(entry.nameBytes, 46);
+      centralChunks.push(header);
+      centralSize += header.length;
+    }
+
+    // 中央目录结束记录（22 字节固定）
+    const centralOffset = this.offset;
+    const endRecord = new Uint8Array(22);
+    const dv = new DataView(endRecord.buffer);
+    dv.setUint32(0, 0x06054b50, true);              // EOCD 签名
+    dv.setUint16(4, 0, true);                       // 磁盘号
+    dv.setUint16(6, 0, true);                       // 中央目录起始磁盘号
+    dv.setUint16(8, this.entries.length, true);     // 本磁盘上的条目数
+    dv.setUint16(10, this.entries.length, true);    // 总条目数
+    dv.setUint32(12, centralSize, true);            // 中央目录大小
+    dv.setUint32(16, centralOffset, true);          // 中央目录偏移
+    dv.setUint16(20, 0, true);                      // 注释长度
+
+    // 显式取 .buffer 并断言为 ArrayBuffer，规避 TS 5.7 对 Uint8Array<ArrayBufferLike>
+    // 不能直接作为 BlobPart 的严格检查（本工具中所有 Uint8Array 均基于 ArrayBuffer 创建）
+    const parts: ArrayBuffer[] = [
+      ...this.chunks,
+      ...centralChunks,
+      endRecord,
+    ].map((chunk) => chunk.buffer as ArrayBuffer);
+    return new Blob(parts, { type: 'application/zip' });
+  }
+}
+
+/** 文件名中不允许的字符正则（跨平台安全） */
+const UNSAFE_FILENAME_CHARS = /[\\/:*?"<>|\u0000-\u001f]/g;
+
+/** 清理文件名：替换不安全字符为下划线，限制长度 */
+function sanitizeFileName(name: string, maxLen = 80): string {
+  const cleaned = name.replace(UNSAFE_FILENAME_CHARS, '_').trim() || 'unnamed';
+  return cleaned.length > maxLen ? cleaned.slice(0, maxLen) : cleaned;
+}
+
+/** 将 dataUrl 解码为 Uint8Array（仅支持 base64 格式） */
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const commaIdx = dataUrl.indexOf(',');
+  if (commaIdx < 0) {
+    throw new Error('dataUrl 格式无效');
+  }
+  const base64 = dataUrl.slice(commaIdx + 1);
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * 将批量对比结果打包为 ZIP
+ *
+ * 包含内容：
+ *  - 每对成功对比的差异图（PNG），文件名格式：`pair-001_<A>__vs__<B>_diff.png`
+ *  - manifest.json：含所有配对的元信息与统计（与 buildBatchExportJson 输出一致）
+ *  - README.txt：简要说明 ZIP 内容与差异图图例
+ *
+ * 设计要点：
+ *  - 仅打包成功对比的差异图，失败项仅在 manifest 中记录
+ *  - 差异图从 dataUrl 解码为 Uint8Array（已是 PNG 字节，可直接放入 ZIP）
+ *  - ZIP 采用 STORE 模式（PNG 已压缩，无需再压缩）
+ *  - 完全无第三方依赖，纯浏览器原生 API
+ */
+export async function buildBatchDiffImagesZip(summary: BatchCompareSummary): Promise<Blob> {
+  const writer = new ZipWriter();
+
+  // 1. 添加每对成功对比的差异图
+  for (const item of summary.items) {
+    if (!item.result) continue; // 跳过失败项
+
+    const idxStr = String(item.index).padStart(3, '0');
+    const nameA = sanitizeFileName(item.sourceA.file.name, 40);
+    const nameB = sanitizeFileName(item.sourceB.file.name, 40);
+    // 文件名包含配对序号 + 双方文件名片段，便于识别
+    const diffFileName = `pair-${idxStr}_${nameA}__vs__${nameB}_diff.png`;
+    const bytes = dataUrlToBytes(item.result.dataUrl);
+    writer.addFile(diffFileName, bytes);
+  }
+
+  // 2. 添加 manifest.json（与 buildBatchExportJson 输出一致，便于自动化集成）
+  const manifest = buildBatchExportJson(summary);
+  writer.addFile('manifest.json', new TextEncoder().encode(manifest));
+
+  // 3. 添加 README.txt（用户友好的说明文档）
+  const readmeLines = [
+    '图片批量对比结果归档',
+    '====================',
+    '',
+    `生成时间：${summary.generatedAt}`,
+    `工具：${summary.tool}`,
+    `差异阈值：${summary.threshold}`,
+    `网格分块尺寸：${summary.gridSize}`,
+    '',
+    '统计汇总：',
+    `- 总配对数：${summary.total}`,
+    `- 成功：${summary.success}`,
+    `- 失败：${summary.failed}`,
+    `- 平均差异：${summary.avgDiffPercent}%`,
+    `- 最大差异：${summary.maxDiffPercent}%`,
+    '',
+    '文件说明：',
+    '- pair-XXX_<A文件名>__vs__<B文件名>_diff.png：每对配对的差异图（PNG）',
+    '- manifest.json：完整对比报告（含元信息、统计、区域列表）',
+    '',
+    '差异图图例：',
+    '- 灰色区域：两图相同（原色灰度化，便于定位）',
+    '- 红色高亮：两图存在差异（醒目易识别）',
+    '',
+    '生成自：https://website.niuzi.asia/image-compare',
+  ];
+  writer.addFile('README.txt', new TextEncoder().encode(readmeLines.join('\n')));
+
+  return writer.finish();
+}
+
+/** 下载 Blob 为文件（异步释放 ObjectURL，避免下载未完成时回收） */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  downloadDataUrl(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}

@@ -6,8 +6,10 @@ import {
   pairFilesSequentially,
   buildDiffExportJson,
   buildBatchExportJson,
+  buildBatchDiffImagesZip,
   downloadDataUrl,
   downloadText,
+  downloadBlob,
   composeSideBySide,
   formatBytes,
   extractRegionDataUrl,
@@ -1022,6 +1024,10 @@ function BatchCompareMode() {
   const [expandedIdx, setExpandedIdx] = useState<number>(-1);
   // 配对警告（如奇数个文件）
   const [pairWarning, setPairWarning] = useState<string>('');
+  // ZIP 打包状态（避免重复点击）
+  const [zipping, setZipping] = useState(false);
+  // ZIP 打包错误提示（独立于对比错误，便于定位）
+  const [zipError, setZipError] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -1125,6 +1131,28 @@ function BatchCompareMode() {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     downloadText(json, `image-compare-batch-${dateStr}.json`);
   }, [summary]);
+
+  /**
+   * 下载批量对比全部差异图（ZIP 打包）
+   * 包含：每对成功对比的差异图 PNG + manifest.json + README.txt
+   * 仅在浏览器本地打包，无网络请求
+   */
+  const handleDownloadBatchZip = useCallback(async () => {
+    if (!summary) return;
+    // 防止重复点击
+    if (zipping) return;
+    setZipping(true);
+    setZipError('');
+    try {
+      const blob = await buildBatchDiffImagesZip(summary);
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      downloadBlob(blob, `image-compare-batch-${dateStr}.zip`);
+    } catch (e) {
+      setZipError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setZipping(false);
+    }
+  }, [summary, zipping]);
 
   /** 切换展开某配对的差异图 */
   const handleToggleExpand = useCallback((idx: number) => {
@@ -1298,6 +1326,22 @@ function BatchCompareMode() {
               >
                 导出批量 JSON
               </button>
+            )}
+            {summary && summary.success > 0 && (
+              <button
+                type="button"
+                className="imgcmp__btn imgcmp__btn--primary"
+                onClick={handleDownloadBatchZip}
+                disabled={zipping}
+                title="将所有成功对比的差异图打包为 ZIP 下载（含 manifest.json 与 README.txt）"
+              >
+                {zipping ? '打包中...' : '下载全部差异图 ZIP'}
+              </button>
+            )}
+            {zipError && (
+              <span className="imgcmp__batch-zip-error" role="alert">
+                ZIP 打包失败：{zipError}
+              </span>
             )}
           </div>
         </div>
