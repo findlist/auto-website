@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **107 个在线开发工具** + **102 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **109 个在线开发工具** + **117 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -57,7 +57,7 @@
 - 🚀 **零广告、零追踪** — 靠爱发电 / 捐赠驱动，不含任何广告联盟代码
 - 🔒 **全本地处理** — 所有工具纯前端计算，数据不离开您的浏览器，打开浏览器开发者工具即可审计
 - 📱 **移动端友好** — 375px / 768px / 1280px 三档响应式 + 暗色模式 + 复制即用
-- 📝 **配套博客** — 100 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
+- 📝 **配套博客** — 117 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
 - 🎨 **色彩设计** — 调色板 / 色值转换 / 对比度检测 / 配色灵感
 - 🔧 **编码转换** — Base64/32、URL、Hex、Punycode、HTML 实体、CSV/JSON/YAML/TOML/XML 互转
 - 🔐 **加密哈希** — AES / JWT 签名与验证 / JWE / 各类 Hash（SHA 系列）/ 强密码生成
@@ -70,7 +70,7 @@
 
 ---
 
-## 工具一览（107 个）
+## 工具一览（109 个）
 
 ### 编码转换
 `Base64` · `Base64 图片` · `图片压缩` · `图片格式转换` · `图片水印` · `图片裁剪` · `图片缩放` · `EXIF 信息查看器` · `EXIF 元数据编辑器` · `SVG 优化器` · `Base32` · `URL 编码` · `Hex 编码` · `Punycode (IDN)` · `HTML 实体` · `MIME 类型` · `进制转换` · `IEEE 754 浮点数` · `摩斯密码`
@@ -103,7 +103,7 @@
 | 层级 | 技术方案 | 说明 |
 | --- | --- | --- |
 | 静态站点生成 | **Astro 5** | SSG `output: static`，仅输出可部署的 HTML/CSS/JS |
-| 交互层 | React 18 + TypeScript 5.7 | 107 个 React 工具组件（`@astrojs/react`） |
+| 交互层 | React 18 + TypeScript 5.7 | 109 个 React 工具组件（`@astrojs/react`） |
 | 内容 | Astro Content Collections | MD 博客 + 230+ 个标签合集 |
 | SEO | `@astrojs/sitemap` | 自动生成 sitemap |
 | 部署 | Vercel / Cloudflare Pages / Netlify | 纯静态，零服务器 |
@@ -158,8 +158,8 @@ auto-website/
 │   ├── og-image.svg               # 社交分享图源文件（用于重新生成 PNG）
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
-│   ├── components/                # 107 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 102 篇技术博客（.md）
+│   ├── components/                # 109 个 React 工具组件（AesTool / Base64Tool / …）
+│   ├── content/blog/              # 117 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -168,7 +168,7 @@ auto-website/
 │   │   ├── privacy.astro          # 隐私政策
 │   │   ├── rss.xml.ts             # RSS 订阅源
 │   │   ├── blog/                  # 博客列表/详情/标签 页（Astro Content Collections）
-│   │   └── [107 个工具页].astro    # 独立工具页（每页独立 SEO）
+│   │   └── [109 个工具页].astro    # 独立工具页（每页独立 SEO）
 │   ├── styles/
 │   │   └── global.css             # 全局样式
 │   └── utils/                     # 26 个纯逻辑工具模块（前端独立运算）
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 870 页（含 102 篇博客 + 300+ 个标签筛选页 + 107 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 966 页（含 117 篇博客 + 300+ 个标签筛选页 + 109 个工具页及其它）。
 
 ---
 
-## 博客主题速览（102 篇）
+## 博客主题速览（117 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -259,7 +259,7 @@ auto-website/
 - `css-if-guide` CSS if() 条件函数：style/media/supports 三类条件、多分支短路求值、嵌套与逻辑运算、降级实践
 - `trigonometric-guide` CSS 三角函数：sin/cos/tan/atan2/hypot 与 pi()/e() 常量，弧度角度、圆周布局、振荡动画、玫瑰曲线与向日葵螺旋实战
 - `css-math-functions-guide` CSS 数学函数：exp/log/sqrt/pow/abs/sign/mod/rem/round，对数刻度、幂律缓动、镜像布局、网格对齐与 mod/rem 符号差异实战
-- ……（共 94 篇，300+ 个标签）
+- ……（共 117 篇，300+ 个标签）
 
 ---
 
@@ -352,7 +352,7 @@ auto-website/
 - **执行时间**：每天 00:00（Asia/Shanghai）
 - **检查范围**：
   - 项目根目录：运行 `npm run check`（即 `astro check`）检查类型，运行 `npm run build` 检查构建是否通过（本项目为 Astro 项目，无 lint / test 脚本）
-  - 审查 `src/components/` 工具组件（JsonTool / JwtTool / RegexTool / HashTool 等全部 93 个工具组件）
+  - 审查 `src/components/` 工具组件（JsonTool / JwtTool / RegexTool / HashTool 等全部 109 个工具组件）
   - 审查 `src/pages/` 页面（.astro 文件）、`src/utils/` 工具函数（aes / jsonPath / jsonSchema / jwe 等加密解析逻辑）、`src/layouts/BaseLayout.astro`、`src/styles/global.css`、`astro.config.mjs`
   - 分析最近一次提交变更（`git diff HEAD~1`），重点关注工具组件逻辑错误（加密解密 / 格式转换 / 编码解码）、类型错误、Astro 客户端/服务端边界问题（`client:` 指令使用）、安全问题（XSS / eval / CSP）、SEO 问题（meta / sitemap / robots）、性能问题
 - **输出位置**：`docs/bug-check/bug-check-YYYYMMDD.md`
