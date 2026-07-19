@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, useId, Fragment } from 'react';
 import exifr from 'exifr';
 import {
   applyEdits,
@@ -25,6 +25,8 @@ import {
   formatPngTime,
   buildPngEditedFilename,
   buildPngBatchEditedFilename,
+  formatHexDump,
+  HEX_DUMP_MAX_BYTES,
   type PngMetaSnapshot,
   type PngChunkInfo,
   type EditOperation,
@@ -1175,12 +1177,20 @@ const PNG_CHUNK_CATEGORY_LABEL: Record<string, string> = {
  * - 搜索框使用 aria-label 与 placeholder，输入实时过滤
  * - 过滤匹配 chunk 类型（如 "tEXt"）或摘要内容（如 "Author"）
  * - 显示匹配数量与总数量，无匹配时显示空状态提示
+ *
+ * 第 109 轮新增：辅助 chunk 行可点击展开查看 hex dump
+ * - 仅辅助 chunk 可展开（关键 chunk IDAT 等不提供展开，压缩数据 hex 无意义）
+ * - hex dump 格式：每行 16 字节，偏移 + hex + ASCII 三栏
+ * - 超过 HEX_DUMP_MAX_BYTES（1024）字节截断，提示用户完整数据需下载文件查看
+ * - 展开/折叠状态独立于搜索过滤
  */
 function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
   // 搜索关键词状态（空字符串表示不过滤）
   const [query, setQuery] = useState('');
   // 唯一 ID（避免编辑前后两个列表的 input id 冲突）
   const filterId = useId();
+  // 展开的 chunk key 集合（第 109 轮新增，独立于搜索过滤）
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
   // 过滤后的 chunk 列表（按类型或摘要匹配，大小写不敏感）
   const filteredChunks = useMemo(() => {
@@ -1194,6 +1204,40 @@ function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
       return summary.toLowerCase().includes(trimmed);
     });
   }, [chunks, query]);
+
+  /** 生成 chunk 唯一 key（与渲染 key 一致，保证全局唯一） */
+  const getChunkKey = useCallback((chunk: PngChunkInfo, idx: number) => {
+    return `${chunk.type}-${chunk.offset}-${idx}`;
+  }, []);
+
+  /** 切换 chunk 展开/折叠状态（仅辅助 chunk 可展开） */
+  const toggleExpand = useCallback((chunk: PngChunkInfo, idx: number) => {
+    // 关键 chunk 不可展开（IDAT 压缩数据 hex dump 无意义）
+    if (chunk.isCritical) return;
+    const key = getChunkKey(chunk, idx);
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, [getChunkKey]);
+
+  /** 键盘事件处理：Enter / Space 触发展开/折叠 */
+  const handleChunkKeyDown = useCallback(
+    (e: React.KeyboardEvent, chunk: PngChunkInfo, idx: number) => {
+      if (chunk.isCritical) return;
+      // Enter (13) 或 Space (32) 触发
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        toggleExpand(chunk, idx);
+      }
+    },
+    [toggleExpand],
+  );
 
   // 空状态：原始无 chunk
   if (chunks.length === 0) {
@@ -1247,31 +1291,88 @@ function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
             <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="columnheader">字节</span>
             <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="columnheader">摘要</span>
           </div>
-          {filteredChunks.map((chunk, idx) => (
-            <div
-              key={`${chunk.type}-${chunk.offset}-${idx}`}
-              className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}`}
-              role="row"
-            >
-              <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
-              <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
-                <span
-                  className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
-                  title={PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+          {filteredChunks.map((chunk, idx) => {
+            const key = getChunkKey(chunk, idx);
+            const expanded = expandedKeys.has(key);
+            // 仅辅助 chunk 可展开；空数据 chunk 展开无意义
+            const canExpand = !chunk.isCritical && chunk.dataLength > 0;
+            return (
+              // Fragment 包裹 chunk row 与 hex dump，避免嵌套 role 冲突
+              // key 放在 Fragment 上保证列表稳定
+              <Fragment key={key}>
+                <div
+                  className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}${canExpand ? ' exifedit__chunk-row--clickable' : ''}${expanded ? ' exifedit__chunk-row--expanded' : ''}`}
+                  role="row"
+                  tabIndex={canExpand ? 0 : undefined}
+                  aria-expanded={canExpand ? expanded : undefined}
+                  aria-label={canExpand ? `${chunk.type} chunk${expanded ? '（已展开 hex dump，按 Enter 折叠）' : '（按 Enter 展开 hex dump）'}` : undefined}
+                  onClick={canExpand ? () => toggleExpand(chunk, idx) : undefined}
+                  onKeyDown={canExpand ? (e) => handleChunkKeyDown(e, chunk, idx) : undefined}
                 >
-                  {chunk.type}
-                </span>
-              </span>
-              <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
-                {chunk.dataLength}
-              </span>
-              <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
-                {chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
-              </span>
-            </div>
-          ))}
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
+                    <span
+                      className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
+                      title={PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+                    >
+                      {chunk.type}
+                    </span>
+                  </span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
+                    {chunk.dataLength}
+                  </span>
+                  <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
+                    {canExpand && (
+                      <span className="exifedit__chunk-toggle" aria-hidden="true">
+                        {expanded ? '▼' : '▶'}
+                      </span>
+                    )}
+                    {chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
+                  </span>
+                </div>
+                {/* hex dump 展开内容（仅辅助 chunk 且 expanded 时渲染，与 chunk row 同级避免嵌套 row） */}
+                {canExpand && expanded && <ChunkHexDump chunk={chunk} />}
+              </Fragment>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * chunk hex dump 子组件（第 109 轮新增）
+ * 仅在辅助 chunk 展开时渲染，使用 formatHexDump 格式化原始字节
+ */
+function ChunkHexDump({ chunk }: { chunk: PngChunkInfo }) {
+  // useMemo 避免每次渲染重新计算 hex dump（chunk.data 不变时结果稳定）
+  const dump = useMemo(() => formatHexDump(chunk.data), [chunk.data]);
+
+  return (
+    <div className="exifedit__chunk-hex" role="region" aria-label={`${chunk.type} chunk 原始字节 hex dump`}>
+      <pre className="exifedit__chunk-hex-pre" aria-hidden="false">
+        {dump.lines.map((line, i) => (
+          // 每行格式：偏移  hex  ascii（使用 template 字符串保证对齐）
+          // 行号作为 key 安全：dump.lines 在 chunk.data 不变时稳定
+          <span key={i} className="exifedit__chunk-hex-line">
+            <span className="exifedit__chunk-hex-offset">{line.offset}</span>
+            {'  '}
+            <span className="exifedit__chunk-hex-bytes">{line.hex}</span>
+            {'  '}
+            <span className="exifedit__chunk-hex-ascii">{line.ascii}</span>
+            {'\n'}
+          </span>
+        ))}
+      </pre>
+      {dump.truncated && (
+        <p className="exifedit__chunk-hex-truncated" role="status">
+          显示前 {dump.shownBytes} 字节，共 {dump.totalBytes} 字节。完整数据请下载原文件查看（或使用 hex editor 工具）。
+        </p>
+      )}
+      <p className="exifedit__chunk-hex-hint">
+        共 {dump.totalBytes} 字节 · 截断阈值 {HEX_DUMP_MAX_BYTES} 字节 · 偏移量与字节均为 hex 大写
+      </p>
     </div>
   );
 }

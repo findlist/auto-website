@@ -1365,6 +1365,87 @@ export interface PngChunkInfo {
   isCritical: boolean;
   /** 简短摘要（如 tEXt 关键字 / tIME 格式化时间 / bKGD 颜色等） */
   summary?: string;
+  /**
+   * chunk 原始数据（Uint8Array view，不复制底层 buffer）
+   * 第 109 轮新增：用于辅助 chunk 行展开后的 hex dump 展示
+   * 关键 chunk（IHDR/PLTE/IDAT/IEND）也保留 data，但 UI 不提供展开能力
+   */
+  data: Uint8Array;
+}
+
+/** Hex dump 单行结构（第 109 轮新增） */
+export interface HexDumpLine {
+  /** 行起始偏移（hex 字符串，8 位） */
+  offset: string;
+  /** 16 字节的 hex 字符串（每组 8 字节，组间空格分隔） */
+  hex: string;
+  /** 16 字节的 ASCII 表示（不可打印字符用 . 替换） */
+  ascii: string;
+}
+
+/** Hex dump 结果（第 109 轮新增） */
+export interface HexDumpResult {
+  /** hex dump 行列表 */
+  lines: HexDumpLine[];
+  /** 是否被截断（原始字节数超过 maxBytes） */
+  truncated: boolean;
+  /** 原始字节数 */
+  totalBytes: number;
+  /** 实际展示的字节数 */
+  shownBytes: number;
+}
+
+/** Hex dump 默认截断阈值（1024 字节，超过则仅显示前 1024 字节） */
+export const HEX_DUMP_MAX_BYTES = 1024;
+
+/**
+ * 将字节数组格式化为标准 hex dump（第 109 轮新增）
+ * 每行 16 字节，分为两组 8 字节，格式：
+ *   00000000  48 65 6C 6C 6F 20 57 6F  72 6C 64 21 0A 00 00 00  Hello Wo rld!....
+ *
+ * @param data 字节数组（Uint8Array view 即可，不复制）
+ * @param maxBytes 最大展示字节数（默认 1024，超出截断）
+ * @returns HexDumpResult，包含行列表与截断信息
+ */
+export function formatHexDump(data: Uint8Array, maxBytes: number = HEX_DUMP_MAX_BYTES): HexDumpResult {
+  const totalBytes = data.length;
+  const shownBytes = Math.min(totalBytes, maxBytes);
+  const truncated = totalBytes > maxBytes;
+  const lines: HexDumpLine[] = [];
+
+  for (let i = 0; i < shownBytes; i += 16) {
+    const lineLen = Math.min(16, shownBytes - i);
+    const hexParts: string[] = [];
+    const asciiParts: string[] = [];
+
+    // 分为两组 8 字节，组间额外空格
+    for (let g = 0; g < 2; g++) {
+      const groupParts: string[] = [];
+      const start = i + g * 8;
+      for (let j = 0; j < 8; j++) {
+        const idx = start + j;
+        if (idx < i + lineLen) {
+          const byte = data[idx];
+          groupParts.push(byte.toString(16).padStart(2, '0').toUpperCase());
+          // ASCII 部分：可打印字符（0x20-0x7E）原样，否则用 .
+          asciiParts.push(byte >= 0x20 && byte <= 0x7e ? String.fromCharCode(byte) : '.');
+        } else {
+          // 不足 16 字节的最后一行，hex 用空格占位保持对齐
+          groupParts.push('  ');
+          asciiParts.push(' ');
+        }
+      }
+      hexParts.push(groupParts.join(' '));
+    }
+
+    lines.push({
+      offset: i.toString(16).padStart(8, '0').toUpperCase(),
+      hex: hexParts.join('  '),
+      ascii: asciiParts.join(''),
+    });
+  }
+
+  return { lines, truncated, totalBytes, shownBytes };
 }
 
 /** PNG 元数据快照（与 JPEG MetaSnapshot 兼容格式，便于复用 UI 组件） */
@@ -1497,6 +1578,8 @@ export async function extractPngMetaSnapshot(chunks: PngChunk[]): Promise<PngMet
       offset: chunk.offset,
       isCritical,
       summary,
+      // data 为 subarray view，不复制底层 buffer（第 109 轮新增，用于 hex dump 展示）
+      data: chunk.data,
     });
   }
 
