@@ -924,3 +924,96 @@ export function buildBatchExportJson(summary: BatchCompareSummary): string {
   };
   return JSON.stringify(exportData, null, 2);
 }
+
+/* ============================================================
+ *  区域放大查看：从原图/差异图中裁剪指定区域并等比放大
+ *  用于差异区域三联放大 modal（A / B / 差异图 同区域对比）
+ * ============================================================ */
+
+/** 区域提取配置项 */
+export interface ExtractRegionOptions {
+  /** 输出最大边长（像素），默认 400 */
+  targetSize?: number;
+  /** 区域四周扩展像素（参考坐标系单位，便于观察上下文），默认 8 */
+  padding?: number;
+  /** 参考坐标系宽度（region 坐标基于此宽度；省略时默认等于图片自身宽度） */
+  refWidth?: number;
+  /** 参考坐标系高度（同上） */
+  refHeight?: number;
+  /** 输出 MIME 类型，默认 image/png（差异图保留红色高亮建议用 PNG） */
+  mime?: string;
+}
+
+/**
+ * 从图片中裁剪指定区域并等比放大输出 dataUrl
+ *
+ * 设计要点：
+ *  - 当图片实际尺寸与 region 坐标系不一致时（如源图大于差异图），
+ *    按比例自动映射，保证三联图区域严格对齐
+ *  - padding 在参考坐标系中扩展，裁剪时 clamp 到图片边界
+ *  - 使用 high 质量图像平滑，便于放大后观察细节
+ *  - 内部不缓存图片元素，由调用方控制生命周期
+ *
+ * @param image 图片源（SourceImage 用其 url，string 视为 dataUrl）
+ * @param region 待提取的区域坐标（基于参考坐标系）
+ * @param options 可选配置
+ */
+export async function extractRegionDataUrl(
+  image: SourceImage | string,
+  region: DiffRegion,
+  options: ExtractRegionOptions = {},
+): Promise<string> {
+  const { targetSize = 400, padding = 8, refWidth, refHeight, mime = 'image/png' } = options;
+
+  const img = await loadHtmlImage(image);
+  const imgW = img.naturalWidth;
+  const imgH = img.naturalHeight;
+
+  // 坐标映射比例：参考坐标系 → 图片自身坐标系
+  const scaleX = refWidth ? imgW / refWidth : 1;
+  const scaleY = refHeight ? imgH / refHeight : 1;
+
+  // 在图片自身坐标系中计算裁剪区域（含 padding，clamp 到边界）
+  const sx = Math.max(0, Math.round((region.x - padding) * scaleX));
+  const sy = Math.max(0, Math.round((region.y - padding) * scaleY));
+  const sw = Math.min(imgW - sx, Math.round((region.width + padding * 2) * scaleX));
+  const sh = Math.min(imgH - sy, Math.round((region.height + padding * 2) * scaleY));
+
+  if (sw <= 0 || sh <= 0) {
+    throw new Error('区域坐标无效，无法裁剪');
+  }
+
+  // 等比放大到 targetSize（保证最长边等于 targetSize）
+  const maxSide = Math.max(sw, sh);
+  const scale = targetSize / maxSide;
+  const dw = Math.max(1, Math.round(sw * scale));
+  const dh = Math.max(1, Math.round(sh * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = dw;
+  canvas.height = dh;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Canvas 2D 上下文不可用，请更换浏览器');
+  }
+  // high 质量平滑，便于放大观察细节
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
+
+  return canvas.toDataURL(mime);
+}
+
+/**
+ * 加载图片元素（内部辅助函数）
+ * 统一处理 SourceImage 与 dataUrl 字符串两种输入
+ */
+function loadHtmlImage(image: SourceImage | string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = typeof image === 'string' ? image : image.url;
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('图片加载失败，无法提取区域'));
+    img.src = url;
+  });
+}

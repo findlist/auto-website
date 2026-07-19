@@ -10,11 +10,13 @@ import {
   downloadText,
   composeSideBySide,
   formatBytes,
+  extractRegionDataUrl,
   ACCEPTED_MIMES,
   DEFAULT_GRID_SIZE,
   MAX_BATCH_PAIRS,
   type SourceImage,
   type CompareMode,
+  type DiffRegion,
   type DiffResultWithRegions,
   type BatchCompareSummary,
 } from '../utils/imageCompare';
@@ -107,6 +109,7 @@ export default function ImageCompareTool() {
   // 差异区域相关状态
   const [showRegions, setShowRegions] = useState<boolean>(true);     // 是否在差异图上叠加区域框选
   const [selectedRegionIdx, setSelectedRegionIdx] = useState<number>(-1); // 当前选中的区域索引（-1 表示无）
+  const [zoomModalIdx, setZoomModalIdx] = useState<number>(-1);     // 区域放大 modal 当前索引（-1 表示关闭）
   const diffImgRef = useRef<HTMLImageElement>(null);                 // 差异图元素引用，用于滚动定位
 
   /** 计算图片尺寸差异提示 */
@@ -376,6 +379,25 @@ export default function ImageCompareTool() {
     if (idx >= 0 && diffImgRef.current) {
       diffImgRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+  }, []);
+
+  /** 打开区域放大 modal：同时选中该区域，便于关闭后保持高亮 */
+  const handleOpenZoom = useCallback((idx: number) => {
+    if (idx < 0) return;
+    setSelectedRegionIdx(idx);
+    setZoomModalIdx(idx);
+  }, []);
+
+  /** 关闭区域放大 modal */
+  const handleCloseZoom = useCallback(() => {
+    setZoomModalIdx(-1);
+  }, []);
+
+  /** modal 内切换区域：仅更新 modal 索引与选中状态，不滚动 */
+  const handleNavigateZoom = useCallback((idx: number) => {
+    if (idx < 0) return;
+    setSelectedRegionIdx(idx);
+    setZoomModalIdx(idx);
   }, []);
 
   /** 卸载时清理 ObjectURL */
@@ -771,7 +793,8 @@ export default function ImageCompareTool() {
                     className="imgcmp__regions-overlay"
                     viewBox={`0 0 ${diffResult.width} ${diffResult.height}`}
                     preserveAspectRatio="xMidYMid meet"
-                    aria-hidden="true"
+                    role="group"
+                    aria-label="差异区域叠加层：点击选中区域，双击放大查看"
                   >
                     {diffResult.regions.map((region, idx) => {
                       // 区域序号标签位置（左上角偏移）
@@ -783,6 +806,16 @@ export default function ImageCompareTool() {
                           key={`region-${idx}`}
                           className={`imgcmp__region-group${isSelected ? ' imgcmp__region-group--active' : ''}`}
                           onClick={() => handleSelectRegion(idx)}
+                          onDoubleClick={() => handleOpenZoom(idx)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`区域 ${idx + 1}：双击或回车放大查看`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleOpenZoom(idx);
+                            }
+                          }}
                         >
                           {/* 包围盒矩形 */}
                           <rect
@@ -907,6 +940,15 @@ export default function ImageCompareTool() {
                             </span>
                           </span>
                         </button>
+                        <button
+                          type="button"
+                          className="imgcmp__region-zoom"
+                          onClick={() => handleOpenZoom(idx)}
+                          aria-label={`放大查看区域 ${idx + 1}：三联对比 A/B/差异图`}
+                          title="放大查看（A/B/差异图三联对比）"
+                        >
+                          🔍 放大
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -924,6 +966,26 @@ export default function ImageCompareTool() {
           )}
         </div>
       )}
+        {/* 区域放大 modal：仅单图模式 + diff-highlight 模式 + 有 diffResult + 索引有效时渲染 */}
+        {appMode === 'single' &&
+          mode === 'diff-highlight' &&
+          diffResult &&
+          sourceA &&
+          sourceB &&
+          zoomModalIdx >= 0 &&
+          zoomModalIdx < diffResult.regions.length && (
+            <RegionZoomModal
+              regions={diffResult.regions}
+              currentIndex={zoomModalIdx}
+              sourceA={sourceA}
+              sourceB={sourceB}
+              diffDataUrl={diffResult.dataUrl}
+              diffWidth={diffResult.width}
+              diffHeight={diffResult.height}
+              onClose={handleCloseZoom}
+              onNavigate={handleNavigateZoom}
+            />
+          )}
         </>
       )}
     </div>
@@ -1389,6 +1451,217 @@ function BatchCompareMode() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ============================================================
+ *  区域放大查看 Modal 子组件
+ *  独立状态管理，三联放大对比（A / B / 差异图 同区域）
+ *  支持键盘导航（ESC 关闭、← / → 切换区域）
+ * ============================================================ */
+
+/** RegionZoomModal 入参 */
+interface RegionZoomModalProps {
+  /** 全部差异区域列表 */
+  regions: DiffRegion[];
+  /** 当前显示的区域索引 */
+  currentIndex: number;
+  /** 图片 A 源 */
+  sourceA: SourceImage;
+  /** 图片 B 源 */
+  sourceB: SourceImage;
+  /** 差异图 dataUrl */
+  diffDataUrl: string;
+  /** 差异图宽度（作为坐标映射参考） */
+  diffWidth: number;
+  /** 差异图高度 */
+  diffHeight: number;
+  /** 关闭 modal 回调 */
+  onClose: () => void;
+  /** 切换区域回调 */
+  onNavigate: (idx: number) => void;
+}
+
+/** 三联图加载状态 */
+type TripleLoadState = {
+  loading: boolean;
+  error: string;
+  urlA: string;
+  urlB: string;
+  urlDiff: string;
+};
+
+/** 三联图初始状态 */
+const INITIAL_TRIPLE: TripleLoadState = {
+  loading: true,
+  error: '',
+  urlA: '',
+  urlB: '',
+  urlDiff: '',
+};
+
+/** 放大输出尺寸（最长边） */
+const ZOOM_TARGET_SIZE = 480;
+/** 区域四周扩展像素（参考坐标系单位） */
+const ZOOM_PADDING = 12;
+
+function RegionZoomModal({
+  regions,
+  currentIndex,
+  sourceA,
+  sourceB,
+  diffDataUrl,
+  diffWidth,
+  diffHeight,
+  onClose,
+  onNavigate,
+}: RegionZoomModalProps) {
+  const [state, setState] = useState<TripleLoadState>(INITIAL_TRIPLE);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  const region = regions[currentIndex];
+  const total = regions.length;
+
+  /** 并行提取三联区域，每次切换区域时触发 */
+  useEffect(() => {
+    if (!region) return;
+    let cancelled = false;
+    setState({ ...INITIAL_TRIPLE });
+    (async () => {
+      try {
+        // 三联并行提取，共享同一区域坐标与参考坐标系
+        const refOpts = { refWidth: diffWidth, refHeight: diffHeight, targetSize: ZOOM_TARGET_SIZE, padding: ZOOM_PADDING };
+        const [urlA, urlB, urlDiff] = await Promise.all([
+          extractRegionDataUrl(sourceA, region, refOpts),
+          extractRegionDataUrl(sourceB, region, refOpts),
+          extractRegionDataUrl(diffDataUrl, region, refOpts),
+        ]);
+        if (cancelled) return;
+        setState({ loading: false, error: '', urlA, urlB, urlDiff });
+      } catch (e) {
+        if (cancelled) return;
+        setState({ loading: false, error: e instanceof Error ? e.message : String(e), urlA: '', urlB: '', urlDiff: '' });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [region, sourceA, sourceB, diffDataUrl, diffWidth, diffHeight]);
+
+  /** 键盘导航：ESC 关闭、← / → 切换区域 */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        e.preventDefault();
+        onNavigate(currentIndex - 1);
+      } else if (e.key === 'ArrowRight' && currentIndex < total - 1) {
+        e.preventDefault();
+        onNavigate(currentIndex + 1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentIndex, total, onClose, onNavigate]);
+
+  /** 打开时自动聚焦关闭按钮，便于键盘操作 */
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+  }, []);
+
+  /** 点击遮罩关闭（点击内容区不关闭） */
+  const handleOverlayClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) onClose();
+    },
+    [onClose],
+  );
+
+  if (!region) return null;
+
+  return (
+    <div
+      className="imgcmp__zoom-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="imgcmp-zoom-title"
+      onClick={handleOverlayClick}
+    >
+      <div className="imgcmp__zoom-dialog" ref={dialogRef}>
+        {/* 顶部：标题 + 关闭按钮 */}
+        <header className="imgcmp__zoom-header">
+          <div className="imgcmp__zoom-title-wrap">
+            <h2 id="imgcmp-zoom-title" className="imgcmp__zoom-title">
+              区域 {currentIndex + 1} / {total}
+            </h2>
+            <p className="imgcmp__zoom-meta">
+              坐标 ({region.x}, {region.y}) · 尺寸 {region.width}×{region.height}
+              <span className="imgcmp__zoom-divider">·</span>
+              差异像素 {region.diffPixels.toLocaleString()}
+              <span className="imgcmp__zoom-divider">·</span>
+              密度 {region.density}% · 强度 {region.avgIntensity}
+            </p>
+          </div>
+          <button
+            ref={closeBtnRef}
+            type="button"
+            className="imgcmp__zoom-close"
+            onClick={onClose}
+            aria-label="关闭放大查看（ESC）"
+          >
+            ×
+          </button>
+        </header>
+
+        {/* 中部：三联放大图 */}
+        <div className="imgcmp__zoom-body">
+          {state.loading && <div className="imgcmp__zoom-loading">正在提取区域并放大…</div>}
+          {state.error && <div className="imgcmp__zoom-error" role="alert">{state.error}</div>}
+          {!state.loading && !state.error && (
+            <div className="imgcmp__zoom-triple">
+              <figure className="imgcmp__zoom-figure">
+                <figcaption className="imgcmp__zoom-caption">图片 A · {sourceA.file.name}</figcaption>
+                <img src={state.urlA} alt={`区域 ${currentIndex + 1} 在图片 A 中的放大显示`} className="imgcmp__zoom-img" />
+              </figure>
+              <figure className="imgcmp__zoom-figure">
+                <figcaption className="imgcmp__zoom-caption">图片 B · {sourceB.file.name}</figcaption>
+                <img src={state.urlB} alt={`区域 ${currentIndex + 1} 在图片 B 中的放大显示`} className="imgcmp__zoom-img" />
+              </figure>
+              <figure className="imgcmp__zoom-figure">
+                <figcaption className="imgcmp__zoom-caption">差异图（红色高亮）</figcaption>
+                <img src={state.urlDiff} alt={`区域 ${currentIndex + 1} 在差异图中的放大显示`} className="imgcmp__zoom-img" />
+              </figure>
+            </div>
+          )}
+        </div>
+
+        {/* 底部：导航按钮 */}
+        <footer className="imgcmp__zoom-footer">
+          <button
+            type="button"
+            className="imgcmp__zoom-nav"
+            onClick={() => onNavigate(currentIndex - 1)}
+            disabled={currentIndex <= 0}
+            aria-label="上一个区域（←）"
+          >
+            ← 上一个
+          </button>
+          <span className="imgcmp__zoom-hint">使用 ← → 切换区域，ESC 关闭</span>
+          <button
+            type="button"
+            className="imgcmp__zoom-nav"
+            onClick={() => onNavigate(currentIndex + 1)}
+            disabled={currentIndex >= total - 1}
+            aria-label="下一个区域（→）"
+          >
+            下一个 →
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }

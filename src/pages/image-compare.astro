@@ -3,14 +3,14 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ImageCompareTool from '../components/ImageCompareTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 批量对比）',
+  title: '图片对比工具 - 在线图片差异比较（左右并排 / 滑块叠加 / 像素差异高亮 / 区域检测 / 区域放大 / 批量对比）',
   description:
-    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告与批量 JSON 导出，适用于 CI/CD 截图回归测试批量执行场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
+    '在线图片对比工具：支持左右并排、滑块叠加、像素级差异高亮三种对比模式，逐像素分析两张图的差异区域并以红色高亮标记，输出差异像素数、差异比例、最大差异强度等统计数据。新增差异区域自动检测（网格分块 + 并查集连通合并，框选差异位置并按差异像素数降序列表）与 JSON 报告导出（含元信息、统计、区域列表，便于自动化测试集成）。区域放大查看支持双击差异区域弹 modal 三联对比 A/B/差异图（最长边放大至 480px），键盘 ← → 切换区域、ESC 关闭，便于小区域细节定位。批量对比模式支持上传多张图片自动两两配对（第 1+2、3+4...），队列处理输出汇总报告与批量 JSON 导出，适用于 CI/CD 截图回归测试批量执行场景。支持阈值调节（0-100，可切换严格/默认/宽松三档预设）与差异图导出 PNG。基于 Canvas API 与 ImageData 全本地处理，零上传、零追踪、可离线使用，适用于设计稿版本对比、A/B 素材对比、回归测试截图对比、压缩前后质量对比等场景。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '图片对比工具',
-    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，批量对比与队列处理，阈值调节与差异统计，全本地 Canvas API 处理。',
+    description: '在线图片对比工具，支持左右并排、滑块叠加、像素差异高亮三种模式，差异区域检测与 JSON 报告导出，区域放大三联对比，批量对比与队列处理，阈值调节与差异统计，全本地 Canvas API 处理。',
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Any (Web Browser)',
     inLanguage: 'zh-CN',
@@ -33,6 +33,7 @@ const meta: SiteMeta = {
         <strong>像素级差异高亮</strong>（相同区域灰度化、差异区域红色标记）。
         差异模式逐像素分析，输出<strong>差异像素数、差异比例、最大差异强度、平均差异强度</strong>等统计，
         并自动<strong>检测差异区域</strong>（网格分块 + 并查集连通合并，框选位置并列表展示），
+        支持<strong>区域放大查看</strong>（双击差异区域弹 modal 三联对比 A/B/差异图，键盘 ← → 切换区域，便于小区域细节定位），
         支持<strong>导出 JSON 报告</strong>（含元信息、统计、区域列表，便于自动化测试集成）。
         <strong>批量对比模式</strong>支持上传多张图片自动两两配对（第 1+2、3+4...），
         队列处理输出汇总报告与<strong>批量 JSON 导出</strong>，适用于 CI/CD 截图回归测试批量执行场景。
@@ -258,6 +259,23 @@ const meta: SiteMeta = {
           解析 meta.success / meta.failed 判断整体通过率 → 解析 items[].stats.diffPercent
           定位差异最大的配对 → 失败时附上批量 JSON 与差异图作为证据。
           文件名格式为 <code>image-compare-batch-YYYYMMDD.json</code>。
+        </p>
+      </details>
+      <details>
+        <summary>差异区域放大查看是什么？如何使用？</summary>
+        <p>
+          差异区域放大查看是<strong>差异高亮模式</strong>下的细节对比能力，针对小区域或密集差异场景
+          （如压缩损失、微调改动、像素级回归）的精细化分析需求。<br />
+          - <strong>触发方式</strong>：在差异高亮模式下生成差异图后，差异区域列表中每个区域项右侧
+          有「🔍 放大」按钮；也可直接<strong>双击差异图上的区域矩形</strong>快速打开<br />
+          - <strong>三联对比</strong>：modal 内并排展示该区域在<strong>图片 A / 图片 B / 差异图</strong>
+          中的放大视图（最长边放大至 480px，四周扩展 12px 上下文），便于对照同一坐标在两张图与差异图中的细节<br />
+          - <strong>键盘导航</strong>：打开后可使用 <kbd>←</kbd> <kbd>→</kbd> 切换上一个 / 下一个区域，
+          <kbd>ESC</kbd> 关闭 modal，无需鼠标操作<br />
+          - <strong>坐标映射</strong>：当两张图尺寸不一致时，工具会按差异图尺寸（取较小尺寸）自动映射
+          到原图坐标系，保证三联图区域严格对齐<br />
+          - <strong>典型用途</strong>：定位压缩算法损失区域、对比设计稿微调、验证 A/B 测试素材差异、
+          像素级回归测试失败定位
         </p>
       </details>
     </section>
@@ -935,13 +953,17 @@ const meta: SiteMeta = {
 
   .imgcmp__region-item {
     margin: 0;
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
   }
 
   .imgcmp__region-btn {
     display: flex;
     align-items: center;
     gap: 10px;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 8px 12px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm, 4px);
@@ -952,6 +974,36 @@ const meta: SiteMeta = {
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
     min-height: 44px;  /* WCAG 2.2 触控目标 */
+  }
+
+  /* 放大按钮：紧凑、固定宽度，与区域按钮并列 */
+  .imgcmp__region-zoom {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text-soft);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .imgcmp__region-zoom:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+    background: rgba(231, 76, 60, 0.06);
+  }
+
+  .imgcmp__region-zoom:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 3px var(--color-primary-ring));
   }
 
   .imgcmp__region-btn:hover {
@@ -1651,5 +1703,289 @@ const meta: SiteMeta = {
 
   :global([data-theme="dark"]) .imgcmp__batch-item-error {
     color: #ff7b6b;
+  }
+
+  /* ============================================================
+   *  区域放大 Modal
+   * ============================================================ */
+
+  /* 遮罩层：固定定位 + 居中布局 + 半透明背景 */
+  .imgcmp__zoom-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  /* modal 容器：限宽 + 限高 + 内部滚动 */
+  .imgcmp__zoom-dialog {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1200px;
+    max-height: calc(100vh - 32px);
+    background: var(--color-bg, #fff);
+    border-radius: var(--radius-md, 8px);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+
+  /* 顶部：标题 + 元信息 + 关闭按钮 */
+  .imgcmp__zoom-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .imgcmp__zoom-title-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .imgcmp__zoom-title {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .imgcmp__zoom-meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-soft);
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    word-break: break-all;
+  }
+
+  .imgcmp__zoom-divider {
+    margin: 0 6px;
+    opacity: 0.5;
+  }
+
+  .imgcmp__zoom-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .imgcmp__zoom-close:hover {
+    border-color: #c0392b;
+    color: #c0392b;
+    background: rgba(231, 76, 60, 0.06);
+  }
+
+  .imgcmp__zoom-close:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 3px var(--color-primary-ring));
+  }
+
+  /* 中部：三联放大图 */
+  .imgcmp__zoom-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .imgcmp__zoom-loading,
+  .imgcmp__zoom-error {
+    padding: 40px 20px;
+    font-size: 14px;
+    color: var(--color-text-soft);
+    text-align: center;
+  }
+
+  .imgcmp__zoom-error {
+    color: #c0392b;
+  }
+
+  /* 三联图：桌面端水平排列，移动端垂直排列 */
+  .imgcmp__zoom-triple {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+  }
+
+  .imgcmp__zoom-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .imgcmp__zoom-caption {
+    padding: 6px 10px;
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-sm, 4px);
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: center;
+    word-break: break-all;
+  }
+
+  .imgcmp__zoom-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+    object-fit: contain;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: repeating-conic-gradient(#f0f0f0 0 25%, #e0e0e0 0 50%) 0 0 / 16px 16px;
+  }
+
+  /* 底部：导航按钮 + 提示 */
+  .imgcmp__zoom-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft, rgba(0, 0, 0, 0.02));
+  }
+
+  .imgcmp__zoom-nav {
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    min-height: 44px;
+  }
+
+  .imgcmp__zoom-nav:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+  }
+
+  .imgcmp__zoom-nav:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 3px var(--color-primary-ring));
+  }
+
+  .imgcmp__zoom-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .imgcmp__zoom-hint {
+    font-size: 12px;
+    color: var(--color-text-soft);
+    text-align: center;
+    flex: 1;
+  }
+
+  /* 响应式：768px 以下三联图改为垂直排列，元信息换行 */
+  @media (max-width: 768px) {
+    .imgcmp__zoom-overlay {
+      padding: 0;
+    }
+    .imgcmp__zoom-dialog {
+      max-height: 100vh;
+      max-width: 100%;
+      border-radius: 0;
+    }
+    .imgcmp__zoom-triple {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .imgcmp__zoom-img {
+      max-height: 280px;
+    }
+    .imgcmp__zoom-header {
+      padding: 12px 16px;
+    }
+    .imgcmp__zoom-body {
+      padding: 12px 16px;
+    }
+    .imgcmp__zoom-footer {
+      padding: 10px 16px;
+      flex-wrap: wrap;
+    }
+    .imgcmp__zoom-hint {
+      order: 3;
+      flex-basis: 100%;
+    }
+  }
+
+  /* 响应式：480px 以下进一步紧凑 */
+  @media (max-width: 480px) {
+    .imgcmp__zoom-title {
+      font-size: 14px;
+    }
+    .imgcmp__zoom-meta {
+      font-size: 11px;
+    }
+    .imgcmp__zoom-close {
+      width: 32px;
+      height: 32px;
+      font-size: 18px;
+    }
+    .imgcmp__zoom-nav {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .imgcmp__zoom-hint {
+      font-size: 11px;
+    }
+  }
+
+  /* 暗色模式：modal 容器、文字、棋盘背景适配 */
+  :global([data-theme="dark"]) .imgcmp__zoom-overlay {
+    background: rgba(0, 0, 0, 0.75);
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-dialog {
+    background: #1f1f1f;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-header,
+  :global([data-theme="dark"]) .imgcmp__zoom-footer {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-caption {
+    background: rgba(255, 255, 255, 0.06);
+    color: #b0b0b0;
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-img {
+    background: repeating-conic-gradient(#2a2a2a 0 25%, #1f1f1f 0 50%) 0 0 / 16px 16px;
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-close:hover,
+  :global([data-theme="dark"]) .imgcmp__region-zoom:hover {
+    background: rgba(231, 76, 60, 0.15);
+  }
+  :global([data-theme="dark"]) .imgcmp__zoom-error {
+    color: #ff7b6b;
+  }
+
+  /* 响应式：480px 以下放大按钮文字简化 */
+  @media (max-width: 480px) {
+    .imgcmp__region-zoom {
+      padding: 0 8px;
+      font-size: 11px;
+    }
   }
 </style>
