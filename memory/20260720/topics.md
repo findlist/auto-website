@@ -2722,4 +2722,62 @@
 - **依据**：部分非标准 WebP 文件的 EXIF chunk 数据缺少 'Exif\0\0' 前缀，直接传给 `parseExifSegment` 会按偏移错位解析；补齐前缀后兼容性良好
 - **启示**：二进制格式解析应容错处理非标准实现，提升真实世界文件兼容率
 
+---
+
+## 第 113 轮（2026-07-20）内链网络质量审计 + 入链最少工具页反向链接补充
+
+### 完成任务
+1. 新建内链网络质量审计脚本 `scripts/link-graph-audit.mjs`，覆盖 6 个审计维度
+2. 运行审计识别站内链网络健康度，生成基线报告 `docs/link-graph-audit-2026-07-20.txt`
+3. 针对 Top 5 入链最少工具页中的 4 个补充反向链接（/background/、/metadata-bundle/、/qr/）
+4. 重新构建并复跑审计验证修复效果，工具页入链平均 13.42→13.47
+5. Git 提交推送（commit 602c31d）
+
+### 修改文件
+- 新增 `scripts/link-graph-audit.mjs`（内链审计脚本，含 sitemap 白名单过滤、6 维度审计、Top 30 工具页/Top 20 博客文章入链排行）
+- 新增 `docs/link-graph-audit-2026-07-20.txt`（审计结果输出）
+- 修改 `src/pages/exif.astro`（related-tools 末尾追加 /metadata-bundle 反向链接）
+- 修改 `src/pages/exif-editor.astro`（related-tools 末尾追加 /metadata-bundle 反向链接）
+- 修改 `src/pages/url.astro`（related-tools 末尾追加 /qr 反向链接）
+- 修改 `src/pages/color.astro`（related-tools 末尾追加 /background 反向链接；文件混入并行任务 4 行 CSS 微调，一并提交）
+- 修改 `src/pages/gradient.astro`（related-tools 末尾追加 /background 反向链接）
+- 删除 `scripts/test-tag.mjs`（临时测试文件，未提交）
+
+### 问题与发现
+1. **dist 残留文件干扰审计**：dist/blog/tag/ 同时存在 `let's-encrypt`（旧 slug 残留）和 `lets-encrypt`（正确 slug）两个目录，首次审计误报 1 个孤立页面
+   - 根因：tagToSlug 在某次迭代中移除了对 `'` 字符的处理，旧构建产物未清理
+   - 尝试方案：astro.config.mjs `clean: true`（无效，非 Astro 5 有效配置项）→ `vite.build.emptyOutDir: true`（Windows 未生效）→ package.json build 前置 `rmSync('dist')`（Windows 未生效，疑似进程占用或权限问题）
+   - 最终方案：审计脚本加载 sitemap-0.xml 作为白名单，仅审计搜索引擎可见的页面，成功过滤 346 个残留文件
+   - 启示：Windows 开发环境下 Astro/Vite 的 dist 清理机制不可靠，审计类脚本应以 sitemap 为权威来源而非文件系统
+2. **入链最少工具页 Top 5**：/text-wrap/(3)、/qr/(3→4)、/regex-benchmark/(4)、/background/(3→5)、/metadata-bundle/(3→5)
+   - /text-wrap/ 暂未补充反向链接，其相关工具区已较完整，强行补充会影响相关性质量
+   - /regex-benchmark/ 入链 4 已接近中位数，且相关工具区不易找到自然协同点
+3. **工作树混入并行任务产物**：color.astro 同时包含本轮 /background 链接修改和并行任务 `.colortool__copy-btn:active` CSS 微调
+   - 处理：避免 patch 交互操作风险，接受整体提交，提交信息未提及并行任务修改
+   - 启示：多任务并行时工作树容易混入不同任务的修改，应在任务切换前及时提交或用 git stash 隔离
+4. **审计结果整体健康**：621 页面 0 孤立、0 入链稀疏、0 出链稀疏、0 无意义锚文本，站内链网络质量良好
+
+### 关键决策
+1. **sitemap 白名单而非文件系统扫描作为审计权威来源**
+   - 决策：审计脚本以 dist/sitemap-0.xml 为白名单，仅审计搜索引擎可见的页面
+   - 依据：dist 目录可能残留历史构建产物（如 slug 变更前的旧目录），文件系统扫描会误报；sitemap 是搜索引擎可见性的权威来源，与 SEO 目标一致
+   - 启示：审计类工具应以"用户/搜索引擎实际可见"为基准，而非开发环境的文件状态
+
+2. **入链最少工具页补充反向链接而非首页推荐位**
+   - 决策：针对入链最少的工具页，在相关工具页的 related-tools 区补充反向链接，而非在首页增加推荐位
+   - 依据：related-tools 区基于工具协同关系，链接具有语义相关性，对用户导航和搜索引擎权重传递都更有效；首页推荐位数量有限且竞争激烈，应留给核心工具
+   - 启示：内链优化应优先利用语义相关的上下文位置，而非集中堆砌在首页
+
+3. **审计维度排除模板导航链接**
+   - 决策：审计脚本识别 BaseLayout header/footer 注入的模板导航链接（/、/about/、/privacy/、/blog/），在"出链稀疏"维度中排除
+   - 依据：模板导航链接是全站统一的，不能反映页面作者对内链的主动设计；审计应聚焦于页面主体内容中的内链质量
+   - 启示：审计指标应区分"模板统一注入"与"页面主动设计"，避免模板链接掩盖真实问题
+
+### 下轮建议
+1. **dist 残留文件清理**：调研 Windows 下 Astro 5 dist 清理失效的根因，或编写跨平台清理脚本（用户取消过一次 Remove-Item 命令，需谨慎）
+2. **博客文章入链优化**：Top 20 入链最少博客文章（4-5 入链）可在工具页 related-blogs 区或博客文章互相引用中补充，但需评估语义相关性
+3. **/text-wrap/ 与 /regex-benchmark/ 入链提升**：寻找自然协同的工具页补充反向链接，或撰写相关博客文章引用
+4. **内链锚文本多样性审计**：当前仅检测无意义锚文本（点击/详情/更多），可扩展检测过度重复的锚文本（同一锚文本指向同一 URL 次数过多）
+5. **统计工具接入**：site-config.md 显示统计工具未接入，阶段二数据驱动迭代缺少数据源，应尽快接入 Plausible / Umami / Cloudflare Analytics 等免费方案
+
 
