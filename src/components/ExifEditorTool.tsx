@@ -26,6 +26,7 @@ import {
   buildPngEditedFilename,
   buildPngBatchEditedFilename,
   type PngMetaSnapshot,
+  type PngChunkInfo,
   type EditOperation,
   type EditResult,
   type EditPreset,
@@ -99,15 +100,18 @@ function buildSnapshot(parsed: Record<string, unknown> | null): MetaSnapshot {
 
 /**
  * 从 PNG 元数据快照构造 MetaSnapshot（与 JPEG 同构，便于复用 UI 组件）
- * 将 tEXt/iTXt 条目按关键字分组，tIME 单独归入时间分组
+ * 将 tEXt/iTXt/zTXt 条目按关键字分组，tIME 单独归入时间分组
+ * zTXt 在 extractPngMetaSnapshot 中已解压，这里与 tEXt 一同参与分组
  */
 function buildPngSnapshot(snapshot: PngMetaSnapshot | null): MetaSnapshot {
   if (!snapshot) return {};
   const result: MetaSnapshot = {};
+  // 合并 tEXt/iTXt 与解压后的 zTXt 条目，统一分组
+  const allTextEntries = [...snapshot.textEntries, ...snapshot.compressedTextEntries];
   // 按 PNG_KEYWORD_GROUPS 分组文本条目
   for (const group of PNG_KEYWORD_GROUPS) {
     const items: Record<string, string> = {};
-    for (const entry of snapshot.textEntries) {
+    for (const entry of allTextEntries) {
       if (group.keywords.includes(entry.keyword)) {
         items[entry.keyword] = entry.text || '(空)';
       }
@@ -118,7 +122,7 @@ function buildPngSnapshot(snapshot: PngMetaSnapshot | null): MetaSnapshot {
   }
   // 未匹配到分组的条目归入"其他文本"
   const matchedKeywords = new Set(PNG_KEYWORD_GROUPS.flatMap((g) => g.keywords));
-  const otherEntries = snapshot.textEntries.filter((e) => !matchedKeywords.has(e.keyword));
+  const otherEntries = allTextEntries.filter((e) => !matchedKeywords.has(e.keyword));
   if (otherEntries.length > 0) {
     const items: Record<string, string> = {};
     for (const entry of otherEntries) {
@@ -130,12 +134,15 @@ function buildPngSnapshot(snapshot: PngMetaSnapshot | null): MetaSnapshot {
   if (snapshot.lastModified) {
     result['PNG 时间信息'] = { 'Last Modified (tIME)': formatPngTime(snapshot.lastModified) };
   }
-  // EXIF 与压缩文本标记
+  // EXIF 标记
   if (snapshot.hasExif) {
     result['PNG EXIF'] = { eXIf: '存在（PNG 1.5+ 扩展，可用"清除全部"删除）' };
   }
+  // 压缩文本标记（保留作为汇总提示，内容已在前面的分组中展示）
   if (snapshot.hasCompressedText) {
-    result['PNG 压缩文本'] = { zTXt: '存在（未解析内容，可用"清除全部"删除）' };
+    result['PNG 压缩文本'] = {
+      zTXt: `存在 ${snapshot.compressedTextEntries.length} 条（已解压，内容见上方分组）`,
+    };
   }
   return result;
 }
@@ -165,8 +172,10 @@ export default function ExifEditorTool() {
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string>('');
   const [parsedMeta, setParsedMeta] = useState<Record<string, unknown> | null>(null);
-  /** PNG 元数据快照（仅在 fileType === 'png' 时有值） */
+  /** PNG 元数据快照（仅在 fileType === 'png' 时有值，编辑后会更新为编辑后快照） */
   const [pngSnapshot, setPngSnapshot] = useState<PngMetaSnapshot | null>(null);
+  /** PNG 编辑前的原始快照（用于编辑前后对比展示，编辑后保持不变） */
+  const [originalPngSnapshot, setOriginalPngSnapshot] = useState<PngMetaSnapshot | null>(null);
   const [hasExif, setHasExif] = useState<boolean>(false);
   /** JPEG 兼容标志：用于复用现有 UI 判断逻辑（PNG 不支持时按 JPEG 路径走） */
   const [hasJpeg, setHasJpeg] = useState<boolean>(false);
@@ -227,6 +236,7 @@ export default function ExifEditorTool() {
     setEditedUrl('');
     setEditedMeta(null);
     setPngSnapshot(null);
+    setOriginalPngSnapshot(null);
 
     // 文件类型识别
     const isJpeg = f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name);
@@ -237,6 +247,7 @@ export default function ExifEditorTool() {
       setFileUrl(URL.createObjectURL(f));
       setParsedMeta(null);
       setPngSnapshot(null);
+      setOriginalPngSnapshot(null);
       setHasExif(false);
       setHasJpeg(false);
       setFileType('unknown');
@@ -284,8 +295,10 @@ export default function ExifEditorTool() {
           return;
         }
         const chunks = parsePngChunks(bytes);
-        const snapshot = extractPngMetaSnapshot(chunks);
+        // extractPngMetaSnapshot 为异步（zTXt 需 DecompressionStream 解压）
+        const snapshot = await extractPngMetaSnapshot(chunks);
         setPngSnapshot(snapshot);
+        setOriginalPngSnapshot(snapshot);
         setParsedMeta(null);
         setHasExif(snapshot.hasExif);
       }
@@ -630,10 +643,11 @@ export default function ExifEditorTool() {
       setEditedUrl(url);
       // 重新解析编辑后的元数据
       if (fileType === 'png') {
-        // PNG 路径：重新解析 chunks 提取快照
+        // PNG 路径：重新解析 chunks 提取快照（异步，因 zTXt 需解压）
         try {
           const newChunks = parsePngChunks(result.bytes);
-          setPngSnapshot(extractPngMetaSnapshot(newChunks));
+          const newSnapshot = await extractPngMetaSnapshot(newChunks);
+          setPngSnapshot(newSnapshot);
           setEditedMeta(null);
         } catch {
           setPngSnapshot(null);
@@ -678,6 +692,7 @@ export default function ExifEditorTool() {
     setParsedMeta(null);
     setEditedMeta(null);
     setPngSnapshot(null);
+    setOriginalPngSnapshot(null);
     setEditResult(null);
     setEditedUrl('');
     setHasExif(false);
@@ -687,15 +702,16 @@ export default function ExifEditorTool() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [fileUrl, editedUrl]);
 
-  // 渲染：原始与编辑后快照（JPEG 走 exifr 解析结果，PNG 走 chunk 解析结果）
+  // 渲染：原始与编辑后快照
+  // JPEG 走 exifr 解析结果，PNG 走 chunk 解析结果
+  // PNG 编辑前快照基于 originalPngSnapshot（编辑后保持不变），编辑后快照基于 pngSnapshot（runEdit 中更新）
   const beforeSnap = useMemo(() => {
-    if (fileType === 'png') return buildPngSnapshot(pngSnapshot);
+    if (fileType === 'png') return buildPngSnapshot(originalPngSnapshot);
     return buildSnapshot(parsedMeta);
-  }, [fileType, pngSnapshot, parsedMeta]);
+  }, [fileType, originalPngSnapshot, parsedMeta]);
   const afterSnap = useMemo(() => {
     if (fileType === 'png') {
-      // PNG 编辑后状态：editResult 存在表示已编辑，afterSnap 应基于"假设的清理后状态"展示
-      // 简化策略：编辑后 pngSnapshot 已更新（runEdit 中已 setPngSnapshot），直接复用
+      // PNG 编辑后状态：editResult 存在表示已编辑，afterSnap 基于编辑后的 pngSnapshot
       return editResult ? buildPngSnapshot(pngSnapshot) : {};
     }
     return buildSnapshot(editedMeta);
@@ -1013,7 +1029,7 @@ export default function ExifEditorTool() {
             )}
 
             {/* 元数据对比 */}
-            {(parsedMeta || editedMeta) && (
+            {(parsedMeta || editedMeta || (fileType === 'png' && (originalPngSnapshot || pngSnapshot))) && (
               <div className="exifedit__compare">
                 <h3 className="exifedit__section-title">元数据对比</h3>
                 <div className="exifedit__compare-grid">
@@ -1027,6 +1043,38 @@ export default function ExifEditorTool() {
                     </h4>
                     {editResult ? (
                       <MetaSnapshotView snapshot={afterSnap} />
+                    ) : (
+                      <p className="exifedit__hint">点击"执行编辑"查看结果</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PNG chunk 列表对比（仅 PNG 模式显示） */}
+            {fileType === 'png' && originalPngSnapshot && (
+              <div className="exifedit__chunks">
+                <h3 className="exifedit__section-title">PNG chunk 列表</h3>
+                <p className="exifedit__hint">
+                  共 {originalPngSnapshot.totalChunks} 个 chunk（其中 {originalPngSnapshot.metaChunkCount} 个元数据 chunk）。
+                  {editResult && (
+                    <>
+                      编辑后共 {pngSnapshot?.totalChunks ?? 0} 个 chunk（其中 {pngSnapshot?.metaChunkCount ?? 0} 个元数据 chunk），
+                      减少 {originalPngSnapshot.totalChunks - (pngSnapshot?.totalChunks ?? originalPngSnapshot.totalChunks)} 个。
+                    </>
+                  )}
+                </p>
+                <div className="exifedit__compare-grid">
+                  <div className="exifedit__compare-col">
+                    <h4 className="exifedit__compare-title">编辑前（{originalPngSnapshot.totalChunks} chunk）</h4>
+                    <PngChunkListView chunks={originalPngSnapshot.chunks} />
+                  </div>
+                  <div className="exifedit__compare-col">
+                    <h4 className="exifedit__compare-title">
+                      编辑后（{editResult ? `${pngSnapshot?.totalChunks ?? 0} chunk` : '—'}）
+                    </h4>
+                    {editResult && pngSnapshot ? (
+                      <PngChunkListView chunks={pngSnapshot.chunks} />
                     ) : (
                       <p className="exifedit__hint">点击"执行编辑"查看结果</p>
                     )}
@@ -1095,6 +1143,66 @@ function MetaSnapshotView({ snapshot }: { snapshot: MetaSnapshot }) {
               </div>
             ))}
           </dl>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** chunk 分类中文说明（用于徽章 tooltip 与辅助文本） */
+const PNG_CHUNK_CATEGORY_LABEL: Record<string, string> = {
+  IHDR: '图像头（关键）',
+  PLTE: '调色板（关键）',
+  IDAT: '图像数据（关键）',
+  IEND: '结束标记（关键）',
+  tEXt: '文本元数据',
+  zTXt: '压缩文本元数据',
+  iTXt: '国际化文本元数据',
+  tIME: '最后修改时间',
+  eXIf: 'EXIF 数据',
+  bKGD: '默认背景色',
+  pHYs: '物理像素尺寸',
+  cHRM: '色度坐标',
+  gAMA: 'Gamma 校正',
+  iCCP: 'ICC 配置',
+  sRGB: 'sRGB 标志',
+  OTHER: '其他辅助 chunk',
+};
+
+/** PNG chunk 列表视图组件：以表格形式展示 chunk 列表，区分关键/辅助 chunk */
+function PngChunkListView({ chunks }: { chunks: PngChunkInfo[] }) {
+  if (chunks.length === 0) {
+    return <p className="exifedit__hint">无 chunk</p>;
+  }
+  return (
+    <div className="exifedit__chunk-list" role="table" aria-label="PNG chunk 列表">
+      <div className="exifedit__chunk-row exifedit__chunk-row--head" role="row">
+        <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="columnheader">#</span>
+        <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="columnheader">类型</span>
+        <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="columnheader">字节</span>
+        <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="columnheader">摘要</span>
+      </div>
+      {chunks.map((chunk, idx) => (
+        <div
+          key={`${chunk.type}-${idx}`}
+          className={`exifedit__chunk-row${chunk.isCritical ? ' exifedit__chunk-row--critical' : ' exifedit__chunk-row--aux'}`}
+          role="row"
+        >
+          <span className="exifedit__chunk-cell exifedit__chunk-cell--idx" role="cell">{idx + 1}</span>
+          <span className="exifedit__chunk-cell exifedit__chunk-cell--type" role="cell">
+            <span
+              className={`exifedit__chunk-badge${chunk.isCritical ? ' exifedit__chunk-badge--critical' : ''}`}
+              title={PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? chunk.category}
+            >
+              {chunk.type}
+            </span>
+          </span>
+          <span className="exifedit__chunk-cell exifedit__chunk-cell--size" role="cell">
+            {chunk.dataLength}
+          </span>
+          <span className="exifedit__chunk-cell exifedit__chunk-cell--summary" role="cell">
+            {chunk.summary ?? PNG_CHUNK_CATEGORY_LABEL[chunk.category] ?? '—'}
+          </span>
         </div>
       ))}
     </div>

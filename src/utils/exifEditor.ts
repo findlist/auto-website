@@ -1189,6 +1189,76 @@ export function parseITxtChunk(data: Uint8Array): PngTextEntry | null {
   return { keyword, text };
 }
 
+/**
+ * 使用浏览器原生 DecompressionStream('deflate') 解压 zlib 数据
+ * 兼容性：Chrome 80+ / Firefox 113+ / Safari 16.4+，主流浏览器均支持
+ * 若环境不支持 DecompressionStream，抛出明确错误便于上层降级
+ */
+async function inflateZlib(compressed: Uint8Array): Promise<Uint8Array> {
+  // 检测 DecompressionStream 可用性
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('当前浏览器不支持 DecompressionStream，无法解压 zTXt');
+  }
+  // 复制到新的 Uint8Array 避免 SharedArrayBuffer 边界问题
+  const inputBytes = compressed instanceof Uint8Array
+    ? compressed.slice()
+    : new Uint8Array(compressed);
+  const ds = new DecompressionStream('deflate');
+  const writer = ds.writable.getWriter();
+  void writer.write(inputBytes);
+  void writer.close();
+  // 读取解压后的所有 chunk
+  const reader = ds.readable.getReader();
+  const out: Uint8Array[] = [];
+  let totalLen = 0;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (value) {
+      out.push(value);
+      totalLen += value.length;
+    }
+  }
+  // 合并为单个 Uint8Array
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const c of out) {
+    result.set(c, offset);
+    offset += c.length;
+  }
+  return result;
+}
+
+/**
+ * 解析 zTXt chunk 数据（异步，因需调用 DecompressionStream）
+ * 格式：keyword(1-79 Latin1) \0 compressionMethod(1) compressedText(zlib/deflate)
+ * compressionMethod 仅 0（zlib/deflate）合法，其他值返回未解析提示
+ */
+export async function parseZTxtChunk(data: Uint8Array): Promise<PngTextEntry | null> {
+  const nullIdx = data.indexOf(0);
+  if (nullIdx < 0) return null;
+  const keyword = new TextDecoder('latin1').decode(data.subarray(0, nullIdx)).trim();
+  if (!keyword) return null;
+  if (data.length < nullIdx + 2) return { keyword, text: '' };
+  const compressionMethod = data[nullIdx + 1];
+  if (compressionMethod !== 0) {
+    return { keyword, text: `[未知压缩方法 ${compressionMethod}，未解析]` };
+  }
+  const compressed = data.subarray(nullIdx + 2);
+  if (compressed.length === 0) return { keyword, text: '' };
+  try {
+    const decompressed = await inflateZlib(compressed);
+    // zTXt 文本为 Latin1 编码（PNG 规范）
+    const text = new TextDecoder('latin1').decode(decompressed);
+    return { keyword, text };
+  } catch (err) {
+    return {
+      keyword,
+      text: `[解压失败：${err instanceof Error ? err.message : String(err)}]`,
+    };
+  }
+}
+
 /** PNG tIME chunk 解析结果 */
 export interface PngTimeEntry {
   year: number;
@@ -1249,83 +1319,170 @@ function buildTimeChunkData(time: PngTimeEntry): Uint8Array {
   return out;
 }
 
+/** PNG chunk 摘要（用于 UI 展示，不含原始 data 字节） */
+export interface PngChunkInfo {
+  /** chunk 类型代码（4 字节 ASCII） */
+  type: string;
+  /** chunk 分类 */
+  category: PngChunkCategory;
+  /** 数据长度（字节，不含 length/type/CRC） */
+  dataLength: number;
+  /** chunk 在文件中的偏移（含 length 字段） */
+  offset: number;
+  /** 是否关键 chunk（IHDR/PLTE/IDAT/IEND，不可删除） */
+  isCritical: boolean;
+  /** 简短摘要（如 tEXt 关键字 / tIME 格式化时间 / bKGD 颜色等） */
+  summary?: string;
+}
+
 /** PNG 元数据快照（与 JPEG MetaSnapshot 兼容格式，便于复用 UI 组件） */
 export interface PngMetaSnapshot {
   /** 文本元数据条目列表（tEXt + iTXt，按 chunk 顺序） */
   textEntries: PngTextEntry[];
+  /** 解压后的 zTXt 文本条目列表（按 chunk 顺序） */
+  compressedTextEntries: PngTextEntry[];
   /** 最后修改时间（tIME chunk，可选） */
   lastModified: PngTimeEntry | null;
   /** 是否包含 eXIf chunk（PNG 1.5+ 扩展） */
   hasExif: boolean;
-  /** 是否包含 zTXt chunk（压缩文本，未解析） */
+  /** 是否包含 zTXt chunk（基于 compressedTextEntries 推导，兼容旧字段） */
   hasCompressedText: boolean;
   /** chunk 总数 */
   totalChunks: number;
   /** 元数据 chunk 数量（不含 IHDR/PLTE/IDAT/IEND） */
   metaChunkCount: number;
+  /** chunk 摘要列表（用于 UI 展示，按文件顺序） */
+  chunks: PngChunkInfo[];
+}
+
+/** 关键 chunk 分类集合（用于判断 isCritical） */
+const PNG_CRITICAL_CATEGORIES = new Set<PngChunkCategory>([
+  'IHDR',
+  'PLTE',
+  'IDAT',
+  'IEND',
+]);
+
+/** 仅解析 zTXt 的关键字（不解压），用于编辑时按关键字过滤 */
+function readZTxtKeyword(data: Uint8Array): string {
+  const nullIdx = data.indexOf(0);
+  if (nullIdx < 0) return '';
+  return new TextDecoder('latin1').decode(data.subarray(0, nullIdx)).trim();
 }
 
 /**
- * 提取 PNG 元数据快照
- * 解析 tEXt/iTXt/tIME/eXIf 等 chunk，返回与 JPEG 兼容的快照结构
+ * 提取 PNG 元数据快照（异步，因 zTXt 需调用 DecompressionStream 解压）
+ * 解析 tEXt/iTXt/zTXt/tIME/eXIf 等 chunk，返回与 JPEG 兼容的快照结构
  */
-export function extractPngMetaSnapshot(chunks: PngChunk[]): PngMetaSnapshot {
+export async function extractPngMetaSnapshot(chunks: PngChunk[]): Promise<PngMetaSnapshot> {
   const textEntries: PngTextEntry[] = [];
+  const compressedTextEntries: PngTextEntry[] = [];
+  const chunkInfos: PngChunkInfo[] = [];
   let lastModified: PngTimeEntry | null = null;
   let hasExif = false;
   let hasCompressedText = false;
   let metaChunkCount = 0;
 
   for (const chunk of chunks) {
+    const isCritical = PNG_CRITICAL_CATEGORIES.has(chunk.category);
+    let summary: string | undefined;
     switch (chunk.category) {
       case 'tEXt': {
         const entry = parseTextChunk(chunk.data);
-        if (entry) textEntries.push(entry);
+        if (entry) {
+          textEntries.push(entry);
+          summary = `${entry.keyword}${entry.text ? ': ' + truncateText(entry.text, 60) : ''}`;
+        }
         metaChunkCount++;
         break;
       }
       case 'iTXt': {
         const entry = parseITxtChunk(chunk.data);
-        if (entry) textEntries.push(entry);
+        if (entry) {
+          textEntries.push(entry);
+          summary = `${entry.keyword}${entry.text ? ': ' + truncateText(entry.text, 60) : ''}`;
+        }
         metaChunkCount++;
         break;
       }
-      case 'zTXt':
+      case 'zTXt': {
+        // 解压 zTXt 文本（异步）
+        const entry = await parseZTxtChunk(chunk.data);
+        if (entry) {
+          compressedTextEntries.push(entry);
+          summary = `${entry.keyword}${entry.text ? ': ' + truncateText(entry.text, 60) : ''}`;
+        }
         hasCompressedText = true;
         metaChunkCount++;
         break;
+      }
       case 'tIME':
         lastModified = parseTimeChunk(chunk.data);
+        summary = lastModified ? formatPngTime(lastModified) : undefined;
         metaChunkCount++;
         break;
       case 'eXIf':
         hasExif = true;
+        summary = 'PNG 1.5+ EXIF 扩展';
         metaChunkCount++;
         break;
       case 'bKGD':
+        summary = '默认背景色';
+        metaChunkCount++;
+        break;
       case 'pHYs':
+        summary = '物理像素尺寸（DPI）';
+        metaChunkCount++;
+        break;
       case 'cHRM':
+        summary = '色度坐标';
+        metaChunkCount++;
+        break;
       case 'gAMA':
+        summary = 'Gamma 校正';
+        metaChunkCount++;
+        break;
       case 'iCCP':
+        summary = 'ICC 配置文件';
+        metaChunkCount++;
+        break;
       case 'sRGB':
+        summary = 'sRGB 色彩空间';
+        metaChunkCount++;
+        break;
       case 'OTHER':
-        // 其他辅助 chunk 也计入元数据
         metaChunkCount++;
         break;
       default:
-        // 关键 chunk（IHDR/PLTE/IDAT/IEND）不计入
+        // 关键 chunk（IHDR/PLTE/IDAT/IEND）不计入元数据
         break;
     }
+    chunkInfos.push({
+      type: chunk.type,
+      category: chunk.category,
+      dataLength: chunk.dataLength,
+      offset: chunk.offset,
+      isCritical,
+      summary,
+    });
   }
 
   return {
     textEntries,
+    compressedTextEntries,
     lastModified,
     hasExif,
     hasCompressedText,
     totalChunks: chunks.length,
     metaChunkCount,
+    chunks: chunkInfos,
   };
+}
+
+/** 截断文本用于 UI 摘要展示，避免过长 chunk 文本占据过多空间 */
+function truncateText(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen) + '…';
 }
 
 /** PNG 编辑操作适用的关键字集合（用于 removePersonal / removeSoftware） */
@@ -1372,12 +1529,16 @@ export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[])
 
   const chunks = parsePngChunks(pngBytes);
   const textEntriesByChunk = new Map<PngChunk, PngTextEntry | null>();
-  // 预解析所有 tEXt/iTXt chunk，避免重复解析
+  // 预解析所有 tEXt/iTXt chunk（含关键字）+ zTXt（仅关键字，不解压）
+  // zTXt 关键字在压缩数据之前为 Latin1 ASCII，无需解压即可读取
   for (const chunk of chunks) {
     if (chunk.category === 'tEXt') {
       textEntriesByChunk.set(chunk, parseTextChunk(chunk.data));
     } else if (chunk.category === 'iTXt') {
       textEntriesByChunk.set(chunk, parseITxtChunk(chunk.data));
+    } else if (chunk.category === 'zTXt') {
+      const keyword = readZTxtKeyword(chunk.data);
+      textEntriesByChunk.set(chunk, keyword ? { keyword, text: '' } : null);
     }
   }
 
@@ -1416,7 +1577,11 @@ export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[])
         removedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'eXIf (all EXIF)' });
       } else if (chunk.category === 'tIME') {
         removedFields.push({ ifd: 'ifd0', tag: 0, tagName: 'tIME (last modified)' });
-      } else if (chunk.category === 'tEXt' || chunk.category === 'iTXt') {
+      } else if (
+        chunk.category === 'tEXt' ||
+        chunk.category === 'iTXt' ||
+        chunk.category === 'zTXt'
+      ) {
         const entry = textEntriesByChunk.get(chunk);
         if (entry) {
           removedFields.push({ ifd: 'ifd0', tag: 0, tagName: `${chunk.type}: ${entry.keyword}` });
@@ -1429,8 +1594,12 @@ export function applyPngEdits(pngBytes: Uint8Array, operations: EditOperation[])
       continue;
     }
 
-    // tEXt/iTXt：按关键字过滤
-    if (chunk.category === 'tEXt' || chunk.category === 'iTXt') {
+    // tEXt/iTXt/zTXt：按关键字过滤（zTXt 关键字无需解压即可读取）
+    if (
+      chunk.category === 'tEXt' ||
+      chunk.category === 'iTXt' ||
+      chunk.category === 'zTXt'
+    ) {
       const entry = textEntriesByChunk.get(chunk);
       if (entry) {
         if (removePersonal && isPersonalKeyword(entry.keyword)) {
