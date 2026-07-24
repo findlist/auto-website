@@ -14,6 +14,8 @@ const blog = defineCollection({
     tags: z.array(z.string()).default([]),
     // 关联的工具页，用于文末引导用户使用工具
     relatedTool: z.string().optional(),
+    // 作者字段（预留扩展，未来可用于结构化数据与署名）
+    author: z.string().optional(),
   }),
 });
 
