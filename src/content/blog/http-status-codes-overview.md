@@ -436,6 +436,7 @@ Content-Language: zh-CN
 - [JWT 解码](/jwt)：检查 401 鉴权失败的根因（JWT 过期、签名错误、role 字段）
 - [URL 编解码](/url)：调试 308 永久重定向的 Location 头中文参数
 - [HTML 实体编解码](/html-entities)：在 503 维护页 HTML 中安全显示错误消息
+- [多语言 HTTP 请求代码生成](/http-request)：生成 cURL/fetch/axios/Python/Go 请求代码，复现各状态码场景
 
 ## 十一、状态码使用检查清单
 

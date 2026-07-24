@@ -327,3 +327,5 @@ router.afterEach(() => {
 CSS view-transition 通过浏览器原生的快照机制，让状态切换与页面跳转的平滑过渡从复杂的手写动画降为简单的 API 调用或 CSS 声明。同文档过渡覆盖 SPA 状态切换，跨文档过渡覆盖 MPA 页面跳转，命名元素支持共享元素动画等复杂效果。配合伪元素树结构与动画覆盖，可实现淡入淡出、滑动、缩放等各类过渡效果。随着主流浏览器全面支持，view-transition 已成为现代前端过渡动画的首选方案，值得一试。
 
 配套工具：[CSS view-transition 视图过渡生成器](/view-transition)——可视化生成视图过渡 CSS 与 JS 代码，支持同文档/跨文档模式、命名元素管理、伪元素动画覆盖、iframe 实时预览，8 组预设覆盖常见场景，一键复制代码。
+
+相关工具：[display 切换过渡动画生成器](/starting-style)——补充 view-transition 无法覆盖的元素首次出现入场场景（display none↔block、popover 显示），配合 transition-behavior: allow-discrete 实现离散属性过渡。

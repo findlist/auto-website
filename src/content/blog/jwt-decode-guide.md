@@ -211,6 +211,8 @@ const decoded = jwt.verify(token, secret, { algorithms: ['HS256', 'RS256'] });
 | 在 URL 中携带 JWT             | URL 会被日志、Referer、浏览器历史记录                             | 用 `Authorization` 头携带                  |
 | 不校验 `aud`                  | A 服务的 token 可能在 B 服务也被接受                              | 验签时校验 `aud` 与自身标识一致            |
 
+> 实践提示：调试 JWT 鉴权接口时，可用 [Bearer Token 请求代码生成器](/http-request) 直接生成带 `Authorization: Bearer <token>` 头的 cURL/fetch/axios/Python/Go 请求代码，复现 401/403 鉴权失败场景。
+
 ## JavaScript 解码实现
 
 完整的 JWT 解码（仅解码，不验签）：

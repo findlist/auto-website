@@ -14,7 +14,7 @@ relatedTool: "/http-headers"
 
 理解 Header 的本质，能让你写出**安全、可缓存、跨域友好、SEO 友好**的 HTTP 接口与网页。本文系统讲解 40+ 常用 Header，覆盖 RFC 9110 核心字段，并给出生产环境配置建议。
 
-> 配套工具：[HTTP Header 解析与生成工具](/http-headers)（40+ Header 速查表 + 解析 + 生成 cURL/fetch 代码）、[HTTP 状态码查询](/http-status)（与 Header 配合理解协议）、[JWT 解码](/jwt)（解析 Authorization 头中的 Bearer 令牌）、[MIME 类型查询](/mime)（Content-Type 头对照表）
+> 配套工具：[HTTP Header 解析与生成工具](/http-headers)（40+ Header 速查表 + 解析 + 生成 cURL/fetch 代码）、[HTTP 状态码查询](/http-status)（与 Header 配合理解协议）、[JWT 解码](/jwt)（解析 Authorization 头中的 Bearer 令牌）、[MIME 类型查询](/mime)（Content-Type 头对照表）、[cURL fetch axios 互转工具](/http-request)（配置 Header 后生成多语言请求代码）
 
 ## 一、Header 的协议规范与基础
 
