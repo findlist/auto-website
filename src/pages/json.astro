@@ -395,6 +395,11 @@ const meta: SiteMeta = {
     background: var(--color-bg);
   }
 
+  /* 按下时轻微下沉，给用户即时操作反馈（与 tu__copy-btn:active 模式一致） */
+  .jsontool__tree-copy:active {
+    transform: translateY(1px);
+  }
+
   .jsontool__tree-toggle {
     display: inline-flex;
     align-items: center;

@@ -507,6 +507,11 @@ const meta: SiteMeta = {
     color: var(--color-primary);
   }
 
+  /* 按下时轻微下沉，给用户即时操作反馈（与 tu__copy-btn:active 模式一致） */
+  .jwttool__copy-btn:active {
+    transform: translateY(1px);
+  }
+
   /* 解码后的 JSON 展示 */
   .jwttool__seg-json {
     margin: 0;

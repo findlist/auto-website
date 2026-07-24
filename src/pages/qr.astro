@@ -297,14 +297,15 @@ END:VCARD</code></pre>
     color: var(--color-text);
   }
 
-  /* 警告提示 */
+  /* 警告提示：边框统一使用 --color-warn，避免与文字色 --color-warning 不一致
+     且 --color-warning 在深色模式未覆盖，导致暗色下边框色不协调 */
   .qrtool__warn {
     margin-top: 8px;
     padding: 8px 12px;
     font-size: 13px;
     color: var(--color-warn);
     background: var(--color-warn-soft);
-    border-left: 3px solid var(--color-warning);
+    border-left: 3px solid var(--color-warn);
     border-radius: var(--radius-sm);
   }
 
@@ -402,12 +403,9 @@ END:VCARD</code></pre>
   }
 
   /* 暗色模式适配：站点使用 prefers-color-scheme */
+  /* .qrtool__warn 已通过 --color-warn / --color-warn-soft 令牌自动适配深色模式，
+     无需重复覆盖；仅 .qrtool__error 需要显式提亮文字色提升可读性 */
   @media (prefers-color-scheme: dark) {
-    .qrtool__warn {
-      color: var(--color-warn);
-      background: var(--color-warn-soft);
-    }
-
     .qrtool__error {
       color: #fca5a5;
       background: var(--color-danger-soft);
