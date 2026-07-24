@@ -293,6 +293,54 @@ sortedBadTargets.slice(0, 30).forEach(([to, items]) => {
   console.log(`  -> ${to}  (${items.length} 处, 锚文本: ${texts.join(' / ')})`);
 });
 
+// 5. 锚文本多样性审计：检测同一 URL 的入链锚文本是否过度集中
+// 过度集中的锚文本（如某工具名占比 > 70%）可能错失长尾关键词的锚文本加权机会
+// 仅审计内容型页面（工具页 / 博客文章），排除模板导航目标（首页/静态页/博客索引）
+// 阈值：入链锚文本总数 >= 8 且最大单一锚文本占比 > 70% 时标记为"低多样性"
+const ANCHOR_DIVERSITY_MIN_TOTAL = 8;
+const ANCHOR_DIVERSITY_MAX_SHARE = 0.7;
+const lowDiversityAnchors = [];
+for (const [url, anchorMap] of inboundAnchorMap.entries()) {
+  const type = classifyPage(url);
+  if (type === 'home' || type === 'static' || type === 'blog-index' || type === 'blog-tag') continue;
+  let total = 0;
+  let maxCount = 0;
+  let topAnchor = '';
+  for (const [text, count] of anchorMap.entries()) {
+    total += count;
+    if (count > maxCount) {
+      maxCount = count;
+      topAnchor = text;
+    }
+  }
+  if (total < ANCHOR_DIVERSITY_MIN_TOTAL) continue;
+  const share = maxCount / total;
+  if (share > ANCHOR_DIVERSITY_MAX_SHARE) {
+    lowDiversityAnchors.push({
+      url,
+      type,
+      total,
+      uniqueAnchors: anchorMap.size,
+      topAnchor: topAnchor || '(空)',
+      topCount: maxCount,
+      topShare: share,
+      allAnchors: [...anchorMap.entries()].sort((a, b) => b[1] - a[1]),
+    });
+  }
+}
+// 按集中度降序（集中度越高越值得优化）
+lowDiversityAnchors.sort((a, b) => b.topShare - a.topShare);
+
+console.log(`\n[锚文本低多样性 - 单一锚文本占比>70%且总数>=${ANCHOR_DIVERSITY_MIN_TOTAL}] 共 ${lowDiversityAnchors.length} 页`);
+console.log(`  说明：入链锚文本过度集中可能错失长尾关键词加权机会，可在博客文章/相关工具区使用更多样化的上下文锚文本`);
+lowDiversityAnchors.slice(0, 20).forEach((p) => {
+  console.log(`  ${p.url}  (${p.type})`);
+  console.log(`    总锚文本=${p.total}  独立锚文本=${p.uniqueAnchors}  主锚文本="${p.topAnchor}" 占比=${(p.topShare * 100).toFixed(0)}% (${p.topCount}/${p.total})`);
+  // 列出前 3 个锚文本分布
+  const top3 = p.allAnchors.slice(0, 3).map(([t, c]) => `"${t||'(空)'}"×${c}`).join(' / ');
+  console.log(`    分布: ${top3}`);
+});
+
 console.log(`\n[入链最少的工具页 Top 30] 用于识别需要补充内链的工具页`);
 // 仅工具页，按入链数升序
 const toolInboundSorted = [];
@@ -332,6 +380,7 @@ console.log(`孤立页面: ${orphanPages.length}`);
 console.log(`入链稀疏(<2): ${sparseInbound.length}`);
 console.log(`出链稀疏(=0): ${sparseOutbound.length}`);
 console.log(`无意义锚文本: ${badAnchors.length} 处`);
+console.log(`锚文本低多样性: ${lowDiversityAnchors.length} 页`);
 
 // 输出 JSON 详细报告（便于后续脚本处理）
 const report = {
@@ -343,6 +392,15 @@ const report = {
   sparseOutbound,
   badAnchors: badAnchors.slice(0, 200), // 限制大小
   badAnchorsTotal: badAnchors.length,
+  lowDiversityAnchors: lowDiversityAnchors.map((p) => ({
+    url: p.url,
+    type: p.type,
+    total: p.total,
+    uniqueAnchors: p.uniqueAnchors,
+    topAnchor: p.topAnchor,
+    topCount: p.topCount,
+    topShare: Number(p.topShare.toFixed(3)),
+  })),
 };
 console.log(`\n[JSON 报告已生成]`);
 console.log(JSON.stringify(report, null, 2));
