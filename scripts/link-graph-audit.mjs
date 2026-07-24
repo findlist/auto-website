@@ -76,6 +76,8 @@ function classifyPage(url) {
   if (url === '/privacy/') return 'static';
   if (url === '/blog/') return 'blog-index';
   if (url.startsWith('/blog/page/')) return 'blog-pagination';
+  // Astro paginate 默认生成 /blog/2/、/blog/3/ 等纯数字路径（不含 /page/ 前缀）
+  if (/^\/blog\/\d+\/$/.test(url)) return 'blog-pagination';
   if (url.startsWith('/blog/tag/')) return 'blog-tag';
   if (/^\/blog\/[^/]+\/$/.test(url)) return 'blog-post';
   return 'tool';
@@ -302,7 +304,7 @@ const ANCHOR_DIVERSITY_MAX_SHARE = 0.7;
 const lowDiversityAnchors = [];
 for (const [url, anchorMap] of inboundAnchorMap.entries()) {
   const type = classifyPage(url);
-  if (type === 'home' || type === 'static' || type === 'blog-index' || type === 'blog-tag') continue;
+  if (type === 'home' || type === 'static' || type === 'blog-index' || type === 'blog-tag' || type === 'blog-pagination') continue;
   let total = 0;
   let maxCount = 0;
   let topAnchor = '';
