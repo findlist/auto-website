@@ -153,3 +153,180 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 115 轮 · 并行任务提交 + 高集中度工具页锚文本多样性攻坚
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 114 轮（commit a3e76e9）：低入链工具页反向链接补强 + 场景化锚文本优化
+- 第 114 轮下轮建议：①高集中度工具页锚文本多样性攻坚 ②提交并行任务锚文本多样性审计增强 ③/time-unit/ 与 /text-wrap/ 入链提升 ④长尾 SEO 内容补充 ⑤博客文章入链优化
+- 工作树状态：存在 11 个并行任务未提交文件（scripts/link-graph-audit.mjs + 9 个 .astro 样式修复 + memory/20260718/topics.md）
+- 距上轮间隔 0 天（同日第 114 轮完成后启动第 115 轮）
+
+## 本轮聚焦方向
+**并行任务提交 + 高集中度工具页锚文本多样性攻坚**
+
+第 114 轮留下 11 个并行任务未提交文件，且建议本轮进行高集中度工具页锚文本多样性攻坚。本轮聚焦：
+1. 评估并提交并行任务的 4 类改动（审计增强 + 样式修复 + 内链补强 + 进度归档）
+2. 对 Top 5 高集中度工具页（/ip/ 89%、/view-transition/ 88%、/password/ 87%、/svg-optimizer/ 87%、/random-picker/ 86%）在协同博客文章中补充场景化内联锚文本
+
+## 完成任务
+
+### 单元 1：提交并行任务 - 锚文本多样性审计增强（commit f09d0c2）
+- `scripts/link-graph-audit.mjs`（+58 行）：新增第 5 维度审计 - 锚文本低多样性检测
+  - 阈值：入链锚文本总数 >= 8 且最大单一锚文本占比 > 70%
+  - 排除模板导航目标（首页/静态页/博客索引/标签页）
+  - 输出 Top 20 低多样性页面及主锚文本分布
+  - JSON 报告增加 lowDiversityAnchors 字段
+
+### 单元 2：提交并行任务 - 4 个工具页样式一致性修复（commit 9013b48）
+- `src/pages/diff.astro`：修复激活态视图按钮 hover 时丢失 primary 背景导致白字浅底不可读；toggle 增加 user-select:none 与 input margin 重置
+- `src/pages/json.astro` / `jwt.astro`：复制按钮新增 :active 下沉反馈，与 tu__copy-btn 交互模式一致
+- `src/pages/qr.astro`：警告边框色统一为 --color-warn，修复 --color-warning 在深色模式未覆盖导致的边框色不协调；移除冗余的暗色模式覆盖
+
+### 单元 3：提交并行任务 - 5 个工具页反向链接补充（commit cf2dd28）
+- `find-replace.astro` / `slug.astro`：related-tools 区新增 /regex-benchmark/ 链接
+- `text-shadow.astro` / `truncate.astro` / `writing-mode.astro`：related-tools 区新增 /text-wrap/ 链接
+
+### 单元 4：提交并行任务 - 20260718 进度归档（commit 8641899）
+- `memory/20260718/topics.md`：将第 72-80 轮进度归档至 topics-archive-20260718.md（160KB），主文件保留第 81 轮起记录（16KB）+ 归档说明
+
+### 单元 5：高集中度工具页锚文本多样性攻坚（commit 2c1b5ac）
+在 8 篇协同博客文章中为 5 个高集中度工具页补充场景化内联锚文本链接：
+
+| 目标工具 | 来源博客 | 场景化锚文本 | 集中度变化 |
+|---------|---------|-------------|-----------|
+| /ip/ | dns-query-guide.md | CIDR 子网掩码计算 | 89% → 81% |
+| /ip/ | ipv4-ipv6-cidr-subnetting.md | 子网掩码换算工具 | （同上） |
+| /view-transition/ | transition-guide.md | 页面切换过渡动画生成 | 88% → 78% |
+| /view-transition/ | starting-style-guide.md | SPA 导航过渡效果生成 | （同上） |
+| /password/ | jwt-security-best-practices.md | HMAC 签名密钥生成 | 87% → 83% |
+| /password/ | password-hash-guide.md | 高强度随机密码生成 | （同上） |
+| /svg-optimizer/ | qr-code-design-guide.md | 矢量图压缩清理工具 | 87% → 83% |
+| /random-picker/ | uuid-generation-guide.md | 随机抽取分配工具 | 86% → 80% |
+
+### 单元 6：构建验证 + 审计复验
+- `npm run check`：0 errors / 0 warnings / 4 hints（均为既有遗留）
+- `npm run build`：966 页面构建成功（22.57s），页面数无变化
+- 审计复验锚文本多样性改善：
+  - /ip/：89% → 81%（+2 锚文本，跌出 Top 20）✅
+  - /view-transition/：88% → 78%（+2 锚文本，跌出 Top 20）✅
+  - /password/：87% → 83%（+1 锚文本，仍在 Top 20 #16）✅
+  - /svg-optimizer/：87% → 83%（+1 锚文本，仍在 Top 20 #17）✅
+  - /random-picker/：86% → 80%（+1 锚文本，跌出 Top 20）✅
+  - 平均集中度下降 6.4%，3 个工具页跌出低多样性 Top 20 榜单
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：966 页面 22.57s，无报错
+- ✅ 5 个高集中度工具页锚文本集中度全部下降（平均 -6.4%）
+- ✅ 3 个工具页跌出低多样性 Top 20 榜单（/ip/ /view-transition/ /random-picker/）
+- ✅ 8 个新链接均使用与工具全名不同的场景化锚文本
+- ✅ 语义相关性：每个新链接基于真实的工具协同关系（DNS A 记录→IP 子网、状态切换→视图过渡、HS256→密码生成、SVG 二维码→SVG 优化、UUID v4 随机→随机抽取）
+- ✅ 代码注释、UI 文案、提交信息全部使用中文
+- ✅ 并行任务 11 个未提交文件已全部提交（4 次 commit）
+
+## 修改文件清单
+
+### commit f09d0c2（1 文件，+58 行）
+- `scripts/link-graph-audit.mjs`（锚文本多样性审计维度增强）
+
+### commit 9013b48（4 文件，+30/-9 行）
+- `src/pages/diff.astro`（激活态 hover 修复 + toggle 一致性）
+- `src/pages/json.astro`（复制按钮 :active 反馈）
+- `src/pages/jwt.astro`（复制按钮 :active 反馈）
+- `src/pages/qr.astro`（警告边框色统一 + 暗色模式冗余清理）
+
+### commit cf2dd28（5 文件，+5 行）
+- `src/pages/find-replace.astro`（新增 /regex-benchmark/ 链接）
+- `src/pages/slug.astro`（新增 /regex-benchmark/ 链接）
+- `src/pages/text-shadow.astro`（新增 /text-wrap/ 链接）
+- `src/pages/truncate.astro`（新增 /text-wrap/ 链接）
+- `src/pages/writing-mode.astro`（新增 /text-wrap/ 链接）
+
+### commit 8641899（2 文件，+1759/-1546 行）
+- `memory/20260718/topics.md`（归档旧轮次，保留近期记录）
+- `memory/20260718/topics-archive-20260718.md`（新建，72-80 轮归档）
+
+### commit 2c1b5ac（8 文件，+8/-8 行）
+- `src/content/blog/dns-query-guide.md`（A 记录→CIDR 子网掩码计算）
+- `src/content/blog/transition-guide.md`（状态切换→页面切换过渡动画生成）
+- `src/content/blog/starting-style-guide.md`（视图过渡→SPA 导航过渡效果生成）
+- `src/content/blog/qr-code-design-guide.md`（SVG 下载→矢量图压缩清理工具）
+- `src/content/blog/jwt-security-best-practices.md`（HS256→HMAC 签名密钥生成）
+- `src/content/blog/uuid-generation-guide.md`（UUID v4→随机抽取分配工具）
+- `src/content/blog/password-hash-guide.md`（明文密码→高强度随机密码生成）
+- `src/content/blog/ipv4-ipv6-cidr-subnetting.md`（通配符掩码→子网掩码换算工具）
+
+## 进度沉淀
+- Git：5 次 commit 全部 push（f09d0c2 → 9013b48 → cf2dd28 → 8641899 → 2c1b5ac）
+- 当前规模：**109 工具**（无变化）+ **117 博客**（无变化）+ **966 页面**（无变化）
+- 并行任务清理：11 个未提交文件已全部提交，工作树仅剩 3 个未跟踪文档文件（bug-check/style-opt 历史记录）
+- 锚文本多样性改善：Top 5 高集中度工具页平均下降 6.4%，3 个跌出 Top 20
+
+## 问题与发现
+1. **场景化锚文本策略验证有效**：在博客文章内联段落中使用场景化锚文本（如"CIDR 子网掩码计算"而非"IP 子网计算器"）能有效降低工具页的锚文本集中度，同时覆盖长尾搜索需求。
+2. **/password/ 与 /svg-optimizer/ 仍在 Top 20**：这两个工具页各有 20 个"密码生成器"/"SVG 优化器"入链（来自 related-tools 区），仅增加 1 个场景化锚文本不足以跌破 70% 阈值。需在后续轮次继续补充 2-3 个场景化锚文本。
+3. **锚文本低多样性总量仍为 100 页**：总量未变因为 100 页中绝大多数是博客文章（锚文本为文章标题，属自然现象），工具页仅占少数。工具页的集中度已显著改善。
+4. **并行任务审计增强已正式上线**：锚文本多样性审计维度（scripts/link-graph-audit.mjs +58 行）已提交，后续轮次可直接使用该维度数据驱动优化。
+
+## 下轮建议
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 15 天，仍未获取访问数据
+2. **/password/ 与 /svg-optimizer/ 锚文本持续优化**：这两个工具页仍在 Top 20（83%），需再补充 2-3 个场景化锚文本链接
+3. **/time-unit/ 入链提升**：通过撰写协同博客文章（如"时间单位在缓存 TTL 配置中的应用"）自然引入反向链接
+4. **长尾 SEO 内容补充**：基于本轮场景化锚文本揭示的交叉需求（如"CIDR 子网掩码计算"、"HMAC 签名密钥生成"），撰写对应长尾关键词落地页
+5. **博客文章入链优化**：Top 20 入链最少博客文章（4-5 入链）可在工具页 related-blogs 区或博客互相引用中补充
+6. **博客文章锚文本多样性**：100 页低多样性中多数为博客文章（锚文本为文章标题），可在工具页 related-blogs 区使用更简短的文章简称替代完整标题
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 15 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **锚文本低多样性总量 100 页未降**：总量未变，但工具页集中度已显著改善。剩余低多样性多为博客文章（自然现象）。
+- **/password/ 与 /svg-optimizer/ 仍在 Top 20**：需后续轮次继续补充场景化锚文本。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 115 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 115 轮（2026-07-24）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：并行任务提交 + 高集中度工具页锚文本多样性攻坚
+**Commits**：f09d0c2 → 9013b48 → cf2dd28 → 8641899 → 2c1b5ac（5 次提交）
+**Push**：a3e76e9..2c1b5ac HEAD -> main
+
+### 完成任务
+1. ✅ 提交并行任务锚文本多样性审计增强（scripts/link-graph-audit.mjs +58 行）
+2. ✅ 提交并行任务 4 个工具页样式一致性修复（diff/json/jwt/qr.astro）
+3. ✅ 提交并行任务 5 个工具页反向链接补充（find-replace/slug/text-shadow/truncate/writing-mode.astro）
+4. ✅ 提交并行任务 20260718 进度归档（topics.md + topics-archive）
+5. ✅ 在 8 篇协同博客中为 5 个高集中度工具页补充场景化内联锚文本
+6. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints）
+7. ✅ 构建成功（966 页面 22.57s）
+8. ✅ 审计复验：5 个工具页集中度平均下降 6.4%，3 个跌出 Top 20
+
+### 当前规模
+- **工具**：109 个（无变化）
+- **博客**：117 篇（无变化）
+- **页面**：966 页（无变化）
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. /password/ 与 /svg-optimizer/ 锚文本持续优化（仍在 Top 20，83%）
+3. /time-unit/ 入链提升（通过协同博客文章）
+4. 长尾 SEO 内容补充
+5. 博客文章入链优化
+6. 博客文章锚文本多样性（related-blogs 区使用简称）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 锚文本低多样性总量 100 页未降（工具页已改善，剩余多为博客自然现象）
+- /password/ 与 /svg-optimizer/ 仍在 Top 20（83%，需后续轮次继续优化）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
