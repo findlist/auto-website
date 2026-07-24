@@ -203,7 +203,7 @@ steps() 适合制作"机械感"动画：
 - **入场效果**（淡入、滑入）：用 `animation` + `fill-mode: both`
 - **循环动效**（呼吸灯、波浪）：用 `animation` + `infinite`
 
-两者经常配合使用：`transition` 处理交互反馈，`animation` 处理持续动效。配合站点的 [animation 动画生成器](/animation)可覆盖全部动效场景。
+两者经常配合使用：`transition` 处理交互反馈，`animation` 处理持续动效。配合站点的 [animation 动画生成器](/animation)可覆盖全部动效场景。若需页面或组件状态切换的平滑过渡效果，可配合 [页面切换过渡动画生成](/view-transition) 实现 SPA 导航过渡。
 
 ## 七、性能优化与 GPU 合成层
 

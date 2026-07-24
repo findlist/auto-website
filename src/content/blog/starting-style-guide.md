@@ -206,7 +206,7 @@ popover 或 dialog 元素显示时触发。`@starting-style` 声明显示前的�
 - **持续循环的动画**或**多关键帧复杂动画** → `animation`
 - **属性值变化触发的过渡**（如 hover、状态切换） → `transition`
 
-三者可组合使用：`@starting-style` 处理入场，`animation` 处理入场后的循环动画，`transition` 处理状态切换。详见本站的 [CSS animation 动画生成器](/animation) 与 [CSS transition 过渡生成器](/transition)。
+三者可组合使用：`@starting-style` 处理入场，`animation` 处理入场后的循环动画，`transition` 处理状态切换。详见本站的 [CSS animation 动画生成器](/animation) 与 [CSS transition 过渡生成器](/transition)；若需跨文档/同文档的视图过渡，可配合 [SPA 导航过渡效果生成](/view-transition)。
 
 ## 六、浏览器兼容性与渐进增强
 

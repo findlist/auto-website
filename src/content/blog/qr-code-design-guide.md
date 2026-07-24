@@ -150,7 +150,7 @@ Logo 四周应留 2-3 模块宽度的纯背景色，避免与数据模块混淆�
 
 ### 4. 实现方式
 
-- <strong>推荐</strong>：下载 SVG 后用矢量编辑器（Inkscape / Illustrator）合成 Logo，矢量精度高
+- <strong>推荐</strong>：下载 SVG 后用 [矢量图压缩清理工具](/svg-optimizer) 去除冗余节点，再用矢量编辑器（Inkscape / Illustrator）合成 Logo，矢量精度高
 - <strong>次选</strong>：下载 PNG 后用图像编辑器合成
 - <strong>不推荐</strong>：直接在前端用 CSS `position: absolute` 叠加 Logo，因为打印时会丢失
 

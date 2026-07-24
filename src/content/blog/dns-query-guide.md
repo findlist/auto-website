@@ -75,7 +75,7 @@ DoH 的核心优势是**与正常 Web 流量混在一起**：端口号、协议�
 
 **CNAME 的核心约束**：CNAME 不能与其他记录共存（根域不能有 CNAME，否则 MX、TXT 等记录会被忽略）。这是为什么根域使用 CDN 时常用 ANAME / ALIAS（伪记录，由 DNS 服务商解析为 A）。
 
-**A vs AAAA**：现代浏览器优先尝试 AAAA（Happy Eyeballs 算法），IPv6 可用时优先走 IPv6。监控 IPv6 解析率是 CDN 优化的重要指标。
+**A vs AAAA**：现代浏览器优先尝试 AAAA（Happy Eyeballs 算法），IPv6 可用时优先走 IPv6。监控 IPv6 解析率是 CDN 优化的重要指标。若需对解析到的 IP 地址进行 CIDR 子网划分，可配合 [CIDR 子网掩码计算](/ip) 计算网络地址与主机范围。
 
 ### 2.2 邮件服务类
 
