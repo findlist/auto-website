@@ -630,3 +630,147 @@
 ### 用户操作项
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+
+---
+
+# 第 118 轮 · 配置文件 Schema 校验横评协同博客 + 3 个低入链 schema 工具页提升
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代），统计工具尚未接入
+- 承接第 117 轮（commit 9abfc89）：博客图片懒加载 rehype 插件 + /time-unit/ 协同博客
+- 第 117 轮下轮建议：①接入 Cloudflare Web Analytics（需用户操作）②持续低入链工具页攻坚 ③长尾 SEO 内容 ④锚文本低多样性攻坚 ⑤博客文章锚文本多样性 ⑥/time-unit/ 系列博客拓展
+- 工作树状态：干净（仅 3 个未跟踪文档历史文件）
+- 距上轮 0 天（同日第 117 轮后启动第 118 轮）
+
+## 本轮聚焦方向
+**配置文件 Schema 校验横评协同博客 + 3 个低入链 schema 工具页提升**
+
+承接第 117 轮"持续低入链工具页攻坚"建议。审计基线显示 10 个工具页并列最低入链（6 个），其中 /toml-schema/ 与 /yaml-schema/ 均为 6 入链。本轮聚焦：
+1. 撰写「配置文件 Schema 校验横评」协同博客，横向对比 JSON/YAML/TOML 三种格式的 Schema 校验方案
+2. 在博客中用场景化锚文本链接 3 个 schema 工具页（/json-schema/ /yaml-schema/ /toml-schema/）
+3. 在 3 个 schema 工具页 related-blogs 区添加新博客链接
+
+## 完成任务
+
+### 单元 1：构建 + 审计基线
+- `npm run build`：971 页面构建成功（22.66s）
+- 审计基线：0 孤立 / 0 入链稀疏 / 0 出链稀疏 / 0 无意义锚文本 / 100 页低多样性
+- 低入链工具页 Top 10（均 6 入链）：/csv-markdown/ /ieee754/ /number-base/ /qr/ /regex-benchmark/ /subgrid/ /text-wrap/ /time-unit/ /toml-schema/ /yaml-schema/
+- /json-schema/ 原已 >6 入链（不在最低列表）
+
+### 单元 2：撰写协同博客（commit e2e25df）
+创建 `src/content/blog/config-schema-validation-comparison.md`（约 232 行）：
+- 标题：配置文件 Schema 校验横评：JSON / YAML / TOML 三大格式的校验方案选型与迁移实践
+- 与已有博客差异化：
+  - yaml-json-toml-comparison.md 聚焦格式语法特性对比
+  - json-schema-validation-practice / toml-schema-validation-practice / yaml-schema-validation-practice 各聚焦单一格式深度实践
+  - 本博客聚焦**跨格式 Schema 校验方案选型**，覆盖选型决策矩阵、跨格式迁移陷阱、统一校验工作流
+- 内容结构：三格式校验现状对比 → JSON Schema 标准 → YAML 类型陷阱 → TOML 无原生标准对策 → 选型决策矩阵 → 跨格式迁移陷阱 → 统一校验工作流 → 常见误区 → 总结
+- 场景化锚文本链接：
+  - /json-schema/ × 5 次："JSON Schema 在线校验工具"、"JSON Schema 校验工具"
+  - /yaml-schema/ × 3 次："YAML 类型推断陷阱检测工具"、"YAML 类型推断检测工具"
+  - /toml-schema/ × 2 次："TOML 配置字段校验工具"
+  - /yaml/ × 1 次："YAML/JSON 互转"
+  - /toml/ × 1 次："TOML/JSON 互转"
+
+### 单元 3：3 个 schema 工具页 related-blogs 区添加新博客（commit e2e25df）
+- `src/pages/json-schema.astro`：related-blogs 数 1→2
+- `src/pages/yaml-schema.astro`：related-blogs 数 1→2
+- `src/pages/toml-schema.astro`：related-blogs 数 1→2
+
+### 单元 4：构建验证 + 审计复验
+- `npm run check`：0 errors / 0 warnings / 4 hints（均为既有遗留：seo-audit.mjs 未用导入 + clipboard execCommand deprecated）
+- `npm run build`：974 页面构建成功（25.37s），页面数 971 → 974（+3：博客详情页 +1 + tag 页 + 分页变化）
+- 审计复验入链数据改善：
+  - /yaml-schema/：6 → 7（+1，来源：新博客 config-schema-validation-comparison）✅
+  - /toml-schema/：6 → 7（+1，来源：新博客 config-schema-validation-comparison）✅
+  - /json-schema/：原已 >6，本轮 +1 场景化锚文本入链（不在最低列表）
+  - 健康度保持：0 孤立 / 0 入链稀疏 / 0 出链稀疏 / 0 无意义锚文本 ✅
+- Git：1 次 commit push（e2e25df，4 文件 +240 行）
+
+## 验收
+- ✅ `npm run check`：0 errors / 0 warnings / 4 hints
+- ✅ `npm run build`：974 页面 25.37s，无报错
+- ✅ 入链数据改善：/yaml-schema/ 6→7、/toml-schema/ 6→7
+- ✅ 场景化锚文本：10 个新链接均使用与工具全名不同的场景化锚文本
+- ✅ 内容差异化：与已有格式对比博客（聚焦语法）和单一格式深度博客（聚焦实践）均不重叠
+- ✅ 协同关系真实：JSON Schema 是 YAML/TOML 校验事实标准，三工具天然协同
+- ✅ 代码注释、UI 文案、提交信息全部使用中文
+
+## 修改文件清单
+
+### commit e2e25df（4 文件，+240 行）
+- `src/content/blog/config-schema-validation-comparison.md`（新建协同博客，232 行）
+- `src/pages/json-schema.astro`（related-blogs 区新增 config-schema-validation-comparison 链接）
+- `src/pages/yaml-schema.astro`（related-blogs 区新增 config-schema-validation-comparison 链接）
+- `src/pages/toml-schema.astro`（related-blogs 区新增 config-schema-validation-comparison 链接）
+
+## 进度沉淀
+- Git：commit e2e25df 已 push（4fe44df..e2e25df HEAD -> main）
+- 当前规模：**109 工具**（无变化）+ **119 博客**（+1）+ **974 页面**（+3）
+- 低入链工具页改善：/yaml-schema/ 与 /toml-schema/ 从 6 提升至 7，最低入链工具页数量从 10 减至 8
+
+## 问题与发现
+1. **横评博客是高效的低入链提升策略**：单篇博客同时提升 2 个工具页入链（/yaml-schema/ + /toml-schema/），效率高于单工具页逐个补充。关键是选择有真实协同关系的工具集群（三个 schema 校验工具天然协同）。
+2. **/json-schema/ 原已不在最低列表**：JSON Schema 作为最流行的校验工具，已被多个工具页（json/json-to-ts/json-to-xml 等）链接，原入链 >6。本轮博客仍为其增加了场景化锚文本变体（"JSON Schema 在线校验工具"），有助于锚文本多样性。
+3. **内容差异化定位验证**：已有的 yaml-json-toml-comparison.md 聚焦格式语法（注释/类型/可读性），已有的三个单一格式深度博客聚焦各自实践。本博客聚焦**跨格式 Schema 校验选型**，三者互补不重叠，覆盖"配置文件 schema 校验选型"长尾搜索需求。
+4. **场景化锚文本设计**：本轮使用"JSON Schema 在线校验工具"（非"JSON Schema 校验器"工具全名）、"YAML 类型推断陷阱检测工具"（非"YAML Schema 校验器"）、"TOML 配置字段校验工具"（非"TOML Schema 校验器"），均为场景化描述，覆盖长尾关键词。
+
+## 下轮建议
+1. **接入 Cloudflare Web Analytics**（阶段二核心阻塞项，需用户操作）：站点已上线 15 天，仍未获取访问数据
+2. **持续低入链工具页攻坚**：本轮后 8 个工具页仍并列最低（6 入链）：/csv-markdown/ /ieee754/ /number-base/ /qr/ /regex-benchmark/ /subgrid/ /text-wrap/ /time-unit/。可针对 /csv-markdown/ + /subgrid/ + /text-wrap/ 撰写协同博客（CSS 排版 + 数据展示场景）
+3. **长尾 SEO 内容补充**：基于本轮博客揭示的交叉需求（"YAML 类型推断陷阱"、"TOML PEP 621 校验"、"跨格式 Schema 迁移"），可撰写更多长尾关键词落地页
+4. **锚文本低多样性攻坚**：100 页低多样性总量未降，可在新博客中继续使用场景化锚文本链接到高集中度工具页
+5. **博客文章锚文本多样性**：可在 related-blogs 区使用更简短的文章简称替代完整标题
+6. **/time-unit/ 系列博客拓展**：基于 time-representation-overview（总览）+ cache-ttl-time-unit-guide（缓存场景），可继续撰写"超时配置中的时间单位"、"日志时间差计算"等系列博客
+
+## 遗留问题
+- **统计工具未接入**：站点已上线 15 天，仍未接入 Cloudflare Web Analytics，无法获取访问数据驱动迭代。**此为阶段二核心阻塞项，需用户在 Cloudflare 控制台开启 Web Analytics 并提供 beacon 代码片段**。
+- **锚文本低多样性总量 100 页未降**：工具页集中度已显著改善，剩余多为博客标题（自然现象）。
+- **8 个工具页仍并列最低入链（6）**：/csv-markdown/ /ieee754/ /number-base/ /qr/ /regex-benchmark/ /subgrid/ /text-wrap/ /time-unit/，需持续优化。
+
+## 用户操作项
+- **可选**：在 Cloudflare 控制台开启 Web Analytics（站点已部署于 Cloudflare Pages），将获取的 beacon script 提供给 Agent 集成到 BaseLayout.astro，进入真正数据驱动迭代阶段
+- **可选**：将 sitemap.xml 提交至 Google Search Console / Bing Webmaster Tools，加速搜索引擎收录新增内容
+
+---
+
+## 第 118 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 118 轮（2026-07-24）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：配置文件 Schema 校验横评协同博客 + 3 个低入链 schema 工具页提升
+**Commit**：e2e25df
+**Push**：4fe44df..e2e25df HEAD -> main
+
+### 完成任务
+1. ✅ 审计基线（0 孤立/0 稀疏/100 页低多样性，识别 10 个工具页并列最低入链 6）
+2. ✅ 撰写「配置文件 Schema 校验横评」协同博客（232 行，覆盖三格式校验现状/选型矩阵/迁移陷阱/统一工作流）
+3. ✅ 在博客中用场景化锚文本链接 3 个 schema 工具页（/json-schema/ ×5、/yaml-schema/ ×3、/toml-schema/ ×2）
+4. ✅ 在 3 个 schema 工具页 related-blogs 区添加新博客链接（各 1→2）
+5. ✅ 类型检查通过（0 errors / 0 warnings / 4 hints，均为既有遗留）
+6. ✅ 构建成功（974 页面 25.37s，+3 页面）
+7. ✅ 审计复验：/yaml-schema/ 6→7、/toml-schema/ 6→7，健康度保持
+8. ✅ Git 提交推送完成（1 次 commit，4 文件 +240 行）
+
+### 当前规模
+- **工具**：109 个（无变化）
+- **博客**：119 篇（+1）
+- **页面**：974 页（+3）
+
+### 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 持续低入链工具页攻坚（csv-markdown/subgrid/text-wrap 等，撰写协同博客）
+3. 长尾 SEO 内容补充（YAML 类型推断 / TOML PEP 621 / 跨格式 Schema 迁移）
+4. 锚文本低多样性攻坚（新博客继续使用场景化锚文本）
+5. 博客文章锚文本多样性（related-blogs 区使用简称）
+6. /time-unit/ 系列博客拓展（超时配置 / 日志时间差）
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 锚文本低多样性总量 100 页未降（工具页已改善，剩余博客自然现象）
+- 8 个工具页仍并列最低入链（6，需持续优化）
+
+### 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
