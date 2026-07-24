@@ -406,6 +406,7 @@ ctx.fillText(text, 0, 0);     // 再填充
 4. **压缩**：用 [图片压缩](/image-compress)进一步压缩体积
 5. **内联**：用 [Base64 图片互转](/base64-image)生成 data URL 内联到 HTML/CSS
 6. **元数据检查**：用 [EXIF 查看](/exif)确认水印后元数据状态
+7. **版权署名写入**：用水印图片配[版权署名 EXIF 写入器](/exif-editor)将"摄影师名 / 网站 / 许可协议"写入 EXIF Copyright / Artist / UserComment 字段，与可见水印形成双重版权保护（可见水印可被裁剪，EXIF 元数据更隐蔽）
 
 ### 8.6 总结
 

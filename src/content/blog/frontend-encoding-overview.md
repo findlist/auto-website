@@ -77,6 +77,8 @@ encodeBase64('工具'); // "5Zy65YWz"
 **URL 安全变体**：标准 Base64 中的 `+` `/` `=` 在 URL 中有特殊含义，URL 安全变体将 `+` → `-`、`/` → `_`、去掉末尾 `=`。常见于 JWT、Data URL、OAuth。
 
 > 配套工具：[Base64 编解码工具](/base64)
+>
+> 当需要把图片直接内联到 HTML / CSS / Markdown 邮件中（避免额外 HTTP 请求）时，可使用[图片内联 Data URL 生成器](/base64-image)将 PNG / JPEG / WebP 文件转为 `data:image/...;base64,...` 格式，支持复制为 Data URL、纯 Base64、`<img>` 标签、CSS 背景四种形式。
 
 ### 3. HTML 实体编码
 

@@ -331,6 +331,8 @@ function randomHarmony(count = 5): RGB[] {
 2. **[调色板生成器](/color-palette)**（本工具）：调色板生成 + 设计系统色阶 + 多格式导出
 3. **[颜色对比度检查工具](/color-contrast)**：双色对比度精确检查 + WCAG 合规判定
 
+调色板确定后，常需要将品牌主色直接用于按钮、Banner、Hero 区背景，可配合[品牌色渐变背景生成器](/gradient)将单色品牌色扩展为 linear / radial / conic 渐变，形成完整的"主色 → 色阶 → 渐变"品牌视觉链路。
+
 ### 典型流程
 
 1. 在 /color 选基础色（拾色器或输入 HEX），获取 HSL 值了解色相

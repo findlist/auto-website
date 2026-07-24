@@ -322,6 +322,7 @@ SHA-256("Hello")（Base64）：GF+NuyMi3/4l9WGm/JK0FE1tsYU=
 - [Base32 编解码工具](/base32)：RFC 4648 + Crockford 双变体 + 校验和
 - [Hex 十六进制编解码工具](/hex)：5 种输出格式 + 多格式自动识别解码
 - [Base64 图片互转](/base64-image)：图片与 Data URL 双向转换
+- [多格式图片互转工具](/image-convert)：PNG / JPEG / WebP / AVIF / BMP / GIF 图片格式互转，对比不同图片编码格式（基于 DCT、预测编码、小波等）的体积与画质差异
 - [Hash 计算](/hash)：SHA-1/256/512 摘要，输出 HEX 或 Base64
 - [JWT 解码](/jwt)：JWT 三段均为 Base64URL 编码
 - [JWE 解码](/jwe)：JWE 五段均为 Base64URL 编码
