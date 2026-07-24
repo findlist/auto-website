@@ -1334,6 +1334,8 @@ const features = [
 
   .tools__filter {
     padding: 7px 14px;
+    /* 保证触摸设备上的最小点击区域，与 .btn 的 min-height: 36px 一致 */
+    min-height: 36px;
     border: 1px solid var(--color-border);
     border-radius: 999px;
     background: var(--color-bg);
@@ -1342,12 +1344,25 @@ const features = [
     font-family: inherit;
     cursor: pointer;
     transition: border-color var(--transition-fast), color var(--transition-fast),
-      background-color var(--transition-fast);
+      background-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .tools__filter:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
+  }
+
+  /* 键盘焦点：与 .btn 一致的 box-shadow 焦点环，避免圆形按钮上 outline 视觉跳脱 */
+  .tools__filter:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  /* 激活态 hover 时保留主色背景，避免被 .tools__filter:hover 覆盖为透明背景 + 主色文字 */
+  .tools__filter--active:hover {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+    color: #fff;
   }
 
   .tools__filter--active {
@@ -1431,6 +1446,13 @@ const features = [
 
   .tool-card--soon:hover::before {
     transform: scaleY(0);
+  }
+
+  /* 禁用态卡片：降低不透明度 + 禁用光标，明确传达"暂不可用"状态，
+     与 aria-disabled="true" 语义对齐，避免用户误以为可点击 */
+  .tool-card--soon .tool-card__link[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 
   .tool-card__link {
@@ -1570,11 +1592,30 @@ const features = [
     padding: 20px;
   }
 
+  /* 悬停时左侧出现主色指示条，与 .tool-card / .blog-card 视觉语言统一，
+     形成全站卡片悬停反馈的一致识别符 */
+  .blog-section__card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--color-primary), var(--color-accent));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform var(--transition-base);
+  }
+
   .blog-section__card:hover {
     border-color: var(--color-primary);
     /* 与 tool-card 悬停反馈保持一致：主色光晕 + 上浮 */
     box-shadow: var(--shadow-hover), 0 0 0 3px var(--color-primary-ring);
     transform: translateY(-4px);
+  }
+
+  .blog-section__card:hover::before {
+    transform: scaleY(1);
   }
 
   /* 拉伸链接：标题链接撑满整张卡片 */

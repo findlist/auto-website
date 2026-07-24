@@ -723,7 +723,8 @@ button {
   }
 
   .tool-card:hover::before,
-  .blog-card:hover::before {
+  .blog-card:hover::before,
+  .blog-section__card:hover::before {
     transform: scaleY(0);
   }
 

@@ -297,10 +297,25 @@ const pageNumbers = Array.from({ length: page.lastPage }, (_, i) => i + 1);
     background: var(--color-primary-soft);
   }
 
+  /* 键盘焦点：与 .btn 一致的 box-shadow 焦点环，避免分页按钮在键盘导航时视觉跳脱 */
+  .pagination__page:focus-visible,
+  .pagination__btn:focus-visible:not(.pagination__btn--disabled) {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+  }
+
   /* 当前页高亮：主色背景 + 白色文字 */
   .pagination__page[aria-current='page'] {
     background: var(--color-primary);
     border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* 当前页 hover 时颜色加深，与 .btn--primary:hover 行为一致 */
+  .pagination__page[aria-current='page']:hover {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
     color: #fff;
   }
 

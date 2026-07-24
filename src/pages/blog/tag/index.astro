@@ -164,6 +164,14 @@ const meta: SiteMeta = {
     transform: translateY(-1px);
   }
 
+  /* 键盘焦点：与 .btn 一致的 box-shadow 焦点环 */
+  .tag-item__link:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--focus-ring);
+    transform: none;
+  }
+
   .tag-item__name {
     color: var(--color-primary);
     font-weight: 500;
