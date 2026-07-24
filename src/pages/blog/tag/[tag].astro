@@ -123,9 +123,7 @@ const meta: SiteMeta = {
     <ul class="blog-list" role="list">
       {posts.map((post) => (
         <li class="blog-card">
-          <h2 class="blog-card__title">
-            <a href={`/blog/${post.id}`} class="blog-card__link">{post.data.title}</a>
-          </h2>
+          <h2 class="blog-card__title">{post.data.title}</h2>
           <p class="blog-card__desc">{post.data.description}</p>
           <div class="blog-card__meta">
             <time datetime={post.data.pubDate.toISOString()}>
@@ -136,6 +134,7 @@ const meta: SiteMeta = {
                 <a href={`/blog/tag/${tagToSlug(t)}`} class="blog-card__tag">#{t}</a>
               ))}
             </span>
+            <a href={`/blog/${post.id}`} class="blog-card__link">阅读「{tagName}」相关全文 →</a>
           </div>
         </li>
       ))}
@@ -266,8 +265,18 @@ const meta: SiteMeta = {
   }
 
   .blog-card__link {
-    color: inherit;
+    color: var(--color-primary);
     text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: auto;
+    /* z-index 高于 ::after，保证链接文字可独立渲染 */
+    position: relative;
+    z-index: 1;
+  }
+
+  .blog-card__link:hover {
+    text-decoration: underline;
   }
 
   .blog-card__link::after {
