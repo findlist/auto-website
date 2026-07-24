@@ -492,7 +492,8 @@ export default function IfFunctionTool() {
   const explainText = useMemo(() => {
     const parts: string[] = [];
     const prop = config.property.trim() || 'color';
-    parts.push(`当前为 <code>${prop}</code> 属性生成 if() 声明，共 ${config.branches.length} 个分支（含 else）。`);
+    // prop 来自用户输入，插入 dangerouslySetInnerHTML 前必须 escape，否则可被注入恶意 HTML 导致 XSS
+    parts.push(`当前为 <code>${escapeHtml(prop)}</code> 属性生成 if() 声明，共 ${config.branches.length} 个分支（含 else）。`);
 
     if (config.branches.length === 0) {
       parts.push('注意：无任何分支，if() 将返回 guaranteed-invalid，属性回退到 initial。');
@@ -501,7 +502,8 @@ export default function IfFunctionTool() {
     }
 
     if (hitPrediction) {
-      parts.push(`当前预览环境下：<strong>${escapeHtml(hitPrediction.branch.value || 'initial')}</strong>（${hitPrediction.reason}）。`);
+      // reason 中含用户输入的表达式 key/expectedVal，必须 escape 防 XSS
+      parts.push(`当前预览环境下：<strong>${escapeHtml(hitPrediction.branch.value || 'initial')}</strong>（${escapeHtml(hitPrediction.reason)}）。`);
     } else {
       const hasElse = config.branches.some((b) => b.type === 'else');
       if (hasElse) {
