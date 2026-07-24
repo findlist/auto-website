@@ -346,5 +346,6 @@ HTML `popover` 属性原生弹层与锚点定位结合：
 - **锚点定位 + @starting-style**：popover 弹层定位 + 入场动画。
 - **锚点定位 + interpolate-size**：dropdown 菜单定位 + auto 高度展开过渡。
 - **锚点定位 + view-transition**：列表项展开为详情时，锚点定位保持位置关系，view-transition 平滑过渡 DOM 变化。
+- **锚点定位 + position-area**：用 [3x3 网格定位区域生成器](/position-area) 可视化选择锚点相对区域，无需手写 position-area 关键字，定位语义更直观。
 
 CSS 正在把越来越多原本依赖 JavaScript 的交互能力收归原生，锚点定位是这一趋势在"定位"领域的重要里程碑。掌握它，意味着用更少的代码、更稳的体验、更好的性能实现同样的功能。

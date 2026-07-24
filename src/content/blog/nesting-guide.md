@@ -263,6 +263,7 @@ CSS Nesting 与本站其他 CSS 工具形成完整生态：
 - 与 [/flexbox](/flexbox) / [/grid](/grid) 协同：嵌套布局规则，组织复杂组件结构
 - 与 [/writing-mode](/writing-mode) 协同：嵌套多语言排版规则
 - 与 [/scroll-snap](/scroll-snap) 协同：嵌套滚动捕捉规则
+- 与 [组件样式隔离作用域生成器](/scope) 协同：嵌套组织选择器结构，@scope 限定作用范围，两者配合实现组件级样式隔离与组织
 
 **延伸学习**：
 - [MDN: CSS Nesting Module](https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_nesting)

@@ -355,3 +355,5 @@ position-area 是锚点定位的"网格定位"模式，把"相对锚点定位"�
 position-area 与 anchor() 函数、position-try-fallbacks 共同构成 CSS 锚点定位的完整能力栈，让 tooltip / popover / dropdown 的定位从"JavaScript 命令式计算"升级为"CSS 声明式网格定位"，全程零 JS、零闪烁、SSR 友好。
 
 > 配套工具：[CSS position-area 生成器](/position-area) — 3x3 网格可视化选择定位区域，实时生成 CSS 代码。
+
+> 若需更精细的锚点偏移控制，可配合 [tooltip 弹层定位生成器](/anchor-positioning) 使用 anchor() 函数按锚点边定位，position-area 定大区域、anchor() 微调偏移。
