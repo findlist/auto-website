@@ -420,7 +420,7 @@ for (let i = 0; i < items.length; i++) {
 | [图片水印](/image-watermark) | 添加水印 | 版权保护 |
 | [EXIF 查看](/exif) | 元数据解析 | 查看拍摄参数、隐私检查 |
 | [Base64 图片互转](/base64-image) | data URL 互转 | 内联图片、CSS 背景 |
-| [SVG 优化器](/svg-optimizer) | 矢量图优化 | SVG 精简压缩 |
+| [SVG 精简压缩工具](/svg-optimizer) | 矢量图优化 | SVG 精简压缩 |
 
 **典型工作流**：
 - **社交媒体上传**：原图 → [图片裁剪](/image-crop)（按目标比例）→ [图片缩放](/image-resize)（按目标尺寸）→ [图片压缩](/image-compress)（控制体积）

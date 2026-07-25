@@ -266,7 +266,7 @@ correct horse battery staple yahoo
 **推荐流程**：
 
 1. 主密码使用 passphrase（≥ 6 词，熵 ≥ 77 bits）
-2. 每个账户使用 [密码生成器](/password) 生成 16 位四类字符集密码（熵 ≈ 104 bits）
+2. 每个账户使用 [16 位四类字符集密码生成器](/password)（熵 ≈ 104 bits）
 3. 开启 2FA / MFA 二次验证
 4. 定期检查 [Have I Been Pwned](https://haveibeenpwned.com/) 是否泄露
 

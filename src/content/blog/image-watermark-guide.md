@@ -62,7 +62,7 @@ relatedTool: /image-watermark
 | [图片水印](/image-watermark) | 水印绘制（本工具） | 核心 |
 | [EXIF 查看](/exif) | 元数据解析 | 检查水印后元数据是否保留 |
 | [Base64 图片互转](/base64-image) | 图片与 data URL 互转 | 水印结果内联 |
-| [SVG 优化器](/svg-optimizer) | 矢量图压缩 | 矢量水印素材预处理 |
+| [矢量水印素材预处理工具](/svg-optimizer) | 矢量图压缩 | 矢量水印素材预处理 |
 
 ## 2. 两种水印类型对比
 

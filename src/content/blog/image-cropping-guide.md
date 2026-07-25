@@ -394,7 +394,7 @@ if (typeof createImageBitmap === 'function') {
 | 加水印（文字 / 图片 / 平铺防盗图） | [图片水印](/image-watermark) |
 | 查看元数据（相机参数 / GPS / 时间） | [EXIF 查看](/exif) |
 | 内联嵌入（图片 ↔ data URL） | [Base64 图片互转](/base64-image) |
-| 矢量图优化（SVG 编辑器残留清理） | [SVG 优化器](/svg-optimizer) |
+| 矢量图优化（SVG 编辑器残留清理） | [SVG 编辑器残留清理工具](/svg-optimizer) |
 
 ### 典型工作流
 

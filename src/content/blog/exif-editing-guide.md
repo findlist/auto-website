@@ -487,7 +487,7 @@ JPEG 压缩流中可能嵌入 `0xFFD0..0xFFD7` 重启标记（Restart Marker）�
 | [图片缩放](/image-resize) | 尺寸调整 | Canvas drawImage 重采样 |
 | [图片水印](/image-watermark) | 版权保护 | Canvas fillText/drawImage |
 | [Base64 图片互转](/base64-image) | 内联嵌入 | FileReader + btoa |
-| [SVG 优化器](/svg-optimizer) | 矢量优化 | 字符串正则处理 |
+| [SVG 字符串精简工具](/svg-optimizer) | 矢量优化 | 字符串正则处理 |
 
 ### 8.5 总结
 
