@@ -8,7 +8,7 @@ relatedTool: "/markdown"
 
 ## 为什么开发者必须懂 Markdown
 
-打开任何一份开源项目，根目录几乎一定有 `README.md`；GitHub Issue、PR 描述、技术博客、API 文档、笔记软件（Obsidian、Notion、Logseq）——Markdown 已经是<strong>开发者写作的事实标准</strong>。
+打开任何一份开源项目，根目录几乎一定有 `README.md`；GitHub Issue、PR 描述、技术博客、API 文档、笔记软件（Obsidian、Notion、Logseq）——Markdown 已经是<strong>开发者写作的事实标准</strong>。为了让 README 第一屏更有视觉冲击力，许多项目会在标题上方放一段 ASCII 字符横幅，可用 [README 字符横幅生成工具](/ascii-art) 把项目名转为 Block/Banner 字体的大号字符艺术，再粘贴到 Markdown 代码块中。
 
 但许多开发者对 Markdown 的理解停留在「会写就行」，遇到这几个问题就抓瞎：
 
