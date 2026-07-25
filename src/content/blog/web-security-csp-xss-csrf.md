@@ -356,6 +356,8 @@ npm audit fix
 | 生成随机 Token（nonce / CSRF Token） | [UUID 生成器](/uuid) | 生成不可预测的随机字符串 |
 | 校验文件完整性（SRI） | [Hash 计算工具](/hash) | 计算 SHA-256 哈希 |
 | 内联图片避免外链请求 | [Base64 图片 CSP 白名单资源](/base64-image) | 严格 CSP 下用 `data:` URL 内联图片，配合 `img-src 'self' data:` 指令 |
+| CSP 域名白名单含中文域名 | [内容安全策略域名解析工具](/dns) | 验证 `script-src`/`connect-src` 中的域名能否正常解析，避免 CSP 配置后资源加载失败 |
+| CSP 白名单含国际化域名 | [中文域名 Punycode 转换器](/punycode) | 将中文域名转换为 `xn--` 前缀的 ACE 形式后写入 CSP 指令，避免非 ASCII 字符破坏 CSP 解析 |
 
 > 配套工具：[HTML 实体编解码工具](/html-entities) 内置 XSS 防御演示模块，可实时查看 `<script>`、`onerror`、`javascript:` 等载荷编码后的效果，配合本文的上下文编码表，覆盖 95% 的前端 XSS 防御场景。
 

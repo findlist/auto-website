@@ -277,6 +277,8 @@ CSRF（跨站请求伪造）依赖浏览器自动携带 Cookie。如果 token �
 - [Base64 编解码](/base64)：理解 JWT 三段的 base64url 编码
 - [URL 编解码](/url)：理解 base64url 与 base64 的差异
 - [时间戳转换](/timestamp)：验证 exp/iat/nbf 时间戳的秒级与毫秒级差异
+- [JWT 签发域名解析工具](/dns)：校验 iss/aud 中声明的签发方与接收方域名是否真实解析，防止 token 仿冒
+- [JWT 过期时间时区换算工具](/timezone)：跨时区团队对 exp 时刻感知不一致，需并列展示签发方与各目标时区的实际过期时刻
 
 ## 安全检查清单
 

@@ -91,6 +91,8 @@ d.getHours();       // 0-23（小时）
 d.getTimezoneOffset(); // 与 UTC 的分钟差（东八区为 -480）
 ```
 
+> `Date` 对象的 `getHours()`、`getMinutes()` 返回的是**运行环境本地时区**的时间，跨时区协作时需对照各时区的实际时刻——可用 [Unix 时间戳时区换算工具](/timezone) 把同一时间戳并列展示多个时区，避免跨时区会议错点。
+
 > **陷阱**：`getMonth()` 从 0 开始，1 月是 0，12 月是 11。这是 JavaScript 最经典的时间 bug。
 
 ### UTC 方法 vs 本地方法

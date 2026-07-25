@@ -97,7 +97,7 @@ Bob                 Alice
 Charlie             Bob
 ```
 
-随机打乱的公平性是关键——详见下文算法分析。
+随机打乱的公平性是关键——详见下文算法分析。如需直接对列表执行随机打乱并导出结果，可用 [列表随机打乱工具](/random-picker)（基于 Fisher-Yates + crypto.getRandomValues 实现无偏差洗牌）。
 
 ## 二、自然排序的拆分比较算法
 

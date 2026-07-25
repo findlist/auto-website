@@ -65,7 +65,7 @@ Host: api.example.com:443
 
 `Host` 是 HTTP/1.1 **唯一必需的请求头**（RFC 7230），指定目标主机与端口。服务端据此做**虚拟主机路由**——一台 IP 可服务多个域名。
 
-HTTP/2 中 `Host` 被 `:authority` 伪头替代，但浏览器仍会同时发送两者以兼容。
+HTTP/2 中 `Host` 被 `:authority` 伪头替代，但浏览器仍会同时发送两者以兼容。当主机名含非 ASCII 字符（如中文域名 `工具.com`）时，必须先用 [非 ASCII 域名编码工具](/punycode) 转换为 `xn--` 前缀的 ACE 形式后才能放入 `Host` 头或 `:authority` 伪头，否则 HTTP 协议解析器会拒绝。
 
 ### 2.2 User-Agent：客户端标识（已弱化）
 
@@ -317,7 +317,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 - `includeSubDomains`：含子域
 - `preload`：可申请加入浏览器内置 HSTS 列表
 
-**注意**：先确保**全站 HTTPS**（含子域）再启用，否则子域会无法访问。
+**注意**：先确保**全站 HTTPS**（含子域）再启用，否则子域会无法访问。启用前可用 [HTTPS 域名解析查询工具](/dns) 逐一验证所有子域的 A/AAAA 记录是否正常解析，避免 HSTS 生效后子域因解析失败而无法访问。
 
 ### 5.3 X-Frame-Options 与 frame-ancestors
 
