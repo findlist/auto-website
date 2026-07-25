@@ -307,4 +307,4 @@ JWT 不是银弹，它的「无状态」带来的便利背后是**主动失效�
 4. **httpOnly cookie + SameSite** 兼顾 XSS 与 CSRF 防护
 5. **严格校验 aud/iss/jti** 防止重放与跨服务滥用
 
-入门 JWT 看[ JWT 入门指南](/blog/jwt-decode-guide)，进阶安全看本文。配合[在线 JWT 解码工具](/jwt)边读边试，理解每个安全机制的实际效果。
+入门 JWT 看[ JWT 入门指南](/blog/jwt-decode-guide)，进阶安全看本文。配合[在线 JWT 解码工具](/jwt)边读边试，理解每个安全机制的实际效果。JWT 鉴权系统的用户密码存储需配合[用户密码哈希存储工具](/password-hash)使用 bcrypt 或 PBKDF2 哈希，避免数据库泄露时密码被还原。

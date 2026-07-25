@@ -224,5 +224,6 @@ animation-timing-function: cubic-bezier(0.68, -0.55, 0.27, 1.55);
 | [gradient 渐变](/gradient) | 渐变背景动画需配合 `background-size` 与 `background-position` 实现 |
 | [首次出现入场动画生成器](/starting-style) | 补充 animation 无法覆盖的首次出现入场场景（display 切换、popover 显示）|
 | [auto 尺寸过渡动画生成器](/interpolate-size) | 补充 animation 无法覆盖的 auto 尺寸过渡（height/width auto→固定值的平滑动画）|
+| [DOM 状态切换过渡动画生成器](/view-transition) | 补充 animation 无法覆盖的 DOM 状态切换视图过渡（同文档/跨文档 SPA 导航过渡）|
 
 CSS animation 是前端动效的基石，掌握八大子属性与 @keyframes 关键帧语义后，配合 transform 的 GPU 合成层优势，可构建流畅且高性能的动画体验。使用 [animation 动画生成器](/animation)可视化调节参数，实时预览效果，一键复制 CSS 代码，显著提升开发效率。

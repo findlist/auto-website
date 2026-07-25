@@ -364,4 +364,4 @@ link = "https://example.com/reset?token=" + encoded
 2. <strong>CSPRNG > PRNG</strong>：密码生成必须用 `crypto.getRandomValues`，不能用 `Math.random`
 3. <strong>拒绝采样消除模偏差</strong>：简单 `% charsetSize` 在字符集大小不整除 256 时会引入概率偏差
 
-实践层面：日常密码用 16 位四类字符集（熵 ≈ 104 bits），密码管理器主密码用 6 词 passphrase（熵 ≈ 77 bits），加密密钥用 32 位四类字符集（熵 ≈ 208 bits）。配合 [UUID 生成器](/uuid)、[Hash 计算](/hash)、[Base64 编解码](/base64) 等工具，覆盖从生成、存储、传输到验证的完整安全链路。
+实践层面：日常密码用 16 位四类字符集（熵 ≈ 104 bits），密码管理器主密码用 6 词 passphrase（熵 ≈ 77 bits），加密密钥用 32 位四类字符集（熵 ≈ 208 bits）。配合 [UUID 生成器](/uuid)、[Hash 计算](/hash)、[Base64 编解码](/base64) 等工具，覆盖从生成、存储、传输到验证的完整安全链路。生成强密码后，存储前需用[强密码哈希计算器](/password-hash)进行 bcrypt 或 PBKDF2 哈希处理，避免明文存储导致泄露风险。

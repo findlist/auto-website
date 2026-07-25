@@ -283,5 +283,6 @@ scroll-snap 与以下 CSS 设计工具形成协同：
 - [Grid 生成器](/grid)：网格布局配合 `scroll-snap-type: both` 实现二维捕捉
 - [animation 动画生成器](/animation)：scroll-snap 配合 CSS 动画增强过渡效果
 - [transition 过渡生成器](/transition)：捕捉时的平滑过渡
+- [滚动切换视图过渡生成器](/view-transition)：滚动切换到新视图时配合 view-transition 实现平滑过渡
 
 立即体验 scroll-snap 的捕捉效果：[CSS scroll-snap 滚动捕捉生成器](/scroll-snap)。
