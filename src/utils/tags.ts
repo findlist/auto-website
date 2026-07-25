@@ -3,15 +3,37 @@
 
 /**
  * 把标签转为 URL 友好的 slug
- * 规则：小写 + 空格转连字符 + 移除 Windows 文件系统非法字符、路径分隔符与撇号 + 保留中文字符与字母数字
- * 示例："Web API" → "web-api"，"SHA-256" → "sha-256"，"编码" → "编码"，":scope" → "scope"，"HTTP/3" → "http3"，"Let's Encrypt" → "lets-encrypt"
+ *
+ * 采用白名单策略：只保留小写字母、数字、连字符、中文字符，移除其他所有特殊字符。
+ * 解决点号、括号、@、!、&、单引号等特殊字符导致的非 URL 安全 slug 问题。
+ *
+ * 处理流程：
+ * 1. 转小写 + 去首尾空白
+ * 2. 空格转连字符
+ * 3. 白名单过滤（移除非 URL 安全字符）
+ * 4. 修剪首尾连字符 + 合并连续连字符
+ *
+ * 示例：
+ * - "Web API" → "web-api"
+ * - "Let's Encrypt" → "lets-encrypt"（移除单引号）
+ * - "X.509" → "x509"（移除点号）
+ * - "if()" → "if"（移除括号）
+ * - "@container" → "container"（移除@）
+ * - "!important" → "important"（移除!）
+ * - "&-选择器" → "选择器"（移除&和首尾连字符）
+ * - "编码" → "编码"（保留中文）
  */
 export function tagToSlug(tag: string): string {
   return tag
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[<>:"|?*/\\'`]/g, '');
+    // 白名单：只保留小写字母、数字、连字符、CJK 统一汉字
+    .replace(/[^a-z0-9\u4e00-\u9fff-]/g, '')
+    // 修剪首尾连字符（如 "&-选择器" 过滤后为 "-选择器"，需修剪为首字符）
+    .replace(/^-+|-+$/g, '')
+    // 合并连续连字符
+    .replace(/-{2,}/g, '-');
 }
 
 /**

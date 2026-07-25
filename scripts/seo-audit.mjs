@@ -49,20 +49,23 @@ function pathToUrl(filePath) {
 }
 
 // 从 HTML 中提取所有 <meta> 标签
+// 修复 BUG：原正则 [^"']+ 同时排除单双引号，当 content 含单引号（如 "Let's Encrypt"）且用双引号包裹时被截断
+// 改用反向引用 (["'])...(同引号) 确保结束引号与开始引号一致，URL/文本内可包含另一种引号
 function extractMeta(html) {
   const metas = {};
-  const re = /<meta\s+(?:property|name)=["']([^"']+)["']\s+content=["']([^"']*)["']/g;
+  const re = /<meta\s+(?:property|name)=(["'])([^"']+)\1\s+content=(["'])(.*?)\3/g;
   let m;
   while ((m = re.exec(html)) !== null) {
-    metas[m[1]] = m[2];
+    metas[m[2]] = m[4];
   }
   return metas;
 }
 
 // 提取 canonical
+// 修复 BUG：原正则 [^"']+ 把含单引号的 canonical（如 /blog/tag/let's-encrypt/）截断为 let
 function extractCanonical(html) {
-  const m = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']/);
-  return m ? m[1] : null;
+  const m = html.match(/<link\s+rel=["']canonical["']\s+href=(["'])(.*?)\1/);
+  return m ? m[2] : null;
 }
 
 // 提取所有 <img> 标签，返回 {src, alt} 数组
@@ -72,11 +75,11 @@ function extractImages(html) {
   let m;
   while ((m = re.exec(html)) !== null) {
     const attrs = m[1];
-    const srcMatch = attrs.match(/src=["']([^"']+)["']/);
-    const altMatch = attrs.match(/alt=["']([^"']*)["']/);
+    const srcMatch = attrs.match(/src=(["'])(.*?)\1/);
+    const altMatch = attrs.match(/alt=(["'])(.*?)\1/);
     imgs.push({
-      src: srcMatch ? srcMatch[1] : '',
-      alt: altMatch ? altMatch[1] : null,
+      src: srcMatch ? srcMatch[2] : '',
+      alt: altMatch ? altMatch[2] : null,
       hasAlt: altMatch !== null,
     });
   }
@@ -84,13 +87,14 @@ function extractImages(html) {
 }
 
 // 提取所有内部 <a href> 链接（排除外链、锚点、邮件、tel）
+// 修复 BUG：原正则 [^"']+ 把含单引号的 href（如 /blog/tag/let's-encrypt）截断
 function extractInternalLinks(html) {
   const links = new Set();
-  const re = /<a\s+[^>]*href=["']([^"']+)["']/g;
+  const re = /<a\s+[^>]*href=(["'])(.*?)\1/g;
   let m;
   while ((m = re.exec(html)) !== null) {
     // 解码 HTML 实体（如 &#38; → &），避免内链 404 误报
-    const href = decodeHtmlEntities(m[1]);
+    const href = decodeHtmlEntities(m[2]);
     if (/^(https?:|mailto:|tel:|data:)/i.test(href)) continue;
     if (href.startsWith('#')) continue;
     links.add(href);
