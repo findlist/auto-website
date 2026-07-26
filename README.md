@@ -20,7 +20,7 @@
 
 > **零广告 · 零追踪 · 全本地处理 · 中文优先 · 响应式 · 暗色模式 · 复制即用**
 
-共 **109 个在线开发工具** + **117 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
+共 **109 个在线开发工具** + **139 篇配套技术博客**，覆盖编码转换、加密哈希、时间日期、代码调试、网络计算、色彩设计、文档处理等常用场景。
 
 ---
 
@@ -57,7 +57,7 @@
 - 🚀 **零广告、零追踪** — 靠爱发电 / 捐赠驱动，不含任何广告联盟代码
 - 🔒 **全本地处理** — 所有工具纯前端计算，数据不离开您的浏览器，打开浏览器开发者工具即可审计
 - 📱 **移动端友好** — 375px / 768px / 1280px 三档响应式 + 暗色模式 + 复制即用
-- 📝 **配套博客** — 117 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
+- 📝 **配套博客** — 139 篇深度技术博客（300+ 个标签），覆盖工具原理、最佳实践、安全指南
 - 🎨 **色彩设计** — 调色板 / 色值转换 / 对比度检测 / 配色灵感
 - 🔧 **编码转换** — Base64/32、URL、Hex、Punycode、HTML 实体、CSV/JSON/YAML/TOML/XML 互转
 - 🔐 **加密哈希** — AES / JWT 签名与验证 / JWE / 各类 Hash（SHA 系列）/ 强密码生成
@@ -159,7 +159,7 @@ auto-website/
 │   └── robots.txt                 # 爬虫规则（上线后替换 sitemap 域名）
 ├── src/
 │   ├── components/                # 109 个 React 工具组件（AesTool / Base64Tool / …）
-│   ├── content/blog/              # 117 篇技术博客（.md）
+│   ├── content/blog/              # 139 篇技术博客（.md）
 │   ├── layouts/
 │   │   └── BaseLayout.astro       # 全站基础布局
 │   ├── pages/
@@ -180,11 +180,11 @@ auto-website/
 └── package.json                   # v0.1.0 · toolbox
 ```
 
-每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 966 页（含 117 篇博客 + 300+ 个标签筛选页 + 109 个工具页及其它）。
+每包含工具页均配独立 `title / description / OG meta / JSON-LD`，并纳入 sitemap 与 RSS。主要内容页面数量约 1042 页（含 139 篇博客 + 300+ 个标签筛选页 + 109 个工具页及其它）。
 
 ---
 
-## 博客主题速览（117 篇）
+## 博客主题速览（139 篇）
 
 涵盖工具深度教程、安全最佳实践、数据格式对比等方向，代表性主题：
 
@@ -259,7 +259,12 @@ auto-website/
 - `css-if-guide` CSS if() 条件函数：style/media/supports 三类条件、多分支短路求值、嵌套与逻辑运算、降级实践
 - `trigonometric-guide` CSS 三角函数：sin/cos/tan/atan2/hypot 与 pi()/e() 常量，弧度角度、圆周布局、振荡动画、玫瑰曲线与向日葵螺旋实战
 - `css-math-functions-guide` CSS 数学函数：exp/log/sqrt/pow/abs/sign/mod/rem/round，对数刻度、幂律缓动、镜像布局、网格对齐与 mod/rem 符号差异实战
-- ……（共 117 篇，300+ 个标签）
+- `css-layout-alignment-toolchain-guide` CSS 布局对齐工具链实战：container/grid/flexbox/subgrid/scope 五工具端到端工作流
+- `css-visual-motion-toolchain-guide` CSS 视觉与动效工具链实战：starting-style/transition/animation/scroll-driven/view-transition 五工具端到端工作流
+- `color-design-token-toolchain-guide` 颜色与设计 Token 工具链实战：color/color-palette/color-contrast/gradient/light-dark 五工具端到端工作流
+- `math-encoding-toolchain-guide` 数学与编码工具链实战：number-base/hex/ieee754/trigonometric/css-math 五工具端到端工作流
+- `css-modern-features-toolchain-guide` CSS 新特性矩阵工具链实战：anchor-positioning/position-area/css-if/layer/nesting 五工具端到端工作流
+- ……（共 139 篇，300+ 个标签）
 
 ---
 
