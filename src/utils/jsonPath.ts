@@ -503,15 +503,15 @@ function parseOperand(ctx: ParserContext): FilterOperand {
   if (tok.type === 'AT') {
     advance(ctx);
     const segments: Segment[] = [{ kind: 'root' }]; // @ 等价于当前节点，用 root 占位
-    // 后续 .name 或 ['name'] 或 [index]
-    while (peek(ctx).type === 'DOT' || peek(ctx).type === 'LBRACKET') {
+    // 后续 .name 或 ['name'] 或 [index] 或 ..name 递归下降
+    while (peek(ctx).type === 'DOT' || peek(ctx).type === 'DOTDOT' || peek(ctx).type === 'LBRACKET') {
       if (peek(ctx).type === 'DOT') {
         advance(ctx);
         const nameTok = expect(ctx, 'IDENT');
         segments.push({ kind: 'child', name: nameTok.value });
       } else {
-        // LBRACKET
-        segments.push(parseBracket(ctx));
+        // DOTDOT 或 LBRACKET：交由 parseSegment 处理（已支持递归下降与括号形式）
+        segments.push(parseSegment(ctx));
       }
     }
     return { kind: 'path', segments, base: 'current' };
@@ -521,7 +521,8 @@ function parseOperand(ctx: ParserContext): FilterOperand {
   if (tok.type === 'ROOT') {
     advance(ctx);
     const segments: Segment[] = [{ kind: 'root' }];
-    while (peek(ctx).type === 'DOT' || peek(ctx).type === 'LBRACKET') {
+    // 后续 .name 或 ['name'] 或 [index] 或 ..name 递归下降
+    while (peek(ctx).type === 'DOT' || peek(ctx).type === 'DOTDOT' || peek(ctx).type === 'LBRACKET') {
       segments.push(parseSegment(ctx));
     }
     return { kind: 'path', segments, base: 'root' };

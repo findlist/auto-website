@@ -84,8 +84,10 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return false;
 }
 
-/** 按 JSON Pointer 路径从 root 解析节点（仅支持 #/a/b/0 这种内部引用） */
+/** 按 JSON Pointer 路径从 root 解析节点（支持 # 整个根、#/a/b/0 内部引用） */
 function resolveRef(ref: string, root: unknown): unknown {
+  // `#` 单独使用为空 JSON Pointer，指向整个 schema 根（RFC 6901 合法语法）
+  if (ref === '#') return root;
   if (!ref.startsWith('#/')) return undefined;
   // 拆分路径段，~1 → /，~0 → ~（JSON Pointer 转义反转）
   const parts = ref.slice(2).split('/').map((p) => p.replace(/~1/g, '/').replace(/~0/g, '~'));
@@ -238,11 +240,12 @@ function validateNode(
     }
     if (sch.uniqueItems === true) {
       // 两两比较去重，O(n²) 但实现简单且对常见规模足够
-      for (let i = 0; i < instance.length; i++) {
+      // 发现任意一对重复即报告一次错误并退出双重循环，避免对同一数组多次报告
+      uniqueCheck: for (let i = 0; i < instance.length; i++) {
         for (let j = i + 1; j < instance.length; j++) {
           if (deepEqual(instance[i], instance[j])) {
             errors.push({ path, message: `数组含重复元素（位置 ${i} 与 ${j}），违反 uniqueItems`, keyword: 'uniqueItems' });
-            break;
+            break uniqueCheck;
           }
         }
       }

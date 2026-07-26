@@ -1,7 +1,7 @@
 // SEO 全站审计脚本：扫描 dist 产出，检查 OG 标签、canonical、图片 alt、内链 404、JSON-LD
 // 使用 Node.js fs，UTF-8 安全（避免 PowerShell GBK 误码问题）
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join, dirname, resolve, normalize, sep } from 'node:path';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
