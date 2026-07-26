@@ -730,8 +730,9 @@ export async function verifyJwt(
   const iatCheck = claimChecks.find((c) => c.field === 'iat');
 
   let ok = signatureValid;
-  if (expCheck && expCheck.status === 'expired') ok = false;
-  if (nbfCheck && nbfCheck.status === 'not_yet_valid') ok = false;
+  // exp/nbf/iat 任一字段为非法数字类型时均应判失败，与 iat 处理保持一致，防止被篡改的令牌通过验签
+  if (expCheck && (expCheck.status === 'expired' || expCheck.status === 'invalid')) ok = false;
+  if (nbfCheck && (nbfCheck.status === 'not_yet_valid' || nbfCheck.status === 'invalid')) ok = false;
   if (iatCheck && iatCheck.status === 'invalid') ok = false;
 
   // 13. 收集警告

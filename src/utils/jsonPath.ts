@@ -780,11 +780,12 @@ function looseEquals(a: unknown, b: unknown): boolean {
   return false;
 }
 
-/** 数值比较：返回 -1/0/1；非数字场景返回 0 表示无法比较 */
+/** 数值比较：返回 -1/0/1；非数字场景返回 NaN 表示无法比较。
+ *  返回 NaN 时，调用处的 > >= < <= 四种比较结果均为 false，避免不可比较的值被误判为满足 >= / <=。 */
 function compareNumeric(a: unknown, b: unknown): number {
   const na = typeof a === 'number' ? a : typeof a === 'string' ? toNumber(a) : NaN;
   const nb = typeof b === 'number' ? b : typeof b === 'string' ? toNumber(b) : NaN;
-  if (isNaN(na) || isNaN(nb)) return 0;
+  if (isNaN(na) || isNaN(nb)) return NaN;
   if (na < nb) return -1;
   if (na > nb) return 1;
   return 0;
