@@ -311,7 +311,7 @@ export default function QrTool() {
             ))}
           </div>
           {/* 实时模式开关 */}
-          <label className="uuidtool__toggle">
+          <label className="qrtool__toggle">
             <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} />
             <span>实时生成</span>
           </label>
@@ -347,7 +347,7 @@ export default function QrTool() {
               <label className="qrtool__field-label" htmlFor="qr-error-level">容错等级</label>
               <select
                 id="qr-error-level"
-                className="uuidtool__select"
+                className="qrtool__select"
                 value={errorLevel}
                 onChange={(e) => setErrorLevel(e.target.value as ErrorLevel)}
               >

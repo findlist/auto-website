@@ -203,6 +203,44 @@ END:VCARD</code></pre>
     font-size: 12.5px;
   }
 
+  /* 实时生成开关：与 uuidtool/pwtool 保持一致的风格 */
+  .qrtool__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-soft);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .qrtool__toggle input {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  /* 容错等级下拉框：与 uuidtool/pwtool 统一表单元素风格 */
+  .qrtool__select {
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .qrtool__select:hover {
+    border-color: var(--color-primary);
+  }
+
+  .qrtool__select:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+  }
+
   /* 参数控制区 */
   .qrtool__controls {
     display: flex;
