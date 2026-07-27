@@ -1796,7 +1796,8 @@ dns description 112 字权衡：dns 的 meta.description 含大量英文 SEO 关
 - `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性
 
 ### 单元 5：Git 提交推送
-- commit 待提交：refactor: 拆分 PNG 代码为独立模块并按需动态导入
+- commit be732c9：refactor: 拆分 PNG 代码为独立模块并按需动态导入（4 文件 +1267/-869）
+- push：8a95186..be732c9 HEAD -> main ✅
 
 ## Bundle 体积前后对比
 
@@ -1859,8 +1860,8 @@ dns description 112 字权衡：dns 的 meta.description 含大量英文 SEO 关
 **轮次**：第 167 轮（2026-07-28）
 **阶段**：阶段二（数据驱动迭代）
 **方向**：/exif-editor/ JS Bundle 体积优化二轮（PNG 代码拆分 + 动态导入）
-**Commit**：待提交
-**Push**：待推送
+**Commit**：be732c9
+**Push**：8a95186..be732c9 HEAD -> main
 
 ### 完成任务
 1. ✅ 创建 exifEditorPng.ts 独立模块（约 880 行，完整的 PNG 元数据编辑器实现）
