@@ -480,3 +480,322 @@ bug-check 报告分析结论：
 2. 第 23 篇长尾 SEO 博客
 3. 新博客 SEO 收录监测
 4. find-stale-tags.mjs 未用导入清理（可选）
+
+---
+
+# 第 159 轮 · 第 23 篇协同博客《SQL 查询到数据报表工具链实战》
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 158 轮（commit ad4a287）：密码哈希与 JWE 工具质量缺陷修复
+- 第 158 轮下轮建议：①接入 Cloudflare Web Analytics（需用户操作）②第 23 篇长尾 SEO 博客 ③新博客 SEO 收录监测 ④find-stale-tags.mjs 未用导入清理
+- 工作树状态：clean（ad4a287 已推送）
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接上轮"第 23 篇长尾 SEO 博客"建议，覆盖 sql 与 csv-markdown 两个尚未被协同博客作为主角覆盖的工具**
+
+工具矩阵覆盖梳理结论：
+- 已覆盖工具（22 篇协同博客）：uuid/password/lorem/random-picker/qr（随机性工具链）、csv/json/yaml/toml/xml（格式互转）、csv/jsonpath/json-schema/ts-mock/csv-markdown（CSV ETL）、yaml/toml/json-schema/error-locator/ts-mock（Schema 验证）、json/yaml/toml/xml（数据格式互转中心枢纽）
+- **未覆盖工具**：sql、csv-markdown（作为协同博客主角）
+- **确定主题**：《SQL 查询到数据报表工具链实战：从查询编写到 Markdown 呈现的端到端工作流》
+- 五工具工序矩阵：sql → csv-json → json → jsonpath → csv-markdown
+
+## 完成任务
+
+### 单元 1：创建第 23 篇协同博客（commit ab1decb）
+创建 `src/content/blog/sql-to-report-toolchain-guide.md` 完整内容，主题：
+**"SQL 查询到数据报表工具链实战：从查询编写到 Markdown 呈现的端到端工作流"**
+
+5 工具在工序中的角色：
+
+| 序号 | 工具 | 工序 | 阶段 | 不可逆性 |
+| --- | --- | --- | --- | --- |
+| 1 | /sql/ | SQL 编写与语法校验 | 编写 | 可逆 |
+| 2 | /csv-json/ | CSV 转 JSON 归一化 | 归一化 | 可逆 |
+| 3 | /json/ | JSON 格式化与校验 | 规范化 | 可逆 |
+| 4 | /jsonpath/ | JSONPath 字段提取 | 提取 | 可逆 |
+| 5 | /csv-markdown/ | CSV 转 Markdown 报表 | 呈现 | 半不可逆 |
+
+工序衔接陷阱（核心内容）：
+1. SQL NULL 导出 CSV 后空字段类型漂移（NULL/空字符串/NULL 字面量混淆）
+2. SQL 日期格式与 JSONPath 字符串比较语义错配（ISO 8601 vs 时间戳）
+3. CSV 引号包裹字段与 Markdown 管道符转义冲突（字段内 | 被 \| 转义后破坏 CSV 结构）
+4. SELECT * 列序不稳导致 JSONPath 字段路径失效（DDL 变更后列序变化）
+5. JSONPath 数组结果在 GFM 表格中嵌套结构坍塌（数组被展平为字符串）
+
+五大典型场景：
+1. 业务数据日报生成（sql + csv-json + csv-markdown）
+2. 数据库迁移校验（sql + csv-json + jsonpath）
+3. API 响应数据归档（csv-json + json + csv-markdown）
+4. 数据质量审计（sql + csv-json + json + jsonpath）
+5. 跨数据源对比报表（csv-json + jsonpath + csv-markdown）
+
+### 单元 2：5 个工具页反向内链（commit ab1decb）
+在以下 5 个工具页"相关博客"区块新增指向 `sql-to-report-toolchain-guide` 的反向内链：
+- `src/pages/sql.astro`（添加新博客作为第 2 条相关博客）
+- `src/pages/csv-json.astro`（添加新博客作为第 3 条相关博客）
+- `src/pages/json.astro`（添加新博客作为第 3 条相关博客）
+- `src/pages/jsonpath.astro`（添加新博客作为第 4 条相关博客）
+- `src/pages/csv-markdown.astro`（添加新博客作为第 3 条相关博客）
+
+反向内链描述统一引用博客核心要点："系统讲解 SQL 查询到报表五道工序的正确顺序与衔接陷阱：NULL 类型漂移、日期比较错配、管道符冲突、列序不稳、数组坍塌，覆盖日报/迁移/归档/审计/对比五大场景。"
+
+### 单元 3：全量验收
+- `npx astro check`：0 errors、0 warnings、2 hints（均为既有无关项：find-stale-tags.mjs 未用导入、clipboard.ts execCommand 弃用）
+- `npm run build`：1073 页面构建成功（34.36s），postbuild 自动运行报告"残留目录: 0 个"
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性
+
+### 单元 4：Git 提交推送
+- commit ab1decb：feat: 新增第 23 篇协同博客《SQL 查询到数据报表工具链实战》并为 5 个工具页添加反向内链（6 文件 +328）
+- push：4432831..ab1decb HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：136 篇（+1，新增 sql-to-report-toolchain-guide）
+- 页面：1073 页（+5，新博客页 + tag/索引页 + 反向内链更新带来的页面变化）
+
+## 验收结果
+- 类型检查 ✅（0 errors, 0 warnings, 2 既有 hints）
+- 构建 ✅（1073 页面，34.36s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，6 文件 +328）
+
+## 数据洞察
+- **工具矩阵覆盖闭环**：本轮补齐 sql 与 csv-markdown 两个工具作为协同博客主角的覆盖空缺，至此 109 个工具中已有 23 篇协同博客覆盖核心工具链组合，工具页反向内链网络更完整
+- **SQL 报表工作流的工序衔接陷阱价值**：NULL 类型漂移、日期比较错配、管道符冲突、列序不稳、数组坍塌这 5 个陷阱均为开发者实际遇到的"格式正确但语义错误"问题，文档化后可帮助用户规避数据失真
+- **半不可逆工序的报表归档语义**：CSV→Markdown 转换标记为"半不可逆"，因为 Markdown 表格用于归档分发后，反向转回 CSV 会丢失对齐方式元数据，这一语义在博客中明确说明
+- **反向内链 SEO 价值**：5 个工具页新增的反向内链使用了博客标题作为锚文本（含"SQL 查询到数据报表工具链实战"等关键词），为博客页提供高相关性入链，同时丰富工具页的内容深度
+
+## 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+- 工具矩阵中剩余可作为协同博客主角的工具组合待梳理（本轮后核心工具链组合已基本覆盖，后续可考虑横向扩展）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 新博客 SEO 收录监测（sql-to-report-toolchain-guide + randomness-generation-toolchain-guide）
+3. 持续低入链监测（验证本轮反向内链未引入新问题）
+4. 工具矩阵剩余工具组合的协同博客规划（横向扩展）
+5. 2 个 hints 清理（可选，低优先级，均有意保留）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 sql-to-report-toolchain-guide 的搜索收录变化
+
+---
+
+## 第 159 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 159 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：第 23 篇协同博客《SQL 查询到数据报表工具链实战》开发 + 5 工具页反向内链
+**Commit**：ab1decb
+**Push**：4432831..ab1decb HEAD -> main
+
+### 完成任务
+1. ✅ 创建第 23 篇协同博客 sql-to-report-toolchain-guide.md（5 工具工序矩阵 + 5 衔接陷阱 + 5 典型场景）
+2. ✅ 在 sql/csv-json/json/jsonpath/csv-markdown 5 个工具页"相关博客"区块新增反向内链
+3. ✅ 类型检查通过（0 errors, 0 warnings, 2 既有 hints）
+4. ✅ 构建成功（1073 页面，34.36s，postbuild 0 残留）
+5. ✅ SEO 审计全指标归零（brokenLinks=0）
+6. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+7. ✅ Git 提交推送完成（1 次 commit，6 文件 +328）
+
+### 修改文件
+- `src/content/blog/sql-to-report-toolchain-guide.md`（新增，第 23 篇协同博客）
+- `src/pages/sql.astro`（相关博客区新增反向内链）
+- `src/pages/csv-json.astro`（相关博客区新增反向内链）
+- `src/pages/json.astro`（相关博客区新增反向内链）
+- `src/pages/jsonpath.astro`（相关博客区新增反向内链）
+- `src/pages/csv-markdown.astro`（相关博客区新增反向内链）
+
+### 验证结果
+- 类型检查 ✅（0 errors, 0 warnings, 2 既有 hints）
+- 构建 ✅（1073 页面，34.36s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，6 文件 +328）
+
+### 数据洞察
+- 工具矩阵覆盖闭环：补齐 sql 与 csv-markdown 两个工具的协同博客主角覆盖空缺
+- 半不可逆工序的报表归档语义：CSV→Markdown 转换会丢失对齐元数据，已在博客中明确说明
+- 反向内链 SEO 价值：5 个工具页新增反向内链使用博客标题作为锚文本，提供高相关性入链
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 astro check hints（均有意保留）
+- 工具矩阵剩余工具组合待梳理（核心工具链组合已基本覆盖）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 新博客 SEO 收录监测
+3. 持续低入链监测
+4. 工具矩阵剩余工具组合的协同博客规划（横向扩展）
+5. 2 个 hints 清理（可选）
+
+---
+
+# 第 160 轮 · 第 24 篇协同博客《CSS 滚动渲染流水线工具链实战》
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 159 轮（commit ab1decb）：第 23 篇协同博客《SQL 查询到数据报表工具链实战》
+- 第 159 轮下轮建议：①接入 Cloudflare Web Analytics（需用户操作）②新博客 SEO 收录监测 ③持续低入链监测 ④工具矩阵剩余工具组合的协同博客规划（横向扩展）⑤2 个 hints 清理
+- 工作树状态：clean（ab1decb 已推送，仅 topics.md 有上轮进度文档未提交）
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接上轮"工具矩阵剩余工具组合的协同博客规划（横向扩展）"建议，覆盖 contain/scroll-snap/transform/interpolate-size/svg-optimizer 5 个尚未被协同博客作为主角覆盖的工具**
+
+工具矩阵覆盖梳理结论（通过 search agent 全量分析 22 篇 *-toolchain-guide.md）：
+- 已覆盖工具：94 个（去重后）
+- 未覆盖工具：16 个（aes, ascii-art, contain, html-entities, image-compress, image-convert, image-crop, image-resize, image-watermark, interpolate-size, morse, regex-benchmark, reverse, scroll-snap, svg-optimizer, transform）
+- 候选主题 1（图像处理）已与 image-publish-workflow-guide.md 重叠，排除
+- **确定主题**：《CSS 滚动渲染流水线工具链实战：从容器隔离到矢量优化的端到端工作流》
+- 五工具工序矩阵：contain → scroll-snap → transform → interpolate-size → svg-optimizer
+
+## 完成任务
+
+### 单元 1：创建第 24 篇协同博客（commit c0b4434）
+创建 `src/content/blog/css-scroll-render-toolchain-guide.md` 完整内容，主题：
+**"CSS 滚动渲染流水线工具链实战：从容器隔离到矢量优化的端到端工作流"**
+
+5 工具在工序中的角色：
+
+| 序号 | 工具 | 工序 | 阶段 | 不可逆性 |
+| --- | --- | --- | --- | --- |
+| 1 | /contain/ | 容器隔离 | 隔离 | 可逆 |
+| 2 | /scroll-snap/ | 滚动吸附 | 吸附 | 可逆 |
+| 3 | /transform/ | 变换 | 变换 | 可逆 |
+| 4 | /interpolate-size/ | 尺寸插值 | 插值 | 可逆 |
+| 5 | /svg-optimizer/ | SVG 优化 | 优化 | 半不可逆 |
+
+工序衔接陷阱（核心内容）：
+1. contain: paint 创建包含块导致 transform 百分比基准漂移（translateX(50%) 的基准从父元素变成隔离子树）
+2. scroll-snap 吸附点在 transform: scale 后坐标偏移（scale 不改布局尺寸但改视觉位置，吸附点漂移）
+3. interpolate-size 在 transition 与 animation 下行为差异（起止值必须明确，auto→auto 不触发过渡）
+4. SVG 优化移除 transform-origin 导致矢量变换错位（SVG 默认 0 0 而非 50% 50%）
+5. contain: strict 与 height: auto 冲突（contain: size 忽略 auto 高度导致坍塌）
+
+三大反模式：
+1. 先 transform 再 scroll-snap（吸附点与视觉位置错位）
+2. 先 SVG 优化再 transform（transform-origin 被移除导致旋转中心偏移）
+3. 先 interpolate-size 再 contain（contain: strict 与 height: auto 冲突导致坍塌）
+
+五大典型场景：
+1. 电商商品轮播（contain + scroll-snap + transform）
+2. 图片画廊翻页（scroll-snap + transform + interpolate-size）
+3. 长文档目录导航（contain + scroll-snap + svg-optimizer）
+4. 数据卡片展开折叠（transform + interpolate-size + svg-optimizer）
+5. 视差滚动效果（contain + transform + interpolate-size）
+
+与已有协同博客的边界划分：
+- 与单点博客（contain-guide/scroll-snap-guide/transform-guide/interpolate-size-guide/svg-optimization-guide）互补不冲突
+- 与 css-visual-motion-toolchain-guide（动效属性矩阵）切入维度不同，互补不冲突
+
+### 单元 2：5 个工具页反向内链（commit c0b4434）
+在以下 5 个工具页"相关博客"区块新增指向 `css-scroll-render-toolchain-guide` 的反向内链：
+- `src/pages/contain.astro`（添加新博客作为第 2 条相关博客）
+- `src/pages/scroll-snap.astro`（添加新博客作为第 2 条相关博客）
+- `src/pages/transform.astro`（添加新博客作为第 2 条相关博客）
+- `src/pages/interpolate-size.astro`（添加新博客作为第 2 条相关博客）
+- `src/pages/svg-optimizer.astro`（添加新博客作为第 2 条相关博客）
+
+反向内链描述统一引用博客核心要点："系统讲解 CSS 滚动渲染流水线五道工序的正确顺序与衔接陷阱：contain 包含块导致 transform 百分比漂移、scroll-snap 吸附点在 scale 后偏移、interpolate-size 在 transition 与 animation 下行为差异、SVG 优化移除 transform-origin 导致变换错位、contain: strict 与 height: auto 冲突，覆盖轮播/画廊/目录/卡片/视差五大场景。"
+
+### 单元 3：全量验收
+- `npm run build`：1079 页面构建成功（20.73s），postbuild 自动运行报告"残留目录: 0 个"
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性
+
+### 单元 4：Git 提交推送
+- commit c0b4434：feat: 新增第 24 篇协同博客《CSS 滚动渲染流水线工具链实战》并为 5 个工具页添加反向内链（6 文件 +222）
+- push：ab1decb..c0b4434 HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：137 篇（+1，新增 css-scroll-render-toolchain-guide）
+- 页面：1079 页（+6，新博客页 + tag/索引页 + 反向内链更新）
+
+## 验收结果
+- 构建 ✅（1079 页面，20.73s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，6 文件 +222）
+
+## 数据洞察
+- **工具矩阵覆盖横向扩展价值**：本轮通过 search agent 全量分析 22 篇协同博客的工具覆盖情况，精确定位 16 个未覆盖工具，并排除与 image-publish-workflow-guide 重叠的候选主题，最终选择 CSS 滚动渲染流水线这一工序逻辑最清晰的组合。至此 109 个工具中已有 24 篇协同博客覆盖核心工具链组合
+- **滚动渲染工序衔接陷阱的技术深度**：contain: paint 创建包含块导致 transform 百分比基准漂移、scroll-snap 吸附点在 scale 后坐标偏移这两个陷阱均为"属性正确但组合后语义变化"的问题，文档化后可帮助开发者规避渲染异常
+- **反模式驱动的工序顺序设计**：本文从 3 个反模式（先 transform 再 scroll-snap、先 SVG 优化再 transform、先 interpolate-size 再 contain）推导出正确工序顺序，这种"从错误中学习"的内容结构比"直接给出正确顺序"更有教学价值
+- **与 css-visual-motion-toolchain-guide 的边界划分**：两者均涉及 CSS 属性但切入维度不同——css-visual-motion 聚焦"动效属性矩阵"（动画时序与过渡驱动），css-scroll-render 聚焦"滚动渲染流水线"（渲染隔离、吸附定位、变换合成、尺寸过渡、矢量优化），互补不冲突
+
+## 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+- 工具矩阵中剩余 11 个未覆盖工具（aes, ascii-art, html-entities, image-compress, image-convert, image-crop, image-resize, image-watermark, morse, regex-benchmark, reverse），部分工具难以组成自然的 5 工具工序链
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 新博客 SEO 收录监测（css-scroll-render-toolchain-guide + sql-to-report-toolchain-guide + randomness-generation-toolchain-guide）
+3. 持续低入链监测（验证本轮反向内链未引入新问题）
+4. 工具矩阵剩余未覆盖工具的协同博客规划（11 个未覆盖工具，需评估可成链性）
+5. 2 个 hints 清理（可选，低优先级，均有意保留）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 css-scroll-render-toolchain-guide 的搜索收录变化
+
+---
+
+## 第 160 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 160 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：第 24 篇协同博客《CSS 滚动渲染流水线工具链实战》开发 + 5 工具页反向内链
+**Commit**：c0b4434
+**Push**：ab1decb..c0b4434 HEAD -> main
+
+### 完成任务
+1. ✅ 通过 search agent 全量分析 22 篇协同博客工具覆盖情况，定位 16 个未覆盖工具
+2. ✅ 创建第 24 篇协同博客 css-scroll-render-toolchain-guide.md（5 工具工序矩阵 + 5 衔接陷阱 + 3 反模式 + 5 典型场景）
+3. ✅ 在 contain/scroll-snap/transform/interpolate-size/svg-optimizer 5 个工具页"相关博客"区块新增反向内链
+4. ✅ 构建成功（1079 页面，20.73s，postbuild 0 残留）
+5. ✅ SEO 审计全指标归零（brokenLinks=0）
+6. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+7. ✅ Git 提交推送完成（1 次 commit，6 文件 +222）
+
+### 修改文件
+- `src/content/blog/css-scroll-render-toolchain-guide.md`（新增，第 24 篇协同博客）
+- `src/pages/contain.astro`（相关博客区新增反向内链）
+- `src/pages/scroll-snap.astro`（相关博客区新增反向内链）
+- `src/pages/transform.astro`（相关博客区新增反向内链）
+- `src/pages/interpolate-size.astro`（相关博客区新增反向内链）
+- `src/pages/svg-optimizer.astro`（相关博客区新增反向内链）
+
+### 验证结果
+- 构建 ✅（1079 页面，20.73s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，6 文件 +222）
+
+### 数据洞察
+- 工具矩阵覆盖横向扩展：通过 search agent 全量分析精确定位 16 个未覆盖工具，排除重叠候选后选择 CSS 滚动渲染流水线组合
+- 滚动渲染工序衔接陷阱：contain 包含块漂移、scroll-snap 吸附点偏移均为"属性正确但组合后语义变化"问题
+- 反模式驱动的工序顺序设计：从 3 个反模式推导正确顺序，比直接给出顺序更有教学价值
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 astro check hints（均有意保留）
+- 11 个未覆盖工具待评估可成链性
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 新博客 SEO 收录监测
+3. 持续低入链监测
+4. 工具矩阵剩余未覆盖工具的协同博客规划
+5. 2 个 hints 清理（可选）
