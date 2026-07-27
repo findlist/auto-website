@@ -799,3 +799,145 @@ bug-check 报告分析结论：
 3. 持续低入链监测
 4. 工具矩阵剩余未覆盖工具的协同博客规划
 5. 2 个 hints 清理（可选）
+
+---
+
+# 第 161 轮 · 工具页 SEO 元数据质量审计与首轮优化（8 个 title>50 字页面）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 160 轮（commit c0b4434）：第 24 篇协同博客《CSS 滚动渲染流水线工具链实战》
+- 第 160 轮下轮建议：①接入 Cloudflare Web Analytics ②新博客 SEO 收录监测 ③持续低入链监测 ④工具矩阵剩余 11 个未覆盖工具的协同博客规划 ⑤2 个 hints 清理
+- 工作树状态：clean（c0b4434 已推送）
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接质量优先原则，对 109 个工具页进行 SEO 元数据质量审计，并修复最严重的 title/description 过长问题**
+
+工具页 SEO 元数据质量审计结论（通过 Grep + Node.js 脚本批量分析）：
+- 109 个工具页中，**64 个页面 title 过长**（>35 字），其中 **12 个严重过长**（>45 字），**8 个极严重**（>50 字）
+- **80 个页面 description 过长**（>80 字）
+- 决策：首轮优先修复 title>50 字的 8 个页面，剩余 title>45 字的页面在后续迭代中处理
+
+## 完成任务
+
+### 单元 1：优化 8 个 title>50 字的工具页元数据（commit e1af667）
+
+| 工具页 | 原 title 字数 | 新 title | 新 title 字数 |
+| --- | --- | --- | --- |
+| metadata-bundle.astro | 92 字 | 图片元数据打包工具 - 批量提取 EXIF/IPTO/XMP 并生成隐私报告 | 38 字 |
+| image-compare.astro | 60 字 | 图片对比工具 - 在线差异比较与像素级高亮 | 21 字 |
+| exif-editor.astro | 58 字 | EXIF 元数据编辑器 - 在线删除 GPS 与个人信息 | 28 字 |
+| toml-schema.astro | 53 字 | TOML Schema 校验工具 - 在线配置文件校验器 | 28 字 |
+| aes.astro | 51 字 | AES 加解密工具 - 在线 GCM/CBC/CTR 模式加密解密 | 33 字 |
+| interpolate-size.astro | 50 字 | CSS interpolate-size 尺寸插值生成器 - auto 高度过渡 | 40 字 |
+| jwt-verify.astro | 50 字 | JWT 签名验证工具 - 在线验签 HS/RS/ES 算法 | 29 字 |
+| text-wrap.astro | 50 字 | CSS text-wrap 文本换行工具 - balance/pretty 对比 | 40 字 |
+
+description 同步精简至 100 字以内，保留核心关键词与功能描述。
+
+### 单元 2：全量验收
+
+#### 2.1 构建验证
+- `npm run build`：1079 页面构建成功（26.32s），postbuild 自动运行报告"残留目录: 0 个"
+
+#### 2.2 SEO 元数据验证（自建临时脚本）
+构建产物中 8 个页面 title 与 description 长度核查：
+- title（含 "- 工具盒子" 5 字后缀）：28-47 字，源文件 title 21-40 字，全部符合 ≤40 字目标
+- description：77-100 字，Google 通常显示 70-80 字（meta 完整内容仍被索引），合理
+
+#### 2.3 链接图审计（自建临时脚本）
+- 8 个修改页面共扫描 131 个内部链接
+- 0 坏链（页面间互链未被破坏）
+
+### 单元 3：Git 提交推送
+- commit e1af667：refactor: 优化8个工具页SEO元数据-title与description精简（8 文件 +12/-12）
+- push：89cf072..e1af667 HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：137 篇（无变化）
+- 页面：1079 页（无变化）
+
+## 验收结果
+- 构建 ✅（1079 页面，26.32s，postbuild 0 残留）
+- SEO 元数据 ✅（8 个页面 title ≤40 字，description ≤100 字）
+- 链接图审计 ✅（131 内部链接，0 坏链）
+- Git 提交推送 ✅（1 次 commit，8 文件 +12/-12）
+
+## 数据洞察
+- **SEO 元数据质量基线**：109 个工具页中 64 个 title 过长、80 个 description 过长，反映早期批量创建工具页时对元数据长度控制不足。这是阶段二数据驱动迭代需持续优化的技术债
+- **title 长度 SEO 最佳实践**：百度通常显示 28-40 字，Google 显示约 50-60 字符（中文约 25-30 字）。源文件 title 控制在 ≤40 字，加 "- 工具盒子" 后缀后约 45 字，平衡品牌曝光与搜索展现
+- **description 长度权衡**：Google 通常截断显示 70-80 字，但 meta 标签完整内容仍被索引用于关键词匹配。控制在 100 字以内可在"完整索引"与"展现可读性"之间取得平衡
+- **质量优先原则的体现**：本轮未追逐新功能或新博客，而是回归既有工具页的元数据质量优化，符合"质量优先 > 变现后置"的核心原则
+
+## 遗留问题
+- 工具页 SEO 元数据质量债：剩余 56 个 title>35 字的页面（其中 4 个 title 仍在 45-50 字之间），需后续迭代处理
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+- 工具矩阵中剩余 11 个未覆盖工具待评估可成链性
+
+## 下轮优先级
+1. **继续优化工具页 SEO 元数据**（优先处理 title 45-50 字的 4 个页面，再处理 35-45 字的页面，分批迭代）
+2. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+3. 新博客 SEO 收录监测（3 篇近期博客：css-scroll-render + sql-to-report + randomness-generation）
+4. 持续低入链监测
+5. 工具矩阵剩余未覆盖工具的协同博客规划
+6. 2 个 hints 清理（可选，低优先级）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 3 篇近期博客的搜索收录变化
+
+---
+
+## 第 161 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 161 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：工具页 SEO 元数据质量审计与首轮优化（8 个 title>50 字页面）
+**Commit**：e1af667
+**Push**：89cf072..e1af667 HEAD -> main
+
+### 完成任务
+1. ✅ 对 109 个工具页进行 SEO 元数据质量审计（Grep + Node.js 脚本批量分析）
+2. ✅ 优化 8 个 title>50 字的工具页（metadata-bundle/image-compare/exif-editor/toml-schema/aes/interpolate-size/jwt-verify/text-wrap）
+3. ✅ title 缩减至 ≤40 字，description 精简至 ≤100 字
+4. ✅ 构建成功（1079 页面，26.32s，postbuild 0 残留）
+5. ✅ 链接图审计通过（131 内部链接，0 坏链）
+6. ✅ Git 提交推送完成（1 次 commit，8 文件 +12/-12）
+
+### 修改文件
+- `src/pages/metadata-bundle.astro`（title 92→38 字）
+- `src/pages/image-compare.astro`（title 60→21 字）
+- `src/pages/exif-editor.astro`（title 58→28 字）
+- `src/pages/toml-schema.astro`（title 53→28 字）
+- `src/pages/aes.astro`（title 51→33 字）
+- `src/pages/interpolate-size.astro`（title 50→40 字）
+- `src/pages/jwt-verify.astro`（title 50→29 字）
+- `src/pages/text-wrap.astro`（title 50→40 字）
+
+### 验证结果
+- 构建 ✅（1079 页面，26.32s，postbuild 0 残留）
+- SEO 元数据 ✅（8 个页面 title ≤40 字，description ≤100 字）
+- 链接图审计 ✅（131 内部链接，0 坏链）
+- Git 提交推送 ✅（1 次 commit，8 文件 +12/-12）
+
+### 数据洞察
+- SEO 元数据质量基线：109 个工具页中 64 个 title 过长、80 个 description 过长，反映早期批量创建工具页时对元数据长度控制不足
+- title 长度 SEO 最佳实践：源文件 title 控制在 ≤40 字，加 "- 工具盒子" 后缀后约 45 字，平衡品牌曝光与搜索展现
+- description 长度权衡：控制在 100 字以内可在"完整索引"与"展现可读性"之间取得平衡
+
+### 遗留问题
+- 剩余 56 个 title>35 字的工具页待后续迭代优化
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 astro check hints（均有意保留）
+
+### 下一轮建议
+1. 继续优化工具页 SEO 元数据（优先 title 45-50 字的 4 个页面）
+2. 接入 Cloudflare Web Analytics（需用户操作）
+3. 新博客 SEO 收录监测
+4. 持续低入链监测
+5. 工具矩阵剩余未覆盖工具的协同博客规划
+6. 2 个 hints 清理（可选）
