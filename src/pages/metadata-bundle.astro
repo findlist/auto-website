@@ -3,9 +3,9 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import MetadataBundleTool from '../components/MetadataBundleTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片元数据打包工具 - 批量提取 EXIF / IPTC / XMP / ICC 并生成隐私分析报告（JSON / JSON Lines / Markdown / CSV / ZIP）',
+  title: '图片元数据打包工具 - 批量提取 EXIF/IPTC/XMP 并生成隐私报告',
   description:
-    '在线图片元数据打包工具：支持选择文件夹递归批量上传 JPEG / PNG / WebP / TIFF / HEIC / GIF / AVIF / BMP，一次性提取 EXIF / IPTC / XMP / ICC Profile 全部元数据，自动检测 GPS 定位、设备序列号、个人信息、软件签名、内嵌缩略图等 5 类隐私敏感字段并给出风险等级与清理建议。支持 JSON / JSON Lines (NDJSON) / Markdown / CSV / ZIP 五种格式报告导出，ZIP 包内含每图独立 JSON + manifest.json + README.txt + summary.md + summary.csv + summary.jsonl，纯浏览器本地打包零依赖。JSON Lines 格式每行一个图片报告，便于 ELK / Loki 日志聚合与 Kafka / Spark Streaming 大数据管道流式消费。提供风险等级筛选、单图折叠详情、处理进度实时显示、暗色模式与移动端响应式。基于 exifr 库全本地解析，零上传、零追踪、可离线使用，适用于照片分享前隐私检查、批量图片元数据审计、合规归档、CI/CD 元数据回归测试等场景。',
+    '在线图片元数据打包工具：批量提取 EXIF/IPTC/XMP/ICC 元数据，自动检测 GPS、设备序列号等隐私敏感字段并给出风险等级，支持 JSON/CSV/ZIP 格式报告导出，全本地处理零上传。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
