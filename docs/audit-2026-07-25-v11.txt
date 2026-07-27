@@ -1,0 +1,180 @@
+﻿sitemap 白名单加载: 999 个 URL
+
+扫描 637 个 HTML 页面（全量 1000，过滤 363 个残留）
+
+=== 内链网络质量审计报告 ===
+
+[页面类型分布]
+  home             数量=   1  入链 min=636  avg=636.00  max=636
+  static           数量=   2  入链 min=636  avg=636.00  max=636
+  tool             数量= 109  入链 min=7  avg=14.54  max=36
+  blog-index       数量=   1  入链 min=636  avg=636.00  max=636
+  blog-pagination  数量=  10  入链 min=10  avg=10.00  max=10
+  blog-tag         数量= 389  入链 min=390  avg=390.80  max=430
+  blog-post        数量= 125  入链 min=4  avg=9.09  max=23
+
+[孤立页面 - 入链=0] 共 0 页
+
+[入链稀疏页面 - 入链<2] 共 0 页（排除首页/静态页/博客索引）
+
+[出链稀疏页面 - 非模板出链=0] 共 0 页（排除首页/静态页）
+
+[无意义锚文本] 共 0 处
+
+[锚文本低多样性 - 单一锚文本占比>70%且总数>=8] 共 0 页
+  说明：入链锚文本过度集中可能错失长尾关键词加权机会，可在博客文章/相关工具区使用更多样化的上下文锚文本
+
+[入链最少的工具页 Top 30] 用于识别需要补充内链的工具页
+    7 入链  /background/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /ieee754/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /light-dark/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /number-base/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /qr/
+         来源: 首页=1 工具页=3 博客=3 标签=0
+    7 入链  /regex-benchmark/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /subgrid/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /text-wrap/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /time-unit/
+         来源: 首页=1 工具页=3 博客=3 标签=0
+    7 入链  /toml-schema/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /trigonometric/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /yaml-schema/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    8 入链  /contain/
+         来源: 首页=1 工具页=6 博客=1 标签=0
+    8 入链  /css-math/
+         来源: 首页=1 工具页=6 博客=1 标签=0
+    8 入链  /csv-markdown/
+         来源: 首页=1 工具页=3 博客=4 标签=0
+    8 入链  /js-formatter/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /json-to-ts/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /json-to-xml/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /metadata-bundle/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /position-area/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    9 入链  /anchor-positioning/
+         来源: 首页=1 工具页=6 博客=2 标签=0
+    9 入链  /css-formatter/
+         来源: 首页=1 工具页=4 博客=4 标签=0
+    9 入链  /css-if/
+         来源: 首页=1 工具页=6 博客=2 标签=0
+    9 入链  /sql/
+         来源: 首页=1 工具页=7 博客=1 标签=0
+    9 入链  /xml-to-json/
+         来源: 首页=1 工具页=5 博客=3 标签=0
+   10 入链  /border-radius/
+         来源: 首页=1 工具页=5 博客=4 标签=0
+   10 入链  /color-palette/
+         来源: 首页=1 工具页=7 博客=2 标签=0
+   10 入链  /timezone/
+         来源: 首页=1 工具页=3 博客=6 标签=0
+   10 入链  /transition/
+         来源: 首页=1 工具页=6 博客=3 标签=0
+   11 入链  /cron/
+         来源: 首页=1 工具页=4 博客=6 标签=0
+
+[入链最少的博客文章 Top 20] 用于识别需要补充内链的博客文章
+    4 入链  /blog/text-dedup-guide/
+    4 入链  /blog/text-sort-guide/
+    5 入链  /blog/color-contrast-accessibility/
+    5 入链  /blog/find-replace-guide/
+    5 入链  /blog/image-privacy-analysis-guide/
+    5 入链  /blog/password-strength-entropy/
+    5 入链  /blog/random-picking-guide/
+    5 入链  /blog/slug-generation-guide/
+    5 入链  /blog/text-analysis-word-count-guide/
+    5 入链  /blog/text-reverse-guide/
+    6 入链  /blog/batch-remove-gps-privacy-guide/
+    6 入链  /blog/border-radius-guide/
+    6 入链  /blog/cron-expression-scheduling/
+    6 入链  /blog/data-format-conversion-overview/
+    6 入链  /blog/diff-algorithms-lcs-myers/
+    6 入链  /blog/http-status-codes-overview/
+    6 入链  /blog/image-comparison-guide/
+    6 入链  /blog/jpeg-compression-loss-evaluation/
+    6 入链  /blog/json-formatting-guide/
+    6 入链  /blog/number-base-conversion-guide/
+
+=== 审计完成 ===
+扫描页面: 637
+孤立页面: 0
+入链稀疏(<2): 0
+出链稀疏(=0): 0
+无意义锚文本: 0 处
+锚文本低多样性: 0 页
+
+[JSON 报告已生成]
+{
+  "scannedAt": "2026-07-25T01:54:29.018Z",
+  "totalPages": 637,
+  "typeStats": {
+    "static": {
+      "count": 2,
+      "inboundSum": 1272,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    },
+    "tool": {
+      "count": 109,
+      "inboundSum": 1585,
+      "inboundMin": 7,
+      "inboundMax": 36,
+      "inboundAvg": "14.54"
+    },
+    "blog-pagination": {
+      "count": 10,
+      "inboundSum": 100,
+      "inboundMin": 10,
+      "inboundMax": 10,
+      "inboundAvg": "10.00"
+    },
+    "blog-post": {
+      "count": 125,
+      "inboundSum": 1136,
+      "inboundMin": 4,
+      "inboundMax": 23,
+      "inboundAvg": "9.09"
+    },
+    "blog-index": {
+      "count": 1,
+      "inboundSum": 636,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    },
+    "blog-tag": {
+      "count": 389,
+      "inboundSum": 152022,
+      "inboundMin": 390,
+      "inboundMax": 430,
+      "inboundAvg": "390.80"
+    },
+    "home": {
+      "count": 1,
+      "inboundSum": 636,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    }
+  },
+  "orphanPages": [],
+  "sparseInbound": [],
+  "sparseOutbound": [],
+  "badAnchors": [],
+  "badAnchorsTotal": 0,
+  "lowDiversityAnchors": []
+}

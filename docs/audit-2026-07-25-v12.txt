@@ -1,0 +1,38 @@
+﻿扫描 1026 个 HTML 页面
+
+=== SEO 审计报告 ===
+
+[title 缺失] 0 页
+
+[description 缺失] 0 页
+
+[OG 标签缺失] 0 页
+
+[canonical 不一致] 5 页
+  - /blog/tag/asn.1/
+      canonical: https://website.niuzi.asia/blog/tag/asn.1
+      expected:  https://website.niuzi.asia/blog/tag/asn.1/
+  - /blog/tag/cargo.toml/
+      canonical: https://website.niuzi.asia/blog/tag/cargo.toml
+      expected:  https://website.niuzi.asia/blog/tag/cargo.toml/
+  - /blog/tag/let's-encrypt/
+      canonical: https://website.niuzi.asia/blog/tag/let
+      expected:  https://website.niuzi.asia/blog/tag/let's-encrypt/
+  - /blog/tag/pyproject.toml/
+      canonical: https://website.niuzi.asia/blog/tag/pyproject.toml
+      expected:  https://website.niuzi.asia/blog/tag/pyproject.toml/
+  - /blog/tag/x.509/
+      canonical: https://website.niuzi.asia/blog/tag/x.509
+      expected:  https://website.niuzi.asia/blog/tag/x.509/
+
+[图片 alt 缺失] 0 处
+
+[JSON-LD 缺失] 0 页
+
+[内链 404] 1 处
+  按 href 聚合 Top 30：
+  - /blog/tag/let (出现在 1 个页面)
+
+=== 审计完成 ===
+扫描页面: 1026
+问题总计: title=0, desc=0, og=0, canonical=5, imgAlt=0, jsonLd=0, brokenLinks=1

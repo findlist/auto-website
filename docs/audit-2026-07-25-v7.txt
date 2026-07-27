@@ -1,0 +1,349 @@
+﻿sitemap 白名单加载: 999 个 URL
+
+扫描 637 个 HTML 页面（全量 1000，过滤 363 个残留）
+
+=== 内链网络质量审计报告 ===
+
+[页面类型分布]
+  home             数量=   1  入链 min=636  avg=636.00  max=636
+  static           数量=   2  入链 min=636  avg=636.00  max=636
+  tool             数量= 109  入链 min=7  avg=14.26  max=36
+  blog-index       数量=   1  入链 min=636  avg=636.00  max=636
+  blog-pagination  数量=  10  入链 min=10  avg=10.00  max=10
+  blog-tag         数量= 389  入链 min=390  avg=390.80  max=430
+  blog-post        数量= 125  入链 min=4  avg=9.09  max=23
+
+[孤立页面 - 入链=0] 共 0 页
+
+[入链稀疏页面 - 入链<2] 共 0 页（排除首页/静态页/博客索引）
+
+[出链稀疏页面 - 非模板出链=0] 共 0 页（排除首页/静态页）
+
+[无意义锚文本] 共 0 处
+
+[锚文本低多样性 - 单一锚文本占比>70%且总数>=8] 共 14 页
+  说明：入链锚文本过度集中可能错失长尾关键词加权机会，可在博客文章/相关工具区使用更多样化的上下文锚文本
+  /password/  (tool)
+    总锚文本=27  独立锚文本=5  主锚文本="密码生成器" 占比=85% (23/27)
+    分布: "密码生成器"×23 / "高强度随机密码生成"×1 / "打开配套工具 →"×1
+  /svg-optimizer/  (tool)
+    总锚文本=24  独立锚文本=5  主锚文本="SVG 优化器" 占比=83% (20/24)
+    分布: "SVG 优化器"×20 / "SVG 优化工具"×1 / "矢量图压缩清理工具"×1
+  /ascii-art/  (tool)
+    总锚文本=11  独立锚文本=3  主锚文本="ASCII Art 横幅生成器" 占比=82% (9/11)
+    分布: "ASCII Art 横幅生成器"×9 / "打开配套工具 →"×1 / "ASCII Art 横幅生成器 输入文本实时渲染为 ASCII Art 大字横幅，内置 Block（5 行方块）、Banner（7 行宽幅）、Small（3 行紧凑）3 种字体，可调节字符间距，支持复制纯文本与下载 .txt 文件。适用于 GitHub README 标题、终端启动横幅、CLI 签名、控制台输出装饰、注释块标题等场景。纯原生 TypeScript 零依赖实现。 可用"×1
+  /ip/  (tool)
+    总锚文本=21  独立锚文本=5  主锚文本="IP 子网计算器" 占比=81% (17/21)
+    分布: "IP 子网计算器"×17 / "CIDR 子网掩码计算"×1 / "子网掩码换算工具"×1
+  /dns/  (tool)
+    总锚文本=15  独立锚文本=4  主锚文本="DNS 查询工具" 占比=80% (12/15)
+    分布: "DNS 查询工具"×12 / "打开配套工具 →"×1 / "DNS 查询"×1
+  /punycode/  (tool)
+    总锚文本=15  独立锚文本=4  主锚文本="Punycode 编解码" 占比=80% (12/15)
+    分布: "Punycode 编解码"×12 / "Punycode 编解码工具"×1 / "打开配套工具 →"×1
+  /random-picker/  (tool)
+    总锚文本=15  独立锚文本=4  主锚文本="随机选择器" 占比=80% (12/15)
+    分布: "随机选择器"×12 / "打开配套工具 →"×1 / "随机抽取分配工具"×1
+  /timezone/  (tool)
+    总锚文本=15  独立锚文本=4  主锚文本="时区转换器" 占比=80% (12/15)
+    分布: "时区转换器"×12 / "打开配套工具 →"×1 / "时区转换器 在线多时区对比与世界时钟：基于 IANA 时区数据库，支持源时区与多个目标时区实时换算、夏令时（DST）识别、UTC 偏移展示、ISO 8601 与 Unix 时间戳复制、12/24 小时制切换。适用于跨时区会议调度、海外团队协作、国际化产品发布时间对齐、航班起落时间换算等场景，纯原生 Intl.DateTimeFormat API 零依赖实现。 可用"×1
+  /text-shadow/  (tool)
+    总锚文本=14  独立锚文本=4  主锚文本="CSS 文字阴影生成器" 占比=79% (11/14)
+    分布: "CSS 文字阴影生成器"×11 / "打开配套工具 →"×1 / "CSS 文字阴影生成器 在线 CSS text-shadow 文字阴影可视化生成器：支持多层阴影叠加、X/Y 偏移、模糊半径、颜色全参数调节，可编辑预览文字、字号、字重、文字颜色与背景色，实时预览效果，一键复制 CSS 代码。内置霓虹、3D、浮雕、描边、凹陷、硬阴影、发光 7 组预设效果。适用于标题设计、按钮文字、Logo 效果、海报排版等前端开发场景。全本地处理，零上传零追踪。 可用"×1
+  /image-resize/  (tool)
+    总锚文本=23  独立锚文本=5  主锚文本="图片缩放" 占比=78% (18/23)
+    分布: "图片缩放"×18 / "图片缩放工具"×2 / "打开配套工具 →"×1
+  /view-transition/  (tool)
+    总锚文本=18  独立锚文本=5  主锚文本="CSS view-transition 视图过渡生成器" 占比=78% (14/18)
+    分布: "CSS view-transition 视图过渡生成器"×14 / "SPA 导航过渡效果生成"×1 / "页面切换过渡动画生成"×1
+  /image-watermark/  (tool)
+    总锚文本=22  独立锚文本=6  主锚文本="图片水印" 占比=77% (17/22)
+    分布: "图片水印"×17 / "打开配套工具 →"×1 / "图片水印工具"×1
+  /lorem/  (tool)
+    总锚文本=13  独立锚文本=4  主锚文本="占位文本生成器" 占比=77% (10/13)
+    分布: "占位文本生成器"×10 / "占位文本与 Mock 数据生成器"×1 / "打开配套工具 →"×1
+  /password-hash/  (tool)
+    总锚文本=13  独立锚文本=4  主锚文本="密码哈希工具" 占比=77% (10/13)
+    分布: "密码哈希工具"×10 / "密码哈希"×1 / "打开配套工具 →"×1
+
+[入链最少的工具页 Top 30] 用于识别需要补充内链的工具页
+    7 入链  /background/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /ieee754/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /light-dark/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /number-base/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /qr/
+         来源: 首页=1 工具页=3 博客=3 标签=0
+    7 入链  /regex-benchmark/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /subgrid/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /text-wrap/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /time-unit/
+         来源: 首页=1 工具页=3 博客=3 标签=0
+    7 入链  /timezone/
+         来源: 首页=1 工具页=3 博客=3 标签=0
+    7 入链  /toml-schema/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    7 入链  /trigonometric/
+         来源: 首页=1 工具页=5 博客=1 标签=0
+    7 入链  /yaml-schema/
+         来源: 首页=1 工具页=4 博客=2 标签=0
+    8 入链  /contain/
+         来源: 首页=1 工具页=6 博客=1 标签=0
+    8 入链  /css-math/
+         来源: 首页=1 工具页=6 博客=1 标签=0
+    8 入链  /csv-markdown/
+         来源: 首页=1 工具页=3 博客=4 标签=0
+    8 入链  /js-formatter/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /json-to-ts/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /json-to-xml/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /metadata-bundle/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    8 入链  /position-area/
+         来源: 首页=1 工具页=5 博客=2 标签=0
+    9 入链  /anchor-positioning/
+         来源: 首页=1 工具页=6 博客=2 标签=0
+    9 入链  /css-formatter/
+         来源: 首页=1 工具页=4 博客=4 标签=0
+    9 入链  /css-if/
+         来源: 首页=1 工具页=6 博客=2 标签=0
+    9 入链  /sql/
+         来源: 首页=1 工具页=7 博客=1 标签=0
+    9 入链  /xml-to-json/
+         来源: 首页=1 工具页=5 博客=3 标签=0
+   10 入链  /border-radius/
+         来源: 首页=1 工具页=5 博客=4 标签=0
+   10 入链  /color-palette/
+         来源: 首页=1 工具页=7 博客=2 标签=0
+   10 入链  /ip/
+         来源: 首页=1 工具页=7 博客=2 标签=0
+   10 入链  /transition/
+         来源: 首页=1 工具页=6 博客=3 标签=0
+
+[入链最少的博客文章 Top 20] 用于识别需要补充内链的博客文章
+    4 入链  /blog/text-dedup-guide/
+    4 入链  /blog/text-sort-guide/
+    5 入链  /blog/color-contrast-accessibility/
+    5 入链  /blog/find-replace-guide/
+    5 入链  /blog/image-privacy-analysis-guide/
+    5 入链  /blog/password-strength-entropy/
+    5 入链  /blog/random-picking-guide/
+    5 入链  /blog/slug-generation-guide/
+    5 入链  /blog/text-analysis-word-count-guide/
+    5 入链  /blog/text-reverse-guide/
+    6 入链  /blog/batch-remove-gps-privacy-guide/
+    6 入链  /blog/border-radius-guide/
+    6 入链  /blog/cron-expression-scheduling/
+    6 入链  /blog/data-format-conversion-overview/
+    6 入链  /blog/diff-algorithms-lcs-myers/
+    6 入链  /blog/http-status-codes-overview/
+    6 入链  /blog/image-comparison-guide/
+    6 入链  /blog/jpeg-compression-loss-evaluation/
+    6 入链  /blog/json-formatting-guide/
+    6 入链  /blog/number-base-conversion-guide/
+
+=== 审计完成 ===
+扫描页面: 637
+孤立页面: 0
+入链稀疏(<2): 0
+出链稀疏(=0): 0
+无意义锚文本: 0 处
+锚文本低多样性: 14 页
+
+[JSON 报告已生成]
+{
+  "scannedAt": "2026-07-25T00:03:18.602Z",
+  "totalPages": 637,
+  "typeStats": {
+    "static": {
+      "count": 2,
+      "inboundSum": 1272,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    },
+    "tool": {
+      "count": 109,
+      "inboundSum": 1554,
+      "inboundMin": 7,
+      "inboundMax": 36,
+      "inboundAvg": "14.26"
+    },
+    "blog-pagination": {
+      "count": 10,
+      "inboundSum": 100,
+      "inboundMin": 10,
+      "inboundMax": 10,
+      "inboundAvg": "10.00"
+    },
+    "blog-post": {
+      "count": 125,
+      "inboundSum": 1136,
+      "inboundMin": 4,
+      "inboundMax": 23,
+      "inboundAvg": "9.09"
+    },
+    "blog-index": {
+      "count": 1,
+      "inboundSum": 636,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    },
+    "blog-tag": {
+      "count": 389,
+      "inboundSum": 152022,
+      "inboundMin": 390,
+      "inboundMax": 430,
+      "inboundAvg": "390.80"
+    },
+    "home": {
+      "count": 1,
+      "inboundSum": 636,
+      "inboundMin": 636,
+      "inboundMax": 636,
+      "inboundAvg": "636.00"
+    }
+  },
+  "orphanPages": [],
+  "sparseInbound": [],
+  "sparseOutbound": [],
+  "badAnchors": [],
+  "badAnchorsTotal": 0,
+  "lowDiversityAnchors": [
+    {
+      "url": "/password/",
+      "type": "tool",
+      "total": 27,
+      "uniqueAnchors": 5,
+      "topAnchor": "密码生成器",
+      "topCount": 23,
+      "topShare": 0.852
+    },
+    {
+      "url": "/svg-optimizer/",
+      "type": "tool",
+      "total": 24,
+      "uniqueAnchors": 5,
+      "topAnchor": "SVG 优化器",
+      "topCount": 20,
+      "topShare": 0.833
+    },
+    {
+      "url": "/ascii-art/",
+      "type": "tool",
+      "total": 11,
+      "uniqueAnchors": 3,
+      "topAnchor": "ASCII Art 横幅生成器",
+      "topCount": 9,
+      "topShare": 0.818
+    },
+    {
+      "url": "/ip/",
+      "type": "tool",
+      "total": 21,
+      "uniqueAnchors": 5,
+      "topAnchor": "IP 子网计算器",
+      "topCount": 17,
+      "topShare": 0.81
+    },
+    {
+      "url": "/dns/",
+      "type": "tool",
+      "total": 15,
+      "uniqueAnchors": 4,
+      "topAnchor": "DNS 查询工具",
+      "topCount": 12,
+      "topShare": 0.8
+    },
+    {
+      "url": "/punycode/",
+      "type": "tool",
+      "total": 15,
+      "uniqueAnchors": 4,
+      "topAnchor": "Punycode 编解码",
+      "topCount": 12,
+      "topShare": 0.8
+    },
+    {
+      "url": "/random-picker/",
+      "type": "tool",
+      "total": 15,
+      "uniqueAnchors": 4,
+      "topAnchor": "随机选择器",
+      "topCount": 12,
+      "topShare": 0.8
+    },
+    {
+      "url": "/timezone/",
+      "type": "tool",
+      "total": 15,
+      "uniqueAnchors": 4,
+      "topAnchor": "时区转换器",
+      "topCount": 12,
+      "topShare": 0.8
+    },
+    {
+      "url": "/text-shadow/",
+      "type": "tool",
+      "total": 14,
+      "uniqueAnchors": 4,
+      "topAnchor": "CSS 文字阴影生成器",
+      "topCount": 11,
+      "topShare": 0.786
+    },
+    {
+      "url": "/image-resize/",
+      "type": "tool",
+      "total": 23,
+      "uniqueAnchors": 5,
+      "topAnchor": "图片缩放",
+      "topCount": 18,
+      "topShare": 0.783
+    },
+    {
+      "url": "/view-transition/",
+      "type": "tool",
+      "total": 18,
+      "uniqueAnchors": 5,
+      "topAnchor": "CSS view-transition 视图过渡生成器",
+      "topCount": 14,
+      "topShare": 0.778
+    },
+    {
+      "url": "/image-watermark/",
+      "type": "tool",
+      "total": 22,
+      "uniqueAnchors": 6,
+      "topAnchor": "图片水印",
+      "topCount": 17,
+      "topShare": 0.773
+    },
+    {
+      "url": "/lorem/",
+      "type": "tool",
+      "total": 13,
+      "uniqueAnchors": 4,
+      "topAnchor": "占位文本生成器",
+      "topCount": 10,
+      "topShare": 0.769
+    },
+    {
+      "url": "/password-hash/",
+      "type": "tool",
+      "total": 13,
+      "uniqueAnchors": 4,
+      "topAnchor": "密码哈希工具",
+      "topCount": 10,
+      "topShare": 0.769
+    }
+  ]
+}
