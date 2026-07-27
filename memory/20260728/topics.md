@@ -941,3 +941,163 @@ description 同步精简至 100 字以内，保留核心关键词与功能描述
 4. 持续低入链监测
 5. 工具矩阵剩余未覆盖工具的协同博客规划
 6. 2 个 hints 清理（可选）
+
+---
+
+# 第 162 轮 · 工具页 SEO 元数据二轮优化（16 个 title>=45 字页面全量清零）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 161 轮（commit e1af667 / docs 2b0e26e）：工具页 SEO 元数据首轮优化（8 个 title>50 字页面）
+- 第 161 轮遗留问题：剩余 56 个 title>35 字的工具页，其中 4 个 title 在 45-50 字之间
+- 工作树状态：clean（2b0e26e 已推送）
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接上轮"继续优化工具页 SEO 元数据"建议，扫描发现 16 个 title>=45 字页面（上轮统计口径为 4 个 45-50 字，实际扫描为 16 个 >=45 字），全量精简至 40 字以内，同步精简 4 个过长 description**
+
+工具页 title 长度全量扫描结论（Node 脚本批量分析 112 个 .astro 页面）：
+- title>=45 字页面：16 个（本轮目标）
+- title 35-44 字页面：41 个（后续迭代处理）
+- title<35 字页面：55 个（已达标）
+
+## 完成任务
+
+### 单元 1：批量精简 16 个工具页 title（commit 2d4869c）
+| 工具页 | 原 title 字数 | 新 title | 新 title 字数 |
+| --- | --- | --- | --- |
+| anchor-positioning.astro | 49 | CSS 锚点定位生成器 - anchor-positioning 可视化 | 28 |
+| http-status.astro | 49 | HTTP 状态码查询工具 - 含义与 RESTful 用法 | 24 |
+| jwt-sign.astro | 49 | JWT 签名生成器 - 在线签发 HS/RS/ES 算法 | 24 |
+| diff.astro | 48 | 文本对比工具 - Diff 差异比较与高亮 | 18 |
+| image-crop.astro | 48 | 图片裁剪工具 - 在线多比例可视化裁剪 | 18 |
+| transition.astro | 48 | CSS transition 过渡生成器 - cubic-bezier 可视化 | 33 |
+| http-request.astro | 47 | HTTP 请求代码生成器 - cURL/fetch/axios 互转 | 28 |
+| url.astro | 47 | URL 编解码工具 - encodeURI 在线转换 | 22 |
+| ascii-art.astro | 46 | ASCII Art 文本横幅生成器 - 三字体实时渲染 | 23 |
+| nesting.astro | 46 | CSS Nesting 原生嵌套生成器 - 在线可视化 | 24 |
+| transform.astro | 46 | CSS transform 生成器 - 平移旋转缩放倾斜 | 24 |
+| base32.astro | 45 | Base32 编解码工具 - RFC 4648 与 Crockford 变体 | 29 |
+| dns.astro | 45 | DNS 查询工具 - DoH 多记录类型在线查询 | 21 |
+| json-to-ts.astro | 45 | JSON 转 TypeScript 接口生成器 - 在线推断 | 26 |
+| starting-style.astro | 45 | CSS @starting-style 入场动画生成器 - 在线可视化 | 31 |
+| svg-optimizer.astro | 45 | SVG 优化器 - 在线 SVG 压缩与精简工具 | 20 |
+
+### 单元 2：精简 4 个过长 description（commit 2d4869c，与 title 同批提交）
+| 工具页 | 原 desc 字数 | 新 desc 字数 | 精简要点 |
+| --- | --- | --- | --- |
+| image-crop.astro | ~300 | ~100 | 删除 Ctrl+Z 快捷键、导出格式、场景举例等冗余细节，保留核心功能与比例 |
+| http-request.astro | ~165 | ~95 | 合并请求体格式与超时控制描述，保留五语言与认证方式 |
+| dns.astro | ~210 | ~95 | 删除服务器列表与 16 种记录类型枚举，保留核心协议与关键能力 |
+| svg-optimizer.astro | ~190 | ~90 | 删除场景举例与规则细节，保留核心优化能力与预设开关 |
+
+### 单元 3：全量验收
+- title>=45 字页面数复扫：**0**（从 16 降至 0）✅
+- 剩余最长 title 为 44 字（animation/color/css-math），符合 ≤45 字目标
+- `npm run build`：1079 页面构建成功（37.44s），postbuild 自动运行报告"残留目录: 0 个" ✅
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）✅
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性 ✅
+
+### 单元 4：Git 提交推送
+- commit 2d4869c：refactor: 精简16个工具页SEO元数据-title降至40字内并精简过长description（16 文件 +20/-20）
+- push：2b0e26e..2d4869c HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：137 篇（无变化）
+- 页面：1079 页（无变化）
+
+## 验收结果
+- title>=45 字页面 ✅（从 16 降至 0）
+- 构建 ✅（1079 页面，37.44s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，16 文件 +20/-20）
+
+## 数据洞察
+- **title 长度优化策略**：本轮将"工具名 - 详细功能枚举"模式精简为"工具名 - 核心能力概括"，如 jwt-sign 从"在线签发 HS256/RS256/ES256 JSON Web Token"简化为"在线签发 HS/RS/ES 算法"，保留算法家族关键词但删除重复的"JSON Web Token"（已在工具名中隐含）
+- **description 精简价值**：image-crop 原描述 300 字远超搜索引擎索引价值区间，精简至 100 字后保留核心功能（比例/手柄/撤销/构图/批量）与本地处理定位，删除快捷键、导出格式、场景举例等可由页面正文承载的细节
+- **title>=45 字清零里程碑**：经第 161 轮（8 个 >50 字）与第 162 轮（16 个 >=45 字）两轮迭代，工具页 title 长度全部控制在 44 字以内，加 "- 工具盒子" 后缀后约 49 字，平衡品牌曝光与搜索展现可读性
+- **上轮统计口径修正**：第 161 轮记录"4 个 title 45-50 字"，本轮实际扫描为 16 个 >=45 字，差异源于上轮以 50 字为扫描下限，未覆盖 45-49 字区间。本轮以下探至 45 字为标准完成全量清零
+
+## 遗留问题
+- 工具页 SEO 元数据质量债：剩余 41 个 title 35-44 字的页面（最长 44 字，已在合理区间，后续可选优化）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+- 工具矩阵中剩余 11 个未覆盖工具待评估可成链性
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 新博客 SEO 收录监测（css-scroll-render + sql-to-report + randomness-generation 三篇近期博客）
+3. 持续低入链监测（验证本轮 title 精简未影响内链锚文本）
+4. 工具矩阵剩余未覆盖工具的协同博客规划（11 个未覆盖工具）
+5. 可选：继续优化 title 35-44 字的工具页（优先级低，已达标区间）
+6. 2 个 hints 清理（可选，低优先级，均有意保留）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 3 篇近期博客的搜索收录变化
+
+---
+
+## 第 162 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 162 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：工具页 SEO 元数据二轮优化（16 个 title>=45 字页面全量清零）
+**Commit**：2d4869c
+**Push**：2b0e26e..2d4869c HEAD -> main
+
+### 完成任务
+1. ✅ 全量扫描 112 个工具页 title 长度，定位 16 个 title>=45 字页面
+2. ✅ 精简 16 个工具页 title 至 40 字以内（最长 33 字，最短 18 字）
+3. ✅ 精简 4 个过长 description 至 100 字内（image-crop/http-request/dns/svg-optimizer）
+4. ✅ title>=45 字页面数从 16 降至 0
+5. ✅ 构建成功（1079 页面，37.44s，postbuild 0 残留）
+6. ✅ SEO 审计全指标归零（brokenLinks=0）
+7. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+8. ✅ Git 提交推送完成（1 次 commit，16 文件 +20/-20）
+
+### 修改文件
+- `src/pages/anchor-positioning.astro`（title 49→28 字）
+- `src/pages/http-status.astro`（title 49→24 字）
+- `src/pages/jwt-sign.astro`（title 49→24 字）
+- `src/pages/diff.astro`（title 48→18 字）
+- `src/pages/image-crop.astro`（title 48→18 字 + description ~300→~100 字）
+- `src/pages/transition.astro`（title 48→33 字）
+- `src/pages/http-request.astro`（title 47→28 字 + description ~165→~95 字）
+- `src/pages/url.astro`（title 47→22 字）
+- `src/pages/ascii-art.astro`（title 46→23 字）
+- `src/pages/nesting.astro`（title 46→24 字）
+- `src/pages/transform.astro`（title 46→24 字）
+- `src/pages/base32.astro`（title 45→29 字）
+- `src/pages/dns.astro`（title 45→21 字 + description ~210→~95 字）
+- `src/pages/json-to-ts.astro`（title 45→26 字）
+- `src/pages/starting-style.astro`（title 45→31 字）
+- `src/pages/svg-optimizer.astro`（title 45→20 字 + description ~190→~90 字）
+
+### 验证结果
+- title>=45 字页面 ✅（从 16 降至 0，剩余最长 44 字）
+- 构建 ✅（1079 页面，37.44s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，16 文件 +20/-20）
+
+### 数据洞察
+- title 长度优化策略：将"工具名 - 详细功能枚举"精简为"工具名 - 核心能力概括"，保留关键词但删除重复
+- description 精简价值：300 字远超索引价值区间，精简至 100 字保留核心功能与定位
+- title>=45 字清零里程碑：经两轮迭代工具页 title 全部控制在 44 字以内
+
+### 遗留问题
+- 剩余 41 个 title 35-44 字工具页（已达标区间，可选优化）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 astro check hints（均有意保留）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 新博客 SEO 收录监测
+3. 持续低入链监测
+4. 工具矩阵剩余未覆盖工具的协同博客规划
+5. 可选：继续优化 title 35-44 字工具页
+6. 2 个 hints 清理（可选）
