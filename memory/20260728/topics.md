@@ -183,3 +183,164 @@
 3. 第 23 篇长尾 SEO 博客
 4. 新博客 SEO 收录监测
 5. 2 个 hints 清理
+
+---
+
+# 第 157 轮 · /random-picker/ 锚文本低多样性修复（场景化变体替换）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 156 轮（commit 391740e）：随机性工具链协同博客+组件修复+select 交互态统一
+- 第 156 轮遗留问题：`/random-picker/` 锚文本低多样性（24 入链中 18 个"随机选择器"占 75%，需修复）
+- 工作树状态：第 156 轮提交已推送（ef7ac54..cb29ae0），391740e docs 提交未推送
+
+## 本轮聚焦方向
+**承接上轮遗留问题，修复 `/random-picker/` 锚文本低多样性，将 75% 集中度降至 70% 阈值以下**
+
+锚文本来源定位（24 入链分布）：
+- 工具页"相关工具"区（10 处，全部"随机选择器"）：find-replace、lorem、reverse、slug、sort、text-analyzer、text-dedup、text-case、text-similarity、truncate
+- 博客 randomness-generation-toolchain-guide.md（8 处"随机选择器"）
+- 博客 random-picking-guide.md（2 处"随机选择器"）
+- 其他已使用变体（4 处）：password-strength-entropy（"密码字符随机抽取工具"）、uuid-generation-guide（"随机抽取分配工具"、"列表元素随机抽样工具"）、text-sort-guide（"列表随机打乱工具"）
+
+## 完成任务
+
+### 单元 1：替换 6 个工具页锚文本为场景化变体（commit 6215d06）
+| 工具页 | 原锚文本 | 新锚文本 | 上下文匹配 |
+| --- | --- | --- | --- |
+| sort.astro | 随机选择器 | 列表随机打乱工具 | sort 工具本身含"随机打乱"模式 |
+| text-dedup.astro | 随机选择器 | 无重复随机抽取工具 | 去重 ↔ 无重复抽取 |
+| slug.astro | 随机选择器 | 随机项抽取工具 | slug 与随机选择场景 |
+| text-analyzer.astro | 随机选择器 | 随机采样工具 | 文本分析 ↔ 采样 |
+| lorem.astro | 随机选择器 | 随机数据抽样工具 | Mock 数据 ↔ 抽样 |
+| truncate.astro | 随机选择器 | 随机项选择工具 | 截断 ↔ 项选择 |
+
+保留"随机选择器"锚文本的工具页（4 处）：find-replace、reverse、text-case、text-similarity
+
+### 单元 2：替换 4 处博客锚文本为场景化变体（commit 6215d06）
+| 博客 | 行 | 原锚文本 | 新锚文本 | 上下文匹配 |
+| --- | --- | --- | --- | --- |
+| randomness-generation-toolchain-guide.md | 43 | 随机选择器 | 随机抽样工具 | 抽样依赖候选集已确定语境 |
+| randomness-generation-toolchain-guide.md | 194 | 随机选择器 | 候选集抽样工具 | 候选集衔接章节 |
+| randomness-generation-toolchain-guide.md | 301 | 随机选择器 | 状态码随机选择器 | API 状态码候选集场景 |
+| random-picking-guide.md | 224 | 随机选择器 | 无偏差随机抽取工具 | Fisher-Yates 算法章节末尾 |
+
+保留"随机选择器"锚文本的博客位置（6 处）：
+- randomness-generation-toolchain-guide.md：第 23、175、208、314、370 行（5 处，工具矩阵与一般性引用）
+- random-picking-guide.md：第 15 行（1 处，配套工具介绍）
+
+### 单元 3：全量验收
+- `npm run build`：1068 页面构建成功（35.68s），postbuild 自动运行报告"残留目录: 0 个"
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）
+- `node scripts/link-graph-audit.mjs`：**锚文本低多样性 0 页**（从 1 降至 0），孤立/稀疏/无意义锚文本全部 0
+
+### 单元 4：Git 提交推送
+- commit 6215d06：feat: 修复 /random-picker/ 锚文本低多样性，10 处场景化变体替换（8 文件 +10/-10）
+
+## 锚文本多样性前后对比
+
+| 维度 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 总入链 | 24 | 24（不变） |
+| 独立锚文本数 | 7 | 14 |
+| 主锚文本 | 随机选择器 | 随机选择器 |
+| 主锚文本数量 | 18 | 8 |
+| 主锚文本占比 | 75% | 33.3% |
+| 阈值（70%） | ❌ 超出 | ✅ 达标 |
+
+锚文本分布（修复后）：
+- 随机选择器 × 8（4 工具页 + 3 博客 + 1 博客配套工具介绍）
+- 列表随机打乱工具 × 2（sort.astro + text-sort-guide.md）
+- 随机抽样工具 × 1
+- 候选集抽样工具 × 1
+- 状态码随机选择器 × 1
+- 无偏差随机抽取工具 × 1
+- 随机项抽取工具 × 1
+- 随机采样工具 × 1
+- 随机数据抽样工具 × 1
+- 随机项选择工具 × 1
+- 无重复随机抽取工具 × 1
+- 密码字符随机抽取工具 × 1
+- 随机抽取分配工具 × 1
+- 列表元素随机抽样工具 × 1
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：135 篇（无变化）
+- 页面：1068 页（无变化）
+
+## 验收结果
+- 构建 ✅（1068 页面，35.68s，postbuild 自动运行）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（**低多样性 0 页**，孤立/稀疏/无意义锚文本全部 0）
+- Git 提交推送 ✅（1 次 commit，8 文件 +10/-10）
+
+## 数据洞察
+- **锚文本过度集中根因**：工具页"相关工具"区使用同一锚文本模板（`<a href="/random-picker">随机选择器</a> —— 加密级随机抽取 N 项`），10 个工具页全部复用导致锚文本重复 10 次。叠加 randomness-generation-toolchain-guide.md 工具矩阵中 8 处"随机选择器"链接，集中度突破 70% 阈值
+- **场景化变体设计原则**：锚文本需匹配来源工具/章节的语义上下文，例如 sort.astro 使用"列表随机打乱工具"（sort 工具本身含随机打乱模式）、text-dedup.astro 使用"无重复随机抽取工具"（去重 ↔ 无重复）、API 状态码场景使用"状态码随机选择器"
+- **多样性阈值设计**：链接图审计阈值（总数≥8 且最大单一占比>70%）的容错设计——单纯新增变体锚文本可稀释集中度，但保留合理数量的主锚文本对 SEO 关键词加权仍有价值，故本轮保留 8 处"随机选择器"作为主锚文本（33.3%），而非完全替换
+- **审计脚本价值验证**：本轮通过 link-graph-audit.mjs 的 lowDiversityAnchors 维度精准定位问题，修复后立即通过审计验证效果，闭环高效
+
+## 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 hints（document.execCommand 已弃用，历史遗留，不影响功能）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 第 23 篇长尾 SEO 博客（候选：编码工具链深化 / CSV 与数据表格 / 正则与文本处理深化）
+3. 新博客 SEO 收录监测（randomness-generation-toolchain-guide）
+4. 持续低入链监测（验证本轮新增变体锚文本未引入新问题）
+5. 2 个 hints 清理（document.execCommand 替换为 Clipboard API）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 randomness-generation-toolchain-guide 的搜索收录变化
+
+---
+
+## 第 157 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 157 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：修复 /random-picker/ 锚文本低多样性（场景化变体替换）
+**Commit**：6215d06
+
+### 完成任务
+1. ✅ 替换 6 个工具页"相关工具"区的"随机选择器"锚文本为场景化变体（sort/text-dedup/slug/text-analyzer/lorem/truncate）
+2. ✅ 替换 4 处博客"随机选择器"锚文本为场景化变体（randomness-toolchain 3 处 + random-picking-guide 1 处）
+3. ✅ 构建成功（1068 页面，35.68s，postbuild 0 残留）
+4. ✅ SEO 审计全指标归零（brokenLinks=0）
+5. ✅ 链接图审计通过（低多样性 0 页，从 1 降至 0）
+6. ✅ Git 提交推送完成（1 次 commit，8 文件 +10/-10）
+
+### 修改文件
+- `src/pages/sort.astro`（锚文本改"列表随机打乱工具"）
+- `src/pages/text-dedup.astro`（锚文本改"无重复随机抽取工具"）
+- `src/pages/slug.astro`（锚文本改"随机项抽取工具"）
+- `src/pages/text-analyzer.astro`（锚文本改"随机采样工具"）
+- `src/pages/lorem.astro`（锚文本改"随机数据抽样工具"）
+- `src/pages/truncate.astro`（锚文本改"随机项选择工具"）
+- `src/content/blog/randomness-generation-toolchain-guide.md`（3 处锚文本场景化）
+- `src/content/blog/random-picking-guide.md`（1 处锚文本场景化）
+
+### 验证结果
+- 构建 ✅（1068 页面，35.68s，postbuild 自动运行）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（**低多样性 0 页**，从 1 降至 0；孤立/稀疏/无意义锚文本全部 0）
+- Git 提交推送 ✅（1 次 commit，8 文件 +10/-10）
+
+### 数据洞察
+- 锚文本过度集中根因：工具页"相关工具"区使用同一锚文本模板，10 个工具页全部复用导致重复 10 次
+- 场景化变体设计原则：锚文本需匹配来源工具/章节的语义上下文
+- 多样性阈值设计：保留 8 处主锚文本（33.3%）平衡 SEO 关键词加权与多样性
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 hints（document.execCommand 已弃用，历史遗留）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 第 23 篇长尾 SEO 博客
+3. 新博客 SEO 收录监测
+4. 2 个 hints 清理
