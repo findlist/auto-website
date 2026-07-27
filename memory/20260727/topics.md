@@ -2719,3 +2719,280 @@
 - 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
 - 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
 - 可选：观察新博客 security-authentication-toolchain-guide 的搜索收录情况
+
+
+---
+
+# 第 154 轮 · canonical URL 修复 + 低入链博客反向内链补充
+
+## 上下文恢复
+- 承接第 153 轮（commit 7b9254c）：安全认证工具链博客 + 5 工具页反向内链
+- 第 153 轮遗留问题：4 个 tag 页 canonical trailing slash 差异（历史遗留，与点号 slug 有关）
+- 工作树状态：`src/utils/site.ts` 已修改未提交（上一会话修复 normalizeUrlTrailingSlash），`scripts/find-stale-tags.mjs` 已创建未提交
+
+## 本轮聚焦方向
+**修复 tag 页 canonical URL 误判 + 为低入链博客补充反向内链**
+
+承接第 153 轮"4 个 tag 页 canonical trailing slash 差异"遗留问题。本轮聚焦：
+1. 修复 `normalizeUrlTrailingSlash` 将含点号 tag slug（如 asn.1、x.509）误判为文件 URL 的问题
+2. 为入链数仅 4 的博客（text-dedup-guide / text-sort-guide）在 text-processing-toolchain-guide.md 补充反向内链
+3. 新增 find-stale-tags.mjs 诊断清理脚本，识别 tagToSlug 修复前的残留 tag 目录
+
+## 完成任务
+
+### 单元 1：修复 normalizeUrlTrailingSlash（commit d20c704）
+- **问题根因**：`tagToSlug` 已更新为移除特殊字符（含点号），"ASN.1" → "asn1"、"X.509" → "x509"。但 `normalizeUrlTrailingSlash` 使用模糊正则检测文件扩展名，将含点号的 tag slug（如 `asn.1`）误判为文件 URL，错误移除末尾斜杠，导致 canonical URL 与页面 URL 不一致
+- **修复方案**：将模糊的文件扩展名正则替换为静态资源扩展名白名单（html/xml/json/css/js/png/woff 等 20+ 种），仅这些扩展名视为文件形式 URL 不加末尾斜杠
+- **效果**：canonical mismatch 从 4 降至 0
+
+### 单元 2：新增 find-stale-tags.mjs 残留目录诊断清理脚本（commit d20c704）
+- **背景**：`tagToSlug` 修复前生成的 tag 目录含特殊字符（`e()`、`@scope`、`!important`、`let's-encrypt` 等），这些目录中的旧 HTML 包含指向 `asn.1`、`x.509` 等含点号 slug 的旧链接
+- **脚本功能**：从博客 frontmatter 收集有效 slug 集合，对比 dist/blog/tag/ 下的目录，识别并清理残留目录
+- **已知限制**：Windows 下 Node.js `rmSync` 无法删除含 `()`、`@`、`!`、`&`、`'` 等特殊字符的目录（静默失败），但 Cloudflare Pages 在 Linux 构建不受影响
+- **诊断结果**：识别 15 个残留目录，Linux 下可正常清理
+
+### 单元 3：为低入链博客补充反向内链（commit 79f5448）
+- **目标**：text-dedup-guide（4 入链）和 text-sort-guide（4 入链）入链数偏低
+- **方案**：在 text-processing-toolchain-guide.md 的对应工序章节末尾插入"深入阅读"引用块
+- **插入位置与锚文本**：
+  | 博客 | 插入位置 | 锚文本 |
+  |------|---------|--------|
+  | /blog/text-dedup-guide | 阶段三：行级去重 末尾 | 文本去重的三种模式与底层实现原理 |
+  | /blog/text-sort-guide | 阶段四：多模式排序 末尾 | 8 种排序模式的算法实现与复杂度分析 |
+- **锚文本策略**：使用差异化锚文本，分别突出"三种模式与实现原理"和"8 种模式与算法分析"，避免锚文本集中度过高
+
+### 单元 4：构建 + 审计复验 + 类型检查
+- `npm run build`：1063 页面构建成功（24.88s）
+- `node scripts/seo-audit.mjs`：
+  - canonical=0 ✅（从 4 降至 0，site.ts 修复生效）
+  - title/desc/og/imgAlt/jsonLd 均为 0 ✅
+  - brokenLinks=58：15 个残留 tag 目录中的旧 HTML 包含指向含点号 slug 的断链（本地 Windows 残留，不影响线上 Linux 构建）
+- `node scripts/link-graph-audit.mjs`：全绿 ✅
+  - 0 孤立页面 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性（连续 24 轮健康度保持）
+- `npx astro check`：0 errors / 0 warnings / 2 hints ✅
+
+### 单元 5：Git 提交推送
+- commit d20c704：fix: 修复 normalizeUrlTrailingSlash 对含点号 tag slug 的误判，新增残留 tag 目录清理脚本（2 文件 +83/-2）
+- commit 79f5448：feat: 为 text-dedup-guide/text-sort-guide 补充反向内链（1 文件 +4）
+- push：7b9254c..79f5448 HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：134 篇（无变化）
+- 页面：1063 页（无变化）
+
+## 验收结果
+- 构建 ✅（1063 页面，24.88s）
+- canonical ✅（0 mismatch，从 4 降至 0）
+- 链接图审计 ✅（全绿，连续 24 轮 0 低多样性）
+- 类型检查 ✅（0 errors / 0 warnings / 2 hints）
+- Git 提交推送 ✅（2 次 commit）
+
+## 数据洞察
+- **canonical 修复链路**：`tagToSlug` 移除特殊字符（点号）→ `normalizeUrlTrailingSlash` 需同步更新扩展名检测逻辑 → 用白名单替代模糊正则避免误判
+- **残留目录根因**：Windows 下 Node.js `rmSync` 无法删除含 `()`、`@`、`!` 等特殊字符的目录（静默失败），Astro 构建时清理 dist/ 也无法删除这些目录。但 Cloudflare Pages 在 Linux 构建不受影响，线上无此问题
+- **反向内链策略**：在工具链博客的对应工序章节末尾插入"深入阅读"引用块，使用差异化锚文本，既提升目标博客入链数又避免锚文本集中度过高
+
+## 遗留问题
+- 58 个本地 Windows 残留目录断链（不影响线上，但影响本地审计准确性；需在 Linux 环境或用支持特殊字符的删除方式清理）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 18 天）
+- 2 个 hints（历史遗留）
+- 审计报告与优化文档未跟踪（19 个文档历史文件）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 第 22 篇长尾 SEO 博客（候选：编码工具链深化 / CSV 与数据表格 / 正则与文本处理深化）
+3. 持续低入链监测（验证 text-dedup-guide/text-sort-guide 入链数从 4 提升至 5+）
+4. 审计报告归档决策（19 个未跟踪文档）
+5. 新博客 SEO 收录监测
+6. 考虑将 find-stale-tags.mjs 集成为 postbuild 脚本（Linux 环境下自动清理残留目录）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 text-dedup-guide / text-sort-guide 反向内链补充后的搜索收录变化
+
+---
+
+## 第 154 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 154 轮（2026-07-27）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：canonical URL 修复 + 低入链博客反向内链补充
+**Commit**：d20c704 + 79f5448
+**Push**：7b9254c..79f5448 HEAD -> main
+
+### 完成任务
+1. ✅ 修复 normalizeUrlTrailingSlash 对含点号 tag slug 的误判（白名单替代模糊正则）
+2. ✅ 新增 find-stale-tags.mjs 残留 tag 目录诊断清理脚本
+3. ✅ 为 text-dedup-guide / text-sort-guide 在 text-processing-toolchain-guide.md 补充反向内链
+4. ✅ 构建成功（1063 页面，24.88s）
+5. ✅ canonical mismatch 从 4 降至 0（site.ts 修复生效）
+6. ✅ 链接图审计全绿（连续 24 轮 0 低多样性）
+7. ✅ 类型检查通过（0 errors / 0 warnings / 2 hints）
+8. ✅ Git 提交推送完成（2 次 commit，3 文件 +87/-2）
+
+### 修改文件
+- `src/utils/site.ts`（normalizeUrlTrailingSlash：模糊正则 → 静态扩展名白名单）
+- `scripts/find-stale-tags.mjs`（新增，残留 tag 目录诊断清理脚本）
+- `src/content/blog/text-processing-toolchain-guide.md`（阶段三/四末尾插入反向内链）
+
+### 验证结果
+- 构建 ✅（1063 页面，24.88s）
+- canonical ✅（0 mismatch，从 4 降至 0）
+- 链接图审计 ✅（全绿，连续 24 轮 0 低多样性）
+- 类型检查 ✅（0 errors / 0 warnings / 2 hints）
+
+### 数据洞察
+- canonical 修复链路：tagToSlug 移除点号 → normalizeUrlTrailingSlash 需同步更新扩展名检测 → 白名单替代模糊正则
+- 残留目录根因：Windows rmSync 无法删除特殊字符目录（静默失败），Linux 不受影响
+- 反向内链策略：工序章节末尾"深入阅读"引用块 + 差异化锚文本
+
+### 遗留问题
+- 58 个本地 Windows 残留目录断链（不影响线上 Linux 构建）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 hints（历史遗留）
+- 审计报告与优化文档未跟踪（19 个文档历史文件）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 第 22 篇长尾 SEO 博客
+3. 持续低入链监测（验证 text-dedup-guide/text-sort-guide 入链数提升）
+4. 审计报告归档决策
+5. 新博客 SEO 收录监测
+6. 考虑 find-stale-tags.mjs 集成为 postbuild 脚本
+
+### 需用户操作
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 text-dedup-guide / text-sort-guide 反向内链补充后的搜索收录变化
+
+---
+
+# 第 155 轮 · Windows 残留 tag 目录清理修复 + postbuild 集成（brokenLinks 58→0）
+
+## 上下文恢复
+- 承接第 154 轮（commit 79f5448）：canonical URL 修复 + 低入链博客反向内链补充
+- 第 154 轮遗留问题：58 个本地 Windows 残留目录断链（含特殊字符的 tag 目录无法用 rmSync 删除）
+- 第 154 轮下轮建议第 6 项："考虑将 find-stale-tags.mjs 集成为 postbuild 脚本"——本轮直接解决
+- 工作树状态：memory/20260727/topics.md 有未提交修改（第 154 轮进度沉淀），19 个未跟踪文档历史文件
+
+## 本轮聚焦方向
+**修复 Windows 下残留 tag 目录清理 + 集成为 postbuild 脚本，消除本地审计噪声**
+
+承接第 154 轮"58 个本地残留目录断链"遗留问题。本轮聚焦：
+1. 改进 find-stale-tags.mjs 的跨平台删除能力（rmSync 静默失败 → PowerShell -LiteralPath 兜底）
+2. 验证清理后 seo-audit brokenLinks 归零
+3. 集成为 postbuild 脚本，构建后自动清理防止复发
+
+## 完成任务
+
+### 单元 1：改进 find-stale-tags.mjs 跨平台删除逻辑（commit 4bee010）
+- **问题根因**：Windows 下 Node.js `rmSync` 对含 `!`、`&`、`@`、`()`、`'` 等特殊字符的目录静默失败（不抛异常但不删除），导致脚本报告"已删除"但目录仍在
+- **修复方案**：`removeStaleDir()` 函数分两步——先尝试 rmSync，再用 `existsSync` 验证是否真删除；若仍存在且为 Windows 平台，用 `execSync` 调用 PowerShell `Remove-Item -LiteralPath` 强制删除
+- **PowerShell -LiteralPath 优势**：不解释通配符，能正确处理含 `!`、`&`、`@`、`()`、`'` 等特殊字符的路径；单引号字符串中单引号本身用两个单引号转义
+- **删除验证**：清理后再次运行脚本确认残留目录从 15 降至 0
+
+### 单元 2：集成为 postbuild 脚本（commit 4bee010）
+- 在 package.json 中添加 `"postbuild": "node scripts/find-stale-tags.mjs"`
+- 构建后自动运行残留目录诊断清理，防止未来 tagToSlug 变更再次产生残留
+- 跨平台兼容：Linux 下 rmSync 正常工作，Windows 下 PowerShell 兜底
+
+### 单元 3：全量验收
+- `npm run build`：1063 页面构建成功（24.17s），postbuild 自动运行报告"残留目录: 0 个"
+- `node scripts/seo-audit.mjs`：**brokenLinks 从 58 降至 0**，全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）
+- `node scripts/link-graph-audit.mjs`：全绿（0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性，连续 25 轮健康度保持）
+- `npx astro check`：0 errors / 0 warnings / 2 hints（历史遗留）
+
+### 单元 4：Git 提交推送
+- commit 4bee010：feat: 改进 find-stale-tags 跨平台删除并集成为 postbuild 脚本（2 文件 +47/-4）
+- push：79f5448..4bee010 HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：134 篇（无变化）
+- 页面：1063 页（无变化）
+
+## 验收结果
+- 构建 ✅（1063 页面，24.17s，postbuild 自动运行）
+- SEO 审计 ✅（全绿，brokenLinks 58→0）
+- 链接图审计 ✅（全绿，连续 25 轮 0 低多样性）
+- 类型检查 ✅（0 errors / 0 warnings / 2 hints）
+- Git 提交推送 ✅（commit 4bee010）
+
+## 数据洞察
+- **Windows rmSync 静默失败根因**：Node.js `fs.rmSync` 在 Windows 下对含特殊字符的目录不抛异常但不删除，这是 Node.js 已知限制。`existsSync` 验证是识别静默失败的可靠手段
+- **PowerShell -LiteralPath 是 Windows 删除特殊字符目录的可靠方案**：相比 `cmd /c rd` 需要处理 `!`（延迟扩展）和 `&`（命令分隔符）的转义，PowerShell 单引号字符串只需转义单引号本身，更健壮
+- **postbuild 集成效果**：构建后自动运行清理脚本，未来 tagToSlug 变更不再需要手动清理残留目录，形成自动化防线
+- **审计噪声消除**：58 个 brokenLinks 全部来自旧构建残留目录中的断链，清理后审计恢复准确，后续迭代的断链检测不再受噪声干扰
+
+## 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 18 天）
+- 2 个 hints（document.execCommand 已弃用，历史遗留，不影响功能）
+- 审计报告与优化文档未跟踪（19 个文档历史文件）
+- memory/20260727/topics.md 有未提交修改（含本轮进度沉淀，将在本轮收尾单独提交）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 第 22 篇长尾 SEO 博客（候选：编码工具链深化 / CSV 与数据表格 / 正则与文本处理深化）
+3. 持续低入链监测（验证 text-dedup-guide/text-sort-guide 入链数从 4 提升至 5+）
+4. 审计报告归档决策（19 个未跟踪文档）
+5. 新博客 SEO 收录监测
+6. 2 个 hints 清理（document.execCommand 替换为 Clipboard API）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 text-dedup-guide / text-sort-guide 反向内链补充后的搜索收录变化
+
+---
+
+## 第 155 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 155 轮（2026-07-27）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：Windows 残留 tag 目录清理修复 + postbuild 集成（消除本地审计噪声）
+**Commit**：4bee010
+**Push**：79f5448..4bee010 HEAD -> main
+
+### 完成任务
+1. ✅ 改进 find-stale-tags.mjs 跨平台删除逻辑（rmSync + PowerShell -LiteralPath 兜底 + existsSync 验证）
+2. ✅ 清理 15 个含特殊字符的残留 tag 目录（!important/@scope/anchor()/let's-encrypt 等）
+3. ✅ 集成为 postbuild 脚本（package.json 添加 postbuild 命令）
+4. ✅ 构建成功（1063 页面，24.17s，postbuild 自动运行）
+5. ✅ SEO 审计 brokenLinks 从 58 降至 0（全指标归零）
+6. ✅ 链接图审计全绿（连续 25 轮 0 低多样性）
+7. ✅ 类型检查通过（0 errors / 0 warnings / 2 hints）
+8. ✅ Git 提交推送完成（1 次 commit，2 文件 +47/-4）
+
+### 修改文件
+- `scripts/find-stale-tags.mjs`（新增 removeStaleDir 函数：rmSync + PowerShell -LiteralPath 兜底 + existsSync 验证）
+- `package.json`（添加 postbuild 脚本）
+
+### 验证结果
+- 构建 ✅（1063 页面，24.17s，postbuild 自动运行）
+- SEO 审计 ✅（brokenLinks 58→0，全指标归零）
+- 链接图审计 ✅（全绿，连续 25 轮 0 低多样性）
+- 类型检查 ✅（0 errors / 0 warnings / 2 hints）
+
+### 数据洞察
+- Windows rmSync 静默失败根因：不抛异常但不删除，existsSync 验证是可靠识别手段
+- PowerShell -LiteralPath 是 Windows 删除特殊字符目录的可靠方案（单引号字符串只需转义单引号本身）
+- postbuild 集成形成自动化防线，未来 tagToSlug 变更不再需要手动清理
+- 审计噪声消除：58 个 brokenLinks 全部来自旧构建残留，清理后审计恢复准确
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 hints（document.execCommand 已弃用，历史遗留）
+- 审计报告与优化文档未跟踪（19 个文档历史文件）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 第 22 篇长尾 SEO 博客
+3. 持续低入链监测
+4. 审计报告归档决策
+5. 2 个 hints 清理（document.execCommand → Clipboard API）
+
+### 需用户操作
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
