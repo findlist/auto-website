@@ -31,19 +31,28 @@ export function getSiteUrl(site: URL | undefined): string {
  * 处理规则：
  * - 根路径 `/` 保持原样
  * - 已含尾部斜杠的保持原样
- * - 文件形式 URL（含扩展名如 .xml / .png）不处理
+ * - 文件形式 URL（白名单扩展名如 .xml / .png）不处理
  * - 其余目录形式路径追加尾部斜杠
  *
  * 用于全站 canonical / prev-next / JSON-LD url 字段统一，
  * 避免搜索引擎将 /foo 与 /foo/ 识别为重复页面。
  *
+ * 注意：早期版本使用 `/\.[a-z0-9]+$/i` 模糊匹配扩展名，
+ * 会将含点号的路径段（如 /blog/tag/asn.1/、/blog/tag/cargo.toml/）
+ * 误判为文件扩展名导致漏加斜杠。现改为精确的静态资源扩展名白名单。
+ *
  * @param url - 待规范化的绝对或相对 URL
  * @returns 规范化后的 URL；解析失败时原样返回
  */
+// 静态资源扩展名白名单：仅这些扩展名视为文件形式 URL，不加末尾斜杠
+// 覆盖页面 feed（xml/json）、图片、字体、样式脚本、文档归档等常见静态资源
+const STATIC_FILE_EXT_REGEX =
+  /\.(html|htm|xml|json|txt|css|js|mjs|cjs|png|jpe?g|gif|svg|webp|ico|bmp|avif|woff2?|ttf|otf|eot|pdf|zip|gz)$/i;
+
 export function normalizeUrlTrailingSlash(url: string): string {
   try {
     const u = new URL(url);
-    if (u.pathname === '/' || u.pathname.endsWith('/') || /\.[a-z0-9]+$/i.test(u.pathname)) {
+    if (u.pathname === '/' || u.pathname.endsWith('/') || STATIC_FILE_EXT_REGEX.test(u.pathname)) {
       return url;
     }
     return u.origin + u.pathname + '/' + u.search + u.hash;
