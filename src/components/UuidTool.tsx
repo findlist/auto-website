@@ -59,7 +59,9 @@ export default function UuidTool() {
   const [hyphen, setHyphen] = useState<boolean>(true);
   const [upper, setUpper] = useState<boolean>(false);
   const [live, setLive] = useState<boolean>(true);
-  const [items, setItems] = useState<UuidItem[]>(() => generateBatch(5));
+  // 初始为空数组：避免 SSR 与 CSR 各自调用 crypto.randomUUID 生成不同 UUID 导致的水合不一致
+  // 首批 UUID 由下方 useEffect 在客户端挂载后触发 regenerate 生成
+  const [items, setItems] = useState<UuidItem[]>([]);
   const [notice, setNotice] = useState<string>('');
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedSeq, setCopiedSeq] = useState<number | null>(null);

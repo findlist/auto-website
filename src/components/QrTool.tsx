@@ -275,6 +275,16 @@ export default function QrTool() {
     setNotice('');
     setGenError('');
     setCopied(false);
+    // 同步清空结果状态与 canvas：live=false 时 useEffect 不会触发 generate 清空，
+    // 需在此显式重置，否则预览区会残留旧二维码、下载按钮仍可点击
+    setStats(null);
+    setDataUrl('');
+    setSvgStr('');
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }, []);
 
   // 输入字符数与预估版本提示

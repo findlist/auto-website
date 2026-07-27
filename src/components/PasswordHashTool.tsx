@@ -212,6 +212,11 @@ async function verifyPbkdf2(
   } catch {
     throw new Error('盐或哈希的 Base64 解码失败');
   }
+  // 拒绝空哈希：expectedBytes.length === 0 时 deriveBits(..., 0) 返回空 ArrayBuffer，
+  // 常数时间比较退化为 diff=0 会误判任意密码匹配，构成安全漏洞
+  if (expectedBytes.length === 0) {
+    throw new Error('哈希长度无效：派生位数为 0，任意密码都会被误判为匹配');
+  }
 
   // 重新派生
   const keyMaterial = await crypto.subtle.importKey(
