@@ -294,6 +294,8 @@ export default function JweTool() {
   const [generating, setGenerating] = useState(false);
   // 复制反馈
   const [copied, setCopied] = useState<string>('');
+  // 生成测试 JWE 失败时的错误提示（成功时清空）
+  const [genError, setGenError] = useState('');
 
   // 解析 JWE（输入即解析）
   const parsed: ParsedJwe = useMemo(() => parseJwe(input), [input]);
@@ -354,14 +356,14 @@ export default function JweTool() {
   /** 生成测试 JWE */
   const handleGenerate = useCallback(async () => {
     setGenerating(true);
+    setGenError('');
     try {
       const { jwe, key } = await generateTestJwe();
       setInput(jwe);
       setKeyInput(key);
       setDecryptResult(null);
     } catch (e) {
-      // 生成失败时静默处理（不阻塞 UI）
-      console.error('生成测试 JWE 失败：', e);
+      setGenError('生成测试 JWE 失败：' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setGenerating(false);
     }
@@ -370,13 +372,14 @@ export default function JweTool() {
   /** 载入 PBES2 示例（现场生成可解密的 PBES2 JWE，密码自动填入） */
   const handleLoadPbes2 = useCallback(async () => {
     setGenerating(true);
+    setGenError('');
     try {
       const { jwe, password } = await generateTestPbes2Jwe();
       setInput(jwe);
       setKeyInput(password);
       setDecryptResult(null);
     } catch (e) {
-      console.error('生成 PBES2 测试 JWE 失败：', e);
+      setGenError('生成 PBES2 测试 JWE 失败：' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setGenerating(false);
     }
@@ -385,13 +388,14 @@ export default function JweTool() {
   /** 载入 ECDH-ES 示例（现场生成可解密的 ECDH-ES JWE，接收方私钥 JWK 自动填入） */
   const handleLoadEcdhEs = useCallback(async () => {
     setGenerating(true);
+    setGenError('');
     try {
       const { jwe, receiverPrivJwk } = await generateTestEcdhEsJwe();
       setInput(jwe);
       setKeyInput(receiverPrivJwk);
       setDecryptResult(null);
     } catch (e) {
-      console.error('生成 ECDH-ES 测试 JWE 失败：', e);
+      setGenError('生成 ECDH-ES 测试 JWE 失败：' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setGenerating(false);
     }
@@ -402,7 +406,17 @@ export default function JweTool() {
     setInput('');
     setKeyInput('');
     setDecryptResult(null);
+    setGenError('');
   }, []);
+
+  /** 密钥输入变更时清除陈旧的解密结果，避免旧错误/旧明文误导 */
+  const handleKeyInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+      setKeyInput(e.target.value);
+      if (decryptResult) setDecryptResult(null);
+    },
+    [decryptResult],
+  );
 
   // 输入超长截断
   const inputTooLong = input.length > MAX_INPUT_LENGTH;
@@ -485,6 +499,11 @@ export default function JweTool() {
         {inputTooLong && (
           <p className="jwetool__error" role="alert">
             输入长度超过 {MAX_INPUT_LENGTH} 字符上限，请缩短输入
+          </p>
+        )}
+        {genError && (
+          <p className="jwetool__error" role="alert">
+            {genError}
           </p>
         )}
       </section>
@@ -642,7 +661,7 @@ export default function JweTool() {
             <textarea
               className="jwetool__textarea jwetool__textarea--key"
               value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
+              onChange={handleKeyInputChange}
               placeholder={'-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----'}
               aria-label="RSA 私钥输入框"
               rows={5}
@@ -652,7 +671,7 @@ export default function JweTool() {
             <textarea
               className="jwetool__textarea jwetool__textarea--key"
               value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
+              onChange={handleKeyInputChange}
               placeholder={'{"kty":"EC","crv":"P-256","x":"...","y":"...","d":"..."}'}
               aria-label="EC 私钥 JWK 输入框"
               rows={5}
@@ -663,7 +682,7 @@ export default function JweTool() {
               type="text"
               className="jwetool__input"
               value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
+              onChange={handleKeyInputChange}
               placeholder={algCategory === 'pbes2' ? '请输入 PBES2 密码' : '请输入 base64url 编码的密钥'}
               aria-label="密钥输入框"
               spellCheck={false}

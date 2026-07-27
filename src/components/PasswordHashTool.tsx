@@ -405,17 +405,40 @@ export default function PasswordHashTool() {
     setCopied(false);
   }, []);
 
-  /** 加载示例 */
+  /** 加载示例（示例 hash 与示例密码真实匹配，可在验证模式直接点"验证密码"） */
   const handleLoadExample = useCallback(() => {
     setPassword('correct horse battery staple');
     if (mode === 'verify') {
       setHashInput(
         algorithm === 'bcrypt'
-          ? '$2a$12$abcdefghijklmnopqrstuueg5MBqZ4lAVCB1nlLmv9BpGhQaF1a2u'
-          : 'pbkdf2$100000$SHA-256$wHZS9xnmaTCrhjvBxQ9T3w==$lUfRw1i1Lv0lLBJCNIYq1w==',
+          ? '$2b$12$9fvcy0Hh1YDrdR0RgH7VPel3oY0esiYNSsMMraoMbsSqxn.lPx.Py'
+          : 'pbkdf2$100000$SHA-256$e5fEC0xOI3mXbP3vYE1rfg==$io+9jc8x8GpROYVprurioiGz14u7PkD/pbN3g3R9og0=',
       );
     }
+    // 清空陈旧状态，避免上一次操作的错误/结果误导
+    setError('');
+    setNotice('');
+    setVerifyResult(null);
+    setHashResult(null);
+    setCopied(false);
   }, [mode, algorithm]);
+
+  /** 密码输入变更时清除陈旧的错误与验证结果 */
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (error) setError('');
+    if (verifyResult) setVerifyResult(null);
+    if (notice) setNotice('');
+    if (copied) setCopied(false);
+  }, [error, verifyResult, notice, copied]);
+
+  /** 哈希输入变更时清除陈旧的错误与验证结果 */
+  const handleHashInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setHashInput(e.target.value);
+    if (error) setError('');
+    if (verifyResult) setVerifyResult(null);
+    if (notice) setNotice('');
+  }, [error, verifyResult, notice]);
 
   return (
     <div className="jsontool pwhtool">
@@ -471,7 +494,7 @@ export default function PasswordHashTool() {
               type={showPassword ? 'text' : 'password'}
               className="pwhtool__input pwhtool__input--mono"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               placeholder="输入待哈希 / 验证的密码"
               aria-label="密码输入"
               autoComplete="off"
@@ -551,7 +574,7 @@ export default function PasswordHashTool() {
             <textarea
               className="pwhtool__textarea pwhtool__input--mono"
               value={hashInput}
-              onChange={(e) => setHashInput(e.target.value)}
+              onChange={handleHashInputChange}
               placeholder={
                 algorithm === 'bcrypt'
                   ? '粘贴 bcrypt 哈希：$2a$12$...'
