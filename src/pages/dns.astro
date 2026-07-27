@@ -3,9 +3,9 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import DnsTool from '../components/DnsTool.tsx';
 
 const meta: SiteMeta = {
-  title: 'DNS 查询工具 - DoH 在线 A/AAAA/MX/TXT/CNAME 多记录类型查询',
+  title: 'DNS 查询工具 - DoH 多记录类型在线查询',
   description:
-    '在线 DNS 查询工具：基于 DNS over HTTPS（DoH）协议直连 Cloudflare / Google / DNS.SB 公共服务器，支持 A / AAAA / CNAME / MX / TXT / NS / SOA / PTR / CAA / SRV / DS / DNSKEY / TLSA / HTTPS / SVCB / NAPTR 共 16 种记录类型查询，含 DNSSEC 验证状态、TTL 解读、dig 风格文本导出。浏览器直连 DoH，查询不经本站服务器，零广告零追踪。',
+    '在线 DNS 查询工具：基于 DoH 协议直连 Cloudflare/Google 公共服务器，支持 A/AAAA/CNAME/MX/TXT/NS 等 16 种记录类型，含 DNSSEC 验证、TTL 解读、dig 风格导出。浏览器直连，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',

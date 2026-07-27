@@ -3,9 +3,9 @@ import BaseLayout, { type SiteMeta } from '../layouts/BaseLayout.astro';
 import ImageCropTool from '../components/ImageCropTool.tsx';
 
 const meta: SiteMeta = {
-  title: '图片裁剪工具 - 在线可视化裁剪 1:1/4:3/16:9 多比例 + 撤销重做 + 九宫格构图',
+  title: '图片裁剪工具 - 在线多比例可视化裁剪',
   description:
-    '在线图片裁剪工具：支持自由裁剪与 1:1 / 4:3 / 3:4 / 16:9 / 9:16 / 3:2 / 2:3 / 自定义共 9 种比例，提供 8 个调整手柄的可视化裁剪框，可拖动可调整大小，支持精确数值输入（X/Y/宽/高）与居中、重置、全图快捷操作。内置撤销/重做历史栈（最多 30 步，支持 Ctrl+Z / Ctrl+Shift+Z 快捷键）、九宫格构图辅助线（三分法构图）、批量裁剪与 ZIP 打包下载。导出 PNG / JPEG / WebP / AVIF 格式。基于 Canvas API drawImage 源矩形参数全本地处理，零上传零追踪，适用于头像裁剪、社交媒体封面、视频缩略图、电商主图、证件照等场景。',
+    '在线图片裁剪工具：支持自由裁剪与 1:1/4:3/16:9 等 8 种预设比例，可视化裁剪框含 8 手柄调整，精确数值输入，撤销/重做 30 步历史，九宫格构图辅助线，批量裁剪与 ZIP 下载。Canvas API 全本地处理，零广告零追踪。',
   jsonLd: {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
