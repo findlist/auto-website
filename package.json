@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "postbuild": "node scripts/find-stale-tags.mjs",
+    "postbuild": "node scripts/find-stale-tags.mjs && node scripts/analyze-bundle.mjs --check",
     "preview": "astro preview",
     "check": "astro check"
   },

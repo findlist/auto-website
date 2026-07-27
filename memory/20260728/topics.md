@@ -1261,3 +1261,309 @@ css-math description 同步精简：
 4. 可选：继续优化 title 43 字工具页（6 个）
 5. 可选：继续优化 description 100-141 字工具页（5 个最长的）
 6. 2 个 hints 清理（可选）
+
+---
+
+# 第 164 轮 · 工具页 SEO 元数据四轮优化（title 43 字清零 + description >=120 字清零）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 163 轮（commit 1e441ad docs / 67eab8c refactor）：工具页 SEO 元数据三轮优化（title 44 字清零 + description >150 字清零）
+- 第 163 轮遗留问题：剩余 20 个 title 35-43 字工具页（最长 43 字 6 个）、21 个 description 100-141 字工具页（最长 141 字 user-agent）
+- 工作树状态：clean（1e441ad 已推送）
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接上轮"继续优化 title 43 字工具页 + description 100-141 字工具页"建议，四轮优化 SEO 元数据：①精简 6 个 title=43 字工具页 ②精简 5 个 description>=120 字工具页**
+
+工具页 SEO 元数据四轮扫描结论（scan-meta-length.mjs）：
+- title>=40 字页面：20 个（最长 43 字 6 个）
+- description>=100 字页面：21 个（最长 141 字 user-agent）
+- 决策：①精简 6 个 title=43 字工具页至 40 字以内 ②精简 5 个 description>=120 字工具页至 100 字以内
+
+## 完成任务
+
+### 单元 1：精简 6 个 title=43 字工具页（commit 337719a）
+| 工具页 | 原 title 字数 | 新 title | 新 title 字数 |
+| --- | --- | --- | --- |
+| html-entities.astro | 43 | HTML 实体编解码工具 - 命名与数字实体互转 | 24 |
+| jwe.astro | 43 | JWE 解码工具 - 解密 JSON Web Encryption 令牌 | 28 |
+| light-dark.astro | 43 | CSS light-dark() 颜色函数生成器 - 双主题配色可视化 | 30 |
+| lorem.astro | 43 | 占位文本与 Mock 数据生成器 - Lorem Ipsum 与中文假数据 | 30 |
+| markdown.astro | 43 | Markdown 在线预览器 - 实时分屏渲染与 HTML 导出 | 28 |
+| text-similarity.astro | 43 | 文本相似度对比工具 - Levenshtein 与 Jaccard 算法 | 28 |
+
+精简策略（沿用 161-163 轮归纳的三类模式）：
+1. 删除冗余前缀（"在线"已在工具名隐含）
+2. 删除冗余后缀（"工具"已在 title 主体）
+3. 删除具体枚举（html-entities 删除实体示例、text-similarity 删除"编辑距离/相似度/计算"）
+4. 紧凑格式（lorem 删除"中文占位"与"假数据"的重复）
+
+### 单元 2：精简 5 个 description>=120 字工具页（commit 337719a）
+| 工具页 | 原 desc 字数 | 新 desc 字数 | 精简要点 |
+| --- | --- | --- | --- |
+| user-agent.astro | 141 | ~70 | 删除浏览器枚举（Chrome/Edge 等）、设备类型枚举、"可一键载入解析" |
+| http-request.astro | 140 | ~75 | 删除"五种语言代码"重复、认证方式枚举（Basic/Bearer/API Key 移正文） |
+| dns.astro | 126 | 112 | 删除"公共服务器"、"TTL 解读"、"浏览器直连"，保留记录类型枚举（SEO 关键词） |
+| image-crop.astro | 121 | ~80 | 删除"支持"、"精确数值输入"、"Canvas API"，紧凑表达 |
+| hash.astro | 117 | ~70 | 删除"免费的"、"使用浏览器原生"，紧凑格式 |
+
+dns description 112 字权衡：dns 的 meta.description 含大量英文 SEO 关键词（DNS/DoH/Cloudflare/Google/A/AAAA/CNAME/MX/TXT/NS/DNSSEC/dig），按 Unicode 码点计算为 112 字。记录类型枚举（A/AAAA/CNAME/MX/TXT/NS）是高价值长尾 SEO 关键词（用户搜索"dns mx 查询"等），保留符合质量优先原则。第 163 轮已接受 tls 107 字先例，112 字在合理区间。
+
+### 单元 3：全量验收
+- 工具页 title 长度复扫：title>=40 字从 20 降至 14，**43 字清零** ✅（最长 42 字 clip-path/hash/position-area）
+- 工具页 description 长度复扫：description>=100 字从 21 降至 17，**>=120 字清零** ✅（最长 113 字 trigonometric）
+- `npm run build`：1079 页面构建成功（24.80s），postbuild 自动运行报告"残留目录: 0 个" ✅
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）✅
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性 ✅
+
+### 单元 4：Git 提交推送
+- commit 337719a：refactor: 精简11个工具页SEO元数据-title降至42字内并精简过长description（11 文件 +11/-11）
+- push：1e441ad..337719a HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：137 篇（无变化）
+- 页面：1079 页（无变化）
+
+## 验收结果
+- title>=40 字页面 ✅（从 20 降至 14，43 字清零，最长 42 字）
+- description>=100 字页面 ✅（从 21 降至 17，>=120 字清零，最长 113 字）
+- 构建 ✅（1079 页面，24.80s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，11 文件 +11/-11）
+
+## 数据洞察
+- **四轮 SEO 元数据优化里程碑**：经第 161 轮（8 个 >50 字）→ 第 162 轮（16 个 >=45 字）→ 第 163 轮（3 个 44 字 + 4 个 desc>150 字）→ 第 164 轮（6 个 43 字 + 5 个 desc>=120 字）四轮迭代，工具页 title 长度全部控制在 42 字以内（含 "- 工具盒子" 后缀约 47 字），description >=120 字清零，剩余最长 title 42 字、最长 description 113 字均在合理区间
+- **title 精简策略延续**：本轮延续 161-163 轮归纳的三类精简模式（删除冗余前缀/后缀、紧凑格式、删除具体枚举），6 个 title 平均缩减 15 字（43→28 字），保留核心工具名与能力概括
+- **description 精简的 SEO 关键词权衡**：dns 的 description 112 字未降至 100 字以内，因其包含 A/AAAA/CNAME/MX/TXT/NS 等高价值长尾 SEO 关键词。删除这些枚举可降至 83 字，但会损失"dns mx 查询""dns txt 查询"等长尾搜索流量。质量优先原则下，保留 SEO 关键词比追求字数指标更有价值
+- **英文字符占比对字数计算的影响**：dns description 的中文字符约 40 个，但英文字符（DNS/DoH/Cloudflare/Google/A/AAAA/CNAME/MX/TXT/NS/DNSSEC/dig）占 72 个字符，按 Unicode 码点计算达 112 字。这一现象在含大量技术术语的工具页（dns/tls/http-headers/http-request）中普遍存在，后续优化需区分"中文冗余"与"英文关键词保留"
+- **scan-meta-length.mjs 工具持续验证价值**：本轮通过脚本精确定位 6 个 43 字 title 与 5 个 >=120 字 description，修复后立即复扫验证效果，闭环高效
+
+## 遗留问题
+- 工具页 SEO 元数据质量债：剩余 14 个 title 40-42 字工具页（最长 42 字，已在合理区间，可选优化）
+- 工具页 description 质量债：剩余 17 个 description 100-113 字工具页（最长 113 字 trigonometric，可选优化）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+- 工具矩阵中剩余 11 个未覆盖工具待评估可成链性
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 新博客 SEO 收录监测（css-scroll-render + sql-to-report + randomness-generation 三篇近期博客）
+3. 持续低入链监测（验证本轮 title 精简未影响内链锚文本）
+4. 可选：继续优化 title 40-42 字工具页（14 个，优先级低，已达标区间）
+5. 可选：继续优化 description 100-113 字工具页（17 个，注意区分中文冗余与英文关键词保留）
+6. 工具矩阵剩余未覆盖工具的协同博客规划（11 个未覆盖工具）
+7. 2 个 hints 清理（可选，低优先级，均有意保留）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 3 篇近期博客的搜索收录变化
+
+---
+
+## 第 164 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 164 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：工具页 SEO 元数据四轮优化（title 43 字清零 + description >=120 字清零）
+**Commit**：337719a
+**Push**：1e441ad..337719a HEAD -> main
+
+### 完成任务
+1. ✅ 精简 6 个 title=43 字工具页（html-entities/jwe/light-dark/lorem/markdown/text-similarity）至 24-30 字
+2. ✅ 精简 5 个 description>=120 字工具页（user-agent/http-request/dns/image-crop/hash）至 70-112 字
+3. ✅ title>=40 字页面从 20 降至 14，43 字清零（最长 42 字）
+4. ✅ description>=100 字页面从 21 降至 17，>=120 字清零（最长 113 字）
+5. ✅ 构建成功（1079 页面，24.80s，postbuild 0 残留）
+6. ✅ SEO 审计全指标归零（brokenLinks=0）
+7. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+8. ✅ Git 提交推送完成（1 次 commit，11 文件 +11/-11）
+
+### 修改文件
+- `src/pages/html-entities.astro`（title 43→24 字）
+- `src/pages/jwe.astro`（title 43→28 字）
+- `src/pages/light-dark.astro`（title 43→30 字）
+- `src/pages/lorem.astro`（title 43→30 字）
+- `src/pages/markdown.astro`（title 43→28 字）
+- `src/pages/text-similarity.astro`（title 43→28 字）
+- `src/pages/user-agent.astro`（description 141→~70 字）
+- `src/pages/http-request.astro`（description 140→~75 字）
+- `src/pages/dns.astro`（description 126→112 字，保留记录类型 SEO 关键词）
+- `src/pages/image-crop.astro`（description 121→~80 字）
+- `src/pages/hash.astro`（description 117→~70 字）
+
+### 验证结果
+- title>=40 字页面 ✅（从 20 降至 14，43 字清零，最长 42 字）
+- description>=100 字页面 ✅（从 21 降至 17，>=120 字清零，最长 113 字）
+- 构建 ✅（1079 页面，24.80s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，11 文件 +11/-11）
+
+### 数据洞察
+- 四轮 SEO 元数据优化里程碑：经 161-164 四轮迭代，工具页 title 全部控制在 42 字以内，description >=120 字清零
+- title 精简策略延续：三类模式（删除冗余前缀/后缀、紧凑格式、删除具体枚举），6 个 title 平均缩减 15 字
+- description 精简的 SEO 关键词权衡：dns 112 字保留记录类型枚举（A/AAAA/CNAME/MX/TXT/NS）的长尾 SEO 价值，不追求字数指标
+- 英文字符占比对字数计算的影响：含大量技术术语的工具页（dns/tls/http-headers）字数偏高，后续优化需区分中文冗余与英文关键词保留
+
+### 遗留问题
+- 剩余 14 个 title 40-42 字工具页（已达标区间，可选优化）
+- 剩余 17 个 description 100-113 字工具页（可选优化，注意 SEO 关键词保留）
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 2 个 astro check hints（均有意保留）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 新博客 SEO 收录监测
+3. 持续低入链监测
+4. 可选：继续优化 title 40-42 字工具页（14 个）
+5. 可选：继续优化 description 100-113 字工具页（17 个）
+6. 工具矩阵剩余未覆盖工具的协同博客规划
+7. 2 个 hints 清理（可选）
+
+---
+
+# 第 165 轮 · JS Bundle 守护机制建设（analyze-bundle.mjs --check 模式 + postbuild 集成）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 164 轮（commit 337719a）：工具页 SEO 元数据四轮优化（title 43 字清零 + description >=120 字清零）
+- 第 164 轮下轮建议：①接入 Cloudflare Web Analytics ②新博客 SEO 收录监测 ③持续低入链监测 ④可选继续优化 title/description ⑤工具矩阵协同博客规划 ⑥2 个 hints 清理
+- 工作树状态：第 164 轮提交已推送（337719a），scripts/analyze-bundle.mjs 为上轮会话末尾创建的未跟踪文件
+- 距上轮间隔 0 天（同日连续迭代）
+
+## 本轮聚焦方向
+**承接上轮会话末尾的 JS bundle 体积审计工作，将临时审计脚本升级为 postbuild 持续守护机制，确保未来构建不会引入超 200KB 红线的页面**
+
+本轮聚焦：
+1. 为 analyze-bundle.mjs 添加 --check 模式（超限页面存在时以退出码 1 退出）
+2. 将 analyze-bundle.mjs --check 集成到 package.json 的 postbuild 脚本
+3. 全量验收与进度沉淀
+
+## 完成任务
+
+### 单元 1：JS Bundle 体积基线审计
+运行 `node scripts/analyze-bundle.mjs` 扫描 dist/ 下 1079 个 HTML 页面：
+
+| 维度 | 数值 |
+| --- | --- |
+| 超 200KB 红线的页面 | 0 个 ✅ |
+| 150-200KB 接近红线的页面 | 21 个 |
+| JS 总加载量最大页面 | /exif-editor/index.html (199.27 KB) |
+| JS 总加载量最小页面(有JS) | /reverse/index.html (137.15 KB) |
+
+接近红线 TOP 5 页面（均加载 client.Bz692-Ao.js 133.31KB React 运行时 + 工具特定 JS）：
+1. /exif-editor/ — 199.27 KB（ExifEditorTool 65.96KB，含 JPEG+PNG+WebP 三套解析）
+2. /image-compare/ — 183.11 KB（ImageCompareTool 49.8KB）
+3. /qr/ — 167.92 KB（QrTool 34.61KB，含 qrcode 库）
+4. /http-status/ — 164.91 KB（HttpStatusTool 31.6KB）
+5. /http-headers/ — 163.8 KB（HttpHeadersTool 30.49KB）
+
+体积来源分析：
+- **共享 React 运行时**（client.Bz692-Ao.js 133.31KB）：所有使用 React 组件的工具页都加载，难以减小
+- **工具特定 JS**（14-66KB 不等）：已通过 Vite/Rollup tree-shaking 优化，exifr 全版本与 lite 版本体积相同（tree-shaking 已移除未用解析器）
+- **exif-editor 最接近红线**：ExifEditorTool.tsx 导入了 JPEG/PNG/WebP 三套解析逻辑（exifEditor.ts），可通过动态导入懒加载 PNG/WebP 代码进一步优化，但需大量重构
+
+### 单元 2：为 analyze-bundle.mjs 添加 --check 模式
+- 新增 `BUNDLE_LIMIT_KB = 200` 常量（与规范质量红线一致）
+- 新增 `CHECK_MODE = process.argv.includes('--check')` 参数解析
+- 将硬编码的 200 替换为 `BUNDLE_LIMIT_KB` 常量
+- 新增退出码逻辑：`--check` 模式下超限页面存在时 `process.exit(1)`，通过时输出 "✓ Bundle 守护通过"
+
+### 单元 3：将 analyze-bundle.mjs --check 集成到 postbuild（commit 待提交）
+- `package.json` 的 `postbuild` 脚本从 `node scripts/find-stale-tags.mjs` 改为 `node scripts/find-stale-tags.mjs && node scripts/analyze-bundle.mjs --check`
+- 验证：`npm run build` 后 postbuild 自动运行两个脚本，find-stale-tags 报告 0 残留，analyze-bundle --check 报告 0 超限并输出 "✓ Bundle 守护通过"
+- 退出码 0，完整链路工作正常
+
+### 单元 4：全量验收
+- `npm run build`：1079 页面构建成功（28.72s），postbuild 自动运行 find-stale-tags（0 残留）+ analyze-bundle --check（0 超限，✓ Bundle 守护通过）✅
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）✅
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性 ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：137 篇（无变化）
+- 页面：1079 页（无变化）
+
+## 验收结果
+- 构建 ✅（1079 页面，28.72s，postbuild 自动链正常运行）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Bundle 守护 ✅（0 个超 200KB 红线，21 个接近红线已纳入持续监控）
+
+## 数据洞察
+- **Bundle 守护机制价值**：将临时审计脚本升级为 postbuild 持续守护，每次构建后自动扫描所有 HTML 页面的 JS 总加载量。若未来新增工具或依赖导致任何页面超过 200KB 红线，postbuild 会以退出码 1 退出，阻断违规构建部署。这是质量红线"单页 JS bundle < 200KB"的自动化保障
+- **--check 模式设计**：通过 `process.argv.includes('--check')` 区分"仅报告"与"守护"两种模式。报告模式（无参数）供开发时手动分析，守护模式（--check）供 postbuild/CI 自动阻断。退出码 1 触发 npm 错误，Cloudflare Pages 部署会因构建失败而中止
+- **exifr tree-shaking 验证结论**：上轮会话尝试将 exifr 从全版本切换到 lite 版本（exifr/dist/lite.esm.mjs），但体积未减小。本轮确认原因：Vite/Rollup 的 tree-shaking 已从全版本中移除未使用的解析器，全版本与 lite 版本在项目中实际打包体积相同。这是 tree-shaking 有效工作的证明，无需切换到 lite 版本
+- **接近红线页面的优化空间分析**：21 个 150-200KB 页面主要受共享 React 运行时（133.31KB）拖累。工具特定 JS（14-66KB）已通过 tree-shaking 优化。进一步优化需动态导入（如 ExifEditorTool 的 PNG/WebP 解析代码懒加载），但需大量重构且当前已达标，暂不优先
+- **postbuild 链设计**：find-stale-tags → analyze-bundle --check，先清理残留目录再守护 bundle 体积。`&&` 在 npm scripts 中通过 cmd.exe（Windows）/ sh（Unix）执行，跨平台兼容
+
+## 遗留问题
+- /exif-editor/ 199.27KB 最接近 200KB 红线（差 0.73KB），未来任何 ExifEditorTool 的功能扩展都可能超线，需优先关注
+- 21 个接近红线页面（150-200KB）的优化空间主要在共享 React 运行时，难以减小
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 新博客 SEO 收录监测（css-scroll-render + sql-to-report + randomness-generation 三篇近期博客）
+3. 持续低入链监测
+4. 可选：优化 /exif-editor/ bundle 体积（动态导入 PNG/WebP 解析代码，预留红线缓冲）
+5. 可选：继续优化 title 40-42 字工具页（14 个）
+6. 可选：继续优化 description 100-113 字工具页（17 个）
+7. 工具矩阵剩余未覆盖工具的协同博客规划
+8. 2 个 hints 清理（可选，低优先级）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 3 篇近期博客的搜索收录变化
+
+---
+
+## 第 165 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 165 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：JS Bundle 守护机制建设（analyze-bundle.mjs --check 模式 + postbuild 集成）
+**Commit**：待提交
+
+### 完成任务
+1. ✅ 运行 analyze-bundle.mjs 审计 1079 个 HTML 页面的 JS 总加载量（0 个超 200KB 红线，21 个接近红线）
+2. ✅ 为 analyze-bundle.mjs 添加 --check 模式（BUNDLE_LIMIT_KB 常量 + 参数解析 + 超限 process.exit(1)）
+3. ✅ 将 analyze-bundle.mjs --check 集成到 package.json postbuild 脚本
+4. ✅ 验证 postbuild 自动链正常运行（find-stale-tags + analyze-bundle --check，退出码 0）
+5. ✅ 构建成功（1079 页面，28.72s，postbuild 自动运行）
+6. ✅ SEO 审计全指标归零（brokenLinks=0）
+7. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+
+### 修改文件
+- `scripts/analyze-bundle.mjs`（新增 --check 模式 + BUNDLE_LIMIT_KB 常量 + 退出码逻辑）
+- `package.json`（postbuild 集成 analyze-bundle --check）
+
+### 验证结果
+- 构建 ✅（1079 页面，28.72s，postbuild 自动链正常运行）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Bundle 守护 ✅（0 个超 200KB 红线，✓ Bundle 守护通过）
+
+### 数据洞察
+- Bundle 守护机制价值：postbuild 持续守护，超 200KB 红线时自动阻断构建部署
+- exifr tree-shaking 验证：全版本与 lite 版本打包体积相同，tree-shaking 已有效工作
+- 接近红线页面优化空间：21 个 150-200KB 页面主要受 React 运行时（133KB）拖累，工具特定 JS 已 tree-shaking
+
+### 遗留问题
+- /exif-editor/ 199.27KB 最接近红线（差 0.73KB），未来扩展需优先关注
+- 21 个接近红线页面的优化空间主要在共享 React 运行时
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 新博客 SEO 收录监测
+3. 可选：优化 /exif-editor/ bundle 体积（动态导入 PNG/WebP 解析代码）
+4. 可选：继续优化 title/description 工具页
+5. 工具矩阵剩余未覆盖工具的协同博客规划
+6. 2 个 hints 清理（可选）
