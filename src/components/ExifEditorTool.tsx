@@ -29,21 +29,16 @@ import {
   HEX_DUMP_MAX_BYTES,
   type PngMetaSnapshot,
   type PngChunkInfo,
-  // WebP 相关导入（第 112 轮新增）
+  // WebP 文件头检测（小函数，保留静态导入以便快速分流）
   isWebpFile,
-  parseWebpChunks,
-  applyWebpEdits,
-  applyWebpEditsBatch,
-  extractWebpMetaSnapshot,
-  buildWebpEditedFilename,
-  buildWebpBatchEditedFilename,
-  type WebpMetaSnapshot,
-  type WebpChunkInfo,
+  // 通用类型
   type EditOperation,
   type EditResult,
   type EditPreset,
   type BatchEditSummary,
 } from '../utils/exifEditor';
+// WebP 类型定义（type-only 导入，编译时擦除，不影响 bundle 体积）
+import type { WebpMetaSnapshot, WebpChunkInfo } from '../utils/exifEditorWebp';
 import { createZipFile, type ZipEntry } from '../utils/imageCrop';
 import { formatBytes, downloadBlob } from '../utils/imageConvert';
 
@@ -331,6 +326,8 @@ export default function ExifEditorTool() {
           setError('文件扩展名是 .webp 但 RIFF/WEBP 文件头不匹配，可能不是有效的 WebP 文件');
           return;
         }
+        // WebP 解析逻辑按需动态导入（减小初始 bundle 体积）
+        const { parseWebpChunks, extractWebpMetaSnapshot } = await import('../utils/exifEditorWebp');
         const chunks = parseWebpChunks(bytes);
         const snapshot = extractWebpMetaSnapshot(chunks);
         setWebpSnapshot(snapshot);
@@ -527,10 +524,12 @@ export default function ExifEditorTool() {
       const pngNames = pngIdx.map((i) => allNames[i]);
       const webpBytes = webpIdx.map((i) => allBytes[i]);
       const webpNames = webpIdx.map((i) => allNames[i]);
+      // WebP 批量处理按需动态导入（仅在有 WebP 文件时加载模块）
+      const webpModule = webpBytes.length > 0 ? await import('../utils/exifEditorWebp') : null;
       const [jpegSummary, pngSummary, webpSummary] = await Promise.all([
         jpegBytes.length > 0 ? applyEditsBatch(jpegBytes, jpegNames, activeOps) : null,
         pngBytes.length > 0 ? applyPngEditsBatch(pngBytes, pngNames, activeOps) : null,
-        webpBytes.length > 0 ? applyWebpEditsBatch(webpBytes, webpNames, activeOps) : null,
+        webpModule ? webpModule.applyWebpEditsBatch(webpBytes, webpNames, activeOps) : null,
       ]);
       // 合并三批结果，按原顺序还原
       const mergedItems = new Array(batchFiles.length);
@@ -600,6 +599,9 @@ export default function ExifEditorTool() {
       setBatchError('没有可下载的成功处理结果');
       return;
     }
+    // 检查是否有 WebP 文件，按需动态导入 WebP 文件名生成器
+    const hasWebp = successItems.some((it) => /\.webp$/i.test(it.fileName));
+    const webpNameModule = hasWebp ? await import('../utils/exifEditorWebp') : null;
     const entries: ZipEntry[] = successItems.map((it, idx) => {
       // 根据文件扩展名判断类型（PNG / WebP 文件扩展名以 .png / .webp 结尾）
       const isPng = /\.png$/i.test(it.fileName);
@@ -607,7 +609,7 @@ export default function ExifEditorTool() {
       const name = isPng
         ? buildPngBatchEditedFilename(it.fileName, idx, successItems.length)
         : isWebp
-          ? buildWebpBatchEditedFilename(it.fileName, idx, successItems.length)
+          ? webpNameModule!.buildWebpBatchEditedFilename(it.fileName, idx, successItems.length)
           : buildBatchEditedFilename(it.fileName, idx, successItems.length);
       const mime = isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg';
       return {
@@ -701,12 +703,14 @@ export default function ExifEditorTool() {
     try {
       const buf = await file.arrayBuffer();
       const bytes = new Uint8Array(buf);
+      // WebP 编辑按需动态导入（仅 WebP 文件时加载模块）
+      const webpModule = fileType === 'webp' ? await import('../utils/exifEditorWebp') : null;
       // 根据文件类型选择处理函数：三路分流 JPEG / PNG / WebP
       const editFn =
         fileType === 'png'
           ? applyPngEdits
           : fileType === 'webp'
-            ? applyWebpEdits
+            ? webpModule!.applyWebpEdits
             : applyEdits;
       const result = editFn(bytes, activeOps);
       setEditResult(result);
@@ -732,11 +736,11 @@ export default function ExifEditorTool() {
         } catch {
           setPngSnapshot(null);
         }
-      } else if (fileType === 'webp') {
-        // WebP 路径：重新解析 RIFF chunks 提取快照（同步），并尝试用 exifr 解析 EXIF 字段
+      } else if (fileType === 'webp' && webpModule) {
+        // WebP 路径：复用已导入的 webpModule 重新解析 RIFF chunks 提取快照
         try {
-          const newChunks = parseWebpChunks(result.bytes);
-          const newSnapshot = extractWebpMetaSnapshot(newChunks);
+          const newChunks = webpModule.parseWebpChunks(result.bytes);
+          const newSnapshot = webpModule.extractWebpMetaSnapshot(newChunks);
           setWebpSnapshot(newSnapshot);
           // 仅在含 EXIF chunk 时重新解析字段级元数据
           if (newSnapshot.hasExif) {
@@ -769,15 +773,18 @@ export default function ExifEditorTool() {
     }
   }, [file, activeOps, editedUrl, fileType]);
 
-  /** 下载编辑后文件（根据 fileType 选择文件名生成器） */
-  const handleDownload = useCallback(() => {
+  /** 下载编辑后文件（根据 fileType 选择文件名生成器，WebP 按需动态导入） */
+  const handleDownload = useCallback(async () => {
     if (!editedUrl || !file) return;
-    const filename =
-      fileType === 'png'
-        ? buildPngEditedFilename(file.name)
-        : fileType === 'webp'
-          ? buildWebpEditedFilename(file.name)
-          : buildEditedFilename(file.name);
+    let filename: string;
+    if (fileType === 'png') {
+      filename = buildPngEditedFilename(file.name);
+    } else if (fileType === 'webp') {
+      const { buildWebpEditedFilename } = await import('../utils/exifEditorWebp');
+      filename = buildWebpEditedFilename(file.name);
+    } else {
+      filename = buildEditedFilename(file.name);
+    }
     downloadBlob(editedUrl, filename);
   }, [editedUrl, file, fileType]);
 
