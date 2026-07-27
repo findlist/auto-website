@@ -344,3 +344,139 @@
 2. 第 23 篇长尾 SEO 博客
 3. 新博客 SEO 收录监测
 4. 2 个 hints 清理
+
+---
+
+# 第 158 轮 · 密码哈希与 JWE 工具质量缺陷修复（示例数据失真 + 陈旧状态清理）
+
+## 上下文恢复
+- 读取 `docs/site-config.md`：站点已上线（https://website.niuzi.asia），阶段二（数据驱动迭代）
+- 承接第 157 轮（commit 6215d06）：修复 /random-picker/ 锚文本低多样性
+- 第 157 轮遗留问题：统计工具未接入、2 个 hints（execCommand 弃用）
+- 工作树状态：clean（8d3b6f4 已推送）
+- 读取 `docs/bug-check/bug-check-2026-07-28.md`：3 个 P1 已修复（d631817），16 个 P2 记录在案
+
+## 本轮聚焦方向
+**按规范优先级"功能可用性 > 性能体验 > SEO 优化 > 内容拓展"，修复 bug-check 报告中影响用户体验的 P2 质量缺陷**
+
+bug-check 报告分析结论：
+- `document.execCommand` hints 是 clipboard.ts 中**有意保留的降级方案**（非安全上下文兼容），移除会降低健壮性，不属于需清理项
+- 真正影响用户的 P2：① PasswordHashTool 示例 hash 与示例密码不匹配（用户点"验证密码"得"不匹配"）② 输入变更后陈旧错误态不清除 ③ JweTool 生成失败静默无反馈
+
+本轮聚焦：
+1. 修复 PasswordHashTool 示例 hash 数据失真（P2 #5）
+2. 修复 PasswordHashTool/JweTool 输入变更后陈旧错误态不清除（P2 #6/#8）
+3. 修复 JweTool 生成测试 JWE 失败静默无反馈（P2 #7）
+
+## 完成任务
+
+### 单元 1：修复 PasswordHashTool 示例 hash 数据失真（commit ad4a287）
+- **问题**：示例密码 `correct horse battery staple` 对应的示例 hash 是伪造值——bcrypt hash 不匹配，pbkdf2 hash 的 hashBase64 解码仅 16 字节（SHA-256 应为 32 字节）。用户在验证模式点"加载示例"→"验证密码"会得到"不匹配"，误导用户以为工具损坏
+- **修复**：用 bcryptjs + Node crypto 生成与示例密码真实匹配的示例 hash：
+  - bcrypt：`$2b$12$9fvcy0Hh1YDrdR0RgH7VPel3oY0esiYNSsMMraoMbsSqxn.lPx.Py`（$2b$ 前缀，bcryptjs 默认）
+  - pbkdf2：`pbkdf2$100000$SHA-256$e5fEC0xOI3mXbP3vYE1rfg==$io+9jc8x8GpROYVprurioiGz14u7PkD/pbN3g3R9og0=`（16 字节盐 + 32 字节哈希，符合工具 generateSalt(16) 标准与 OWASP 建议）
+- **验证**：临时脚本验证 bcrypt.compareSync 与 crypto.pbkdf2Sync 均返回 true，salt 16 字节、hash 32 字节
+- **影响**：用户点"加载示例"→"验证密码"即得"匹配"，示例真正可用于学习验证流程
+
+### 单元 2：修复 PasswordHashTool 输入变更后陈旧错误态不清除（P2 #6，commit ad4a287）
+- **问题**：验证失败显示 error 后，用户修改密码或哈希输入，旧 error 仍显示直到下次点按钮才清除，可能误导
+- **修复**：新增 `handlePasswordChange` 与 `handleHashInputChange`，在输入变更时清除陈旧的 error/verifyResult/notice/copied，绑定到密码 input 与哈希 textarea 的 onChange
+- **影响**：用户修改输入后立即清除上一次操作的错误与结果，状态与输入一致
+
+### 单元 3：修复 JweTool 陈旧解密结果与生成失败静默（P2 #7/#8，commit ad4a287）
+- **问题 1（#8）**：解密失败后修改 keyInput，旧 decryptResult（含错误）仍显示
+- **修复 1**：新增 `handleKeyInputChange`，密钥变更时清除 decryptResult，替换 3 处 keyInput 输入框的 onChange（asymmetric textarea / ecdh-es textarea / 其他 input）
+- **问题 2（#7）**：handleGenerate/handleLoadPbes2/handleLoadEcdhEs 失败时仅 console.error，UI 无反馈
+- **修复 2**：新增 `genError` 状态，三个生成函数开始时清空、失败时设置错误信息，UI 在按钮区下方用 `jwetool__error` 样式显示（role="alert"），handleClear 也清空 genError
+- **影响**：密钥变更后旧结果不再误导；生成失败时用户能看到具体错误而非无声失败
+
+### 单元 4：全量验收
+- `npx astro check`：0 errors、0 warnings、2 hints（均为既有无关项：find-stale-tags.mjs 未用导入、clipboard.ts execCommand 弃用）
+- `npm run build`：1068 页面构建成功（21.49s），postbuild 自动运行报告"残留目录: 0 个"
+- `node scripts/seo-audit.mjs`：全指标归零（title=0, desc=0, og=0, canonical=0, imgAlt=0, jsonLd=0, brokenLinks=0）
+- `node scripts/link-graph-audit.mjs`：0 孤立 / 0 稀疏入链 / 0 稀疏出链 / 0 无意义锚文本 / 0 低多样性
+
+### 单元 5：Git 提交推送
+- commit ad4a287：fix: 修复密码哈希工具示例数据失真与 JWE 工具陈旧状态清理（2 文件 +54/-12）
+- push：8d3b6f4..ad4a287 HEAD -> main ✅
+
+## 当前规模
+- 工具：109 个（无变化）
+- 博客：135 篇（无变化）
+- 页面：1068 页（无变化）
+
+## 验收结果
+- 类型检查 ✅（0 errors, 0 warnings, 2 既有 hints）
+- 构建 ✅（1068 页面，21.49s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit，2 文件 +54/-12）
+
+## 数据洞察
+- **示例数据失真根因**：原示例 hash 是手写的"格式正确但内容伪造"值——bcrypt 串符合 `$2a$12$` 格式但哈希部分是随意字符，pbkdf2 串的 hashBase64 是 16 字节而非 SHA-256 应有的 32 字节。修复方式：用与工具相同的库（bcryptjs + Web Crypto 等价的 Node crypto）真实生成，确保示例可在工具内闭环验证
+- **陈旧状态清理价值**：表单类工具的"错误/结果"状态属于"上次操作的产物"，当用户修改输入时应自动失效。本次为 PasswordHashTool 与 JweTool 建立统一的"输入变更→清除陈旧结果"模式，与 UuidTool/PasswordTool 已有的清空逻辑一致
+- **生成失败反馈的必要性**：JweTool 三个生成函数依赖 Web Crypto 的密钥生成与加密，在极端环境（如浏览器禁用 Web Crypto、内存不足）可能失败。原静默 console.error 违反"完整的错误提示"质量红线，新增 genError 状态后用户可见具体失败原因
+- **hints 评估结论**：clipboard.ts 的 execCommand 是有意保留的非安全上下文降级路径，站点虽部署在 HTTPS（Cloudflare Pages）但保留降级提升健壮性，不应清理；find-stale-tags.mjs 的未用导入属脚本工具非生产代码，低优先级
+
+## 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作，站点已上线 19 天）
+- bug-check 报告中其余 P2（#1-#4、#9-#13、#15）均为设计权衡或防御性代码，非阻塞
+- 2 个 astro check hints（execCommand 弃用 + find-stale-tags 未用导入，均有意保留）
+
+## 下轮优先级
+1. 接入 Cloudflare Web Analytics（阶段二核心阻塞项，需用户操作）
+2. 第 23 篇长尾 SEO 博客（候选：编码工具链深化 / CSV 与数据表格 / 正则与文本处理深化；注意避开已有 toolchain 博客覆盖范围）
+3. 新博客 SEO 收录监测（randomness-generation-toolchain-guide）
+4. find-stale-tags.mjs 未用导入清理（可选，低优先级）
+
+## 用户操作项
+- 可选：开启 Cloudflare Web Analytics 并提供 beacon 代码
+- 可选：提交 sitemap.xml 至 Google Search Console / Bing Webmaster Tools
+- 可选：观察 randomness-generation-toolchain-guide 的搜索收录变化
+
+---
+
+## 第 158 轮工作摘要（按规范第十节模板）
+
+**轮次**：第 158 轮（2026-07-28）
+**阶段**：阶段二（数据驱动迭代）
+**方向**：密码哈希与 JWE 工具质量缺陷修复（示例数据失真 + 陈旧状态清理）
+**Commit**：ad4a287
+**Push**：8d3b6f4..ad4a287 HEAD -> main
+
+### 完成任务
+1. ✅ 修复 PasswordHashTool 示例 hash 数据失真（bcrypt + pbkdf2 改为与示例密码真实匹配的值）
+2. ✅ 修复 PasswordHashTool 输入变更后陈旧错误态不清除（新增 handlePasswordChange/handleHashInputChange）
+3. ✅ 修复 JweTool 密钥变更后陈旧解密结果不清除（新增 handleKeyInputChange，替换 3 处 onChange）
+4. ✅ 修复 JweTool 生成测试 JWE 失败静默无反馈（新增 genError 状态 + UI 错误提示）
+5. ✅ 类型检查通过（0 errors, 0 warnings, 2 既有 hints）
+6. ✅ 构建成功（1068 页面，21.49s，postbuild 0 残留）
+7. ✅ SEO 审计全指标归零（brokenLinks=0）
+8. ✅ 链接图审计通过（孤立/稀疏/无意义锚文本/低多样性全部 0）
+9. ✅ Git 提交推送完成（1 次 commit，2 文件 +54/-12）
+
+### 修改文件
+- `src/components/PasswordHashTool.tsx`（示例 hash 修正 + 输入变更清除陈旧状态）
+- `src/components/JweTool.tsx`（密钥变更清除陈旧结果 + 生成失败反馈 genError）
+
+### 验证结果
+- 类型检查 ✅（0 errors, 0 warnings, 2 既有 hints）
+- 构建 ✅（1068 页面，21.49s，postbuild 0 残留）
+- SEO 审计 ✅（全指标归零，brokenLinks=0）
+- 链接图审计 ✅（孤立/稀疏/无意义锚文本/低多样性全部 0）
+- Git 提交推送 ✅（1 次 commit）
+
+### 数据洞察
+- 示例数据失真根因：手写的"格式正确但内容伪造"值，应用与工具相同的库真实生成确保闭环可验证
+- 陈旧状态清理价值：表单类工具的"错误/结果"属上次操作产物，输入变更时应自动失效
+- 生成失败反馈的必要性：静默 console.error 违反"完整的错误提示"质量红线
+
+### 遗留问题
+- 统计工具未接入（阶段二核心阻塞项，需用户操作）
+- 其余 P2 均为设计权衡或防御性代码，非阻塞
+
+### 下一轮建议
+1. 接入 Cloudflare Web Analytics（需用户操作）
+2. 第 23 篇长尾 SEO 博客
+3. 新博客 SEO 收录监测
+4. find-stale-tags.mjs 未用导入清理（可选）
