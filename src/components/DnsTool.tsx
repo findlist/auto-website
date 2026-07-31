@@ -197,7 +197,7 @@ export default function DnsTool() {
     }
     if (!result.ok) {
       return (
-        <div className="dns__error">
+        <div className="dns__error" role="alert">
           <h3>查询失败</h3>
           <p>{result.error}</p>
           <dl className="dns__meta">
