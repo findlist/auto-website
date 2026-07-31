@@ -306,7 +306,7 @@ export default function FindReplaceTool() {
       </div>
 
       {/* 错误提示 */}
-      {error && <div className="fr__error">{error}</div>}
+      {error && <div className="fr__error" role="alert">{error}</div>}
 
       {/* 统计区 */}
       <div className="fr__stats">

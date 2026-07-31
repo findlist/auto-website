@@ -436,7 +436,7 @@ export default function AesTool() {
         <div className="aes__result">
           <h3 className="aes__result-title">加密结果</h3>
           {!encResult.ok ? (
-            <p className="aes__error">{encResult.error}</p>
+            <p className="aes__error" role="alert">{encResult.error}</p>
           ) : (
             <>
               <ResultField
@@ -486,7 +486,7 @@ export default function AesTool() {
         <div className="aes__result">
           <h3 className="aes__result-title">解密结果</h3>
           {!decResult.ok ? (
-            <p className="aes__error">{decResult.error}</p>
+            <p className="aes__error" role="alert">{decResult.error}</p>
           ) : (
             <ResultField
               label="明文"
