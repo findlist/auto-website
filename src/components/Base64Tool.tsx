@@ -262,7 +262,7 @@ export default function Base64Tool() {
       {/* 状态条 */}
       <div className="jsontool__status" role="status" aria-live="polite">
         {error ? (
-          <div className="jsontool__error">
+          <div className="jsontool__error" role="alert">
             <strong>❌ 错误</strong>
             <span>{error}</span>
           </div>
